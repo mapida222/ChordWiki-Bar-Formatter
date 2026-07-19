@@ -172,6 +172,12 @@ main { padding: 12px 0 28px; }
 .support-message:last-child { border-bottom: 0; }
 .support-jump-button { flex: 0 0 auto; min-height: 25px; padding: 3px 7px; border: 1px solid var(--correction-line); border-radius: 3px; color: var(--text); background: color-mix(in srgb, var(--panel) 86%, var(--correction-line)); cursor: pointer; font: 800 .68rem/1 var(--sans); }
 .support-jump-button:hover { background: color-mix(in srgb, var(--panel) 72%, var(--correction-line)); }
+.support-correction-review { flex: 1 0 100%; display: grid; gap: 5px; margin-top: 3px; padding: 8px; border: 1px solid color-mix(in srgb, var(--correction-line) 72%, transparent); border-radius: 4px; background: color-mix(in srgb, var(--panel) 90%, var(--correction-line)); }
+.support-correction-review > div:not(.support-review-actions) { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 5px; align-items: baseline; }
+.support-correction-review code { min-width: 0; overflow-wrap: anywhere; white-space: pre-wrap; color: var(--text); font: inherit; }
+.support-review-actions { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 3px; }
+.support-review-button { min-height: 27px; padding: 4px 8px; border: 1px solid var(--correction-line); border-radius: 3px; color: var(--text); background: var(--panel); cursor: pointer; font: 800 .7rem/1.2 var(--sans); }
+.support-review-button:hover { background: color-mix(in srgb, var(--panel) 76%, var(--correction-line)); }
 .input-card { grid-column: 2; grid-row: 1; }
 .output-card { grid-column: 2; grid-row: 2; }
 .final-card { grid-column: 2; grid-row: 3; }

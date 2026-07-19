@@ -562,7 +562,86 @@
     elements.correction.scrollTop = Math.max(0, targetIndex * lineHeight - elements.correction.clientHeight / 3);
     updateActivePosition(elements.correction, elements.correctionLines, true);
   }
-  function renderSupport(messages) {
+  function editorLine(textarea, lineIndex) {
+    return textarea.value.split(/\r\n|\r|\n/)[lineIndex] || "";
+  }
+  function replaceCorrectionLine(lineIndex, nextValue) {
+    const lines = elements.correction.value.split(/\r\n|\r|\n/);
+    while (lines.length <= lineIndex) lines.push("");
+    lines[lineIndex] = nextValue;
+    elements.correction.value = lines.join("\n");
+    elements.correction.dispatchEvent(new Event("input", { bubbles: true }));
+  }
+  function focusEditorLine(textarea, lineIndex) {
+    const lines = textarea.value.split(/\r\n|\r|\n/);
+    const target = Math.max(0, Math.min(lines.length - 1, lineIndex));
+    const start = lines.slice(0, target).reduce((sum, line) => sum + line.length + 1, 0);
+    const end = start + (lines[target] || "").length;
+    textarea.focus();
+    textarea.setSelectionRange(start, end);
+    const lineHeight = Number.parseFloat(getComputedStyle(textarea).lineHeight) || 23;
+    textarea.scrollTop = Math.max(0, target * lineHeight - textarea.clientHeight / 3);
+  }
+  function rebuildCorrectionLineFromSource(lineIndex) {
+    manualOutputLines.delete(lineIndex);
+    outputManuallyEdited = manualOutputLines.size > 0;
+    replaceCorrectionLine(lineIndex, inferenceFallbackCorrectionLines[lineIndex] || "");
+    scheduleConversion(false, new Set([lineIndex]));
+    jumpToCorrectionLine(lineIndex + 1);
+  }
+  function keepOutputAndRefreshCorrection(lineIndex) {
+    const settings = validatedSettings();
+    if (!settings.valid) return;
+    const outputLine = editorLine(elements.output, lineIndex);
+    const inferred = CBFConverter.inferBeatCodeFromRenderedLine(outputLine, inferenceFallbackCorrectionLines[lineIndex] || "", settings.values);
+    if (!inferred) {
+      focusEditorLine(elements.output, lineIndex);
+      notify("この変換後行から行修正を作れませんでした。変換後の行を確認してください。", true);
+      return;
+    }
+    manualOutputLines.add(lineIndex);
+    outputManuallyEdited = true;
+    replaceCorrectionLine(lineIndex, inferred);
+    scheduleConversion(false, new Set([lineIndex]));
+    jumpToCorrectionLine(lineIndex + 1);
+    notify(`${lineIndex + 1}行目を変換後に合わせて更新しました。`);
+  }
+  function appendCorrectionReview(row, error) {
+    const lineIndex = Math.max(0, Number(error.line) - 1);
+    const review = document.createElement("div");
+    review.className = "support-correction-review";
+    review.dataset.line = String(error.line);
+    [
+      ["変換前", editorLine(elements.input, lineIndex)],
+      ["変換後", editorLine(elements.output, lineIndex)],
+      ["行修正", editorLine(elements.correction, lineIndex)]
+    ].forEach(([label, value]) => {
+      const line = document.createElement("div");
+      const strong = document.createElement("strong");
+      strong.textContent = `${label}：`;
+      const code = document.createElement("code");
+      code.textContent = value || "（空行）";
+      line.append(strong, code);
+      review.append(line);
+    });
+    const actions = document.createElement("div");
+    actions.className = "support-review-actions";
+    [
+      ["変換前から作り直す", () => rebuildCorrectionLineFromSource(lineIndex)],
+      ["変換後を残して行修正を合わせる", () => keepOutputAndRefreshCorrection(lineIndex)],
+      ["変換前の行へ移動", () => focusEditorLine(elements.input, lineIndex)]
+    ].forEach(([label, action]) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "support-review-button";
+      button.textContent = label;
+      button.addEventListener("click", action);
+      actions.append(button);
+    });
+    review.append(actions);
+    row.append(review);
+  }
+  function renderSupport(messages, correctionErrors = []) {
     const items = Array.isArray(messages) ? messages : [messages];
     elements.statusDetail.textContent = "";
     items.filter(Boolean).forEach((message) => {
@@ -571,15 +650,19 @@
       const text = document.createElement("span");
       text.textContent = message;
       row.append(text);
-      const errorLine = message.match(/行修正エラー（(\d+)[^）]*行目）/);
-      if (errorLine) {
+      correctionErrors.filter((error) => message.includes(error.message)).forEach((error) => {
         const button = document.createElement("button");
         button.type = "button";
         button.className = "support-jump-button";
-        button.textContent = `${errorLine[1]}行目へ`;
-        button.addEventListener("click", () => jumpToCorrectionLine(Number(errorLine[1])));
+        button.textContent = `${error.line}行目を確認`;
+        button.addEventListener("click", () => {
+          const existing = row.querySelector(".support-correction-review");
+          const sameLineIsOpen = existing?.dataset.line === String(error.line);
+          if (existing) existing.remove();
+          if (!sameLineIsOpen) appendCorrectionReview(row, error);
+        });
         row.append(button);
-      }
+      });
       elements.statusDetail.append(row);
     });
   }
@@ -1067,7 +1150,7 @@
     lastConvertedInputLines = elements.input.value.split(/\r\n|\r|\n/);
     elements.correctionCount.textContent = `${lineCount(elements.correction.value)}行`;
     updateLineNumbers(elements.correction, elements.correctionLines);
-    renderSupport(result.warnings);
+    renderSupport(result.warnings, result.correctionErrors || []);
   }
   function scheduleConversion(refreshCorrections = false, changedLineIndices = null, sourceChangedLineIndices = null) {
     pendingCorrectionRefresh ||= refreshCorrections;

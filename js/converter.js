@@ -909,7 +909,7 @@
     groupedCorrectionErrors.forEach((errorLines, message) => {
       warnings.push(`行修正エラー（${summarizeLineNumbers(errorLines)}行目）：${message}`);
     });
-    return { output: bodyLines.join("\n"), corrections: correctionLines.join("\n"), automaticCorrections: automaticCorrectionLines.join("\n"), appliedCorrections: appliedCorrectionLines.join("\n"), correctionSlotCounts, authoredWhiteNoteCounts, warnings: [...new Set(warnings)], settings, rowCorrections };
+    return { output: bodyLines.join("\n"), corrections: correctionLines.join("\n"), automaticCorrections: automaticCorrectionLines.join("\n"), appliedCorrections: appliedCorrectionLines.join("\n"), correctionSlotCounts, authoredWhiteNoteCounts, correctionErrors, warnings: [...new Set(warnings)], settings, rowCorrections };
   }
 
   function removeSelectedLyricHyphens(tokens, selectedCounts) {
