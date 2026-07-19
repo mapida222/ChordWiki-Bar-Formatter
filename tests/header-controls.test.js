@@ -9,6 +9,10 @@ const html = fs.readFileSync(path.join(root, "index.html"), "utf8");
 const css = fs.readFileSync(path.join(root, "style.css"), "utf8");
 
 assert(html.includes('<span>小節線[|]にカッコをつけない</span>'));
+assert(html.includes('id="correction-refresh-line"'));
+assert(html.includes("↻ この行を更新"));
+assert(!html.includes('id="correction-append"'));
+assert(!html.includes("＋ 末尾に追加"));
 assert(!html.includes("編集時の小節線[|]にカッコをつけない"));
 assert(html.includes('id="add-input-brackets" class="sample-header-button bracket-header-button"'));
 assert(html.includes('<span>コードに[]を追加</span></button>'));

@@ -4,13 +4,27 @@
   const elements = {
     settingsGrid: $("#settings-grid"), settingsProfilePicker: $("#settings-profile-picker"), settingsRecommendationValues: $("#settings-recommendation-values"), customProfileNameField: $("#custom-profile-name-field"), customProfileName: $("#custom-profile-name"), settingsPanel: $("#settings-panel"), settingsShell: $("#settings-shell"), settingsBody: $("#settings-body"), settingsToggle: $("#settings-toggle"), settingsExampleToggle: $("#settings-example-toggle"), theme: $("#setting-theme"), fontSelect: $("#setting-editor-font"), fontSizeValue: $("#font-size-value"), scrollSync: $("#scroll-sync"), textColoring: $("#text-coloring"), boldCode: $("#bold-code"), addedBackground: $("#added-background"), plainEditBars: $("#plain-edit-bars"), finalBarsThrough: $("#final-bars-through"), previewTransposeMain: $("#preview-transpose-main"), previewTransposeMainDown: $("#preview-transpose-main-down"), previewTransposeMainUp: $("#preview-transpose-main-up"), previewSpellingMain: $("#preview-spelling-main"), previewTranspose: $("#preview-transpose"), previewTransposeDown: $("#preview-transpose-down"), previewTransposeUp: $("#preview-transpose-up"), previewSpelling: $("#preview-spelling"), previewDoubleSharp: $("#preview-double-sharp"), previewTheoretical: $("#preview-theoretical"), openScoreWindow: $("#open-score-window"),
     correctionCard: $(".correction-card"), correctionHeading: $(".correction-card .editor-heading"), correctionContext: $(".correction-context-bar"), outputHeading: $(".output-card .editor-heading"), removalControls: $(".removal-controls"), correction: $("#correction-text"), input: $("#input-text"), output: $("#output-text"), finalOutput: $("#final-output-text"), finalPreview: $("#final-score-preview"), committedOutput: $("#committed-output-text"),
-    workspace: $(".workspace"), fontPanel: $(".font-panel"), displaySettingsShell: $("#display-settings-shell"), displaySettingsToggle: $("#display-settings-toggle"), correctionGuide: $(".correction-input-guide"), correctionShell: $("#correction-shell"), inputShell: $("#input-shell"), outputShell: $("#output-shell"), finalOutputShell: $("#final-output-shell"),
+    workspace: $(".workspace"), fontPanel: $(".font-panel"), displaySettingsShell: $("#display-settings-shell"), displaySettingsToggle: $("#display-settings-toggle"), correctionGuide: $(".correction-input-guide"), guideToggleAll: $("#guide-toggle-all"), correctionShell: $("#correction-shell"), inputShell: $("#input-shell"), outputShell: $("#output-shell"), finalOutputShell: $("#final-output-shell"),
     correctionLines: $("#correction-lines"), inputLines: $("#input-lines"), outputLines: $("#output-lines"), finalOutputLines: $("#final-output-lines"), committedOutputLines: $("#committed-output-lines"),
     correctionHighlight: $("#correction-highlight"), inputHighlight: $("#input-highlight"), outputHighlight: $("#output-highlight"), finalOutputHighlight: $("#final-output-highlight"), committedOutputHighlight: $("#committed-output-highlight"),
-    correctionCount: $("#correction-count"), correctionPosition: $("#correction-position"), correctionUndo: $("#correction-undo"), correctionRedo: $("#correction-redo"), correctionAppend: $("#correction-append"), inputCount: $("#input-count"), outputCount: $("#output-count"), finalOutputCount: $("#final-output-count"), committedOutputCount: $("#committed-output-count"), committedOutputShell: $("#committed-output-shell"), committedOutputToggle: $("#committed-output-toggle"),
+    correctionCount: $("#correction-count"), correctionPosition: $("#correction-position"), correctionUndo: $("#correction-undo"), correctionRedo: $("#correction-redo"), correctionRefreshLine: $("#correction-refresh-line"), inputCount: $("#input-count"), outputCount: $("#output-count"), finalOutputCount: $("#final-output-count"), committedOutputCount: $("#committed-output-count"), committedOutputShell: $("#committed-output-shell"), committedOutputToggle: $("#committed-output-toggle"),
     removalTargets: $("#hyphen-removal-targets"), removalSummary: $("#removal-summary"), measureCapacityWarning: $("#measure-capacity-warning"), measureCapacityWarningText: $("#measure-capacity-warning-text"), measureCapacityWarningOpen: $("#measure-capacity-warning-open"),
     statusDetail: $("#status-detail"), toast: $("#toast"), helpDialog: $("#help-dialog"), historyDialog: $("#history-dialog"), historyList: $("#history-list"), historyPreviewPanel: $("#history-preview-panel"), historyPreview: $("#history-score-preview"), historyPreviewTitle: $("#history-preview-title"), historyPreviewDate: $("#history-preview-date"), historyRestore: $("#history-restore"), historyDeleteAll: $("#history-delete-all"), keySettingsDialog: $("#key-settings-dialog"), keySettingsList: $("#key-settings-list"), keySettingsPreview: $("#key-settings-score-preview")
   };
+  const correctionGuideItems = [...document.querySelectorAll(".guide-item")];
+  function updateGuideToggleAll() {
+    if (!elements.guideToggleAll) return;
+    const allOpen = correctionGuideItems.length > 0 && correctionGuideItems.every((item) => item.open);
+    elements.guideToggleAll.textContent = allOpen ? "詳細をすべて閉じる▲" : "詳細をすべて表示▼";
+    elements.guideToggleAll.setAttribute("aria-expanded", String(allOpen));
+  }
+  elements.guideToggleAll?.addEventListener("click", () => {
+    const open = !correctionGuideItems.every((item) => item.open);
+    correctionGuideItems.forEach((item) => { item.open = open; });
+    updateGuideToggleAll();
+  });
+  correctionGuideItems.forEach((item) => item.addEventListener("toggle", updateGuideToggleAll));
+  updateGuideToggleAll();
   elements.output.title = "自由に直接編集できます。";
   let toastTimer;
   let conversionTimer;
@@ -1596,19 +1610,11 @@
   });
   elements.correctionUndo.addEventListener("click", undoCorrection);
   elements.correctionRedo.addEventListener("click", redoCorrection);
-  elements.correctionAppend.addEventListener("click", () => {
+  elements.correctionRefreshLine.addEventListener("click", () => {
     const value = elements.correction.value;
     const caret = elements.correction.selectionStart;
-    const lineStart = Math.max(value.lastIndexOf("\n", caret - 1), value.lastIndexOf("\r", caret - 1)) + 1;
-    const nextLf = value.indexOf("\n", caret);
-    const nextCr = value.indexOf("\r", caret);
-    const lineEndCandidates = [nextLf, nextCr].filter((position) => position >= 0);
-    const lineEnd = lineEndCandidates.length ? Math.min(...lineEndCandidates) : value.length;
-    const appended = CBFCorrectionInput.appendBeatSlot(value.slice(lineStart, lineEnd));
-    elements.correction.setRangeText(appended.text, lineStart, lineEnd, "end");
-    elements.correction.setSelectionRange(lineStart + appended.selectionStart, lineStart + appended.selectionEnd);
-    elements.correction.dispatchEvent(new Event("input", { bubbles: true }));
-    elements.correction.focus();
+    const lineIndex = value.slice(0, caret).split(/\r\n|\r|\n/).length - 1;
+    keepOutputAndRefreshCorrection(lineIndex);
   });
   elements.input.addEventListener("input", () => {
     localStorage.setItem(INPUT_STORAGE_KEY, elements.input.value);

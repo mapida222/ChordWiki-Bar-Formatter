@@ -137,12 +137,12 @@
           <div class="correction-history-actions" role="group" aria-label="行修正の操作">
             <button id="correction-undo" type="button" disabled title="元に戻す（Ctrl+Z）">↶ 戻す</button>
             <button id="correction-redo" type="button" disabled title="やり直す（Ctrl+Y）">↷ 進む</button>
-            <button id="correction-append" type="button" title="現在の行の末尾へ新しい指定を1つ追加">＋ 末尾に追加</button>
+            <button id="correction-refresh-line" type="button" title="カーソルがある変換後の1行を読み取り、同じ1行の行修正を更新">↻ この行を更新</button>
           </div>
         </div>
         <div id="correction-shell" class="editor-shell">
           <div id="correction-lines" class="line-numbers" aria-hidden="true"></div>
-          <div class="editor-text-layer"><pre id="correction-highlight" class="editor-highlight" aria-hidden="true"></pre><textarea id="correction-text" wrap="off" spellcheck="false" title="数字・長さは現在位置を上書きします。入力可能：数字0～9、長さa～i、記号^・*・@・x・s、行修正しないn。指定を増やすときは「＋ 末尾に追加」を使います。" placeholder="&#10;&#10;&#10;&#10;88349&#10;7944&#10;8c4&#10;&#10;4444&#10;43^9&#10;44^*3^*3^*a&#10;44332"></textarea></div>
+          <div class="editor-text-layer"><pre id="correction-highlight" class="editor-highlight" aria-hidden="true"></pre><textarea id="correction-text" wrap="off" spellcheck="false" title="数字・長さは現在位置を上書きします。入力可能：数字0～9、長さa～i、記号^・*・@・x・s、行修正しないn。表示と合わない場合は対象行で「↻ この行を更新」を使います。" placeholder="&#10;&#10;&#10;&#10;88349&#10;7944&#10;8c4&#10;&#10;4444&#10;43^9&#10;44^*3^*3^*a&#10;44332"></textarea></div>
         </div>
         <div class="frame-resize-corner two-axis" data-row="bottom" data-column="direct" role="separator" aria-label="行修正枠の幅と高さを調整" tabindex="0"></div>
         <div class="column-resize-edge" role="separator" aria-label="行修正枠の幅を調整" aria-orientation="vertical" tabindex="0"></div>
@@ -153,34 +153,46 @@
           <h3 id="correction-input-guide-title">入力できる文字列 <span>/ INPUT GUIDE</span></h3>
         </header>
         <div class="correction-input-guide-body">
-          <p><strong>読み方</strong>：すべて「入力<span class="guide-arrow">→</span>何をする<span class="guide-arrow">→</span>結果」の順です。</p>
-          <p class="guide-indent"><strong>入力できる文字</strong>：数字<code class="guide-input">0～9</code>、長さ<code class="guide-input">a～i</code>、記号<code class="guide-input">^・*・@・x・s</code>、行修正しない<code class="guide-input">n</code>です。</p>
-          <p class="guide-indent">数字・英字は現在の長さ指定を上書きします。行末で入力しても指定数は増えません。新しいコード分を増やすときだけ、<strong>＋ 末尾に追加</strong>を押します。</p>
-          <p class="guide-indent">長さ1個が、コード1個に対応します。例：<code class="guide-input">4444</code>は4コード分です。</p>
-
-          <p><strong>基本の長さ</strong>：<code class="guide-input">4</code><span class="guide-arrow">→</span>ハイフンを4個付ける<span class="guide-arrow">→</span><code class="guide-output">[----]</code></p>
-          <p class="guide-indent"><code class="guide-input">0</code>＝ハイフンなし、<code class="guide-input">1–9</code>＝その個数、10以上は次の文字で入力します。</p>
-          <p class="guide-indent"><code class="guide-input">a=10、b=11、c=12、d=13、e=14、f=15、g=16、h=24、i=32</code></p>
-
-          <p><strong>シンコペーション</strong>：<code class="guide-input">4s4</code><span class="guide-arrow">→</span>後ろのコードを半音価分だけ前へ移す<span class="guide-arrow">→</span><code class="guide-output">[C]---=[G]=</code></p>
-          <p class="guide-indent"><code class="guide-input">s</code>は2つの長さの間に置き、コード数には数えません。例：<code class="guide-input">4s44s4</code>は4コード分です。</p>
-          <p class="guide-indent">行に<code class="guide-input">s</code>だけを書くと、その行のコードを2個ずつ組にして、すべてシンコペーションにします。</p>
-          <p class="guide-indent">1小節合計4：<code class="guide-output">|[C]---=[G]=|----|</code>　1小節合計8：<code class="guide-output">|[C]---=[G]= ----|</code></p>
-
-          <p><strong>行修正しない</strong>：<code class="guide-input">n</code><span class="guide-arrow">→</span>この行を変更しない<span class="guide-arrow">→</span>行修正を触る前の結果を使う</p>
-
-          <p><strong>倍の細かさ</strong>：<code class="guide-input">*4</code><span class="guide-arrow">→</span>長さ4を<code class="guide-output">=</code>で表示する<span class="guide-arrow">→</span><code class="guide-output">[====]</code></p>
-          <p><strong>アクセント</strong>：<code class="guide-input">^4</code><span class="guide-arrow">→</span>長さ4の先頭をアクセントにする<span class="guide-arrow">→</span><code class="guide-output">[&gt;---]</code></p>
-          <p class="guide-indent"><code class="guide-input">^^4</code><span class="guide-arrow">→</span>アクセントを2個付ける<span class="guide-arrow">→</span><code class="guide-output">[&gt;&gt;--]</code></p>
-          <p><strong>アクセント＋倍の細かさ</strong>：<code class="guide-input">^*4</code><span class="guide-arrow">→</span>両方を付ける<span class="guide-arrow">→</span><code class="guide-output">[≧===]</code></p>
-
-          <p><strong>白丸</strong>：<code class="guide-input">@</code><span class="guide-arrow">→</span>白丸を付ける<span class="guide-arrow">→</span><code class="guide-output">[○]</code></p>
-          <p class="guide-indent"><code class="guide-input">@4</code><span class="guide-arrow">→</span>白丸の後ろに長さ4を付ける<span class="guide-arrow">→</span><code class="guide-output">[○][----]</code></p>
-
-          <p><strong>小節線を消す</strong>：<code class="guide-input">x4</code><span class="guide-arrow">→</span>そのコードの前を消す　<code class="guide-input">4x</code><span class="guide-arrow">→</span>そのコードの後ろを消す</p>
-          <p class="guide-indent"><code class="guide-input">44x4</code><span class="guide-arrow">→</span>3番目のコード前にある<code class="guide-output">[|]</code>を消します。</p>
-
-          <p class="guide-note">ここで指定するのは拍数ではなく、記号の長さです。<code>-：8分音符</code>の4/4拍子では、<code>2</code>＝1拍、<code>4</code>＝2拍、<code>8</code>＝1小節です。</p>
+          <section class="guide-quick" aria-label="入力文字の説明">
+            <div class="guide-quick-heading">
+              <strong class="guide-quick-label">簡易版</strong>
+              <button id="guide-toggle-all" class="guide-toggle-all" type="button" aria-expanded="false">詳細をすべて表示▼</button>
+            </div>
+            <div class="guide-quick-list">
+              <details class="guide-item">
+                <summary><code class="guide-input">0～9</code><span>ハイフン数</span><span class="guide-item-arrow" aria-hidden="true">▼</span></summary>
+                <div class="guide-item-detail"><p><strong>意味：</strong>コード直後に入れるハイフンの数です。</p><p><strong>入力⇒出力①：</strong><code class="guide-input">4</code><span class="guide-arrow">⇒</span><code class="guide-output">[----]</code> または <code class="guide-output">----</code></p><p><strong>入力⇒出力②：</strong><code class="guide-input">4444</code><span class="guide-arrow">⇒</span><code class="guide-output">[C][----][G][----][Am][----][F][----]</code></p><p><strong>補足：</strong><code class="guide-input">0</code>はハイフンなしです。<code>-：8分音符</code>の4/4拍子では、<code>2</code>＝1拍、<code>4</code>＝2拍、<code>8</code>＝1小節です。</p></div>
+              </details>
+              <details class="guide-item">
+                <summary><code class="guide-input">a～i</code><span>10以上のハイフン数</span><span class="guide-item-arrow" aria-hidden="true">▼</span></summary>
+                <div class="guide-item-detail"><p><strong>意味：</strong>1文字で10個以上のハイフン数を指定します。</p><p><strong>入力⇒出力：</strong><code class="guide-input">a</code><span class="guide-arrow">⇒</span><code class="guide-output">[----------]</code></p><p><strong>対応：</strong><code class="guide-input">a=10、b=11、c=12、d=13、e=14、f=15、g=16、h=24、i=32</code></p></div>
+              </details>
+              <details class="guide-item">
+                <summary><code class="guide-input">^</code><span>アクセント</span><span class="guide-item-arrow" aria-hidden="true">▼</span></summary>
+                <div class="guide-item-detail"><p><strong>意味：</strong>ハイフン表記の先頭へアクセントを付けます。</p><p><strong>入力⇒出力①：</strong><code class="guide-input">^4</code><span class="guide-arrow">⇒</span><code class="guide-output">[&gt;---]</code></p><p><strong>入力⇒出力②：</strong><code class="guide-input">^^4</code><span class="guide-arrow">⇒</span><code class="guide-output">[&gt;&gt;--]</code></p><p><strong>組合せ：</strong><code class="guide-input">^*4</code><span class="guide-arrow">⇒</span><code class="guide-output">[≧===]</code></p></div>
+              </details>
+              <details class="guide-item">
+                <summary><code class="guide-input">*</code><span>=（ハイフンの半分音価）</span><span class="guide-item-arrow" aria-hidden="true">▼</span></summary>
+                <div class="guide-item-detail"><p><strong>意味：</strong><code class="guide-output">=</code>はハイフン1個の半分の音価です。</p><p><strong>入力⇒出力：</strong><code class="guide-input">*4</code><span class="guide-arrow">⇒</span><code class="guide-output">[====]</code></p><p><strong>補足：</strong>数字の<code class="guide-input">4</code>は、イコールの個数です。</p></div>
+              </details>
+              <details class="guide-item">
+                <summary><code class="guide-input">@</code><span>白玉</span><span class="guide-item-arrow" aria-hidden="true">▼</span></summary>
+                <div class="guide-item-detail"><p><strong>意味：</strong>対象コードへ白玉<code class="guide-output">[○]</code>を付けます。</p><p><strong>入力⇒出力①：</strong><code class="guide-input">@</code><span class="guide-arrow">⇒</span><code class="guide-output">[○]</code></p><p><strong>入力⇒出力②：</strong><code class="guide-input">@4</code><span class="guide-arrow">⇒</span><code class="guide-output">[○][----]</code></p></div>
+              </details>
+              <details class="guide-item">
+                <summary><code class="guide-input">s</code><span>半音価のシンコペーション</span><span class="guide-item-arrow" aria-hidden="true">▼</span></summary>
+                <div class="guide-item-detail"><p><strong>意味：</strong>前のコードを半音価短くし、次のコードを同じ長さだけ前へ出します。</p><p><strong>入力⇒出力：</strong><code class="guide-input">4s4</code><span class="guide-arrow">⇒</span><code class="guide-output">[C]---=[G]=</code></p><p><strong>補足：</strong><code class="guide-input">s</code>はコード数に数えないため、<code class="guide-input">4s44s4</code>は4コード分です。行に<code class="guide-input">s</code>だけを書くと、コードを2個ずつ組にして適用します。</p><p><strong>小節例：</strong>合計4：<code class="guide-output">|[C]---=[G]=|----|</code><br>合計8：<code class="guide-output">|[C]---=[G]= ----|</code></p></div>
+              </details>
+              <details class="guide-item">
+                <summary><code class="guide-input">x</code><span>小節線消去</span><span class="guide-item-arrow" aria-hidden="true">▼</span></summary>
+                <div class="guide-item-detail"><p><strong>意味：</strong>対象コードの前または後ろにある小節線<code class="guide-output">[|]</code>を消します。</p><p><strong>入力⇒出力①：</strong><code class="guide-input">x4</code><span class="guide-arrow">⇒</span>コード前の<code class="guide-output">[|]</code>を消す</p><p><strong>入力⇒出力②：</strong><code class="guide-input">4x</code><span class="guide-arrow">⇒</span>コード後ろの<code class="guide-output">[|]</code>を消す</p><p><strong>例：</strong><code class="guide-input">44x4</code><span class="guide-arrow">⇒</span>3番目のコード前にある<code class="guide-output">[|]</code>を消します。</p></div>
+              </details>
+              <details class="guide-item">
+                <summary><code class="guide-input">n</code><span>行修正なし</span><span class="guide-item-arrow" aria-hidden="true">▼</span></summary>
+                <div class="guide-item-detail"><p><strong>意味：</strong>その行には行修正を適用しません。</p><p><strong>入力⇒出力：</strong><code class="guide-input">n</code><span class="guide-arrow">⇒</span>行修正を触る前の変換結果</p></div>
+              </details>
+            </div>
+          </section>
         </div>
         <div class="frame-resize-corner two-axis" data-panel="guide" data-column="direct" role="separator" aria-label="入力できる文字列枠の幅と高さを調整" tabindex="0"></div>
       </aside>

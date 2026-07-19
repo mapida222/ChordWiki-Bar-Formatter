@@ -88,12 +88,14 @@ assert.deepStrictEqual(addMissingBrackets(broadInstrumentSource), {
 });
 const searchLabels = [
   "<検索用>　ラヴ・ファントム",
+  "<検索用>　～ワード～",
   "＜検索＞",
   "<関連ワード>",
   "G>--- <検索用>"
 ].join("\n");
 const searchLabelsExpected = [
   "<検索用>　ラヴ・ファントム",
+  "<検索用>　～ワード～",
   "＜検索＞",
   "<関連ワード>",
   "[G][>---] <検索用>"
