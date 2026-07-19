@@ -99,6 +99,47 @@
     return nextLineStart(text, lineEnd);
   }
 
+  function overwritePastedRows(text, selectionStart, pastedText, maximumRows = 0) {
+    const existing = String(text || "").split(/\r\n|\r|\n/);
+    const safeStart = Math.max(0, Math.min(Number(selectionStart) || 0, String(text || "").length));
+    const startLine = String(text || "").slice(0, safeStart).split(/\r\n|\r|\n/).length - 1;
+    const normalizedPaste = String(pastedText || "").replace(/\r\n|\r/g, "\n").replace(/\n$/, "");
+    const pasted = normalizedPaste.split("\n").map((line) => normalizeLine(line, 0));
+    const rowLimit = Math.max(existing.length, Number(maximumRows) || 0);
+    while (existing.length < rowLimit) existing.push("");
+    const appliedCount = Math.max(0, Math.min(pasted.length, rowLimit - startLine));
+    for (let index = 0; index < appliedCount; index += 1) existing[startLine + index] = pasted[index];
+    const value = existing.join("\n");
+    const nextLine = startLine + appliedCount;
+    const caret = nextLine < existing.length
+      ? existing.slice(0, nextLine).reduce((total, line) => total + line.length + 1, 0)
+      : value.length;
+    return { value, caret, truncatedRows: pasted.length - appliedCount };
+  }
+
+  function overwritePastedLine(line, selectionStart, selectionEnd, pastedText) {
+    const text = String(line || "");
+    const from = Math.max(0, Math.min(Number(selectionStart) || 0, text.length));
+    const to = Math.max(from, Math.min(Number(selectionEnd) || from, text.length));
+    const pasted = normalizeLine(String(pastedText || ""), 0);
+    if (!pasted || pasted === "n" || pasted === "s" || (from === 0 && to === text.length)) {
+      return { text: pasted, caret: pasted.length };
+    }
+    const targetParts = [...text.matchAll(new RegExp(PART_PATTERN.source, "gi"))];
+    const pastedParts = [...pasted.matchAll(new RegExp(PART_PATTERN.source, "gi"))];
+    if (!targetParts.length || !pastedParts.length) return { text: pasted || text, caret: pasted.length };
+    if (pastedParts.length >= targetParts.length) return { text: pasted, caret: pasted.length };
+    let targetIndex = targetParts.findIndex((part) => part.index + part[0].length > from);
+    if (targetIndex < 0) targetIndex = targetParts.length - 1;
+    const replaceStart = targetParts[targetIndex].index;
+    const finalTarget = targetParts[Math.min(targetParts.length - 1, targetIndex + pastedParts.length - 1)];
+    const replaceEnd = finalTarget.index + finalTarget[0].length;
+    return {
+      text: `${text.slice(0, replaceStart)}${pasted}${text.slice(replaceEnd)}`,
+      caret: replaceStart + pasted.length
+    };
+  }
+
   function appendBeatSlot(line) {
     const text = String(line || "");
     if (text.trim().toLowerCase() === "n" || text.trim().toLowerCase() === "s") return { text: "0", selectionStart: 0, selectionEnd: 1 };
@@ -112,5 +153,5 @@
     }).join("\n");
   }
 
-  window.CBFCorrectionInput = { groups, beatCharacters, normalizeLine, modifierInsertionAtLineEnd, needsInsertedWhiteNoteDuration, smartBeatEdit, whiteNoteEdit, nextLineStart, caretAfterLineEdit, appendBeatSlot, migrateLegacyText };
+  window.CBFCorrectionInput = { groups, beatCharacters, normalizeLine, modifierInsertionAtLineEnd, needsInsertedWhiteNoteDuration, smartBeatEdit, whiteNoteEdit, nextLineStart, caretAfterLineEdit, overwritePastedRows, overwritePastedLine, appendBeatSlot, migrateLegacyText };
 }());

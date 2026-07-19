@@ -1341,6 +1341,37 @@
     elements.correction.setSelectionRange(caret, caret);
     elements.correction.dispatchEvent(new Event("input", { bubbles: true }));
   }
+  elements.correction.addEventListener("paste", (event) => {
+    const pastedText = event.clipboardData?.getData("text/plain");
+    if (typeof pastedText !== "string") return;
+    event.preventDefault();
+    const value = elements.correction.value;
+    const selectionStart = elements.correction.selectionStart;
+    const selectionEnd = elements.correction.selectionEnd;
+    const selectedText = value.slice(selectionStart, selectionEnd);
+    if (!/[\r\n]/.test(pastedText) && !/[\r\n]/.test(selectedText)) {
+      const lineStart = Math.max(value.lastIndexOf("\n", selectionStart - 1), value.lastIndexOf("\r", selectionStart - 1)) + 1;
+      const nextLf = value.indexOf("\n", selectionStart);
+      const nextCr = value.indexOf("\r", selectionStart);
+      const lineEndCandidates = [nextLf, nextCr].filter((position) => position >= 0);
+      const lineEnd = lineEndCandidates.length ? Math.min(...lineEndCandidates) : value.length;
+      const pasted = CBFCorrectionInput.overwritePastedLine(
+        value.slice(lineStart, lineEnd),
+        selectionStart - lineStart,
+        selectionEnd - lineStart,
+        pastedText
+      );
+      elements.correction.setRangeText(pasted.text, lineStart, lineEnd, "end");
+      elements.correction.setSelectionRange(lineStart + pasted.caret, lineStart + pasted.caret);
+      elements.correction.dispatchEvent(new Event("input", { bubbles: true }));
+      return;
+    }
+    const pasted = CBFCorrectionInput.overwritePastedRows(value, selectionStart, pastedText, correctionSlotCounts.length);
+    elements.correction.value = pasted.value;
+    elements.correction.setSelectionRange(pasted.caret, pasted.caret);
+    elements.correction.dispatchEvent(new Event("input", { bubbles: true }));
+    if (pasted.truncatedRows > 0) notify(`貼り付け先がない末尾${pasted.truncatedRows}行は追加しませんでした。`, true);
+  });
   elements.correction.addEventListener("keydown", (event) => {
     if (document.activeElement !== elements.correction) return;
     if ((event.ctrlKey || event.metaKey) && !event.altKey && event.key.toLowerCase() === "z") {
