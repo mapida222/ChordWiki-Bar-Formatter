@@ -85,6 +85,20 @@
     return { start: insertionPoint, end: insertionPoint, replacement: "@", caret: insertionPoint + 1 };
   }
 
+  function nextLineStart(text, lineEnd) {
+    const value = String(text || "");
+    const resolvedEnd = Math.max(0, Math.min(Number(lineEnd) || 0, value.length));
+    if (value.slice(resolvedEnd, resolvedEnd + 2) === "\r\n") return resolvedEnd + 2;
+    if (value[resolvedEnd] === "\r" || value[resolvedEnd] === "\n") return resolvedEnd + 1;
+    return resolvedEnd;
+  }
+
+  function caretAfterLineEdit(text, lineEnd, editCaret, keepOnCurrentLine = false) {
+    const caret = Math.max(0, Number(editCaret) || 0);
+    if (keepOnCurrentLine || caret < lineEnd) return caret;
+    return nextLineStart(text, lineEnd);
+  }
+
   function appendBeatSlot(line) {
     const text = String(line || "");
     if (text.trim().toLowerCase() === "n" || text.trim().toLowerCase() === "s") return { text: "0", selectionStart: 0, selectionEnd: 1 };
@@ -98,5 +112,5 @@
     }).join("\n");
   }
 
-  window.CBFCorrectionInput = { groups, beatCharacters, normalizeLine, modifierInsertionAtLineEnd, needsInsertedWhiteNoteDuration, smartBeatEdit, whiteNoteEdit, appendBeatSlot, migrateLegacyText };
+  window.CBFCorrectionInput = { groups, beatCharacters, normalizeLine, modifierInsertionAtLineEnd, needsInsertedWhiteNoteDuration, smartBeatEdit, whiteNoteEdit, nextLineStart, caretAfterLineEdit, appendBeatSlot, migrateLegacyText };
 }());

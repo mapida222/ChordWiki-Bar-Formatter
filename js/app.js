@@ -1444,7 +1444,11 @@
       const edit = event.key === "@"
         ? CBFCorrectionInput.whiteNoteEdit(line, relativeStart, relativeEnd)
         : CBFCorrectionInput.smartBeatEdit(line, relativeStart, relativeEnd, event.key);
-      if (edit) replaceCorrectionText(lineStart + edit.start, lineStart + edit.end, edit.replacement, lineStart + edit.caret);
+      if (edit) {
+        let nextCaret = lineStart + edit.caret;
+        nextCaret = CBFCorrectionInput.caretAfterLineEdit(value, lineEnd, nextCaret, event.key === "@");
+        replaceCorrectionText(lineStart + edit.start, lineStart + edit.end, edit.replacement, nextCaret);
+      }
     }
   });
   elements.correctionUndo.addEventListener("click", undoCorrection);
