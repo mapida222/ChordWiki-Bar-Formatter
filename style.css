@@ -237,10 +237,10 @@ main { padding: 12px 0 28px; }
 .output-card .editor-tools { flex-wrap: wrap; justify-content: flex-end; }
 .preview-heading-tools { flex: 0 0 auto; justify-content: flex-end; }
 .preview-controls { display: flex; flex-wrap: nowrap; align-items: center; justify-content: flex-end; gap: 5px 8px; min-height: 29px; margin-bottom: 6px; padding: 0 5px; overflow-x: auto; scrollbar-width: thin; }
-.output-bar-setting, .final-bar-setting { display: flex; align-items: center; gap: 5px; color: var(--text); font-size: .78rem; font-weight: 800; white-space: nowrap; cursor: pointer; }
+.output-diff-setting, .output-bar-setting, .final-bar-setting { display: flex; align-items: center; gap: 5px; color: var(--text); font-size: .78rem; font-weight: 800; white-space: nowrap; cursor: pointer; }
 .diff-legend { display: inline-flex; align-items: center; gap: 4px; color: var(--muted); font-size: .66rem; font-weight: 800; white-space: nowrap; }
 .diff-legend i { display: block; width: 12px; height: 12px; border-radius: 3px; background: color-mix(in srgb, #48b86b 30%, transparent); box-shadow: inset 0 -2px 0 #26964a; }
-.output-bar-setting input, .final-bar-setting input { width: 17px; height: 17px; margin: 0; accent-color: var(--accent); }
+.output-diff-setting input, .output-bar-setting input, .final-bar-setting input { width: 17px; height: 17px; margin: 0; accent-color: var(--accent); }
 .preview-control { display: flex; align-items: center; gap: 4px; color: var(--text); font-size: .72rem; font-weight: 800; white-space: nowrap; }
 .preview-control select { height: 28px; min-width: 76px; padding: 2px 24px 2px 6px; border: 1px solid var(--line); border-radius: 3px; color: var(--text); background: var(--panel); font: inherit; }
 .preview-transpose-stepper { display: grid; grid-template-columns: minmax(76px, 1fr) 28px 28px; overflow: hidden; border: 1px solid var(--line); border-radius: 3px; background: var(--panel); }
@@ -496,7 +496,7 @@ textarea::placeholder { color: var(--muted); opacity: .7; }
   .removal-controls input { grid-column: 2; }
   #removal-summary { grid-column: 1 / -1; text-align: left; }
   .history-item { grid-template-columns: 1fr; }
-  .output-bar-setting, .final-bar-setting { font-size: .68rem; }
+  .output-diff-setting, .output-bar-setting, .final-bar-setting { font-size: .68rem; }
   .preview-control { font-size: .68rem; }
   .preview-controls { justify-content: flex-start; }
   .score-window-page { overflow: auto; }

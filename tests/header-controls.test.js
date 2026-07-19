@@ -7,8 +7,16 @@ const path = require("path");
 const root = path.join(__dirname, "..");
 const html = fs.readFileSync(path.join(root, "index.html"), "utf8");
 const css = fs.readFileSync(path.join(root, "style.css"), "utf8");
+const app = fs.readFileSync(path.join(root, "js", "app.js"), "utf8");
 
 assert(html.includes('<span>小節線[|]にカッコをつけない</span>'));
+assert.strictEqual((html.match(/id="added-background"/g) || []).length, 1);
+assert(html.includes('<label class="output-diff-setting"><input id="added-background" type="checkbox" checked> <span>差分背景</span></label>'));
+assert(!html.includes("自動追加の背景に色付ける"));
+const diffBackgroundHandler = app.match(/elements\.addedBackground\.addEventListener\("change", \(\) => \{([\s\S]*?)\n  \}\);/);
+assert(diffBackgroundHandler);
+assert(diffBackgroundHandler[1].includes("updateEditorHighlight(elements.output)"));
+assert(!/scheduleConversion|positionSettingsPanel|syncResultRowAlignment/.test(diffBackgroundHandler[1]));
 assert(html.includes('id="correction-refresh-line"'));
 assert(html.includes("↻ この行を更新"));
 assert(!html.includes('id="correction-append"'));

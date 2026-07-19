@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="ChordWikiのコード譜を小節単位に整形するブラウザアプリ">
   <title>ChordWiki Bar Formatter Web</title>
-  <link rel="stylesheet" href="style.css?v=20260720-1">
+  <link rel="stylesheet" href="style.css?v=20260720-2">
 </head>
 <body>
   <header class="app-header">
@@ -89,7 +89,6 @@
         <label class="sync-setting"><span>スクロール同期</span><input id="scroll-sync" type="checkbox" checked></label>
         <label class="sync-setting"><span>文字色付け</span><input id="text-coloring" type="checkbox"></label>
         <label class="sync-setting"><span>太字コード</span><input id="bold-code" type="checkbox" checked></label>
-        <label class="sync-setting"><span>自動追加の背景に色付ける</span><input id="added-background" type="checkbox" checked></label>
         <p class="display-memory-note">前回入力値は記憶されます。</p>
         </div>
         <div class="frame-resize-corner two-axis" data-panel="display" data-column="direct" role="separator" aria-label="表示設定枠の幅と高さを調整" tabindex="0"></div>
@@ -226,6 +225,7 @@
           <h2 class="compact-editor-title"><label for="output-text">05. 変換後 <span>/ RESULT</span></label></h2>
           <div class="editor-tools">
             <span class="diff-legend" hidden title="変換時に自動追加された小節線・拍記号"><i aria-hidden="true"></i>自動追加</span>
+            <label class="output-diff-setting"><input id="added-background" type="checkbox" checked> <span>差分背景</span></label>
             <label class="output-bar-setting"><input id="plain-edit-bars" type="checkbox"> <span>小節線[|]にカッコをつけない</span></label>
             <span id="output-count" class="counter">0文字 / 0行</span>
             <button id="copy-output" class="icon-button" type="button" aria-label="変換結果をコピー" title="変換結果をコピー"><span class="copy-icon" aria-hidden="true"></span></button>
@@ -446,8 +446,8 @@
   <script src="js/input-brackets.js?v=20260718-5" defer></script>
   <script src="js/correction-input.js?v=20260720-1" defer></script>
   <script src="js/transposer.js?v=20260716-7" defer></script>
-  <script src="js/chordwiki-preview.js?v=20260719-4" defer></script>
+  <script src="js/chordwiki-preview.js?v=20260720-1" defer></script>
   <script src="js/history.js?v=20260718-4" defer></script>
-  <script src="js/app.js?v=20260720-1" defer></script>
+  <script src="js/app.js?v=20260720-2" defer></script>
 </body>
 </html>
