@@ -928,6 +928,13 @@
     let changedMeasures = 0;
     measures.forEach((measure) => {
       const chordCount = chordsOf(measure).length;
+      const lyricCharacterCount = measure.reduce((count, token) => {
+        if (token.kind !== "text") return count;
+        const lyric = token.value.replaceAll("[○]", "").replace(/[\s　]/gu, "");
+        return count + [...lyric].length;
+      }, 0);
+      const isClosedMeasure = measure[measure.length - 1]?.kind === "bar";
+      const hasSingleLyricCharacter = isClosedMeasure && lyricCharacterCount === 1;
       const hasWhiteNote = measure.some((token) => token.kind === "text" && token.value === "[○]");
       const hasExpressiveRhythm = measure.some((token) => {
         if (token.kind === "hyphen") return /[=>≧＝＞]/u.test(token.value);
@@ -975,7 +982,7 @@
       const uniformAttachedFourFour = measureRhythmWidth === 8 && !hasOrphanRhythm && validGroups === chordCount
         && allHyphensSelected && new Set(signatures).size === 1 && signatures[0] === 4;
       const mixedCompleteEightBeat = selected.size === 1 && selected.has(4) && measureRhythmWidth === 8 && !uniformAttachedFourFour;
-      const shouldRemove = !hasWhiteNote && !hasExpressiveRhythm && !mixedCompleteEightBeat && chordCount >= 1 && validGroups === chordCount && removable.size > 0 && allHyphensSelected && new Set(signatures).size === 1 && lyricsFollowEveryGroup;
+      const shouldRemove = !hasSingleLyricCharacter && !hasWhiteNote && !hasExpressiveRhythm && !mixedCompleteEightBeat && chordCount >= 1 && validGroups === chordCount && removable.size > 0 && allHyphensSelected && new Set(signatures).size === 1 && lyricsFollowEveryGroup;
       if (shouldRemove) changedMeasures += 1;
       measure.forEach((token, tokenIndex) => {
         if (shouldRemove && removable.has(tokenIndex)) removedHyphens += token.value.replace(/ /g, "").length;
