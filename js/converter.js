@@ -736,6 +736,72 @@
     return numbers.join(",");
   }
 
+  function authoredRhythmFineWidth(token) {
+    if (token.kind !== "hyphen") return 0;
+    return [...token.value].reduce((sum, character) => {
+      if (character === "-" || character === ">") return sum + 2;
+      if (character === "=" || character === "≧") return sum + 1;
+      return sum;
+    }, 0);
+  }
+
+  function analyzeAuthoredMeasureCapacity(inputText, configuredCapacity, targetMeter = "4/4") {
+    const configured = Number(configuredCapacity);
+    if (!Number.isFinite(configured) || configured <= 0) return null;
+    const candidates = [];
+    let meterContext = "";
+    String(inputText || "").split(/\r\n|\r|\n/).forEach((line, lineIndex) => {
+      const meter = line.match(/(\d+(?:\s*\+\s*\d+)*)\s*\/\s*(\d+)\s*拍子/);
+      if (DIRECTIVE_RE.test(line) && meter) {
+        meterContext = meter[1].includes("+") ? "mixed" : `${Number(meter[1])}/${Number(meter[2])}`;
+        return;
+      }
+      if (meterContext === "mixed") return;
+      if (targetMeter && meterContext && meterContext !== targetMeter) return;
+      if (!targetMeter && meterContext) return;
+      const tokens = parseTokens(line);
+      let measure = [];
+      const inspectMeasure = () => {
+        if (!measure.length) return;
+        const text = measure.filter((token) => token.kind === "text").map((token) => token.value).join("");
+        if (/\(\s*\d+\s*\/\s*\d+\s*\)/.test(text)) return;
+        const chordIndices = measure.map((token, index) => token.kind === "chord" ? index : -1).filter((index) => index >= 0);
+        if (!chordIndices.length) return;
+        let fineWidth = 0;
+        for (let chord = 0; chord < chordIndices.length; chord += 1) {
+          const start = chordIndices[chord] + 1;
+          const end = chordIndices[chord + 1] ?? measure.length;
+          const chordWidth = measure.slice(start, end).reduce((sum, token) => sum + authoredRhythmFineWidth(token), 0);
+          if (!chordWidth) return;
+          fineWidth += chordWidth;
+        }
+        const lyricText = text.replace(/\(\s*\d+\s*\/\s*\d+\s*\)/g, "").replace(/[\s.:：]/g, "");
+        candidates.push({ width: fineWidth / 2, line: lineIndex + 1, codeOnly: !lyricText });
+      };
+      tokens.forEach((token) => {
+        if (token.kind === "bar") {
+          inspectMeasure();
+          measure = [];
+        } else measure.push(token);
+      });
+    });
+    if (!candidates.length) return null;
+    const grouped = new Map();
+    candidates.forEach((candidate) => {
+      const key = String(candidate.width);
+      if (!grouped.has(key)) grouped.set(key, []);
+      grouped.get(key).push(candidate);
+    });
+    const ranked = [...grouped.values()].sort((left, right) => right.length - left.length || right[0].width - left[0].width);
+    const dominant = ranked[0];
+    if (ranked[1]?.length === dominant.length) return null;
+    if (dominant.length / candidates.length <= 0.5) return null;
+    if (dominant.length < 2 && !dominant.some((candidate) => candidate.codeOnly)) return null;
+    const detected = dominant[0].width;
+    if (detected === configured) return null;
+    return { configured, detected, measureCount: dominant.length, lineNumbers: [...new Set(dominant.map((candidate) => candidate.line))] };
+  }
+
   function convertChordText(inputText, settings, rowCorrections = [], manualOutputLines = [], previousRowCorrections = []) {
     const normalized = inputText.replace(/^\n+|\n+$/g, "");
     const lines = normalized ? normalized.split(/\r\n|\r|\n/) : [];
@@ -1227,5 +1293,5 @@
     return [...new Set(remapped)].sort((left, right) => left - right);
   }
 
-  window.CBFConverter = { convertChordText, parseTokens, isChordSymbol, normalizeChordSymbol, moveDelayedRhythmAfterChord, suppressTrailingBarAfterParenthesizedFinalChord, renderWithBeatCode, mergeCorrectionScope, renderCompletedOutput, inferBeatCodeFromRenderedLine, mergeChangedLines, alignLineIndices, addedCharacterIndices, remapTrackedCharacterIndices, addContinuationChordsToManualRhythm };
+  window.CBFConverter = { convertChordText, parseTokens, isChordSymbol, normalizeChordSymbol, moveDelayedRhythmAfterChord, suppressTrailingBarAfterParenthesizedFinalChord, renderWithBeatCode, mergeCorrectionScope, renderCompletedOutput, inferBeatCodeFromRenderedLine, mergeChangedLines, alignLineIndices, addedCharacterIndices, remapTrackedCharacterIndices, addContinuationChordsToManualRhythm, analyzeAuthoredMeasureCapacity };
 }());

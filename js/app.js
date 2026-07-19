@@ -8,7 +8,7 @@
     correctionLines: $("#correction-lines"), inputLines: $("#input-lines"), outputLines: $("#output-lines"), finalOutputLines: $("#final-output-lines"), committedOutputLines: $("#committed-output-lines"),
     correctionHighlight: $("#correction-highlight"), inputHighlight: $("#input-highlight"), outputHighlight: $("#output-highlight"), finalOutputHighlight: $("#final-output-highlight"), committedOutputHighlight: $("#committed-output-highlight"),
     correctionCount: $("#correction-count"), correctionPosition: $("#correction-position"), correctionUndo: $("#correction-undo"), correctionRedo: $("#correction-redo"), correctionAppend: $("#correction-append"), inputCount: $("#input-count"), outputCount: $("#output-count"), finalOutputCount: $("#final-output-count"), committedOutputCount: $("#committed-output-count"), committedOutputShell: $("#committed-output-shell"), committedOutputToggle: $("#committed-output-toggle"),
-    removalTargets: $("#hyphen-removal-targets"), removalSummary: $("#removal-summary"),
+    removalTargets: $("#hyphen-removal-targets"), removalSummary: $("#removal-summary"), measureCapacityWarning: $("#measure-capacity-warning"), measureCapacityWarningText: $("#measure-capacity-warning-text"), measureCapacityWarningOpen: $("#measure-capacity-warning-open"),
     statusDetail: $("#status-detail"), toast: $("#toast"), helpDialog: $("#help-dialog"), historyDialog: $("#history-dialog"), historyList: $("#history-list"), historyPreviewPanel: $("#history-preview-panel"), historyPreview: $("#history-score-preview"), historyPreviewTitle: $("#history-preview-title"), historyPreviewDate: $("#history-preview-date"), historyRestore: $("#history-restore"), historyDeleteAll: $("#history-delete-all"), keySettingsDialog: $("#key-settings-dialog"), keySettingsList: $("#key-settings-list"), keySettingsPreview: $("#key-settings-score-preview")
   };
   elements.output.title = "自由に直接編集できます。";
@@ -245,6 +245,24 @@
     });
     if (result.valid && persist) CBFSettings.save(result.values);
     return result;
+  }
+  function updateMeasureCapacityWarning(values = null) {
+    if (!values || !elements.input.value) {
+      elements.measureCapacityWarning.hidden = true;
+      elements.measureCapacityWarningText.textContent = "";
+      return;
+    }
+    const profile = CBFSettings.activeProfile();
+    const targetMeter = profile === "fourFour" ? "4/4" : profile === "sixEight" ? "6/8" : "";
+    const mismatch = CBFConverter.analyzeAuthoredMeasureCapacity(elements.input.value, values.measureCapacity, targetMeter);
+    if (!mismatch) {
+      elements.measureCapacityWarning.hidden = true;
+      elements.measureCapacityWarningText.textContent = "";
+      return;
+    }
+    const lines = mismatch.lineNumbers.join(",");
+    elements.measureCapacityWarningText.textContent = `設定確認：変換前では「1小節${mismatch.detected}ハイフン」が中心（${lines}行目／全${mismatch.measureCount}小節）ですが、初期設定は${mismatch.configured}です。`;
+    elements.measureCapacityWarning.hidden = false;
   }
   function lineCount(text) { return text.length ? text.split(/\r\n|\r|\n/).length : 0; }
   function updateCount(textarea, target) { target.textContent = `${textarea.value.length}文字 / ${lineCount(textarea.value)}行`; }
@@ -988,10 +1006,12 @@
   function convert({ refreshCorrections = false, preserveUserEdits = false, changedLineIndices = null, sourceChangedLineIndices = null } = {}) {
     const settings = validatedSettings();
     if (!settings.valid) {
+      updateMeasureCapacityWarning();
       renderSupport("設定に範囲外または数値以外の項目があります。");
       return;
     }
     if (!elements.input.value) {
+      updateMeasureCapacityWarning();
       convertedOutput = "";
       inferenceFallbackCorrectionLines = [];
       elements.correction.value = "";
@@ -1366,6 +1386,7 @@
       elements.correction.dispatchEvent(new Event("input", { bubbles: true }));
       return;
     }
+    updateMeasureCapacityWarning(settings.values);
     const pasted = CBFCorrectionInput.overwritePastedRows(value, selectionStart, pastedText, correctionSlotCounts.length);
     elements.correction.value = pasted.value;
     elements.correction.setSelectionRange(pasted.caret, pasted.caret);
@@ -1676,6 +1697,14 @@
   }
   elements.settingsToggle.addEventListener("click", () => setSettingsMode(settingsMode === "closed" ? "compact" : "closed"));
   elements.settingsExampleToggle.addEventListener("click", () => setSettingsMode(settingsMode === "expanded" ? "compact" : "expanded"));
+  elements.measureCapacityWarningOpen.addEventListener("click", () => {
+    setSettingsMode("compact");
+    requestAnimationFrame(() => {
+      const input = $("#setting-measureCapacity");
+      input?.focus();
+      input?.select();
+    });
+  });
   function positionSettingsPanel() {
     const workspaceRect = elements.workspace.getBoundingClientRect();
     const displayRect = elements.fontPanel.getBoundingClientRect();
