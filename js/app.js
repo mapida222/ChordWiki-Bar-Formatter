@@ -436,6 +436,10 @@
     correctionHistoryValue = elements.correction.value;
     updateCorrectionHistoryButtons();
   }
+  function syncCorrectionHistoryOnFocus() {
+    if (elements.correction.value === correctionHistoryValue) return;
+    resetCorrectionHistory();
+  }
   function recordCorrectionHistory() {
     if (restoringCorrectionHistory || elements.correction.value === correctionHistoryValue) return;
     correctionUndoStack.push(correctionHistoryValue);
@@ -477,6 +481,7 @@
     correctionUndoStack.push(elements.correction.value);
     applyCorrectionHistory(correctionRedoStack.pop());
   }
+  elements.correction.addEventListener("focus", syncCorrectionHistoryOnFocus);
   function installLocalEditorHistory(textarea) {
     const state = {
       value: textarea.value,

@@ -17,5 +17,7 @@ assert(historyRestore.includes("elements.correction.scrollTop = scrollTop"));
 assert(historyRestore.includes("elements.correction.scrollLeft = scrollLeft"));
 assert(historyRestore.includes("elements.correctionLines.scrollTop = scrollTop"));
 assert(historyRestore.includes("requestAnimationFrame(restoreViewport)"));
+assert(source.includes('elements.correction.addEventListener("focus", syncCorrectionHistoryOnFocus)'));
+assert(source.includes("if (elements.correction.value === correctionHistoryValue) return;"));
 
 console.log("PASS: row-edit undo preserves caret and viewport instead of jumping to the end");
