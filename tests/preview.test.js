@@ -28,14 +28,14 @@ assert(html.includes('<span class="cw-suit-club">♣</span>'));
 assert(html.includes('<span class="cw-suit-diamond">♦</span>'));
 assert(html.includes('<span class="cw-chord"><span class="cw-code-token" data-token-type="chord">C</span></span>'));
 assert(html.includes('cw-segment-has-trailing-bar cw-segment-has-upper'));
-assert(html.includes('<span class="cw-body">----</span></span><span class="cw-boundary cw-boundary-trailing cw-boundary-body" data-token-type="bar"><span>|</span></span>'));
+assert(html.includes('<span class="cw-body">----<span class="cw-body-bar-token" data-token-type="bar">|</span></span>'));
 assert.strictEqual(preview.isRhythmToken("----*"), true);
 assert.strictEqual(preview.isRhythmToken("F#m7-5"), false);
 assert.strictEqual(preview.isSpacingBody("--"), true);
 
 const formatted = preview.render("[|][C][----][----]歌詞[|][G][≧==]続き");
 assert(formatted.includes('class="cw-segment cw-segment-has-leading-bar cw-segment-has-trailing-upper-bar cw-segment-has-upper"'));
-assert(formatted.includes('<span class="cw-boundary cw-boundary-leading cw-boundary-body cw-boundary-line-start" data-token-type="bar"><span>|</span></span><span class="cw-segment'));
+assert(formatted.includes('<span class="cw-boundary cw-boundary-leading cw-boundary-upper cw-boundary-line-start" data-token-type="bar"><span>|</span></span><span class="cw-segment'));
 assert(formatted.includes('<span class="cw-chord"><span class="cw-code-token" data-token-type="chord">C</span> <span class="cw-rhythm-token" data-token-type="rhythm">----</span> <span class="cw-rhythm-token" data-token-type="rhythm">----</span></span>'));
 assert(formatted.includes('<span class="cw-body">歌詞</span></span><span class="cw-boundary cw-boundary-trailing cw-boundary-upper" data-token-type="bar"><span>|</span></span>'));
 assert(formatted.includes('<span class="cw-segment cw-segment-has-upper"><span class="cw-chord"><span class="cw-code-token" data-token-type="chord">G</span> <span class="cw-rhythm-token" data-token-type="rhythm">≧==</span></span>'));
@@ -45,23 +45,27 @@ assert(!formatted.includes('<span class="cw-body">----</span>'));
 
 const rhythmSpacingRegression = preview.render("|[Bm7][≧≧≧=]--[--]--[F#m7][≧≧≧=]--[--]--|");
 assert.strictEqual((rhythmSpacingRegression.match(/cw-rhythm-token/g) || []).length, 4);
-assert.strictEqual((rhythmSpacingRegression.match(/cw-segment-rhythm-spacing/g) || []).length, 4);
+assert.strictEqual((rhythmSpacingRegression.match(/cw-segment-rhythm-spacing/g) || []).length, 0);
 assert(rhythmSpacingRegression.includes('<span class="cw-rhythm-token" data-token-type="rhythm">≧≧≧=</span>'));
 
 const plainBars = preview.render("|[C]歌詞|");
-assert.strictEqual((plainBars.match(/cw-boundary-leading/g) || []).length, 1);
-assert.strictEqual((plainBars.match(/cw-boundary-trailing/g) || []).length, 1);
-assert.strictEqual((plainBars.match(/cw-boundary-body/g) || []).length, 2);
+assert.strictEqual((plainBars.match(/cw-boundary-leading/g) || []).length, 0);
+assert.strictEqual((plainBars.match(/cw-boundary-trailing/g) || []).length, 0);
+assert.strictEqual((plainBars.match(/cw-body-bar-token/g) || []).length, 2);
+
+const bracketedBars = preview.render("[|][C][----]歌詞[|]");
+assert.strictEqual((bracketedBars.match(/cw-boundary-upper/g) || []).length, 2);
+assert.strictEqual((bracketedBars.match(/cw-body-bar-token/g) || []).length, 0);
 
 const wideChordBars = preview.render("|[E7/G#]要|[Am7]です|");
-assert.strictEqual((wideChordBars.match(/cw-segment-has-trailing-bar/g) || []).length, 2);
-assert(wideChordBars.includes('<span class="cw-body">要</span></span><span class="cw-boundary cw-boundary-trailing cw-boundary-body" data-token-type="bar"><span>|</span></span>'));
+assert.strictEqual((wideChordBars.match(/cw-segment-has-trailing-bar/g) || []).length, 3);
+assert(wideChordBars.includes('<span class="cw-body">要<span class="cw-body-bar-token" data-token-type="bar">|</span></span>'));
 
 const chordOnlySpacing = preview.render("|[GM7]----|[GM7]----|[Am7]----|[D7]----|");
-assert.strictEqual((chordOnlySpacing.match(/class="cw-segment /g) || []).length, 4);
+assert.strictEqual((chordOnlySpacing.match(/class="cw-segment /g) || []).length, 5);
 assert.strictEqual((chordOnlySpacing.match(/cw-segment-has-upper/g) || []).length, 4);
-assert.strictEqual((chordOnlySpacing.match(/cw-boundary-leading/g) || []).length, 1);
-assert(!chordOnlySpacing.startsWith('<div class="cw-score-line"><span class="cw-segment cw-segment-has-trailing-bar"'));
+assert.strictEqual((chordOnlySpacing.match(/cw-boundary-leading/g) || []).length, 0);
+assert(chordOnlySpacing.startsWith('<div class="cw-score-line"><span class="cw-segment cw-segment-has-trailing-bar"'));
 
 const scaleLayoutSource = [
   "{c:＜メジャースケール＞　三和音}",
@@ -95,10 +99,10 @@ const scaleLayoutSource = [
 ].join("\n");
 const scaleLayout = preview.render(scaleLayoutSource);
 assert.strictEqual((scaleLayout.match(/class="cw-score-line"/g) || []).length, 26);
-assert.strictEqual((scaleLayout.match(/class="cw-segment /g) || []).length, 182);
+assert.strictEqual((scaleLayout.match(/class="cw-segment /g) || []).length, 208);
 assert.strictEqual((scaleLayout.match(/cw-segment-has-upper/g) || []).length, 182);
-assert.strictEqual((scaleLayout.match(/cw-boundary-leading/g) || []).length, 26);
-assert.strictEqual((scaleLayout.match(/cw-boundary-trailing/g) || []).length, 182);
+assert.strictEqual((scaleLayout.match(/cw-boundary-leading/g) || []).length, 0);
+assert.strictEqual((scaleLayout.match(/cw-body-bar-token/g) || []).length, 208);
 assert.strictEqual((scaleLayout.match(/cw-code-token/g) || []).length, 186);
 assert(scaleLayout.includes('(Fm-5)'));
 assert(scaleLayout.includes('(BM7)'));

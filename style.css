@@ -286,31 +286,27 @@ main { padding: 12px 0 28px; }
 .cw-key { color: #ff294f; }
 .cw-link a { color: #1683ff; text-decoration: underline; text-underline-offset: 2px; }
 .cw-blank { height: 1em; }
-.cw-score-line { --cw-chord-row: 1.2em; --cw-lyrics-row: 1.35em; --cw-row-gap: .05em; display: flex; align-items: flex-end; width: max-content; min-width: 100%; margin: .05em 0 .55em; white-space: pre; }
-.cw-segment { position: relative; display: inline-grid; grid-template-columns: max-content; grid-template-rows: var(--cw-chord-row) var(--cw-lyrics-row); row-gap: var(--cw-row-gap); align-items: end; min-width: min-content; }
-.cw-chord { position: static; grid-column: 1; grid-row: 1; min-height: var(--cw-chord-row); color: var(--syntax-chord); font-size: .88em; line-height: 1.1; white-space: nowrap; }
+.cw-score-line { display: block; width: max-content; min-width: 100%; margin: 1em 0; line-height: 1.5; white-space: pre; }
+.cw-segment { position: static; display: inline; }
+.cw-chord { position: relative; top: -1.5em; color: var(--syntax-chord); font-family: sans-serif; font-size: 100%; line-height: inherit; white-space: nowrap; }
 .cw-code-token, .cw-rhythm-token { position: static; display: inline; }
 .cw-rhythm-token { font-weight: 400; letter-spacing: 0; }
 .cw-bar-token { position: relative; display: inline-block; }
 .bars-through .cw-bar-token { color: transparent; }
-.bars-through .cw-bar-token::after { content: ""; position: absolute; top: .05em; left: 50%; width: 0; height: calc(var(--cw-chord-row) + var(--cw-row-gap) + var(--cw-lyrics-row)); border-left: 1.5px solid var(--syntax-chord); transform: translateX(-.75px); pointer-events: none; }
-.cw-boundary { position: relative; display: inline-grid; flex: 0 0 .25em; grid-template-rows: var(--cw-chord-row) var(--cw-lyrics-row); row-gap: var(--cw-row-gap); width: .25em; color: var(--syntax-chord); text-align: center; }
-.cw-boundary > span { position: relative; z-index: 1; display: block; width: .5em; margin-left: -.25em; }
-.cw-boundary-body > span { grid-row: 2; height: var(--cw-lyrics-row); line-height: var(--cw-lyrics-row); }
-.cw-boundary-upper > span { grid-row: 1; height: var(--cw-chord-row); line-height: 1.1; }
+.bars-through .cw-bar-token::after { content: ""; position: absolute; top: 0; bottom: -1.5em; left: 50%; width: 0; border-left: 1.5px solid var(--syntax-chord); transform: translateX(-.75px); pointer-events: none; }
+.cw-boundary { position: relative; display: inline; color: var(--syntax-chord); }
+.cw-boundary > span { position: relative; display: inline; }
+.cw-boundary-upper { top: -1.5em; font-family: sans-serif; font-size: 100%; }
+.cw-boundary-leading { margin-right: .28em; }
+.cw-boundary-trailing { margin-right: .28em; margin-left: .28em; }
 .bars-through .cw-boundary { color: transparent; }
-.bars-through .cw-boundary > span::after { content: ""; position: absolute; top: calc(-1 * (var(--cw-chord-row) + var(--cw-row-gap))); bottom: 0; left: 50%; width: 0; border-left: 1.5px solid var(--syntax-chord); transform: translateX(-.75px); pointer-events: none; }
-.bars-through .cw-boundary-upper > span::after { top: .05em; bottom: calc(-1 * (var(--cw-row-gap) + var(--cw-lyrics-row))); }
-.bold-chords .cw-code-token { font-weight: 700; }
-.cw-body { position: static; grid-column: 1; grid-row: 2; min-height: var(--cw-lyrics-row); line-height: var(--cw-lyrics-row); white-space: pre; }
-.cw-segment-rhythm-spacing { grid-template-columns: max-content max-content; }
-.cw-segment-rhythm-spacing .cw-body { grid-column: 2; transform: translateX(-.8em); }
-.cw-boundary-after-short-rhythm { transform: translateX(-1em); }
-.cw-segment-plain-rhythm .cw-body { transform: translateX(-1.15em); }
-.cw-boundary-after-plain-rhythm { transform: translateX(-.55em); }
-.cw-body-bar-token { position: relative; display: inline-block; width: .7em; color: var(--syntax-chord); text-align: center; }
+.bars-through .cw-boundary-upper { top: 0; }
+.bars-through .cw-boundary > span::after { content: ""; position: absolute; top: -1.5em; bottom: 0; left: 50%; width: 0; border-left: 1.5px solid var(--syntax-chord); transform: translateX(-.75px); pointer-events: none; }
+.bold-chords .cw-code-token { font-weight: 700; -webkit-text-stroke: 0; }
+.cw-body { position: relative; left: -.5em; display: inline; line-height: inherit; white-space: pre; }
+.cw-body-bar-token { position: relative; display: inline; color: var(--syntax-chord); }
 .bars-through .cw-body-bar-token { color: transparent; }
-.bars-through .cw-body-bar-token::before { content: ""; position: absolute; left: 50%; bottom: 0; width: 0; height: calc(var(--cw-lyrics-row) + var(--cw-row-gap) + var(--cw-chord-row)); border-left: 1.5px solid var(--syntax-chord); transform: translateX(-.75px); pointer-events: none; }
+.bars-through .cw-body-bar-token::before { content: ""; position: absolute; top: -1.5em; bottom: 0; left: 50%; width: 0; border-left: 1.5px solid var(--syntax-chord); transform: translateX(-.75px); pointer-events: none; }
 .cw-suit-spade { color: var(--syntax-chord); }
 .cw-symbol-red-circle { color: #e5485d; }
 .cw-suit-club { color: #159947; }

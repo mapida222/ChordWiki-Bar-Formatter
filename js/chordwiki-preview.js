@@ -47,37 +47,28 @@
       : decoratedText(character)).join("");
   }
 
-  function renderBoundary(position, row = "body", atLineStart = false, modifier = "") {
+  function renderBoundary(position, row = "body", atLineStart = false) {
     const classes = ["cw-boundary", `cw-boundary-${position}`, `cw-boundary-${row}`];
     if (atLineStart) classes.push("cw-boundary-line-start");
-    if (modifier) classes.push(modifier);
     return `<span class="${classes.join(" ")}" data-token-type="bar"><span>|</span></span>`;
   }
 
   function renderSegment(part, index) {
     const hasTrailingBar = part.body.endsWith("|");
-    const body = hasTrailingBar ? part.body.slice(0, -1) : part.body;
+    const body = part.body;
     const hasTrailingUpperBar = Boolean(part.trailingUpperBar);
     const hasLeadingBar = part.upper[0] === "|";
     const upper = hasLeadingBar ? part.upper.slice(1) : part.upper;
-    const spacingBody = isSpacingBody(body);
-    const shortRhythm = upper.length && spacingBody && body.trim().length <= 1;
-    const plainRhythm = !upper.length && spacingBody;
     const classes = ["cw-segment"];
     if (hasLeadingBar) classes.push("cw-segment-has-leading-bar");
     if (hasTrailingBar) classes.push("cw-segment-has-trailing-bar");
     if (hasTrailingUpperBar) classes.push("cw-segment-has-trailing-upper-bar");
     if (upper.length) classes.push("cw-segment-has-upper");
-    if (upper.length && spacingBody) classes.push("cw-segment-rhythm-spacing");
-    if (shortRhythm) classes.push("cw-segment-short-rhythm");
-    if (plainRhythm) classes.push("cw-segment-plain-rhythm");
-    const leadingBar = hasLeadingBar ? renderBoundary("leading", "body", index === 0) : "";
-    const boundaryModifier = shortRhythm ? "cw-boundary-after-short-rhythm"
-      : plainRhythm ? "cw-boundary-after-plain-rhythm" : "";
-    const trailingBar = hasTrailingBar ? renderBoundary("trailing", "body", false, boundaryModifier) : "";
+    const leadingBar = hasLeadingBar ? renderBoundary("leading", "upper", index === 0) : "";
     const trailingUpperBar = hasTrailingUpperBar ? renderBoundary("trailing", "upper") : "";
     const chord = upper.length ? `<span class="cw-chord">${decoratedUpper(upper)}</span>` : "";
-    return `${leadingBar}<span class="${classes.join(" ")}">${chord}<span class="cw-body">${decoratedBody(body) || "&nbsp;"}</span></span>${trailingBar}${trailingUpperBar}`;
+    const bodySpan = body ? `<span class="cw-body">${decoratedBody(body)}</span>` : "";
+    return `${leadingBar}<span class="${classes.join(" ")}">${chord}${bodySpan}</span>${trailingUpperBar}`;
   }
 
   function renderScoreLine(line) {
@@ -89,33 +80,11 @@
 
     function append(body, upper = [], options = {}) {
       if (!body && !upper.length) return;
-      const barIndexes = Array.from(body.matchAll(/\|/g), (bar) => bar.index);
-      if (!barIndexes.length) {
-        parts.push({ body, upper: [...upper], ...options });
-        return;
-      }
-      let start = 0;
-      let segmentUpper = [...upper];
-      barIndexes.forEach((barIndex, index) => {
-        parts.push({
-          body: body.slice(start, barIndex + 1),
-          upper: segmentUpper,
-          ...(index === barIndexes.length - 1 ? options : {})
-        });
-        segmentUpper = [];
-        start = barIndex + 1;
-      });
-      if (start < body.length || segmentUpper.length) {
-        parts.push({ body: body.slice(start), upper: segmentUpper, ...options });
-      }
+      parts.push({ body, upper: [...upper], ...options });
     }
 
     while ((match = tokenPattern.exec(line))) {
       let before = line.slice(cursor, match.index);
-      if (!parts.length && !upperTokens.length && before === "|") {
-        upperTokens.push("|");
-        before = "";
-      }
       const token = match[1];
       if (token === "|") {
         if (before || upperTokens.length) {
