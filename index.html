@@ -1,0 +1,437 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="ChordWikiのコード譜を小節単位に整形するブラウザアプリ">
+  <title>ChordWiki Bar Formatter Web</title>
+  <link rel="stylesheet" href="style.css?v=20260719-18">
+</head>
+<body>
+  <header class="app-header">
+    <div>
+      <p class="eyebrow">LOCAL CHORD TOOL</p>
+      <h1>ChordWiki Bar Formatter</h1>
+      <p class="subtitle">コード譜を、読みやすい小節表記へ。</p>
+    </div>
+    <div class="header-actions">
+  <button id="history-save" class="help-open-button" type="button" title="05. 変換後の表示を保存">履歴に追加</button>
+      <button id="history-open" class="help-open-button" type="button">使用履歴</button>
+      <button id="help-open" class="help-open-button" type="button">ヘルプ・使い方</button>
+      <div class="privacy-badge" title="入力内容を外部へ送信しません">
+        <span aria-hidden="true">●</span> ブラウザ内で処理
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="workspace" aria-label="コード譜変換エリア">
+      <aside class="font-panel" aria-labelledby="display-settings-title">
+        <div class="editor-heading">
+          <h2 id="display-settings-title" class="compact-editor-title">01. 表示設定 <span>/ DISPLAY</span></h2>
+        </div>
+        <div id="display-settings-shell" class="display-settings-shell">
+        <div class="display-primary-actions">
+          <button id="display-settings-toggle" class="text-button display-toggle-button" type="button" aria-expanded="false" aria-controls="display-settings-body">設定を開く▼</button>
+          <button id="reset-layout" class="text-button layout-reset-button" type="button">レイアウトと表示を初期化</button>
+        </div>
+        <div id="display-settings-body" class="display-settings-body">
+        <div class="display-setting-row">
+          <label for="setting-theme">テーマ</label>
+          <select id="setting-theme">
+            <option value="light" selected>ライト</option>
+            <option value="dark-gray">ダークグレー</option>
+            <option value="dark">ダーク</option>
+          </select>
+        </div>
+        <div class="display-setting-row">
+          <label for="setting-editor-font">表示フォント</label>
+          <div class="selection-stepper">
+          <select id="setting-editor-font">
+          <option value="browser">ブラウザ標準</option>
+          <option value="system-ui">system-ui</option>
+          <option value="meiryo">メイリオ / Meiryo</option>
+          <option value="biz-udp">BIZ UDPゴシック</option>
+          <option value="ms-gothic">MS Gothic</option>
+          <option value="segoe-ui">Segoe UI</option>
+          <option value="verdana">Verdana</option>
+          <option value="consolas">Consolas</option>
+          <option value="courier-new">Courier New</option>
+          </select>
+          <button id="font-next" type="button" aria-label="次のフォント">▼</button>
+          <button id="font-previous" type="button" aria-label="前のフォント">▲</button>
+          </div>
+        </div>
+        <div class="display-setting-row font-size-row">
+          <span>フォントサイズ</span>
+          <div class="stepper" role="group" aria-label="フォントサイズ変更">
+            <select id="font-size-value" aria-label="フォントサイズ">
+              <option value="10">10px</option>
+              <option value="11">11px</option>
+              <option value="12">12px</option>
+              <option value="13">13px</option>
+              <option value="14" selected>14px</option>
+              <option value="15">15px</option>
+              <option value="16">16px</option>
+              <option value="17">17px</option>
+              <option value="18">18px</option>
+              <option value="19">19px</option>
+              <option value="20">20px</option>
+              <option value="21">21px</option>
+              <option value="22">22px</option>
+              <option value="23">23px</option>
+              <option value="24">24px</option>
+            </select>
+            <button id="font-size-down" type="button" aria-label="文字を小さくする">▼</button>
+            <button id="font-size-up" type="button" aria-label="文字を大きくする">▲</button>
+          </div>
+        </div>
+        <label class="sync-setting"><span>スクロール同期</span><input id="scroll-sync" type="checkbox" checked></label>
+        <label class="sync-setting"><span>文字色付け</span><input id="text-coloring" type="checkbox"></label>
+        <label class="sync-setting"><span>太字コード</span><input id="bold-code" type="checkbox" checked></label>
+        <label class="sync-setting"><span>自動追加の背景に色付ける</span><input id="added-background" type="checkbox" checked></label>
+        <p class="display-memory-note">前回入力値は記憶されます。</p>
+        </div>
+        <div class="frame-resize-corner two-axis" data-panel="display" data-column="direct" role="separator" aria-label="表示設定枠の幅と高さを調整" tabindex="0"></div>
+        </div>
+      </aside>
+      <section id="settings-panel" class="settings-panel settings-closed" aria-labelledby="settings-title">
+        <div class="editor-heading">
+          <div class="settings-heading-copy">
+            <h2 id="settings-title" class="compact-editor-title">03. 初期設定・使用例 <span>/ SETTINGS</span></h2>
+          </div>
+        </div>
+        <div id="settings-shell" class="settings-shell">
+        <div class="settings-primary-actions">
+          <button id="settings-toggle" class="text-button" type="button" aria-expanded="false" aria-controls="settings-body">設定を開く▼</button>
+          <button id="settings-example-toggle" class="text-button settings-example-toggle" type="button">使用例を表示▶</button>
+        </div>
+        <div id="settings-body" hidden>
+          <div id="settings-profile-picker" class="settings-profile-picker" role="group" aria-label="拍子ごとの初期設定">
+            <button type="button" data-settings-profile="fourFour" aria-pressed="false">4/4拍子</button>
+            <button type="button" data-settings-profile="sixEight" aria-pressed="false">6/8拍子</button>
+            <button type="button" data-settings-profile="custom" aria-pressed="false">カスタム</button>
+          </div>
+          <p class="settings-recommendation"><strong>推奨値：</strong><span id="settings-recommendation-values">4, 8, 16, 24, 32</span></p>
+          <div id="settings-grid" class="settings-grid"></div>
+        </div>
+        <div class="settings-footer-actions">
+          <label id="custom-profile-name-field" class="custom-profile-name-field" hidden>
+            <span>カスタム名</span>
+            <input id="custom-profile-name" type="text" maxlength="24" placeholder="カスタム" autocomplete="off">
+            <small>Enterで反映</small>
+          </label>
+          <button id="settings-reset" class="text-button settings-reset-button" type="button">初期値に戻す</button>
+        </div>
+        </div>
+        <div class="column-resize-edge settings-column-resize-edge" role="separator" aria-label="初期設定枠と変換後枠の境界を調整" aria-orientation="vertical" tabindex="0"></div>
+      </section>
+
+      <article class="editor-card correction-card">
+        <div class="editor-heading">
+          <h2 class="compact-editor-title"><label for="correction-text">04. 行修正 <span>/ ROW EDIT</span></label></h2>
+          <span id="correction-count" class="counter">0行</span>
+        </div>
+        <div class="correction-context-bar">
+          <span id="correction-position" class="correction-position" aria-live="polite">行修正をクリックすると現在位置を表示します</span>
+          <div class="correction-history-actions" role="group" aria-label="行修正の操作">
+            <button id="correction-undo" type="button" disabled title="元に戻す（Ctrl+Z）">↶ 戻す</button>
+            <button id="correction-redo" type="button" disabled title="やり直す（Ctrl+Y）">↷ 進む</button>
+            <button id="correction-append" type="button" title="現在の行の末尾へ新しい指定を1つ追加">＋ 末尾に追加</button>
+          </div>
+        </div>
+        <div id="correction-shell" class="editor-shell">
+          <div id="correction-lines" class="line-numbers" aria-hidden="true"></div>
+          <div class="editor-text-layer"><pre id="correction-highlight" class="editor-highlight" aria-hidden="true"></pre><textarea id="correction-text" wrap="off" spellcheck="false" title="数字・長さは現在位置を上書きします。入力可能：数字0～9、長さa～i、記号^・*・@・x・s、行修正しないn。指定を増やすときは「＋ 末尾に追加」を使います。" placeholder="&#10;&#10;&#10;&#10;88349&#10;7944&#10;8c4&#10;&#10;4444&#10;43^9&#10;44^*3^*3^*a&#10;44332"></textarea></div>
+        </div>
+        <div class="frame-resize-corner two-axis" data-row="bottom" data-column="direct" role="separator" aria-label="行修正枠の幅と高さを調整" tabindex="0"></div>
+        <div class="column-resize-edge" role="separator" aria-label="行修正枠の幅を調整" aria-orientation="vertical" tabindex="0"></div>
+      </article>
+
+      <aside class="correction-input-guide" aria-labelledby="correction-input-guide-title">
+        <header class="auxiliary-panel-heading">
+          <h3 id="correction-input-guide-title">入力できる文字列 <span>/ INPUT GUIDE</span></h3>
+        </header>
+        <div class="correction-input-guide-body">
+          <p><strong>読み方</strong>：すべて「入力<span class="guide-arrow">→</span>何をする<span class="guide-arrow">→</span>結果」の順です。</p>
+          <p class="guide-indent"><strong>入力できる文字</strong>：数字<code class="guide-input">0～9</code>、長さ<code class="guide-input">a～i</code>、記号<code class="guide-input">^・*・@・x・s</code>、行修正しない<code class="guide-input">n</code>です。</p>
+          <p class="guide-indent">数字・英字は現在の長さ指定を上書きします。行末で入力しても指定数は増えません。新しいコード分を増やすときだけ、<strong>＋ 末尾に追加</strong>を押します。</p>
+          <p class="guide-indent">長さ1個が、コード1個に対応します。例：<code class="guide-input">4444</code>は4コード分です。</p>
+
+          <p><strong>基本の長さ</strong>：<code class="guide-input">4</code><span class="guide-arrow">→</span>ハイフンを4個付ける<span class="guide-arrow">→</span><code class="guide-output">[----]</code></p>
+          <p class="guide-indent"><code class="guide-input">0</code>＝ハイフンなし、<code class="guide-input">1–9</code>＝その個数、10以上は次の文字で入力します。</p>
+          <p class="guide-indent"><code class="guide-input">a=10、b=11、c=12、d=13、e=14、f=15、g=16、h=24、i=32</code></p>
+
+          <p><strong>シンコペーション</strong>：<code class="guide-input">4s4</code><span class="guide-arrow">→</span>後ろのコードを半音価分だけ前へ移す<span class="guide-arrow">→</span><code class="guide-output">[C]---=[G]=</code></p>
+          <p class="guide-indent"><code class="guide-input">s</code>は2つの長さの間に置き、コード数には数えません。例：<code class="guide-input">4s44s4</code>は4コード分です。</p>
+          <p class="guide-indent">行に<code class="guide-input">s</code>だけを書くと、その行のコードを2個ずつ組にして、すべてシンコペーションにします。</p>
+          <p class="guide-indent">1小節合計4：<code class="guide-output">|[C]---=[G]=|----|</code>　1小節合計8：<code class="guide-output">|[C]---=[G]= ----|</code></p>
+
+          <p><strong>行修正しない</strong>：<code class="guide-input">n</code><span class="guide-arrow">→</span>この行を変更しない<span class="guide-arrow">→</span>行修正を触る前の結果を使う</p>
+
+          <p><strong>倍の細かさ</strong>：<code class="guide-input">*4</code><span class="guide-arrow">→</span>長さ4を<code class="guide-output">=</code>で表示する<span class="guide-arrow">→</span><code class="guide-output">[====]</code></p>
+          <p><strong>アクセント</strong>：<code class="guide-input">^4</code><span class="guide-arrow">→</span>長さ4の先頭をアクセントにする<span class="guide-arrow">→</span><code class="guide-output">[&gt;---]</code></p>
+          <p class="guide-indent"><code class="guide-input">^^4</code><span class="guide-arrow">→</span>アクセントを2個付ける<span class="guide-arrow">→</span><code class="guide-output">[&gt;&gt;--]</code></p>
+          <p><strong>アクセント＋倍の細かさ</strong>：<code class="guide-input">^*4</code><span class="guide-arrow">→</span>両方を付ける<span class="guide-arrow">→</span><code class="guide-output">[≧===]</code></p>
+
+          <p><strong>白丸</strong>：<code class="guide-input">@</code><span class="guide-arrow">→</span>白丸を付ける<span class="guide-arrow">→</span><code class="guide-output">[○]</code></p>
+          <p class="guide-indent"><code class="guide-input">@4</code><span class="guide-arrow">→</span>白丸の後ろに長さ4を付ける<span class="guide-arrow">→</span><code class="guide-output">[○][----]</code></p>
+
+          <p><strong>小節線を消す</strong>：<code class="guide-input">x4</code><span class="guide-arrow">→</span>そのコードの前を消す　<code class="guide-input">4x</code><span class="guide-arrow">→</span>そのコードの後ろを消す</p>
+          <p class="guide-indent"><code class="guide-input">44x4</code><span class="guide-arrow">→</span>3番目のコード前にある<code class="guide-output">[|]</code>を消します。</p>
+
+          <p class="guide-note">ここで指定するのは拍数ではなく、記号の長さです。<code>-：8分音符</code>の4/4拍子では、<code>2</code>＝1拍、<code>4</code>＝2拍、<code>8</code>＝1小節です。</p>
+        </div>
+        <div class="frame-resize-corner two-axis" data-panel="guide" data-column="direct" role="separator" aria-label="入力できる文字列枠の幅と高さを調整" tabindex="0"></div>
+      </aside>
+
+      <aside class="status-support-panel" aria-labelledby="status-support-title">
+        <header class="auxiliary-panel-heading">
+          <h3 id="status-support-title">ひとことサポート <span>/ SUPPORT</span></h3>
+        </header>
+        <div id="status-detail" class="status-detail" role="status" aria-live="polite">入力内容はリアルタイムで右側へ反映されます。</div>
+      </aside>
+
+      <article class="editor-card input-card">
+        <div class="editor-heading">
+          <h2 class="compact-editor-title"><label for="input-text">02. 変換前 <span>/ SOURCE</span></label></h2>
+          <div class="editor-tools">
+            <span id="input-count" class="counter">0文字 / 0行</span>
+            <button id="add-input-brackets" class="sample-header-button bracket-header-button" type="button" title="角括弧のないコード・アクセント・白玉へ[]を追加"><span>コードに[]を追加</span></button>
+            <button id="insert-input-sample" class="sample-header-button" type="button" title="入力サンプルを貼り付け"><span class="inline-tool-icon"><span class="paste-icon" aria-hidden="true"></span></span><span>入力サンプル</span></button>
+            <button id="paste-input" class="icon-button" type="button" aria-label="クリップボードから変換前へ貼り付け" title="貼り付け"><span class="paste-icon" aria-hidden="true"></span></button>
+          </div>
+        </div>
+        <div id="input-shell" class="editor-shell">
+          <div id="input-lines" class="line-numbers" aria-hidden="true"></div>
+          <div class="editor-text-layer"><pre id="input-highlight" class="editor-highlight" aria-hidden="true"></pre><textarea id="input-text" wrap="off" spellcheck="false" placeholder="{title:変換テスト用サンプル}&#10;{subtitle:これは実在する楽曲ではありません}&#10;{comment:ChordWiki Bar Formatterの機能確認用ダミー歌詞です}&#10;{key:C}&#10;[C]ChordPro形式の[G]テキストを貼ると　[Am]自動[G]で小節線[F]と拍を追記します&#10;[E]原曲と異[Am]なる部分は　[F]行修正の[D/F#]数値を変えて&#10;[Gsus4]ハイフン数を[G]合わせます　[G#dim]&#10;&#10;[Am]=(イコール)表示は*([G#aug]アスタリスク)で、[C/G]&gt;(アクセント)は[F#m7-5]^(キャレット)で&#10;[F]入力[G]できま[C]す&#10;[F]細かい部分は[G]手動修正が[E7]必[E7/G#]要[Am7]です🙏🏻&#10;[F]編集[G]お疲れ[Csus4]様で[C]す！（ありが[N.C.]とう！）"></textarea></div>
+        </div>
+        <div class="frame-resize-corner two-axis" data-row="top" data-column="inverse" role="separator" aria-label="変換前枠の幅と高さを調整" tabindex="0"></div>
+      </article>
+
+      <article class="editor-card output-card">
+        <div class="editor-heading">
+          <h2 class="compact-editor-title"><label for="output-text">05. 変換後 <span>/ RESULT</span></label></h2>
+          <div class="editor-tools">
+            <span class="diff-legend" hidden title="変換時に自動追加された小節線・拍記号"><i aria-hidden="true"></i>自動追加</span>
+            <label class="output-bar-setting"><input id="plain-edit-bars" type="checkbox"> <span>小節線[|]にカッコをつけない</span></label>
+            <span id="output-count" class="counter">0文字 / 0行</span>
+            <button id="copy-output" class="icon-button" type="button" aria-label="変換結果をコピー" title="変換結果をコピー"><span class="copy-icon" aria-hidden="true"></span></button>
+          </div>
+        </div>
+        <div class="removal-controls">
+          <label for="hyphen-removal-targets">削除ハイフン数（複数削除はカンマ区切り）</label>
+          <input id="hyphen-removal-targets" type="text" value="4" inputmode="numeric" autocomplete="off" aria-describedby="removal-summary">
+          <span id="removal-summary" role="status" aria-live="polite"></span>
+        </div>
+        <div id="output-shell" class="editor-shell">
+          <div id="output-lines" class="line-numbers" aria-hidden="true"></div>
+          <div class="editor-text-layer"><pre id="output-highlight" class="editor-highlight" aria-hidden="true"></pre><textarea id="output-text" wrap="off" spellcheck="false" placeholder="{title:変換テスト用サンプル}&#10;{subtitle:これは実在する楽曲ではありません}&#10;{comment:ChordWiki Bar Formatterの機能確認用ダミー歌詞です}&#10;{key:C}&#10;[|][C][----][----]ChordPro形式の[|][G][----][----]テキストを貼ると　[|][Am][---]自動[G][-]で[---]小節線[F][-]と[|][----][----]拍を追記します[|]&#10;[|][E][----][---]原曲と異[Am][-]な[|][----][----]る部分は　[|][F][----]行修正の[D/F#][----]数値を変えて[|]&#10;[|][Gsus4][----][----]ハイフン数を合[|][G][----][----]わせます　[|][G][----][G#dim][----][|]&#10;&#10;[|][Am][----](イコール)表示は*([G#aug][----]アスタリスク)で、[|][C/G][----]&gt;(アクセント)は[F#m7-5][----]^(キャレット)で[|]&#10;[|][F][----]入力[G][---]できま[C][&gt;]す[|][----][----][|]&#10;[|][F][----]細かい部分は[G][----]手動修正が[|][E7/G#][&gt;==]必[E7][&gt;==]要[Am7][&gt;=][========]です🙏🏻[|]&#10;[|][F][----]編集[G][----]お疲れ[|][Csus4][---]様で[C][-]す[--]！（ありが[N.C.][--]とう！）[|]"></textarea></div>
+        </div>
+        <div class="frame-resize-corner two-axis" data-row="bottom" data-column="inverse" role="separator" aria-label="変換後枠の幅と高さを調整" tabindex="0"></div>
+      </article>
+
+      <article class="editor-card final-card">
+        <div class="editor-heading">
+          <h2 class="compact-editor-title">06. 譜面プレビュー <span>/ SCORE</span></h2>
+          <div class="editor-tools preview-heading-tools">
+            <span id="final-output-count" class="counter">0文字 / 0行</span>
+            <button id="copy-final-output" class="icon-button" type="button" aria-label="譜面用テキストをコピー" title="譜面用テキストをコピー"><span class="copy-icon" aria-hidden="true"></span></button>
+          </div>
+        </div>
+        <div class="preview-controls" aria-label="譜面プレビュー設定">
+          <label class="preview-control" for="preview-transpose-main"><span>移調</span><span class="preview-transpose-stepper"><select id="preview-transpose-main" aria-label="譜面プレビューの移調"></select><button id="preview-transpose-main-down" type="button" aria-label="移調を半音下げる">▼</button><button id="preview-transpose-main-up" type="button" aria-label="移調を半音上げる">▲</button></span></label>
+          <label class="preview-control" for="preview-spelling-main"><span>音名</span><select id="preview-spelling-main" aria-label="シャープ・フラット表記"><option value="preserve">元表記</option><option value="sharp">♯表記</option><option value="flat">♭表記</option></select></label>
+          <button id="preview-key-settings" class="score-window-button" type="button">キー詳細設定…</button>
+          <label class="final-bar-setting"><input id="final-bars-through" type="checkbox"> <span>小節線を貫通させる</span></label>
+          <a id="open-score-window" class="score-window-button" href="chordwiki-preview.html" target="_blank" rel="opener" title="譜面プレビューを別画面で開く">別画面で開く</a>
+        </div>
+        <div id="final-output-shell" class="editor-shell">
+          <div id="final-output-lines" class="line-numbers" aria-hidden="true"></div>
+          <div class="editor-text-layer"><pre id="final-output-highlight" class="editor-highlight" aria-hidden="true"></pre><textarea id="final-output-text" wrap="off" readonly spellcheck="false" placeholder="削除対象を反映した最終結果がここに表示されます。"></textarea></div>
+          <div id="final-score-preview" class="chordwiki-preview" aria-label="ChordWiki譜面プレビュー" hidden></div>
+        </div>
+        <div class="frame-resize-corner two-axis" data-row="final" data-column="inverse" role="separator" aria-label="譜面プレビュー枠の幅と高さを調整" tabindex="0"></div>
+      </article>
+
+      <article class="editor-card committed-card">
+        <div class="editor-heading">
+          <h2 class="compact-editor-title">07. 確定譜面テキスト <span>/ COMMITTED SCORE TEXT</span></h2>
+          <div class="editor-tools">
+            <button id="commit-preview-to-output" class="score-window-button" type="button">譜面プレビューを確定</button>
+            <span id="committed-output-count" class="counter">0文字 / 0行</span>
+            <button id="copy-committed-output" class="icon-button" type="button" aria-label="確定譜面をコピー" title="確定譜面をコピー"><span class="copy-icon" aria-hidden="true"></span></button>
+            <button id="committed-output-toggle" class="score-window-button" type="button" aria-expanded="false">開く▼</button>
+          </div>
+        </div>
+        <div id="committed-output-shell" class="editor-shell committed-collapsed">
+          <div id="committed-output-lines" class="line-numbers" aria-hidden="true"></div>
+          <div class="editor-text-layer"><pre id="committed-output-highlight" class="editor-highlight" aria-hidden="true"></pre><textarea id="committed-output-text" wrap="off" spellcheck="false" placeholder="07. 確定譜面テキストの「譜面プレビューを確定」を押すと、ここへ保存されます。"></textarea></div>
+        </div>
+      </article>
+    </section>
+
+    <dialog id="key-settings-dialog" class="help-dialog key-settings-dialog" aria-labelledby="key-settings-title">
+      <div class="help-dialog-frame">
+        <header class="help-dialog-header">
+          <div><p class="eyebrow">KEY SETTINGS</p><h2 id="key-settings-title">キー詳細設定</h2></div>
+          <button id="key-settings-close" class="icon-button" type="button" aria-label="閉じる">×</button>
+        </header>
+        <div class="key-settings-content">
+          <div class="key-settings-layout">
+            <div class="key-settings-editor">
+              <section class="key-global-settings" aria-labelledby="key-global-settings-title">
+                <h3 id="key-global-settings-title">全体の移調・音名</h3>
+                <div class="key-global-controls">
+                  <label class="preview-control" for="preview-transpose"><span>移調</span><span class="preview-transpose-stepper"><select id="preview-transpose" aria-label="譜面プレビューの移調"></select><button id="preview-transpose-down" type="button" aria-label="移調を半音下げる">▼</button><button id="preview-transpose-up" type="button" aria-label="移調を半音上げる">▲</button></span></label>
+                  <label class="preview-control" for="preview-spelling"><span>音名</span><select id="preview-spelling" aria-label="シャープ・フラット表記"><option value="preserve">元表記</option><option value="sharp">♯表記</option><option value="flat">♭表記</option></select></label>
+                  <label class="preview-control" for="preview-double-sharp"><span>重♯</span><select id="preview-double-sharp" aria-label="ダブルシャープ表記"><option value="##">##</option><option value="x">x</option></select></label>
+                  <label class="final-bar-setting" title="{key:}ごとに転調を判定し、bb・##を含む異名同音を使い分けます"><input id="preview-theoretical" type="checkbox"> <span>キー・転調に合わせて異名同音を自動選択</span></label>
+                </div>
+              </section>
+              <p class="key-settings-note">全体設定は本番プレビューへ即時反映されます。区間ごとの変更は右の仮プレビューで確認し、「設定を適用」すると本番へ反映されます。</p>
+              <div id="key-settings-list" class="key-settings-list"></div>
+              <div class="key-settings-actions">
+                <button id="key-settings-reset" class="text-button" type="button">区間設定をクリア</button>
+                <button id="key-settings-apply" class="score-window-button" type="button">設定を適用</button>
+              </div>
+            </div>
+            <aside class="key-settings-preview-panel">
+              <h3>出力結果（仮プレビュー）</h3>
+              <div id="key-settings-score-preview" class="chordwiki-preview key-settings-score-preview" aria-label="キー別設定の仮プレビュー"></div>
+            </aside>
+          </div>
+        </div>
+      </div>
+    </dialog>
+
+    <dialog id="history-dialog" class="help-dialog history-dialog" aria-labelledby="history-title">
+      <div class="help-dialog-frame">
+        <header class="help-dialog-header">
+          <div>
+            <p class="eyebrow">LOCAL HISTORY / 7 DAYS</p>
+            <h2 id="history-title">使用履歴</h2>
+          </div>
+          <button id="history-close" class="help-close-button" type="button">閉じる</button>
+        </header>
+        <div class="history-content">
+          <div class="history-layout">
+            <section class="history-list-panel" aria-label="使用履歴一覧">
+              <p class="history-note">05. 変換後の表示を「履歴に追加」で手動保存、または入力停止から10分後に自動保存します。履歴を採用すると、保存した変換後テキストが02. 変換前へ入ります。履歴はこのブラウザ内だけに7日間保持されます。</p>
+              <div id="history-list" class="history-list"></div>
+            </section>
+            <section id="history-preview-panel" class="history-preview-panel" aria-labelledby="history-preview-title">
+              <header class="history-preview-heading">
+                <div>
+                  <h3 id="history-preview-title">履歴を選択してください</h3>
+                  <p id="history-preview-date">一覧をクリックすると、ここに全体プレビューを表示します。</p>
+                </div>
+                <button id="history-restore" class="history-restore-button" type="button" disabled>変換前に採用</button>
+              </header>
+              <div id="history-score-preview" class="chordwiki-preview history-score-preview" aria-label="選択した履歴の全体プレビュー">
+                <p class="history-preview-empty">履歴を選択すると、譜面全体を確認できます。</p>
+              </div>
+            </section>
+          </div>
+          <footer class="history-footer">
+            <button id="history-delete-all" class="history-delete-button" type="button">使用履歴を削除</button>
+          </footer>
+        </div>
+      </div>
+    </dialog>
+
+    <dialog id="help-dialog" class="help-dialog" aria-labelledby="help-title">
+      <div class="help-dialog-frame">
+      <header class="help-dialog-header">
+        <div>
+          <p class="eyebrow">GUIDE</p>
+          <h2 id="help-title">ヘルプ・使い方</h2>
+        </div>
+        <button id="help-close" class="help-close-button" type="button">閉じる</button>
+      </header>
+      <div class="help-content">
+        <section class="help-overview" aria-labelledby="help-overview-title">
+          <div>
+            <p class="help-kicker">OVERVIEW</p>
+            <h3 id="help-overview-title">コード譜を貼り付け、整形し、完成版をコピーするツールです</h3>
+            <p>基本の流れは、<strong>02. 変換前</strong>へコード譜を貼り付け、<strong>04. 行修正</strong>でハイフン換算の長さを整え、<strong>06. 譜面プレビュー</strong>で見た目を確認し、<strong>07. 確定譜面テキスト</strong>からコピーする順です。入力内容はブラウザ内だけで処理されます。</p>
+          </div>
+          <p class="help-overview-note"><strong>最初は初期値のままで使えます。</strong>01と03は必要なときだけ変更してください。入力や設定を変えると、変換結果は自動更新されます。</p>
+        </section>
+
+        <div class="help-usage-table-wrap">
+          <table class="help-usage-table">
+            <colgroup><col class="help-step-col"><col><col><col class="help-detail-col"></colgroup>
+            <thead><tr><th>工程</th><th>何をするところ？</th><th>何をすればいい？</th><th>詳細説明・例</th></tr></thead>
+            <tbody>
+              <tr>
+                <th scope="row"><span class="help-table-number">01</span><span class="help-table-step"><small>DISPLAY</small><strong>表示設定</strong><em>任意</em></span></th>
+                <td data-label="何をするところ？">テーマ、文字の種類・大きさ、色付け、スクロール同期を見やすく整える場所です。変換内容には影響しません。</td>
+                <td data-label="何をすればいい？"><span class="help-control-chip">設定を開く ▼</span>を押し、必要な項目だけ変更します。迷った場合は初期値のままで構いません。</td>
+                <td data-label="詳細説明・例"><div class="help-table-example"><code>テーマ：ダーク</code><code>文字：16px</code><small>戻す場合は「レイアウトと表示を初期化」</small></div></td>
+              </tr>
+              <tr>
+                <th scope="row"><span class="help-table-number">02</span><span class="help-table-step"><small>SOURCE</small><strong>変換前</strong><em>最初に操作</em></span></th>
+                <td data-label="何をするところ？">ChordPro形式のコード譜を入力する場所です。貼り付けると、小節線と拍記号を付けた結果が自動で作られます。</td>
+                <td data-label="何をすればいい？"><span class="help-icon-sample" aria-label="貼り付け"><span class="paste-icon" aria-hidden="true"></span></span>を押すか直接貼り付けます。角括弧がない場合は<span class="help-control-chip">コードに[]を追加</span>を押します。</td>
+                <td data-label="詳細説明・例"><div class="help-table-example"><code>C　D/F#　C on G</code><code>↓ コードに[]を追加</code><code>[C]　[D/F#]　[C on G]</code><small>試す場合は「入力サンプル」を利用できます。</small></div></td>
+              </tr>
+              <tr>
+                <th scope="row"><span class="help-table-number">03</span><span class="help-table-step"><small>SETTINGS</small><strong>初期設定・使用例</strong><em>任意</em></span></th>
+                <td data-label="何をするところ？">拍子やコード数に応じた、変換時の標準値を決める場所です。4/4拍子、6/8拍子、カスタムを選べます。</td>
+                <td data-label="何をすればいい？"><span class="help-control-chip">設定を開く ▼</span>を押して拍子を選び、結果に違和感がある項目だけ調整します。</td>
+                <td data-label="詳細説明・例"><div class="help-table-example"><code>4/4拍子 → 4, 8, 16, 24, 32</code><small><span class="help-control-chip">使用例を表示 ▶</span>で結果を確認できます。</small></div></td>
+              </tr>
+              <tr>
+                <th scope="row"><span class="help-table-number">04</span><span class="help-table-step"><small>ROW EDIT</small><strong>行修正</strong><em>結果を調整</em></span></th>
+                <td data-label="何をするところ？">05と同じ行番号にあるハイフン換算の長さや記号を、コードごとに修正する場所です。入力値は変換結果へすぐ反映されます。</td>
+                <td data-label="何をすればいい？"><kbd>← →</kbd>でコード間、<kbd>↑ ↓</kbd>で行間を移動して値を入力します。<span class="help-control-chip">↶ 戻す</span><span class="help-control-chip">↷ 進む</span>も使えます。</td>
+                <td data-label="詳細説明・例"><div class="help-table-example"><code>4 → [----]</code><code>4s4 → シンコペーション</code><code>n → その行は修正しない</code><code>^4 → [&gt;---]</code><code>*4 → [====]</code><code>x4 → コード前の小節線なし</code><small><code>0-9</code>、<code>a-i</code>、<code>s</code>、<code>n</code>、<code>^</code>、<code>*</code>、<code>@</code>、<code>x</code>を使用できます。</small></div></td>
+              </tr>
+              <tr>
+                <th scope="row"><span class="help-table-number">05</span><span class="help-table-step"><small>RESULT</small><strong>変換後</strong><em>内容を確認</em></span></th>
+                <td data-label="何をするところ？">小節線と拍記号が追加された結果を確認する場所です。不要なハイフンの一括削除や直接編集もできます。</td>
+                <td data-label="何をすればいい？">04と見比べ、必要なら「削除ハイフン数」を指定します。途中結果を使う場合は<span class="help-icon-sample" aria-label="コピー"><span class="copy-icon" aria-hidden="true"></span></span>でコピーします。</td>
+                <td data-label="詳細説明・例"><div class="help-table-example help-table-warning"><strong>注意</strong><span>ここで直接編集した内容は、02・03・04を変更して再変換すると上書きされます。通常の修正は04で行います。</span></div></td>
+              </tr>
+              <tr>
+                <th scope="row"><span class="help-table-number">06</span><span class="help-table-step"><small>SCORE</small><strong>譜面プレビュー</strong><em>仕上がり確認</em></span></th>
+                <td data-label="何をするところ？">完成時の譜面を確認する場所です。移調、♯・♭表記、キーごとの詳細設定、小節線表示を調整できます。</td>
+                <td data-label="何をすればいい？">譜面を確認し、必要なら<span class="help-control-chip">移調 ▼ ▲</span>や<span class="help-control-chip">キー詳細設定…</span>を操作します。</td>
+                <td data-label="詳細説明・例"><div class="help-table-example"><code>移調：+2</code><code>音名：♭表記</code><small>広く確認する場合は「別画面で開く」</small></div></td>
+              </tr>
+              <tr>
+                <th scope="row"><span class="help-table-number">07</span><span class="help-table-step"><small>COMMITTED</small><strong>確定譜面テキスト</strong><em>ラスト</em></span></th>
+                <td data-label="何をするところ？">06で確認した譜面を確定し、保存・投稿に使う最終テキストを取り出す場所です。</td>
+                <td data-label="何をすればいい？"><span class="help-control-chip help-primary-chip">譜面プレビューを確定</span>を押し、<span class="help-control-chip">開く ▼</span>で確認してから<span class="help-icon-sample" aria-label="コピー"><span class="copy-icon" aria-hidden="true"></span></span>を押します。</td>
+                <td data-label="詳細説明・例"><div class="help-table-example"><strong>完了</strong><span>コピーしたテキストをChordWikiなどへ貼り付けます。</span><small>「履歴に追加」は05の変換後表示を保存し、履歴から02の変換前へ採用できます。</small></div></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <section class="help-shortcuts" aria-labelledby="help-shortcuts-title">
+          <h3 id="help-shortcuts-title">共通の操作アイコン</h3>
+          <div class="help-shortcut-grid">
+            <p><span class="help-icon-sample" aria-hidden="true"><span class="paste-icon"></span></span><span><strong>貼り付け</strong><small>クリップボードから入力</small></span></p>
+            <p><span class="help-icon-sample" aria-hidden="true"><span class="copy-icon"></span></span><span><strong>コピー</strong><small>表示中のテキストをコピー</small></span></p>
+            <p><kbd>▼ ▲</kbd><span><strong>値を変更</strong><small>前後の候補へ移動</small></span></p>
+            <p><span class="help-resize-symbol" aria-hidden="true">◢</span><span><strong>枠サイズ変更</strong><small>枠の右下をドラッグ</small></span></p>
+          </div>
+        </section>
+      </div>
+      </div>
+    </dialog>
+  </main>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <script src="js/settings.js?v=20260719-5" defer></script>
+  <script src="js/converter.js?v=20260719-32" defer></script>
+  <script src="js/input-brackets.js?v=20260718-5" defer></script>
+  <script src="js/correction-input.js?v=20260719-7" defer></script>
+  <script src="js/transposer.js?v=20260716-7" defer></script>
+  <script src="js/chordwiki-preview.js?v=20260719-4" defer></script>
+  <script src="js/history.js?v=20260718-4" defer></script>
+  <script src="js/app.js?v=20260719-27" defer></script>
+</body>
+</html>

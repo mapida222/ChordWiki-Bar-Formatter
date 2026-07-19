@@ -1,0 +1,167 @@
+{
+    "settings":  {
+                     "hyphenUnit":  4,
+                     "measureCapacity":  8,
+                     "hyphenSpacing":  4,
+                     "shortFractionPrepose":  1,
+                     "showContinuationChord":  0
+                 },
+    "conversionCases":  [
+                            {
+                                "name":  "plain text is untouched",
+                                "input":  "plain text",
+                                "output":  "plain text",
+                                "corrections":  ""
+                            },
+                            {
+                                "name":  "directives are untouched",
+                                "input":  "{title:Test}",
+                                "output":  "{title:Test}",
+                                "corrections":  ""
+                            },
+                            {
+                                "name":  "one chord fills one measure",
+                                "input":  "[C]",
+                                "output":  "[|][C][----][----][|]",
+                                "corrections":  "8"
+                            },
+                            {
+                                "name":  "two chord-only measures",
+                                "input":  "[C][G]",
+                                "output":  "[|][C][----][----][|][G][----][----][|]",
+                                "corrections":  "88"
+                            },
+                            {
+                                "name":  "odd chord count starts a new two-measure group",
+                                "input":  "[C][G][Am]",
+                                "output":  "[|][C][----][----][|][G][----][----][|][|][Am][----][----][|]",
+                                "corrections":  "888"
+                            },
+                            {
+                                "name":  "lyrics stay attached to their chords",
+                                "input":  "[C]lyrics[G]words",
+                                "output":  "[|][C][----]lyrics[G][----]words[|]",
+                                "corrections":  "44"
+                            },
+                            {
+                                "name":  "complex chord suffixes are not mistaken for text",
+                                "input":  "[F7(13)][C#7(b9#11)][Bm7-5]",
+                                "output":  "[|][F7(13)][----][----][|][C#7(b9#11)][----][----][|][|][Bm7-5][----][----][|]",
+                                "corrections":  "888"
+                            },
+                            {
+                                "name":  "on chord is normalized to slash chord",
+                                "input":  "[C on G]lyrics",
+                                "output":  "[|][C/G][----][----]lyrics[|]",
+                                "corrections":  "8"
+                            },
+                            {
+                                "name":  "authored white note is exposed as at slot",
+                                "input":  "[C][○]",
+                                "output":  "[|][C][○][|]",
+                                "corrections":  "@8"
+                            }
+                        ],
+    "correctionCases":  [
+                            {
+                                "name":  "22 sets two chord positions to two hyphens each",
+                                "input":  "[C]a[G]b",
+                                "code":  "22",
+                                "output":  "[|][C][--]a[G][--]b[|]"
+                            },
+                            {
+                                "name":  "35 renders five hyphens as one then four when prepose is enabled",
+                                "input":  "[C][G]",
+                                "code":  "35",
+                                "output":  "[|][C][---][G][-][----][|]"
+                            },
+                            {
+                                "name":  "at inserts a white note marker",
+                                "input":  "[C]",
+                                "code":  "@",
+                                "output":  "[|][C][○][|]"
+                            },
+                            {
+                                "name":  "at slot followed by duration renders white note timing",
+                                "input":  "[C][○]",
+                                "code":  "@8",
+                                "output":  "[|][C][○][----][----][|]"
+                            },
+                            {
+                                "name":  "Japanese short fraction moves one lyric character before completion",
+                                "input":  "[A]止まっ[D/A]た手の",
+                                "code":  "35",
+                                "output":  "[|][A][---]止まっ[D/A][-]た[----]手の[|]",
+                                "settings":  {
+                                                 "shortFractionPrepose":  1
+                                             }
+                            },
+                            {
+                                "name":  "English short fraction moves one contiguous word before completion",
+                                "input":  "[A]x[D]love you",
+                                "code":  "35",
+                                "output":  "[|][A][---]x[D][-]love[----] you[|]",
+                                "settings":  {
+                                                 "shortFractionPrepose":  1
+                                             }
+                            },
+                            {
+                                "name":  "English short fraction moves a one-letter word before completion",
+                                "input":  "[A]x[D]I love you",
+                                "code":  "35",
+                                "output":  "[|][A][---]x[D][-]I[----] love you[|]",
+                                "settings":  {
+                                                 "shortFractionPrepose":  1
+                                             }
+                            },
+                            {
+                                "name":  "English short fraction prepose off keeps lyric after completion",
+                                "input":  "[A]x[D]love you",
+                                "code":  "35",
+                                "settings":  {
+                                                 "shortFractionPrepose":  0
+                                             },
+                                "output":  "[|][A][---]x[D][-][----]love you[|]"
+                            },
+                            {
+                                "name":  "short fraction does not cross a leading space",
+                                "input":  "[A]x[D] love",
+                                "code":  "35",
+                                "output":  "[|][A][---]x[D][-][----] love[|]"
+                            },
+                            {
+                                "name":  "short fraction does not move a leading number",
+                                "input":  "[A]x[D]2026 love",
+                                "code":  "35",
+                                "output":  "[|][A][---]x[D][-][----]2026 love[|]"
+                            },
+                            {
+                                "name":  "short fraction does not move leading punctuation",
+                                "input":  "[A]x[D])love",
+                                "code":  "35",
+                                "output":  "[|][A][---]x[D][-][----])love[|]"
+                            },
+                            {
+                                "name":  "Japanese short fraction prepose off keeps lyric after completion",
+                                "input":  "[A]止まっ[D/A]た手の",
+                                "code":  "35",
+                                "settings":  {
+                                                 "shortFractionPrepose":  0
+                                             },
+                                "output":  "[|][A][---]止まっ[D/A][-][----]た手の[|]"
+                            }
+                        ],
+    "completedCases":  [
+                           {
+                               "name":  "selected lyric hyphens are removed by measure",
+                               "input":  "[|][C][----]歌詞[D][----]歌詞[|]\n[|][E][----][----]歌詞[|]\n[|][F][----][|]",
+                               "selectedCounts":  [
+                                                      4,
+                                                      8
+                                                  ],
+                               "output":  "[|][C]歌詞[D]歌詞　[|]\n[|][E]歌詞　[|]\n|[F]----|",
+                               "removedHyphens":  16,
+                               "changedMeasures":  2
+                           }
+                       ]
+}

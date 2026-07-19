@@ -1,0 +1,52 @@
+{
+  "settings": {
+    "hyphenUnit": 8,
+    "measureCapacity": 8,
+    "hyphenSpacing": 4,
+    "shortFractionPrepose": 1,
+    "showContinuationChord": 0
+  },
+  "cases": [
+    {
+      "name": "4+3/4 is an alternating 4/4 then 3/4 two-measure pattern",
+      "input": "[Dm]---- ----|[Dm]-- -- --|[Dm]---- ----|[Dm]-- -- --|",
+      "output": "[|][Dm][----] [----][|][Dm][--] [--] [--][|][Dm][----] [----][|][Dm][--] [--] [--][|]",
+      "corrections": "8686",
+      "completed": "|[Dm]---- ----|[Dm]-- -- --|[Dm]---- ----|[Dm]-- -- --|"
+    },
+    {
+      "name": "authored 8-6-8-4 rhythm preserves the inline 2/4 annotation",
+      "input": "[Dm]---- ----|[Dm]-- -- --|[Dm]---- ----|(2/4)[N.C.]----|",
+      "output": "[|][Dm][----] [----][|][Dm][--] [--] [--][|][Dm][----] [----][|](2/4)[N.C.][----][|]",
+      "corrections": "8684",
+      "completed": "|[Dm]---- ----|[Dm]-- -- --|[Dm]---- ----|(2/4)[N.C.]----|"
+    },
+    {
+      "name": "manual accents at the end of a meter transition",
+      "input": "[Em]---- ----|[Em]-- -- --|(4/4)[Em]---- ----|[Em]---- >>-[Bm]>|",
+      "output": "[|][Em][----] [----][|][Em][--] [--] [--][|](4/4)[Em][----] [----][|][Em][----] [>>-][Bm][>][|]",
+      "corrections": "86871",
+      "completed": "|[Em]---- ----|[Em]-- -- --|(4/4)[Em]---- ----|[Em]---- >>-[Bm]>|"
+    },
+    {
+      "name": "Japanese and English lyrics use ordinary chord boundaries",
+      "input": "時(と[Dm]き)に愛は2人[Bb]を試してる　[F]Because I [A7]love you",
+      "output": "時(と[|][Dm][----][----]き)に愛は2人[|][Bb][----][----]を試してる　[|][F][----][----]Because I [|][A7][----][----]love you[|]",
+      "corrections": "8888",
+      "completed": "時(と[|][Dm]き)に愛は2人[|][Bb]を試してる　[|][F]Because I [|][A7]love you[|]"
+    },
+    {
+      "name": "parenthesized final chord does not gain a trailing bar",
+      "input": "[G]無く[D]すも[F#7]ののな[Bm]い明日([G]あす)向か[(A)]う",
+      "output": "[|][G][----][----]無く[|][D][----][----]すも[|][F#7][----][----]ののな[|][Bm][----][----]い明日([|][G][----][----]あす)向か[|][(A)][----][----]う",
+      "corrections": "888888",
+      "completed": "[|][G]無く[|][D]すも[|][F#7]ののな[|][Bm]い明日([|][G]あす)向か[|][(A)]う"
+    }
+  ],
+  "manualOnly": [
+    "Add or infer {key:...} directives",
+    "Insert or duplicate chords such as A, Bm, N.C. and F#7",
+    "Place rhythm markers between arbitrary English words or Japanese lyric positions",
+    "Apply correction codes whose slot count only matches after manual chord insertion"
+  ]
+}
