@@ -106,7 +106,9 @@
     const remainder = line.slice(cursor);
     if (remainder || upperTokens.length) append(remainder, upperTokens);
 
-    return `<div class="cw-score-line">${parts.map(renderSegment).join("")}</div>`;
+    const hasLyrics = parts.some((part) => part.body && !/^[\s\-=>≧○|*]+$/.test(part.body));
+    const lineClass = hasLyrics ? "cw-score-line cw-score-line-has-lyrics" : "cw-score-line";
+    return `<div class="${lineClass}">${parts.map(renderSegment).join("")}</div>`;
   }
 
   function directive(line, names) {

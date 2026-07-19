@@ -28,6 +28,7 @@ assert(css.includes("font-family: sans-serif"));
 assert(css.includes("font-size: 100%"));
 assert(!css.includes("font-size: smaller"));
 assert(css.includes(".cw-body { position: relative; left: -.5em; display: inline;"));
+assert(css.includes(".cw-score-line-has-lyrics .cw-body-bar-token { top: -1.5em; }"));
 assert(css.includes(".bars-through .cw-boundary { color: transparent; }"));
 assert(css.includes(".cw-boundary-upper { top: -1.5em;"));
 assert(css.includes(".cw-boundary-leading { margin-right: .28em; }"));

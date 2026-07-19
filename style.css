@@ -305,6 +305,7 @@ main { padding: 12px 0 28px; }
 .bold-chords .cw-code-token { font-weight: 700; -webkit-text-stroke: 0; }
 .cw-body { position: relative; left: -.5em; display: inline; line-height: inherit; white-space: pre; }
 .cw-body-bar-token { position: relative; display: inline; color: var(--syntax-chord); }
+.cw-score-line-has-lyrics .cw-body-bar-token { top: -1.5em; }
 .bars-through .cw-body-bar-token { color: transparent; }
 .bars-through .cw-body-bar-token::before { content: ""; position: absolute; top: -1.5em; bottom: 0; left: 50%; width: 0; border-left: 1.5px solid var(--syntax-chord); transform: translateX(-.75px); pointer-events: none; }
 .cw-suit-spade { color: var(--syntax-chord); }
