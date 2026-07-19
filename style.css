@@ -173,7 +173,11 @@ main { padding: 12px 0 28px; }
 .guide-item-arrow { color: var(--text); transition: transform .15s ease; }
 .guide-item[open] .guide-item-arrow { transform: rotate(180deg); }
 .guide-item-detail { display: grid; gap: 4px; padding: 5px 8px 7px 48px; border-top: 1px solid color-mix(in srgb, var(--line) 68%, transparent); color: var(--muted); }
-.guide-item-detail p { margin: 0; }
+.guide-item-detail p { display: grid; grid-template-columns: 7.5em minmax(0, 1fr); gap: .35em; margin: 0; }
+.guide-detail-heading { display: block !important; color: var(--text); font-weight: 800; }
+.guide-detail-label { display: flex; justify-content: space-between; color: var(--text); white-space: nowrap; }
+.guide-detail-label::after { content: "："; }
+.guide-detail-value { min-width: 0; color: var(--muted); overflow-wrap: anywhere; }
 .correction-input-guide:has(.guide-item[open]) { height: auto !important; }
 .correction-input-guide .guide-indent { padding-left: 1em; color: var(--muted); }
 .correction-input-guide strong { color: var(--text); }
