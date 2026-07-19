@@ -798,8 +798,11 @@
       const automaticSlotCount = chordsOf(automaticTokens).length + automaticTokens.filter((token) => token.kind === "text" && token.value === "[○]").length;
       correctionSlotCounts.push(beatCodeUnits(automaticCode)?.length || automaticSlotCount);
       authoredWhiteNoteCounts.push(automaticTokens.filter((token) => token.kind === "text" && token.value === "[○]").length);
-      const enteredCode = (rowCorrections[outputIndex] || "").trim();
-      const displayedCode = enteredCode || automaticCode;
+      const displayedEnteredCode = (rowCorrections[outputIndex] || "").trim();
+      const enteredCode = partialOutputIndices.has(outputIndex) && displayedEnteredCode === automaticCode
+        ? ""
+        : displayedEnteredCode;
+      const displayedCode = displayedEnteredCode || automaticCode;
       const previousCode = (previousRowCorrections[outputIndex] || "").trim();
       let appliedCode = enteredCode ? (previousCode || automaticCode) : automaticCode;
       const manualBody = typeof manualOutputLines[outputIndex] === "string" ? manualOutputLines[outputIndex] : null;
