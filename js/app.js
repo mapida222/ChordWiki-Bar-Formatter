@@ -1573,12 +1573,15 @@
       const nextCr = value.indexOf("\r", start);
       const lineEndCandidates = [nextLf, nextCr].filter((position) => position >= 0);
       const lineEnd = lineEndCandidates.length ? Math.min(...lineEndCandidates) : value.length;
+      const lineIndex = value.slice(0, lineStart).split(/\r\n|\r|\n/).length - 1;
       const line = value.slice(lineStart, lineEnd);
       const relativeStart = start - lineStart;
       const relativeEnd = end - lineStart;
       const edit = event.key === "@"
         ? CBFCorrectionInput.whiteNoteEdit(line, relativeStart, relativeEnd)
-        : CBFCorrectionInput.smartBeatEdit(line, relativeStart, relativeEnd, event.key);
+        : CBFCorrectionInput.needsInsertedWhiteNoteDuration(line, relativeStart, correctionSlotCounts[lineIndex] || 0, authoredWhiteNoteCounts[lineIndex] || 0)
+          ? { start: relativeStart, end: relativeEnd, replacement: event.key.toLowerCase(), caret: relativeStart + 1 }
+          : CBFCorrectionInput.smartBeatEdit(line, relativeStart, relativeEnd, event.key);
       if (edit) {
         let nextCaret = lineStart + edit.caret;
         nextCaret = CBFCorrectionInput.caretAfterLineEdit(value, lineEnd, nextCaret, event.key === "@");

@@ -99,8 +99,8 @@ assert.strictEqual(CBFCorrectionInput.normalizeLine("^8@4*x", 1), "^8@4*x", "all
 assert.deepStrictEqual(CBFCorrectionInput.smartBeatEdit("4444", 4, 4, "8"), { start: 3, end: 4, replacement: "8", caret: 4 }, "typing at line end overwrites the final beat");
 assert.deepStrictEqual(CBFCorrectionInput.smartBeatEdit("4^444", 1, 1, "8"), { start: 2, end: 3, replacement: "8", caret: 3 }, "typing before an accented beat changes its value without removing the accent");
 assert.deepStrictEqual(CBFCorrectionInput.smartBeatEdit("4444", 1, 3, "8"), { start: 1, end: 3, replacement: "8", caret: 2 }, "a selection is replaced explicitly");
-assert.deepStrictEqual(CBFCorrectionInput.whiteNoteEdit("4444", 4, 4), { start: 3, end: 3, replacement: "@", caret: 4 }, "white note attaches to the final selected beat instead of trailing ambiguously");
-assert.deepStrictEqual(CBFCorrectionInput.whiteNoteEdit("444^*4", 6, 6), { start: 3, end: 3, replacement: "@", caret: 4 }, "white note is placed before existing accent and fine-value modifiers");
+assert.deepStrictEqual(CBFCorrectionInput.whiteNoteEdit("4444", 4, 4), { start: 3, end: 4, replacement: "@", caret: 4 }, "white note overwrites the final selected beat instead of adding a slot");
+assert.deepStrictEqual(CBFCorrectionInput.whiteNoteEdit("444^*4", 6, 6), { start: 3, end: 6, replacement: "@", caret: 4 }, "white note replaces existing modifiers and their beat without adding a slot");
 assert.deepStrictEqual(CBFCorrectionInput.appendBeatSlot("4444"), { text: "44440", selectionStart: 4, selectionEnd: 5 }, "explicit append adds one selected placeholder");
 assert.deepStrictEqual(CBFCorrectionInput.appendBeatSlot("n"), { text: "0", selectionStart: 0, selectionEnd: 1 }, "explicit append replaces a line command with one selected placeholder");
 ["s4", "4s", "*4s4", "4s^4", "@s4", "0s4"].forEach((code) => {

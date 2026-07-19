@@ -81,8 +81,8 @@
     }
     if (target[0] === "@") return { start: target.index, end: target.index + 1, replacement: "@", caret: target.index + 1 };
     const modifierPrefix = text.slice(0, target.index).match(/[\^*]+$/);
-    const insertionPoint = modifierPrefix ? target.index - modifierPrefix[0].length : target.index;
-    return { start: insertionPoint, end: insertionPoint, replacement: "@", caret: insertionPoint + 1 };
+    const replacementStart = modifierPrefix ? target.index - modifierPrefix[0].length : target.index;
+    return { start: replacementStart, end: target.index + target[0].length, replacement: "@", caret: replacementStart + 1 };
   }
 
   function nextLineStart(text, lineEnd) {
