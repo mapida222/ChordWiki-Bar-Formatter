@@ -1522,31 +1522,7 @@
     elements.input.focus();
     notify(`${result.addedCount}か所へ[]を追加しました。`);
   });
-  let replayingCorrectionTextInput = false;
-  let correctionBeforeInputSelection = null;
-  elements.correction.addEventListener("input", (event) => {
-    const nativeKey = !replayingCorrectionTextInput && event.inputType?.startsWith("insert")
-      ? CBFCorrectionInput.normalizeInputKey(event.data)
-      : "";
-    if (/^[0-9a-isn@x\^*|]$/i.test(nativeKey)) {
-      const currentCaret = elements.correction.selectionStart;
-      const insertedLength = String(event.data || "").length;
-      const snapshot = correctionBeforeInputSelection?.value === correctionHistoryValue
-        ? correctionBeforeInputSelection
-        : { value: correctionHistoryValue, start: Math.max(0, currentCaret - insertedLength), end: Math.max(0, currentCaret - insertedLength) };
-      correctionBeforeInputSelection = null;
-      replayingCorrectionTextInput = true;
-      elements.correction.value = snapshot.value;
-      elements.correction.setSelectionRange(snapshot.start, snapshot.end);
-      if (nativeKey === "|") replaceCorrectionText(snapshot.start, snapshot.end, nativeKey, snapshot.start + 1);
-      else {
-        const handled = !elements.correction.dispatchEvent(new KeyboardEvent("keydown", { key: nativeKey, bubbles: true, cancelable: true }));
-        if (!handled) replaceCorrectionText(snapshot.start, snapshot.end, nativeKey, snapshot.start + 1);
-      }
-      replayingCorrectionTextInput = false;
-      return;
-    }
-    correctionBeforeInputSelection = null;
+  elements.correction.addEventListener("input", () => {
     const caret = elements.correction.selectionStart;
     const previousCorrectionLines = correctionHistoryValue.split(/\r\n|\r|\n/);
     const normalized = elements.correction.value.split(/\r\n|\r|\n/).map((line, index) => {
@@ -1616,27 +1592,6 @@
     elements.correction.dispatchEvent(new Event("input", { bubbles: true }));
     if (pasted.truncatedRows > 0) notify(`貼り付け先がない末尾${pasted.truncatedRows}行は追加しませんでした。`, true);
   });
-  let correctionKeydownHandled = false;
-  elements.correction.addEventListener("beforeinput", (event) => {
-    if (document.activeElement !== elements.correction || !event.inputType?.startsWith("insert")) return;
-    const key = CBFCorrectionInput.normalizeInputKey(event.data);
-    if (!/^[0-9a-isn@x\^*|]$/i.test(key)) return;
-    correctionBeforeInputSelection = {
-      value: elements.correction.value,
-      start: elements.correction.selectionStart,
-      end: elements.correction.selectionEnd
-    };
-    if (correctionKeydownHandled) return;
-    event.preventDefault();
-    correctionBeforeInputSelection = null;
-    if (key === "|") {
-      const start = elements.correction.selectionStart;
-      const end = elements.correction.selectionEnd;
-      replaceCorrectionText(start, end, key, start + 1);
-      return;
-    }
-    elements.correction.dispatchEvent(new KeyboardEvent("keydown", { key, bubbles: true, cancelable: true }));
-  });
   elements.correction.addEventListener("keydown", (event) => {
     if (document.activeElement !== elements.correction) return;
     if ((event.ctrlKey || event.metaKey) && !event.altKey && event.key.toLowerCase() === "z") {
@@ -1651,11 +1606,6 @@
       return;
     }
     if (event.ctrlKey || event.metaKey || event.altKey) return;
-    const normalizedKey = CBFCorrectionInput.normalizeInputKey(event.key);
-    if (/^[0-9a-isn@x\^*|]$/i.test(normalizedKey) && normalizedKey === event.key.toLowerCase()) {
-      correctionKeydownHandled = true;
-      setTimeout(() => { correctionKeydownHandled = false; }, 0);
-    }
     const start = elements.correction.selectionStart;
     const end = elements.correction.selectionEnd;
     const value = elements.correction.value;

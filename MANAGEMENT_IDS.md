@@ -18,7 +18,7 @@
 | `ROW-002` | 行修正内容の変換後への反映 | 有効 | `js/app.js`、`js/converter.js` |
 | `ROW-003` | 行修正記号（0～9、a～i、`*`、`^`、`@`、`s`、縦線、`x`、`n`） | 有効 | `js/correction-input.js`、`js/converter.js` |
 | `ROW-004` | 変換前編集時の行修正保持 | 有効 | `js/app.js`、`js/converter.js`、`tests/source-edit-correction-preservation.test.js` |
-| `ROW-005` | 日本語入力・ソフトウェアキーボードを含む行修正の上書き入力 | 有効 | `js/app.js`、`js/correction-input.js`、`tests/correction-input.test.js` |
+| `ROW-005` | 行修正の上書き入力と更新キャッシュ対策 | 有効 | `index.html`、`js/app.js`、`tests/correction-key-routing.test.js` |
 | `CONVERT-001` | 歌詞行のハイフン省略モード | 有効 | `index.html`、`js/app.js`、`js/converter.js` |
 | `CONVERT-002` | 1小節3コード以上でタイミング用ハイフンを保持 | 有効 | `js/converter.js` |
 | `WARNING-001` | 変換前と初期設定の1小節ハイフン数不一致警告 | 有効 | `js/app.js`、`js/converter.js` |
