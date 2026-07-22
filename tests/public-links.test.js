@@ -24,8 +24,8 @@ assert(html.includes('class="community-feedback-icon" aria-hidden="true">✉</sp
 assert(html.includes("<h3>ご意見・応援 <span>/ LINKS</span></h3>"));
 assert(html.includes('<details class="support-menu">'));
 assert(html.includes("<span>応援する</span>"));
-assert(html.includes("<strong>BOOTH（単発で応援）</strong>"));
-assert(html.includes("<strong>FANBOX（継続で応援）</strong>"));
+assert(html.includes("<strong>単発応援/BOOTH</strong>"));
+assert(html.includes("<strong>継続応援/FANBOX</strong>"));
 assert(!html.includes("単発・100円から"));
 assert(!html.includes("定期的な応援はこちら"));
 assert.strictEqual((html.match(/class="support-choice /g) || []).length, 2);
