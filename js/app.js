@@ -1507,12 +1507,12 @@
     renderSettings(INITIAL_SETTINGS);
     updateSettingsProfileUI();
     elements.lyricHyphenMode.value = "target";
-    elements.removalTargets.value = "8";
-    removalLinked = true;
-    elements.removalLinked.checked = true;
+    elements.removalTargets.value = "4,8";
+    removalLinked = false;
+    elements.removalLinked.checked = false;
     elements.plainEditBars.checked = false;
     updateLyricHyphenControls();
-    localStorage.setItem(REMOVAL_STORAGE_KEY, "8");
+    localStorage.setItem(REMOVAL_STORAGE_KEY, "4,8");
     persistFeatureSettings();
     elements.input.value = INITIAL_INPUT;
     elements.correction.value = INITIAL_CORRECTION;

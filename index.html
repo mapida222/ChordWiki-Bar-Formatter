@@ -275,7 +275,7 @@
           </div>
         </div>
         <div class="removal-controls">
-          <span class="removal-label-with-help"><label for="lyric-hyphen-mode">歌詞行のハイフン</label><span class="context-help"><button class="context-help-button" type="button" aria-label="歌詞行のハイフン省略の説明" aria-expanded="false" aria-controls="help-tip-lyric-hyphens">?</button><span id="help-tip-lyric-hyphens" class="context-help-popover" role="tooltip" hidden>歌詞行に付いたハイフンの表示方法を選びます。<br>「指定数だけ省略」は対象にした長さだけ、「できるだけ省略」はコードチェンジの位置が必要な箇所を残して省略します。<br>「すべて省略」はタイミング情報も含めて省略します。</span></span></span>
+          <span class="removal-label-with-help"><label for="lyric-hyphen-mode">歌詞行のハイフン</label><span class="context-help"><button class="context-help-button" type="button" aria-label="歌詞行のハイフン省略の説明" aria-expanded="false" aria-controls="help-tip-lyric-hyphens">?</button><span id="help-tip-lyric-hyphens" class="context-help-popover" role="tooltip" hidden>歌詞行に付いたハイフンの表示方法を選びます。<br>「省略しない」：すべてのハイフンを表示します。<br>「指定数だけ省略」：入力した長さだけ省略します。複数指定はカンマ区切りで入力します（例：4,8）。<br>「できるだけ省略」：コードチェンジの位置が必要な箇所を残して省略します。<br>「すべて省略」：タイミング情報も含めて省略します。</span></span></span>
           <select id="lyric-hyphen-mode" aria-describedby="removal-summary">
             <option value="show">省略しない</option>
             <option value="target" selected>指定数だけ省略（カスタム・おすすめ）</option>
@@ -289,7 +289,7 @@
           <div class="output-column-headings" aria-hidden="true"><span>No.</span><span>変換後テキスト</span></div>
           <span id="removal-summary" role="status" aria-live="polite"></span>
           <div id="output-lines" class="line-numbers" aria-hidden="true"></div>
-          <div class="editor-text-layer"><pre id="output-highlight" class="editor-highlight" aria-hidden="true"></pre><textarea id="output-text" wrap="off" spellcheck="false" placeholder="{title:変換テスト用サンプル}&#10;{subtitle:これは実在する楽曲ではありません}&#10;{comment:ChordWiki Bar Formatterの機能確認用ダミー歌詞です}&#10;{c:BPM=100　　4/4拍子　-：8分音符　＝：16分音符　&gt;：8分音符アクセント　≧：16分音符アクセント　○：白玉}&#10;{key:C}&#10;[|][C]ChordPro形式の[|][G]テキストを貼ると　[|][Am][----]自動[G][----]で小節線[|][F]と長さ記号を追記します[|]&#10;[|][E][---]原曲と異[Am][-]な[----]る部分は　[|][F][---]行修正の[D/F#][-]数[----]値を変えて[|]&#10;[|][Gsus4]ハイフン数を[|][G][----]合わせます　[G#dim][----][|]&#10;&#10;[|][Am][----]＝(イコール)表示は*([G#aug][----]アスタリスク)で、[|][C/G][----]＞(アクセント)は[F#m7-5][----]^(キャレット)で[|]&#10;[|][F][----][--]入力[G][--]できま[|][C][----]す[----][|]&#10;[|][F][---=]細かい部分は[G][=]手[----]動修正が[|][E7][---]必[E7/G#][---]要[Am7][--]で[|][----][----]す🙏🏻[|]&#10;[|][F][----]編集[G][----]お疲れ[|][Csus4][----]様で[C][&gt;-]す！（ありが[N.C.][--]とう！）[|]"></textarea></div>
+          <div class="editor-text-layer"><pre id="output-highlight" class="editor-highlight" aria-hidden="true"></pre><textarea id="output-text" wrap="off" spellcheck="false" placeholder="{title:変換テスト用サンプル}&#10;{subtitle:これは実在する楽曲ではありません}&#10;{comment:ChordWiki Bar Formatterの機能確認用ダミー歌詞です}&#10;{c:BPM=100　　4/4拍子　-：8分音符　＝：16分音符　&gt;：8分音符アクセント　≧：16分音符アクセント　○：白玉}&#10;{key:C}&#10;[|][C]ChordPro形式の[|][G]テキストを貼ると　[|][Am]自動[G]で小節線[|][F]と長さ記号を追記します[|]&#10;[|][E][---]原曲と異[Am][-]な[----]る部分は　[|][F][---]行修正の[D/F#][-]数[----]値を変えて[|]&#10;[|][Gsus4]ハイフン数を[|][G][----]合わせます　[G#dim][----][|]&#10;&#10;[|][Am]＝(イコール)表示は*([G#aug]アスタリスク)で、[|][C/G]＞(アクセント)は[F#m7-5]^(キャレット)で[|]&#10;[|][F][----][--]入力[G][--]できま[|][C][----]す[----][|]&#10;[|][F][---=]細かい部分は[G][=]手[----]動修正が[|][E7][---]必[E7/G#][---]要[Am7][--]で[|][----][----]す🙏🏻[|]&#10;[|][F]編集[G]お疲れ[|][Csus4][----]様で[C][&gt;-]す！（ありが[N.C.][--]とう！）[|]"></textarea></div>
         </div>
         <div class="frame-resize-corner two-axis" data-row="bottom" data-column="inverse" role="separator" aria-label="変換後枠の幅と高さを調整" tabindex="0"></div>
       </article>
@@ -522,6 +522,6 @@
   <script src="js/transposer.js?v=20260716-7" defer></script>
   <script src="js/chordwiki-preview.js?v=20260722-3" defer></script>
   <script src="js/history.js?v=20260718-4" defer></script>
-  <script src="js/app.js?v=20260723-6" defer></script>
+  <script src="js/app.js?v=20260723-7" defer></script>
 </body>
 </html>

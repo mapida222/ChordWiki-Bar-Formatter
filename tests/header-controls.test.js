@@ -52,7 +52,9 @@ const minimizeOption = html.indexOf('<option value="minimize">できるだけ省
 const allOption = html.indexOf('<option value="all">すべて省略</option>');
 assert(showOption >= 0 && showOption < targetOption && targetOption < minimizeOption && minimizeOption < allOption);
 assert.strictEqual((html.match(/class="context-help-button"/g) || []).length, 4);
-assert(html.includes("表示方法を選びます。<br>「指定数だけ省略」"));
+assert(html.includes("表示方法を選びます。<br>「省略しない」：すべてのハイフンを表示します。"));
+assert(html.includes("複数指定はカンマ区切りで入力します（例：4,8）。"));
+assert(html.includes("「できるだけ省略」：コードチェンジの位置が必要な箇所を残して省略します。"));
 assert(html.includes("小節位置を調整します。<br>入力例と記号の意味"));
 assert(html.includes("譜面に近い形で確認します。<br>移調、音名表記"));
 assert(html.includes("初期設定値を使う"));
