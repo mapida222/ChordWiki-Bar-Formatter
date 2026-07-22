@@ -27,6 +27,7 @@
 | `PUBLIC-001` | Web版の公開準備と公開前確認 | 進行中 | `README.md`、`PUBLICATION_CHECKLIST.md`、`.gitignore`、`package.json` |
 | `PUBLIC-002` | GitHubトップページの文章・画像改善 | 確認待ち | `README.md`、`docs/images/readme-*.png` |
 | `HELP-001` | 丸い「？」による補足説明 | 有効 | `index.html`、`style.css`、`js/app.js`、`docs/TOOLTIP_HELP_DRAFT.md` |
+| `HELP-002` | ヘルプ画面の見出し・対象枠表記 | 有効 | `index.html`、`tests/help-layout.test.js` |
 
 ## カテゴリ
 
