@@ -68,7 +68,6 @@
   });
   correctionGuideItems.forEach((item) => item.addEventListener("toggle", updateGuideToggleAll));
   updateGuideToggleAll();
-  elements.output.title = "自由に直接編集できます。";
   const HELP_EXAMPLE_PREVIEW_TEXT = [
     "[|][C]あいうえ[G]お　かき[|][Am][--]く[G][--]け[F][----]こ[|]",
     "[|][E]さしす[Am]せそ　たち[|][F][---]つて[D/F#][-]と[----][|]",
