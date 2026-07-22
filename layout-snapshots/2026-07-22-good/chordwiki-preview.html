@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="ja" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>譜面プレビュー</title>
+  <link rel="stylesheet" href="style.css?v=20260722-7">
+</head>
+<body class="score-window-page">
+  <header class="score-window-toolbar">
+    <div class="score-window-heading">
+      <p class="eyebrow">SCORE WINDOW</p>
+      <h1>譜面プレビュー</h1>
+      <p id="score-window-status" class="score-window-status" role="status" aria-live="polite">元画面と同期しています</p>
+    </div>
+    <div class="score-window-controls" aria-label="譜面表示設定">
+      <label class="preview-control" for="window-transpose"><span>移調</span><span class="preview-transpose-stepper"><select id="window-transpose" aria-label="譜面の移調"></select><button id="window-transpose-down" type="button" aria-label="移調を半音下げる">▼</button><button id="window-transpose-up" type="button" aria-label="移調を半音上げる">▲</button></span></label>
+      <label class="preview-control" for="window-spelling"><span>音名</span><select id="window-spelling" aria-label="シャープ・フラット表記">
+        <option value="preserve">元表記</option>
+        <option value="sharp">♯表記</option>
+        <option value="flat">♭表記</option>
+      </select></label>
+      <label class="preview-control" for="window-double-sharp"><span>重♯</span><select id="window-double-sharp" aria-label="ダブルシャープ表記"><option value="##">##</option><option value="x">x</option></select></label>
+      <label class="final-bar-setting" title="{key:}ごとに転調を判定し、bb・##を含む異名同音を使い分けます"><input id="window-theoretical" type="checkbox"> <span>キー・転調に合わせて異名同音を自動選択</span></label>
+      <label class="final-bar-setting"><input id="window-bars-through" type="checkbox"> <span>小節線を貫通させる</span></label>
+      <button id="window-copy" class="score-window-button" type="button">表示中の譜面をコピー</button>
+    </div>
+  </header>
+  <main class="score-window-main">
+    <div id="standalone-score-preview" class="chordwiki-preview" aria-label="別画面のChordWiki譜面プレビュー"></div>
+  </main>
+  <script src="js/transposer.js?v=20260716-7"></script>
+  <script src="js/chordwiki-preview.js?v=20260722-3"></script>
+  <script src="js/preview-window.js?v=20260717-6"></script>
+</body>
+</html>
