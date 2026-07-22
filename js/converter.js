@@ -401,11 +401,17 @@
         const spacingGrid = settings.hyphenSpacing > 0 ? settings.hyphenSpacing * (syncopated ? 2 : 1) : 0;
         const shortWidth = spacingGrid > 0 ? segmentWidth % spacingGrid : 0;
         const preposeWidths = syncopated ? [1, 2, 3, 4] : [1, 2];
-        const lyricSpan = Boolean(settings.shortFractionPrepose) && !unit.halfNote && boundaryFraction && preposeWidths.includes(shortWidth) && followingLyric?.kind === "text"
-          ? firstLyricSpan(followingLyric.value)
-          : 0;
+        const firstMarkerEnd = rendered.indexOf("]") + 1;
+        const hasMultipleMarkers = firstMarkerEnd > 0 && rendered.indexOf("[", firstMarkerEnd) >= 0;
+        const candidateLyricSpan = followingLyric?.kind === "text" ? firstLyricSpan(followingLyric.value) : 0;
+        const singleTrailingLyric = candidateLyricSpan > 0 && [...followingLyric.value.trim()].length === 1;
+        const spreadFullMeasureLyric = !syncopated && !unit.halfNote && !unit.accents && !unit.suffixStar
+          && !unit.noLeadingBar && !unit.noTrailingBar && position === 0 && segmentWidth === capacity
+          && remaining === segmentWidth && hasMultipleMarkers && singleTrailingLyric;
+        const moveLyricIntoRhythm = Boolean(settings.shortFractionPrepose) && !unit.halfNote
+          && boundaryFraction && preposeWidths.includes(shortWidth);
+        const lyricSpan = moveLyricIntoRhythm || spreadFullMeasureLyric ? candidateLyricSpan : 0;
         if (lyricSpan) {
-          const firstMarkerEnd = rendered.indexOf("]") + 1;
           parts.push(rendered.slice(0, firstMarkerEnd));
           parts.push(followingLyric.value.slice(0, lyricSpan));
           parts.push(rendered.slice(firstMarkerEnd));

@@ -149,6 +149,33 @@
                                                  "shortFractionPrepose":  0
                                              },
                                 "output":  "[|][A][---]止まっ[D/A][-][----]た手の[|]"
+                            },
+                            {
+                                "name":  "full-measure row correction spreads one lyric character between visible rhythm blocks",
+                                "input":  "[F]入力[G]できま[C]す",
+                                "code":  "448",
+                                "output":  "[|][F][----]入力[G][----]できま[|][C][----]す[----][|]"
+                            },
+                            {
+                                "name":  "full-measure row correction stays contiguous when hyphen spacing is disabled",
+                                "input":  "[C]す",
+                                "code":  "8",
+                                "settings":  {
+                                                 "hyphenSpacing":  0
+                                             },
+                                "output":  "[|][C][--------]す[|]"
+                            },
+                            {
+                                "name":  "full-measure row correction keeps rhythm blocks together before longer lyrics",
+                                "input":  "[C]長い歌詞",
+                                "code":  "8",
+                                "output":  "[|][C][----][----]長い歌詞[|]"
+                            },
+                            {
+                                "name":  "special full-measure rhythm is not spread around lyrics",
+                                "input":  "[C]す",
+                                "code":  "*8",
+                                "output":  "[|][C][========]す[|]"
                             }
                         ],
     "completedCases":  [
