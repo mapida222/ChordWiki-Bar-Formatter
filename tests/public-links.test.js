@@ -14,7 +14,8 @@ assert(html.includes("https://docs.google.com/forms/d/e/1FAIpQLScYAHIEEOtuk8MoQR
 assert(html.includes("https://ja.chordwiki.org/"));
 assert(html.includes("制作："));
 assert(html.includes("© 2026 mapida"));
-assert(html.includes("ChordWiki運営者のmapidaが、個人で制作した非公式ツールです。"));
+assert(html.includes('>ChordWiki公式サイト</a>　非公式ツールです。</p>'));
+assert(!html.includes("ChordWiki運営者のmapidaが、個人で制作した"));
 assert(!html.includes("運営元とは関係ありません"));
 assert(!html.includes("fanbox.cc/manage/plans"));
 assert(!html.includes("1Rm8bOSxlRNkhEa3l8eVPsWUr_OXVBuDFqnoHwc1BMZg/edit"));
