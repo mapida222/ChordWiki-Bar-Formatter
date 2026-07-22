@@ -1152,7 +1152,7 @@
     return output.join("").replace(/[ \t　]+(?=\|)/g, "");
   }
 
-  function hideLyricHyphens(tokens) {
+  function hideLyricHyphens(tokens, includeDenseMeasures = false) {
     if (isCodeOnly(tokens)) return { tokens: [...tokens], hiddenHyphens: 0 };
     const output = [];
     let measure = [];
@@ -1161,7 +1161,7 @@
       const chordCount = chordsOf(measure).length;
       measure.forEach((token) => {
         const pureHyphen = token.kind === "hyphen" && /^-+$/u.test(token.value.replace(/ /g, ""));
-        if (chordCount >= 1 && chordCount < 3 && pureHyphen) hiddenHyphens += rhythmWidth(token);
+        if (chordCount >= 1 && (includeDenseMeasures || chordCount < 3) && pureHyphen) hiddenHyphens += rhythmWidth(token);
         else output.push(token);
       });
       measure = [];
@@ -1185,7 +1185,8 @@
       const result = removeSelectedLyricHyphens(parsed, selectedCounts);
       removedHyphens += result.removedHyphens;
       changedMeasures += result.changedMeasures;
-      const visibility = hideLyricHyphenMarkers ? hideLyricHyphens(result.tokens) : { tokens: result.tokens, hiddenHyphens: 0 };
+      const hideAllLyricHyphens = hideLyricHyphenMarkers === "all";
+      const visibility = hideLyricHyphenMarkers ? hideLyricHyphens(result.tokens, hideAllLyricHyphens) : { tokens: result.tokens, hiddenHyphens: 0 };
       hiddenLyricHyphens += visibility.hiddenHyphens;
       if (!codeOnly) return serializeTokens(padShortTrailingLyric(visibility.tokens), { hyphenSpacing: 0 });
       return serializeCodeOnlyTokens(result.tokens, hyphenSpacing);

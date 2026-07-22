@@ -12,6 +12,49 @@
     statusDetail: $("#status-detail"), toast: $("#toast"), helpDialog: $("#help-dialog"), helpExamplePreview: $("#help-example-preview"), historyDialog: $("#history-dialog"), historyList: $("#history-list"), historyPreviewPanel: $("#history-preview-panel"), historyPreview: $("#history-score-preview"), historyPreviewTitle: $("#history-preview-title"), historyPreviewDate: $("#history-preview-date"), historyRestore: $("#history-restore"), historyDeleteAll: $("#history-delete-all"), keySettingsDialog: $("#key-settings-dialog"), keySettingsList: $("#key-settings-list"), keySettingsPreview: $("#key-settings-score-preview")
   };
   const correctionGuideItems = [...document.querySelectorAll(".guide-item")];
+  const contextHelpButtons = [...document.querySelectorAll(".context-help-button")];
+  let contextHelpHoverTimer;
+  let openContextHelpButton = null;
+  function closeContextHelp(button = openContextHelpButton) {
+    if (!button) return;
+    const popover = document.getElementById(button.getAttribute("aria-controls"));
+    if (popover) popover.hidden = true;
+    button.setAttribute("aria-expanded", "false");
+    button.dataset.pinned = "false";
+    if (openContextHelpButton === button) openContextHelpButton = null;
+  }
+  function showContextHelp(button, pinned = false) {
+    if (openContextHelpButton && openContextHelpButton !== button) closeContextHelp(openContextHelpButton);
+    const popover = document.getElementById(button.getAttribute("aria-controls"));
+    if (!popover) return;
+    popover.hidden = false;
+    button.setAttribute("aria-expanded", "true");
+    button.dataset.pinned = String(pinned);
+    openContextHelpButton = button;
+  }
+  contextHelpButtons.forEach((button) => {
+    const wrapper = button.closest(".context-help");
+    wrapper.addEventListener("pointerenter", () => {
+      clearTimeout(contextHelpHoverTimer);
+      contextHelpHoverTimer = setTimeout(() => showContextHelp(button), 650);
+    });
+    wrapper.addEventListener("pointerleave", () => {
+      clearTimeout(contextHelpHoverTimer);
+      if (button.dataset.pinned !== "true") closeContextHelp(button);
+    });
+    button.addEventListener("click", (event) => {
+      event.stopPropagation();
+      const pinned = button.dataset.pinned === "true";
+      if (pinned) closeContextHelp(button);
+      else showContextHelp(button, true);
+    });
+  });
+  document.addEventListener("click", (event) => {
+    if (!event.target.closest(".context-help")) closeContextHelp();
+  });
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") closeContextHelp();
+  });
   function updateGuideToggleAll() {
     if (!elements.guideToggleAll) return;
     const allOpen = correctionGuideItems.length > 0 && correctionGuideItems.every((item) => item.open);
@@ -789,7 +832,7 @@
     outputHighlightValue = mergedValue;
   }
   function updateRenderedOutputs(force = false, changedLineIndices = null) {
-    const lyricHyphenMode = ["target", "minimize", "show"].includes(elements.lyricHyphenMode.value)
+    const lyricHyphenMode = ["show", "target", "minimize", "all"].includes(elements.lyricHyphenMode.value)
       ? elements.lyricHyphenMode.value
       : "target";
     const parsedTargets = parseRemovalTargets(elements.removalTargets.value);
@@ -813,7 +856,8 @@
     }
     const activeSettings = validatedSettings({ persist: false });
     const hyphenSpacing = activeSettings.valid ? activeSettings.values.hyphenSpacing : 0;
-    const result = CBFConverter.renderCompletedOutput(convertedOutput, targets, hyphenSpacing, lyricHyphenMode === "minimize");
+    const visibilityMode = lyricHyphenMode === "all" ? "all" : lyricHyphenMode === "minimize";
+    const result = CBFConverter.renderCompletedOutput(convertedOutput, targets, hyphenSpacing, visibilityMode);
     const nextOutput = renderBars(result.output, elements.plainEditBars.checked);
     if (changedLineIndices?.size) {
       const previousValue = elements.output.value;
@@ -836,6 +880,8 @@
     updateLineNumbers(elements.finalOutput, elements.finalOutputLines);
     elements.removalSummary.textContent = lyricHyphenMode === "minimize"
       ? `歌詞行 ${result.hiddenLyricHyphens}個を省略（3コード以上は保持）`
+      : lyricHyphenMode === "all"
+      ? `歌詞行 ${result.hiddenLyricHyphens}個をすべて省略`
       : lyricHyphenMode === "show" || targets.length === 0 || targets.includes(0)
       ? "すべて表示"
       : `削除 ${result.removedHyphens}個 / ${result.changedMeasures}小節`;
@@ -949,7 +995,7 @@
     elements.removalTargets.value = removalLinked
       ? String(converterSettings.hyphenUnit)
       : (state.removalTargets ?? String(converterSettings.hyphenUnit));
-    elements.lyricHyphenMode.value = ["target", "minimize", "show"].includes(state.lyricHyphenMode)
+    elements.lyricHyphenMode.value = ["show", "target", "minimize", "all"].includes(state.lyricHyphenMode)
       ? state.lyricHyphenMode
       : (state.hideLyricHyphens ? "minimize" : "target");
     updateLyricHyphenControls();
@@ -2143,7 +2189,7 @@
     : (localStorage.getItem(REMOVAL_STORAGE_KEY) ?? String(loadedSettings.hyphenUnit));
   {
     const savedLyricHyphenMode = localStorage.getItem(LYRIC_HYPHEN_MODE_STORAGE_KEY);
-    elements.lyricHyphenMode.value = ["target", "minimize", "show"].includes(savedLyricHyphenMode)
+    elements.lyricHyphenMode.value = ["show", "target", "minimize", "all"].includes(savedLyricHyphenMode)
       ? savedLyricHyphenMode
       : (localStorage.getItem(LEGACY_HIDE_LYRIC_HYPHENS_STORAGE_KEY) === "true" ? "minimize" : "target");
     updateLyricHyphenControls();
