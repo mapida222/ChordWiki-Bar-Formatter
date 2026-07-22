@@ -135,7 +135,7 @@
   const SCORE_WINDOW_CHANNEL = "chordWikiBarFormatter.scoreWindow.channel.v1";
   const REMOVAL_LINKED_STORAGE_KEY = "chordWikiBarFormatter.hyphenRemovalLinked.v1";
   const CURRENT_STATE_UPDATED_AT_KEY = "chordWikiBarFormatter.currentStateUpdatedAt.v1";
-  const HISTORY_DELAY_MS = 10 * 60 * 1000;
+  const HISTORY_DELAY_MS = 1 * 60 * 1000;
   const CRASH_DELAY_MS = 5 * 60 * 1000;
   const historyStore = CBFHistoryStore.createStore(localStorage);
   try {
@@ -923,7 +923,7 @@
   function collectHistorySnapshot() {
     return { historyText: elements.output.value };
   }
-  function saveCurrentHistory(manual = false) {
+  function saveCurrentHistory(manual = false, silent = false) {
     if (!elements.output.value.trim()) {
       if (manual) notify("使用履歴へ追加する変換後テキストがありません。", true);
       return false;
@@ -931,7 +931,7 @@
     try {
       const result = historyStore.saveHistory(collectHistorySnapshot());
       if (result.saved) {
-        notify(manual ? "使用履歴へ追加しました。" : "使用履歴へ保存しました。");
+        if (!silent) notify(manual ? "使用履歴へ追加しました。" : "使用履歴へ保存しました。");
         if (elements.historyDialog.open) renderHistoryList();
         return true;
       }
@@ -1748,7 +1748,7 @@
   });
   $("#copy-output").addEventListener("click", async () => {
     if (!elements.output.value) return notify("コピーする結果がありません。", true);
-    try { await writeClipboard(elements.output.value); notify("変換結果をコピーしました。"); }
+    try { await writeClipboard(elements.output.value); saveCurrentHistory(false, true); notify("変換結果をコピーしました。"); }
     catch (_error) { notify("コピーできませんでした。結果を選択してコピーしてください。", true); elements.output.select(); }
   });
   elements.output.addEventListener("input", () => {
@@ -1851,7 +1851,7 @@
   });
   $("#copy-final-output").addEventListener("click", async () => {
     if (!elements.finalOutput.value) return notify("コピーする譜面用テキストがありません。", true);
-    try { await writeClipboard(elements.finalOutput.value); notify("譜面用テキストをコピーしました。"); }
+    try { await writeClipboard(elements.finalOutput.value); saveCurrentHistory(false, true); notify("譜面用テキストをコピーしました。"); }
     catch (_error) { notify("コピーできませんでした。変換後の内容を選択してコピーしてください。", true); elements.output.select(); }
   });
   function setCommittedOutputOpen(open) {
@@ -1889,7 +1889,7 @@
   });
   $("#copy-committed-output").addEventListener("click", async () => {
     if (!elements.committedOutput.value) return notify("コピーする確定譜面がありません。", true);
-    try { await writeClipboard(elements.committedOutput.value); notify("確定譜面をコピーしました。"); }
+    try { await writeClipboard(elements.committedOutput.value); saveCurrentHistory(false, true); notify("確定譜面をコピーしました。"); }
     catch (_error) { notify("確定譜面をコピーできませんでした。", true); elements.committedOutput.select(); }
   });
   $("#settings-reset").addEventListener("click", () => {
