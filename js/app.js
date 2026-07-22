@@ -162,15 +162,20 @@
   const INITIAL_INPUT = [
     "{title:変換テスト用サンプル}",
     "{subtitle:これは実在する楽曲ではありません}",
-    "{comment:コード・小節線・行修正・譜面プレビューの確認用です}",
+    "{comment:ChordWiki Bar Formatterの機能確認用ダミー歌詞です}",
+    "{c:BPM=100　　4/4拍子　-：8分音符　＝：16分音符　>：8分音符アクセント　≧：16分音符アクセント　○：白玉}",
     "{key:C}",
-    "[C]コード譜を[G]貼り付けると　[Am]小節線と[F]長さを自動で補います",
-    "[Dm]曲に合わない[G]部分は　[C]行修正で[Am]整えられます",
-    "[F]アクセントや[G]細かな長さも　[Em]記号で[Am]指定できます",
+    "[C]ChordPro形式の[G]テキストを貼ると　[Am]自動[G]で小節線[F]と長さ記号を追記します",
+    "[E]原曲と異[Am]なる部分は　[F]行修正の[D/F#]数値を変えて",
+    "[Gsus4]ハイフン数を[G]合わせます　[G#dim]",
     "",
-    "[F]変換結果を[G]確認して　[Csus4]譜面プレビューへ[C]"
+    "[Am]＝(イコール)表示は*([G#aug]アスタリスク)で、[C/G]＞(アクセント)は[F#m7-5]^(キャレット)で",
+    "[F]入力[G]できま[C]す",
+    "[F]細かい部分は[G]手動修正が[E7]必[E7/G#]要[Am7]です🙏🏻",
+    "[F]編集[G]お疲れ[Csus4]様で[C]す！（ありが[N.C.]とう！）"
   ].join("\n");
-  const INITIAL_CORRECTION = ["", "", "", "", "4444", "43^4a", "44^*4a", "", "4433"].join("\n");
+  const INITIAL_CORRECTION = ["", "", "", "", "", "88448", "3535", "844", "", "4444", "628", "4s433a", "444^22"].join("\n");
+  const INITIAL_SETTINGS = { measureCapacity: 8, hyphenUnit: 4, hyphenSpacing: 4, shortFractionPrepose: 1, showContinuationChord: 0 };
   const CUSTOM_PROFILE_NAME_STORAGE_KEY = "chordWikiBarFormatter.customProfileName.v1";
   const RECOMMENDED_VALUES = {
     fourFour: [0, 4, 8, 16, 24, 32],
@@ -1497,9 +1502,29 @@
   });
   $("#insert-input-sample").addEventListener("click", () => {
     if (elements.input.value.trim() && !window.confirm("入力中の内容をサンプルで上書きします。よろしいですか？")) return;
+    CBFSettings.setActiveProfile("fourFour");
+    CBFSettings.save(INITIAL_SETTINGS, "fourFour");
+    renderSettings(INITIAL_SETTINGS);
+    updateSettingsProfileUI();
+    elements.lyricHyphenMode.value = "target";
+    elements.removalTargets.value = "8";
+    removalLinked = true;
+    elements.removalLinked.checked = true;
+    elements.plainEditBars.checked = false;
+    updateLyricHyphenControls();
+    localStorage.setItem(REMOVAL_STORAGE_KEY, "8");
+    persistFeatureSettings();
     elements.input.value = INITIAL_INPUT;
     elements.correction.value = INITIAL_CORRECTION;
     correctionSlotCounts = INITIAL_CORRECTION.split("\n").map((line) => CBFCorrectionInput.groups(line).length);
+    authoredWhiteNoteCounts = correctionSlotCounts.map(() => 0);
+    rowAdoptionModes = INITIAL_CORRECTION.split("\n").map((line) => line ? "edit" : "");
+    correctionDisplayStates = rowAdoptionModes.map((mode) => mode ? "edit" : "none");
+    lastAppliedCorrectionLines = [];
+    inferenceFallbackCorrectionLines = [];
+    manualOutputLines.clear();
+    outputManuallyEdited = false;
+    persistRowAdoptionModes();
     localStorage.setItem(INPUT_STORAGE_KEY, elements.input.value);
     localStorage.setItem(CORRECTION_STORAGE_KEY, elements.correction.value);
     updateCount(elements.input, elements.inputCount);

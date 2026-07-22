@@ -10,12 +10,17 @@ const readme = fs.readFileSync(path.join(root, "README.md"), "utf8");
 const captureGuide = fs.readFileSync(path.join(root, "docs/README_CAPTURE_SAMPLE.md"), "utf8");
 
 for (const expected of [
-  "{comment:コード・小節線・行修正・譜面プレビューの確認用です}",
-  "[C]コード譜を[G]貼り付けると",
-  "[Dm]曲に合わない[G]部分は",
-  "[F]アクセントや[G]細かな長さも",
-  "[F]変換結果を[G]確認して",
-  'const INITIAL_CORRECTION = ["", "", "", "", "4444", "43^4a", "44^*4a", "", "4433"].join("\\n");'
+  "{comment:ChordWiki Bar Formatterの機能確認用ダミー歌詞です}",
+  "{c:BPM=100　　4/4拍子",
+  "[C]ChordPro形式の[G]テキストを貼ると",
+  "[F]細かい部分は[G]手動修正が",
+  "[F]編集[G]お疲れ",
+  'const INITIAL_CORRECTION = ["", "", "", "", "", "88448", "3535", "844", "", "4444", "628", "4s433a", "444^22"].join("\\n");',
+  "const INITIAL_SETTINGS = { measureCapacity: 8, hyphenUnit: 4, hyphenSpacing: 4, shortFractionPrepose: 1, showContinuationChord: 0 };",
+  'elements.lyricHyphenMode.value = "target";',
+  'elements.removalTargets.value = "8";',
+  "elements.removalLinked.checked = true;",
+  "elements.plainEditBars.checked = false;"
 ]) {
   assert(app.includes(expected), `missing app sample: ${expected}`);
 }
