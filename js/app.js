@@ -162,18 +162,15 @@
   const INITIAL_INPUT = [
     "{title:変換テスト用サンプル}",
     "{subtitle:これは実在する楽曲ではありません}",
-    "{comment:ChordWiki Bar Formatterの機能確認用ダミー歌詞です}",
+    "{comment:コード・小節線・行修正・譜面プレビューの確認用です}",
     "{key:C}",
-    "[C]ChordPro形式の[G]テキストを貼ると　[Am]自動[G]で小節線[F]と長さ記号を追記します",
-    "[E]原曲と異[Am]なる部分は　[F]行修正の[D/F#]数値を変えて",
-    "[Gsus4]ハイフン数を[G]合わせます　[G#dim]",
+    "[C]コード譜を[G]貼り付けると　[Am]小節線と[F]長さを自動で補います",
+    "[Dm]曲に合わない[G]部分は　[C]行修正で[Am]整えられます",
+    "[F]アクセントや[G]細かな長さも　[Em]記号で[Am]指定できます",
     "",
-    "[Am]=(イコール)表示は*([G#aug]アスタリスク)で、[C/G]>(アクセント)は[F#m7-5]^(キャレット)で",
-    "[F]入力[G]できま[C]す",
-    "[F]細かい部分は[G]手動修正が[E7]必[E7/G#]要[Am7]です🙏🏻",
-    "[F]編集[G]お疲れ[Csus4]様で[C]す！（ありが[N.C.]とう！）"
+    "[F]変換結果を[G]確認して　[Csus4]譜面プレビューへ[C]"
   ].join("\n");
-  const INITIAL_CORRECTION = ["", "", "", "", "88349", "7944", "8c4", "", "4444", "43^9", "44^*3^*3^*a", "44332"].join("\n");
+  const INITIAL_CORRECTION = ["", "", "", "", "4444", "43^4a", "44^*4a", "", "4433"].join("\n");
   const CUSTOM_PROFILE_NAME_STORAGE_KEY = "chordWikiBarFormatter.customProfileName.v1";
   const RECOMMENDED_VALUES = {
     fourFour: [0, 4, 8, 16, 24, 32],
