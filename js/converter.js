@@ -404,13 +404,8 @@
         const firstMarkerEnd = rendered.indexOf("]") + 1;
         const hasMultipleMarkers = firstMarkerEnd > 0 && rendered.indexOf("[", firstMarkerEnd) >= 0;
         const candidateLyricSpan = followingLyric?.kind === "text" ? firstLyricSpan(followingLyric.value) : 0;
-        const candidateLyric = candidateLyricSpan > 0 ? followingLyric.value.slice(0, candidateLyricSpan) : "";
-        const trailingDecoration = candidateLyricSpan > 0 ? followingLyric.value.slice(candidateLyricSpan).trim() : "";
-        const singleTrailingLyric = candidateLyricSpan > 0
-          && [...candidateLyric].filter((character) => !/\p{Mark}/u.test(character)).length === 1
-          && !/[\p{Letter}\p{Number}]/u.test(trailingDecoration);
-        const spreadFullMeasureLyric = (!syncopated || (!unit.syncBefore && !unit.syncAfter))
-          && !unit.halfNote && !unit.accents && !unit.suffixStar
+        const singleTrailingLyric = candidateLyricSpan > 0 && [...followingLyric.value.trim()].length === 1;
+        const spreadFullMeasureLyric = !syncopated && !unit.halfNote && !unit.accents && !unit.suffixStar
           && !unit.noLeadingBar && !unit.noTrailingBar && position === 0 && segmentWidth === capacity
           && remaining === segmentWidth && hasMultipleMarkers && singleTrailingLyric;
         const moveLyricIntoRhythm = Boolean(settings.shortFractionPrepose) && !unit.halfNote

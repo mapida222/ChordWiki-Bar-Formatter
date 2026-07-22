@@ -157,10 +157,10 @@
                                 "output":  "[|][F][----]入力[G][----]できま[|][C][----]す[----][|]"
                             },
                             {
-                                "name":  "full-measure row correction keeps trailing emoji after the distributed lyric character",
+                                "name":  "syncopated line keeps phrase-ambiguous trailing lyrics after the full-measure rhythm",
                                 "input":  "[F]細かい部分は[G]手動修正が[E7]必[E7/G#]要[Am7]です🙏🏻",
                                 "code":  "4s433a",
-                                "output":  "[|][F][---=]細かい部分は[G][=]手[----]動修正が[|][E7][---]必[E7/G#][---]要[Am7][--]で[|][----]す[----]🙏🏻[|]"
+                                "output":  "[|][F][---=]細かい部分は[G][=]手[----]動修正が[|][E7][---]必[E7/G#][---]要[Am7][--]で[|][----][----]す🙏🏻[|]"
                             },
                             {
                                 "name":  "full-measure row correction stays contiguous when hyphen spacing is disabled",
