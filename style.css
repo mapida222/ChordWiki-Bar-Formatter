@@ -258,7 +258,7 @@ main { padding: 12px 0 28px; }
 .removal-controls > select:disabled, .removal-controls > input:disabled { cursor: not-allowed; opacity: .58; }
 .removal-linked-setting { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; cursor: pointer; }
 .removal-linked-setting input { width: 15px; height: 15px; margin: 0; accent-color: var(--accent); }
-#removal-summary { grid-column: 1 / -1; color: var(--accent); text-align: right; }
+#removal-summary { z-index: 1; grid-column: 2; grid-row: 1; align-self: center; justify-self: end; overflow: hidden; max-width: calc(100% - 9em); margin-right: 7px; padding-left: 8px; color: var(--accent); background: color-mix(in srgb, var(--panel) 84%, var(--result-line)); font: 800 calc(var(--editor-font-size) * .6)/1.2 var(--sans); text-align: right; text-overflow: ellipsis; white-space: nowrap; pointer-events: none; }
 .output-card .editor-heading, .final-card .editor-heading { flex-wrap: wrap; }
 .output-card .editor-tools { flex-wrap: wrap; justify-content: flex-end; }
 .preview-heading-tools { flex: 0 0 auto; justify-content: flex-end; }
@@ -660,7 +660,6 @@ textarea::placeholder { color: var(--muted); opacity: .7; }
   .removal-controls > select { grid-column: 2; grid-row: 1; }
   .removal-linked-setting { grid-column: 1; grid-row: 2; }
   .removal-controls > input[type="text"] { grid-column: 2; grid-row: 2; }
-  #removal-summary { grid-column: 1 / -1; grid-row: 3; text-align: left; }
   .help-io-flow { grid-template-columns: 1fr; grid-template-areas: "input" "forward" "output" "turn" "correction" "back" "preview"; }
   .help-flow-forward, .help-flow-back { transform: rotate(90deg); }
   .help-flow-grid { grid-template-columns: 1fr; gap: 5px; }
