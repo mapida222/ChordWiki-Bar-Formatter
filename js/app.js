@@ -1715,12 +1715,28 @@
     if (currentLines.length !== lastConvertedInputLines.length) {
       const previousLines = [...lastConvertedInputLines];
       const mapping = CBFConverter.alignMusicLineIndices(previousLines, currentLines);
+      const lineBreakOnly = previousLines.join("") === currentLines.join("");
+      const chordCounts = (lines) => lines.map((line) => CBFConverter.parseTokens(line).filter((token) => token.kind === "chord").length);
+      const previousChordCounts = lineBreakOnly ? chordCounts(previousLines) : [];
+      const currentChordCounts = lineBreakOnly ? chordCounts(currentLines) : [];
+      const redistributeCorrections = (values) => lineBreakOnly
+        ? CBFCorrectionInput.redistributeForLineBreaks(values, previousChordCounts, currentChordCounts)
+        : null;
       const remapArray = (values, fallback) => currentLines.map((_line, index) => {
         const previousIndex = mapping[index];
         return previousIndex >= 0 ? values[previousIndex] ?? fallback : fallback;
       });
       const remapText = (value) => remapArray(String(value || "").split(/\r\n|\r|\n/), "").join("\n");
       const previousCorrectionLines = elements.correction.value.split(/\r\n|\r|\n/);
+      const redistributedCorrections = redistributeCorrections(previousCorrectionLines);
+      const remapCorrectionArray = (values, fallback = "") => {
+        const redistributed = redistributeCorrections(values);
+        return currentLines.map((_line, index) => {
+          const previousIndex = mapping[index];
+          if (previousIndex >= 0) return values[previousIndex] ?? fallback;
+          return redistributed?.preserved[index] ? redistributed.lines[index] : fallback;
+        });
+      };
       const previousOutputLines = elements.output.value.split(/\r\n|\r|\n/);
       const previousManualOutputLines = new Set(manualOutputLines);
       const changedLines = new Set();
@@ -1728,15 +1744,24 @@
         const previousIndex = mapping[index];
         if (previousIndex < 0 || line !== previousLines[previousIndex]) changedLines.add(index);
       });
-      elements.correction.value = remapArray(previousCorrectionLines, "").join("\n");
-      inferenceFallbackCorrectionLines = remapArray(inferenceFallbackCorrectionLines, "");
-      lastAppliedCorrectionLines = remapArray(lastAppliedCorrectionLines, "");
-      correctionSlotCounts = remapArray(correctionSlotCounts, 0);
+      elements.correction.value = remapCorrectionArray(previousCorrectionLines).join("\n");
+      inferenceFallbackCorrectionLines = remapCorrectionArray(inferenceFallbackCorrectionLines);
+      lastAppliedCorrectionLines = remapCorrectionArray(lastAppliedCorrectionLines);
+      correctionSlotCounts = currentLines.map((_line, index) => {
+        const previousIndex = mapping[index];
+        if (previousIndex >= 0) return correctionSlotCounts[previousIndex] || 0;
+        return redistributedCorrections?.preserved[index] ? CBFCorrectionInput.groups(redistributedCorrections.lines[index]).length : 0;
+      });
       authoredWhiteNoteCounts = remapArray(authoredWhiteNoteCounts, 0);
-      correctionDisplayStates = remapArray(correctionDisplayStates, "none");
+      correctionDisplayStates = currentLines.map((_line, index) => {
+        const previousIndex = mapping[index];
+        if (previousIndex >= 0) return correctionDisplayStates[previousIndex] || "none";
+        return redistributedCorrections?.preserved[index] ? "edit" : "none";
+      });
       rowAdoptionModes = currentLines.map((_line, index) => {
         const previousIndex = mapping[index];
-        return previousIndex >= 0 ? rowAdoptionModes[previousIndex] || "" : "";
+        if (previousIndex >= 0) return rowAdoptionModes[previousIndex] || "";
+        return redistributedCorrections?.preserved[index] && redistributedCorrections.lines[index] ? "edit" : "";
       });
       manualOutputLines = new Set();
       const remappedOutputLines = remapArray(previousOutputLines, "");
@@ -1749,7 +1774,11 @@
       correctionUndoStack = correctionUndoStack.map(remapText);
       correctionRedoStack = correctionRedoStack.map(remapText);
       correctionHistoryValue = remapText(correctionHistoryValue);
-      lastConvertedInputLines = remapArray(previousLines, "");
+      lastConvertedInputLines = currentLines.map((line, index) => {
+        const previousIndex = mapping[index];
+        if (previousIndex >= 0) return previousLines[previousIndex] || "";
+        return redistributedCorrections?.preserved[index] ? line : "";
+      });
       persistRowAdoptionModes();
       localStorage.setItem(CORRECTION_STORAGE_KEY, elements.correction.value);
       updateCorrectionHistoryButtons();

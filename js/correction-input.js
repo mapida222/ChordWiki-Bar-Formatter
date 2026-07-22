@@ -13,6 +13,60 @@
     return String(line || "").match(GROUP_PATTERN) || [];
   }
 
+  function redistributeForLineBreaks(previousLines, previousSlotCounts, currentSlotCounts) {
+    const flattened = [];
+    (previousLines || []).forEach((line, lineIndex) => {
+      const slotCount = Math.max(0, Number(previousSlotCounts?.[lineIndex]) || 0);
+      const command = String(line || "").trim().toLowerCase();
+      if (command === "n" || command === "s") {
+        for (let index = 0; index < slotCount; index += 1) flattened.push({ command });
+        return;
+      }
+      const text = String(line || "");
+      const matches = [...text.matchAll(new RegExp(GROUP_SOURCE, "gi"))];
+      if (matches.length !== slotCount) {
+        for (let index = 0; index < slotCount; index += 1) flattened.push(null);
+        return;
+      }
+      matches.forEach((match, index) => {
+        const previous = matches[index - 1];
+        const separatorBefore = previous
+          ? text.slice(previous.index + previous[0].length, match.index).replace(/[^s|]/gi, "")
+          : "";
+        flattened.push({ value: match[0], separatorBefore });
+      });
+    });
+
+    const expectedSlots = (currentSlotCounts || []).reduce((sum, count) => sum + Math.max(0, Number(count) || 0), 0);
+    if (flattened.length !== expectedSlots) return null;
+    let offset = 0;
+    const preserved = [];
+    const lines = (currentSlotCounts || []).map((count, lineIndex) => {
+      const slotCount = Math.max(0, Number(count) || 0);
+      const items = flattened.slice(offset, offset + slotCount);
+      offset += slotCount;
+      if (!slotCount) {
+        preserved[lineIndex] = true;
+        return "";
+      }
+      if (items.every((item) => item?.command === "n")) {
+        preserved[lineIndex] = true;
+        return "n";
+      }
+      if (items.every((item) => item?.command === "s")) {
+        preserved[lineIndex] = true;
+        return "s";
+      }
+      if (!items.every((item) => item?.value)) {
+        preserved[lineIndex] = false;
+        return "";
+      }
+      preserved[lineIndex] = true;
+      return items.map((item, index) => `${index ? item.separatorBefore : ""}${item.value}`).join("");
+    });
+    return { lines, preserved };
+  }
+
   function beatCharacters(line) {
     return [...String(line || "").matchAll(BEAT_CHARACTER_PATTERN)];
   }
@@ -153,5 +207,5 @@
     }).join("\n");
   }
 
-  window.CBFCorrectionInput = { groups, beatCharacters, normalizeLine, modifierInsertionAtLineEnd, needsInsertedWhiteNoteDuration, smartBeatEdit, whiteNoteEdit, nextLineStart, caretAfterLineEdit, overwritePastedRows, overwritePastedLine, appendBeatSlot, migrateLegacyText };
+  window.CBFCorrectionInput = { groups, redistributeForLineBreaks, beatCharacters, normalizeLine, modifierInsertionAtLineEnd, needsInsertedWhiteNoteDuration, smartBeatEdit, whiteNoteEdit, nextLineStart, caretAfterLineEdit, overwritePastedRows, overwritePastedLine, appendBeatSlot, migrateLegacyText };
 }());
