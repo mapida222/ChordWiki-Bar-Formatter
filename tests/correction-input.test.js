@@ -13,6 +13,18 @@ const settings = {
   showContinuationChord: 0
 };
 
+[
+  ["４", "4"],
+  ["Ａ", "a"],
+  ["ｉ", "i"],
+  ["＠", "@"],
+  ["＊", "*"],
+  ["＾", "^"],
+  ["｜", "|"]
+].forEach(([input, expected]) => {
+  assert.strictEqual(CBFCorrectionInput.normalizeInputKey(input), expected, `${input} must use the same overwrite path as ${expected}`);
+});
+
 const beatCodes = [
   ...Array.from({ length: 10 }, (_, value) => [String(value), value]),
   ...Array.from({ length: 7 }, (_, offset) => [String.fromCharCode("a".charCodeAt(0) + offset), 10 + offset]),

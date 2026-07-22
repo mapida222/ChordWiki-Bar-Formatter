@@ -6,6 +6,17 @@
   const PART_PATTERN = new RegExp(`${GROUP_SOURCE}|s|\\|`, "gi");
   const BEAT_CHARACTER_PATTERN = /[0-9a-i@]/gi;
 
+  function normalizeInputKey(key) {
+    const value = String(key || "");
+    if (value.length !== 1) return "";
+    const code = value.charCodeAt(0);
+    if (code >= 0xff10 && code <= 0xff19) return String.fromCharCode(code - 0xfee0);
+    if (code >= 0xff21 && code <= 0xff29) return String.fromCharCode(code - 0xfee0).toLowerCase();
+    if (code >= 0xff41 && code <= 0xff49) return String.fromCharCode(code - 0xfee0);
+    const fullWidthSymbols = { "＠": "@", "＊": "*", "＾": "^", "｜": "|" };
+    return (fullWidthSymbols[value] || value).toLowerCase();
+  }
+
   function groups(line) {
     const value = String(line || "").trim().toLowerCase();
     if (value === "n" || value === "s") return [];
@@ -207,5 +218,5 @@
     }).join("\n");
   }
 
-  window.CBFCorrectionInput = { groups, redistributeForLineBreaks, beatCharacters, normalizeLine, modifierInsertionAtLineEnd, needsInsertedWhiteNoteDuration, smartBeatEdit, whiteNoteEdit, nextLineStart, caretAfterLineEdit, overwritePastedRows, overwritePastedLine, appendBeatSlot, migrateLegacyText };
+  window.CBFCorrectionInput = { groups, redistributeForLineBreaks, beatCharacters, normalizeInputKey, normalizeLine, modifierInsertionAtLineEnd, needsInsertedWhiteNoteDuration, smartBeatEdit, whiteNoteEdit, nextLineStart, caretAfterLineEdit, overwritePastedRows, overwritePastedLine, appendBeatSlot, migrateLegacyText };
 }());
