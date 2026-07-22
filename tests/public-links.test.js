@@ -17,11 +17,13 @@ assert(html.includes("© 2026 mapida"));
 assert(html.includes("ChordWikiの非公式ツールです。運営元とは関係ありません。"));
 assert(!html.includes("fanbox.cc/manage/plans"));
 assert(!html.includes("1Rm8bOSxlRNkhEa3l8eVPsWUr_OXVBuDFqnoHwc1BMZg/edit"));
-assert.strictEqual((html.match(/class="community-link /g) || []).length, 3);
-assert(css.includes(".community-links { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));"));
-assert(css.includes(".community-heading h2 { color: var(--muted); font-size: .78rem;"));
-assert(css.includes(".community-panel { width: min(100%, 760px);"));
-assert(css.includes("min-height: 54px;"));
+assert(html.includes("<span>意見・要望</span>"));
+assert(html.includes('<details class="support-menu">'));
+assert(html.includes("<span>応援する</span>"));
+assert.strictEqual((html.match(/class="support-choice /g) || []).length, 2);
+assert(css.includes(".community-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));"));
+assert(css.includes(".community-panel { width: min(100%, 460px);"));
+assert(css.includes(".support-menu[open] .support-menu-caret"));
 assert(!css.includes("transform: translateY(-2px)"));
 
 console.log("PASS: public feedback, support and credit links");
