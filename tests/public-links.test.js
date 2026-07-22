@@ -23,7 +23,7 @@ assert(html.includes("ご意見・ご要望（Googleフォーム）"));
 assert(html.includes('class="community-feedback-icon" aria-hidden="true">✉</span>'));
 assert(html.includes("<h3>ご意見・応援 <span>/ LINKS</span></h3>"));
 assert(html.includes('<details class="support-menu">'));
-assert(html.includes("<span>応援する</span>"));
+assert(html.includes("<span>開発を応援する</span>"));
 assert(html.includes("<strong>単発応援/BOOTH</strong>"));
 assert(html.includes("<strong>継続応援/FANBOX</strong>"));
 assert(!html.includes("単発・100円から"));
