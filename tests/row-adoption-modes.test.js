@@ -48,6 +48,6 @@ assert(css.includes('.correction-modes { z-index: 2; grid-column: 3;'));
 assert(css.includes('button.correction-mode-row[data-mode="direct"]'));
 assert(app.includes('const ROW_MODE_LABELS = { auto: "自動", edit: "行修正", source: "原文" };'));
 assert(app.includes('const directlyEdited = mode === "edit" && manualOutputLines.has(index);'));
-assert(app.includes('if (rowAdoptionModes[index] !== "source") rowAdoptionModes[index] = "auto";'));
+assert(app.includes('if (musicStructureChanged && rowAdoptionModes[index] !== "source") rowAdoptionModes[index] = "auto";'));
 
 console.log("PASS: automatic, row-edit, direct-edit and source adoption states");

@@ -1343,6 +1343,50 @@
     return mapping;
   }
 
+  function musicLineSignature(line) {
+    const musicTokens = parseTokens(String(line || ""))
+      .filter((token) => token.kind === "chord" || token.kind === "bar" || token.kind === "hyphen")
+      .map((token) => `${token.kind}:${token.value}`);
+    return musicTokens.length ? musicTokens.join("\u0000") : "";
+  }
+
+  function sameMusicStructure(previousLine, currentLine) {
+    return musicLineSignature(previousLine) === musicLineSignature(currentLine);
+  }
+
+  function alignMusicLineIndices(previousLines, currentLines) {
+    const previous = Array.from(previousLines || [], String);
+    const current = Array.from(currentLines || [], String);
+    const mapping = alignLineIndices(previous, current);
+    const anchors = [{ current: -1, previous: -1 }];
+    mapping.forEach((previousIndex, currentIndex) => {
+      if (previousIndex >= 0) anchors.push({ current: currentIndex, previous: previousIndex });
+    });
+    anchors.push({ current: current.length, previous: previous.length });
+    for (let anchorIndex = 0; anchorIndex + 1 < anchors.length; anchorIndex += 1) {
+      const left = anchors[anchorIndex];
+      const right = anchors[anchorIndex + 1];
+      const previousStart = left.previous + 1;
+      const currentStart = left.current + 1;
+      const previousSlice = previous.slice(previousStart, right.previous);
+      const currentSlice = current.slice(currentStart, right.current);
+      if (!previousSlice.length || !currentSlice.length) continue;
+      const previousKeys = previousSlice.map((line) => {
+        const signature = musicLineSignature(line);
+        return signature ? `music:${signature}` : `text:${line}`;
+      });
+      const currentKeys = currentSlice.map((line) => {
+        const signature = musicLineSignature(line);
+        return signature ? `music:${signature}` : `text:${line}`;
+      });
+      const segmentMapping = alignLineIndices(previousKeys, currentKeys);
+      segmentMapping.forEach((previousIndex, currentIndex) => {
+        if (previousIndex >= 0) mapping[currentStart + currentIndex] = previousStart + previousIndex;
+      });
+    }
+    return mapping;
+  }
+
   function addedCharacterIndices(sourceText, outputText) {
     const added = [];
     const sourceLines = String(sourceText || "").replace(/\r\n?/g, "\n").split("\n");
@@ -1449,5 +1493,5 @@
     return [...new Set(remapped)].sort((left, right) => left - right);
   }
 
-  window.CBFConverter = { convertChordText, parseTokens, isChordSymbol, normalizeChordSymbol, moveDelayedRhythmAfterChord, suppressTrailingBarAfterParenthesizedFinalChord, renderWithBeatCode, mergeCorrectionScope, renderCompletedOutput, inferBeatCodeFromRenderedLine, mergeChangedLines, alignLineIndices, addedCharacterIndices, remapTrackedCharacterIndices, addContinuationChordsToManualRhythm, analyzeAuthoredMeasureCapacity };
+  window.CBFConverter = { convertChordText, parseTokens, isChordSymbol, normalizeChordSymbol, moveDelayedRhythmAfterChord, suppressTrailingBarAfterParenthesizedFinalChord, renderWithBeatCode, mergeCorrectionScope, renderCompletedOutput, inferBeatCodeFromRenderedLine, mergeChangedLines, alignLineIndices, musicLineSignature, sameMusicStructure, alignMusicLineIndices, addedCharacterIndices, remapTrackedCharacterIndices, addContinuationChordsToManualRhythm, analyzeAuthoredMeasureCapacity };
 }());

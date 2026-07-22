@@ -1219,11 +1219,14 @@
     }
     updateMeasureCapacityWarning(settings.values);
     const sourceChanged = new Set(sourceChangedLineIndices || []);
+    const currentInputLines = elements.input.value.split(/\r\n|\r|\n/);
     const currentCorrectionLines = elements.correction.value.split(/\r\n|\r|\n/);
     const rowCorrections = refreshCorrections
       ? []
       : currentCorrectionLines.map((line, index) => {
-        if (sourceChanged.has(index) && rowAdoptionModes[index] !== "source") return "";
+        const musicStructureChanged = sourceChanged.has(index)
+          && !CBFConverter.sameMusicStructure(lastConvertedInputLines[index] || "", currentInputLines[index] || "");
+        if (musicStructureChanged && rowAdoptionModes[index] !== "source") return "";
         if (line === (inferenceFallbackCorrectionLines[index] || "")) return "";
         return line;
       });
@@ -1713,20 +1716,55 @@
     updateLineNumbers(elements.input, elements.inputLines);
     const currentLines = elements.input.value.split(/\r\n|\r|\n/);
     if (currentLines.length !== lastConvertedInputLines.length) {
-      const mapping = CBFConverter.alignLineIndices(lastConvertedInputLines, currentLines);
+      const previousLines = [...lastConvertedInputLines];
+      const mapping = CBFConverter.alignMusicLineIndices(previousLines, currentLines);
+      const remapArray = (values, fallback) => currentLines.map((_line, index) => {
+        const previousIndex = mapping[index];
+        return previousIndex >= 0 ? values[previousIndex] ?? fallback : fallback;
+      });
+      const remapText = (value) => remapArray(String(value || "").split(/\r\n|\r|\n/), "").join("\n");
+      const previousCorrectionLines = elements.correction.value.split(/\r\n|\r|\n/);
+      const previousOutputLines = elements.output.value.split(/\r\n|\r|\n/);
+      const previousManualOutputLines = new Set(manualOutputLines);
+      const changedLines = new Set();
+      currentLines.forEach((line, index) => {
+        const previousIndex = mapping[index];
+        if (previousIndex < 0 || line !== previousLines[previousIndex]) changedLines.add(index);
+      });
+      elements.correction.value = remapArray(previousCorrectionLines, "").join("\n");
+      inferenceFallbackCorrectionLines = remapArray(inferenceFallbackCorrectionLines, "");
+      lastAppliedCorrectionLines = remapArray(lastAppliedCorrectionLines, "");
+      correctionSlotCounts = remapArray(correctionSlotCounts, 0);
+      authoredWhiteNoteCounts = remapArray(authoredWhiteNoteCounts, 0);
+      correctionDisplayStates = remapArray(correctionDisplayStates, "none");
       rowAdoptionModes = currentLines.map((_line, index) => {
         const previousIndex = mapping[index];
         return previousIndex >= 0 ? rowAdoptionModes[previousIndex] || "" : "";
       });
+      manualOutputLines = new Set();
+      const remappedOutputLines = remapArray(previousOutputLines, "");
+      mapping.forEach((previousIndex, index) => {
+        if (previousIndex >= 0 && previousManualOutputLines.has(previousIndex)) manualOutputLines.add(index);
+      });
+      elements.output.value = remappedOutputLines.join("\n");
+      outputHighlightValue = elements.output.value;
+      outputAddedOffsets.clear();
+      correctionUndoStack = correctionUndoStack.map(remapText);
+      correctionRedoStack = correctionRedoStack.map(remapText);
+      correctionHistoryValue = remapText(correctionHistoryValue);
+      lastConvertedInputLines = remapArray(previousLines, "");
       persistRowAdoptionModes();
+      localStorage.setItem(CORRECTION_STORAGE_KEY, elements.correction.value);
+      updateCorrectionHistoryButtons();
       updateCorrectionModes();
-      scheduleConversion(true);
+      scheduleConversion(false, null, changedLines);
     }
     else {
       const changedLines = new Set();
       currentLines.forEach((line, index) => { if (line !== (lastConvertedInputLines[index] || "")) changedLines.add(index); });
       changedLines.forEach((index) => {
-        if (rowAdoptionModes[index] !== "source") rowAdoptionModes[index] = "auto";
+        const musicStructureChanged = !CBFConverter.sameMusicStructure(lastConvertedInputLines[index] || "", currentLines[index] || "");
+        if (musicStructureChanged && rowAdoptionModes[index] !== "source") rowAdoptionModes[index] = "auto";
       });
       persistRowAdoptionModes();
       updateCorrectionModes();
