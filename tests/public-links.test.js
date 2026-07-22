@@ -22,8 +22,10 @@ assert(html.includes('<details class="support-menu">'));
 assert(html.includes("<span>応援する</span>"));
 assert.strictEqual((html.match(/class="support-choice /g) || []).length, 2);
 assert(css.includes(".community-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));"));
-assert(css.includes(".community-panel { width: min(100%, 460px);"));
+assert(css.includes(".community-panel { width: 100%; min-width: 0;"));
 assert(css.includes(".support-menu[open] .support-menu-caret"));
 assert(!css.includes("transform: translateY(-2px)"));
+assert(html.indexOf('class="status-support-panel"') < html.indexOf('class="community-panel"'));
+assert(html.indexOf('class="community-panel"') < html.indexOf('class="editor-card input-card"'));
 
 console.log("PASS: public feedback, support and credit links");
