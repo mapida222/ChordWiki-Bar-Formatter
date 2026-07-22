@@ -19,5 +19,8 @@ assert(!html.includes("fanbox.cc/manage/plans"));
 assert(!html.includes("1Rm8bOSxlRNkhEa3l8eVPsWUr_OXVBuDFqnoHwc1BMZg/edit"));
 assert.strictEqual((html.match(/class="community-link /g) || []).length, 3);
 assert(css.includes(".community-links { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));"));
+assert(css.includes(".community-heading h2 { color: var(--muted); font-size: .78rem;"));
+assert(css.includes("min-height: 68px;"));
+assert(!css.includes("transform: translateY(-2px)"));
 
 console.log("PASS: public feedback, support and credit links");
