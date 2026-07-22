@@ -12,12 +12,22 @@ assert.strictEqual(converted.correctionErrors.length, 1);
 assert.strictEqual(converted.correctionErrors[0].line, 1);
 assert.ok(converted.correctionErrors[0].message.includes("2個多い"));
 
+const sample = CBFConverter.convertChordText(
+  "[Am]=(イコール)表示は*([G#aug]アスタリスク)で、[C/G]>(アクセント)は[F#m7-5]^(キャレット)で",
+  settings,
+  ["44844"]
+);
+assert.strictEqual(sample.correctionErrors.length, 1);
+assert.strictEqual(sample.correctionErrors[0].line, 1);
+assert.ok(sample.correctionErrors[0].message.includes("1個多い"));
+
 const app = fs.readFileSync(path.join(__dirname, "../js/app.js"), "utf8");
 assert.ok(app.includes("行目を確認"));
-assert.ok(app.includes("変換前から作り直す"));
-assert.ok(app.includes("変換後を残して行修正を合わせる"));
-assert.ok(app.includes("変換前の行へ移動"));
-assert.ok(app.includes("manualOutputLines.delete(lineIndex)"));
-assert.ok(app.includes("manualOutputLines.add(lineIndex)"));
+assert.ok(app.includes("jumpToCorrectionLine(error.line)"));
+assert.ok(app.includes('elements.correctionCard.scrollIntoView({ behavior: "smooth", block: "center" })'));
+assert.ok(!app.includes("support-correction-review"));
+assert.ok(!app.includes("変換前から作り直す"));
+assert.ok(!app.includes("変換後を残して行修正を合わせる"));
+assert.ok(!app.includes("変換前の行へ移動"));
 
-console.log("PASS: row correction mismatch exposes per-line recovery actions");
+console.log("PASS: row correction mismatch jumps directly to the affected correction line");

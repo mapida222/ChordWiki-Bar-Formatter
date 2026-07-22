@@ -1,0 +1,42 @@
+# ChordWiki Bar Formatter 管理ID台帳
+
+チャットをまたいで修正箇所や確認項目を指定するための共通台帳です。
+
+## 運用ルール
+
+- ID形式は `カテゴリ-3桁番号` とする。
+- 同じ機能には同じIDを使い、新しい機能だけ連番を追加する。
+- IDは改番・別用途への再利用・削除をしない。
+- 完了後も記録を残し、必要なら状態を「廃止」に変更する。
+- 報告時は `ROW-001：上書き入力 OK` のように記載する。
+
+## 管理項目
+
+| 管理ID | 対象 | 状態 | 主な場所・基準 |
+|---|---|---|---|
+| `ROW-001` | 行修正の上書き入力 | 有効 | `js/correction-input.js` |
+| `ROW-002` | 行修正内容の変換後への反映 | 有効 | `js/app.js`、`js/converter.js` |
+| `ROW-003` | 行修正記号（0～9、a～i、`*`、`^`、`@`、`s`、縦線、`x`、`n`） | 有効 | `js/correction-input.js`、`js/converter.js` |
+| `CONVERT-001` | 歌詞行のハイフン省略モード | 有効 | `index.html`、`js/app.js`、`js/converter.js` |
+| `CONVERT-002` | 1小節3コード以上でタイミング用ハイフンを保持 | 有効 | `js/converter.js` |
+| `WARNING-001` | 変換前と初期設定の1小節ハイフン数不一致警告 | 有効 | `js/app.js`、`js/converter.js` |
+| `LAYOUT-001` | 行修正枠と変換後枠の入力欄上端を揃える | 有効 | `style.css`、`js/app.js` |
+| `PREVIEW-001` | 譜面プレビューのベスト条件 | 基準 | `LAYOUT_REFERENCE.md`、`layout-snapshots/2026-07-22-good/`、Gitタグ `preview-layout-best-2026-07-22` |
+| `TEST-001` | プロジェクト全体の回帰テスト | 有効 | `tests/*.test.js` |
+| `PROJECT-001` | チャット間で共有する管理ID台帳 | 有効 | `AGENTS.md`、`MANAGEMENT_IDS.md` |
+| `PUBLIC-001` | Web版の公開準備と公開前確認 | 進行中 | `README.md`、`PUBLICATION_CHECKLIST.md`、`.gitignore`、`package.json` |
+
+## カテゴリ
+
+| カテゴリ | 用途 |
+|---|---|
+| `ROW` | 行修正入力・採用・反映 |
+| `CONVERT` | 変換規則・出力処理 |
+| `SETTINGS` | 初期設定・保存設定 |
+| `WARNING` | 判定・警告表示 |
+| `LAYOUT` | 通常画面の配置・サイズ |
+| `PREVIEW` | 譜面プレビュー |
+| `HISTORY` | 履歴・復元 |
+| `TEST` | 動作確認・回帰テスト |
+| `PROJECT` | プロジェクト全体の運用・管理 |
+| `PUBLIC` | 公開準備・配信・公開後確認 |

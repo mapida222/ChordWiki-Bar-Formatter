@@ -90,27 +90,37 @@ const guideText = fs.readFileSync(path.join(__dirname, "..", "index.html"), "utf
   .replace(/<[^>]+>/g, "")
   .replace(/\s+/g, " ");
 const guideMarkup = fs.readFileSync(path.join(__dirname, "..", "index.html"), "utf8");
-assert(guideText.includes("簡易版"));
+assert(!guideText.includes("簡易版"));
 assert.strictEqual((guideMarkup.match(/<details class="guide-item">/g) || []).length, 8);
 assert(!/<details class="guide-item"\s+open/.test(guideMarkup));
 const guideDetails = [...guideMarkup.matchAll(/<div class="guide-item-detail">([\s\S]*?)<\/div>/g)].map((match) => match[1]);
 assert.strictEqual(guideDetails.length, 8);
 guideDetails.forEach((detail) => {
-  assert(detail.indexOf("文字列説明：") < detail.indexOf("guide-detail-label\">意味"));
-  assert(detail.indexOf("guide-detail-label\">意味") < detail.indexOf("入力→結果"));
+  assert(detail.includes("guide-detail-label\">意味"));
+  assert(/入力(?:→|⇒)結果/.test(detail));
 });
-assert(guideText.includes("詳細をすべて表示▼"));
+assert(guideText.includes("詳細を全て表示▼"));
 assert(guideText.includes("0～9ハイフン数"));
 assert(guideText.includes("*=（ハイフンの半分音価）"));
 assert(guideText.includes("s半音価のシンコペーション"));
-assert(guideText.includes("n行修正なし"));
+assert(guideText.includes("|小節頭を指定"));
 assert(guideText.includes("a=10、b=11、c=12、d=13、e=14、f=15、g=16、h=24、i=32"));
-assert(guideText.includes("4s44s4は4コード分です。"));
-assert(guideText.includes("入力→結果n→行修正を触る前の変換結果"));
-assert(guideText.includes("入力→結果②4444→[C][----][G][----][Am][----][F][----]"));
-assert(guideText.includes("4→[----] or ----"));
+assert(guideText.includes("次のコードを半音価だけ早く鳴らします。その分、前のコードは半音価短くなります。"));
+assert(guideText.includes("4s4→[C][---=][G][=][----]"));
+assert(guideText.includes("入力⇒結果②4444⇒[C][----][G][----][Am][----][F][----]"));
+assert(guideText.includes("4⇒[----]"));
+assert(!guideText.includes("[----] or ----"));
+assert(!guideText.includes("0はハイフンなしです。"));
+assert(!guideText.includes("数字の4は、イコールの個数です。"));
+const guideOrder = [...guideMarkup.matchAll(/<summary><code class="guide-input">([^<]+)<\/code>/g)].map((match) => match[1]);
+assert.deepStrictEqual(guideOrder, ["0～9", "a～i", "*", "^", "@", "s", "|", "x"]);
+const deletedBar = window.CBFConverter.convertChordText("[G][C]", base, ["42x"]);
+assert.strictEqual(deletedBar.output, "[|][G][----][C][--]");
+const anchoredBar = window.CBFConverter.convertChordText("[G][G#dim][C][G/B]", base, ["22|44"]);
+assert.strictEqual(anchoredBar.output, "[G][--][G#dim][--][|][C][----][G/B][----][|]");
+assert(!anchoredBar.output.includes("[C][----][|][G/B]"));
 const guideApp = fs.readFileSync(path.join(__dirname, "..", "js", "app.js"), "utf8");
-assert(guideApp.includes("詳細をすべて閉じる▲"));
+assert(guideApp.includes("すべてを閉じる▲"));
 assert(guideApp.includes("correctionGuideItems.forEach"));
 
 console.log("PASS: 4 syncopation notations, all-sync, no-edit, inference, compact length codes and readable guide");

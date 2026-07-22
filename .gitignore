@@ -1,0 +1,17 @@
+# OS and editor files
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+*.swp
+*.tmp
+
+# Local tooling
+node_modules/
+coverage/
+*.log
+
+# Alternate local screenshot; the PNG version is used by README.md.
+help-usage-screenshot.jpg
+

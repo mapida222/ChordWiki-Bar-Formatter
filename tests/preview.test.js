@@ -35,7 +35,7 @@ assert.strictEqual(preview.isSpacingBody("--"), true);
 
 const formatted = preview.render("[|][C][----][----]歌詞[|][G][≧==]続き");
 assert(formatted.includes('class="cw-segment cw-segment-has-leading-bar cw-segment-has-trailing-upper-bar cw-segment-has-upper"'));
-assert(formatted.includes('<span class="cw-boundary cw-boundary-leading cw-boundary-upper cw-boundary-line-start" data-token-type="bar"><span>|</span></span><span class="cw-segment'));
+assert(formatted.includes('<span class="cw-boundary cw-boundary-leading cw-boundary-upper cw-boundary-line-start cw-boundary-before-chord" data-token-type="bar"><span>|</span></span><span class="cw-segment'));
 assert(formatted.includes('<span class="cw-chord"><span class="cw-code-token" data-token-type="chord">C</span> <span class="cw-rhythm-token" data-token-type="rhythm">----</span> <span class="cw-rhythm-token" data-token-type="rhythm">----</span></span>'));
 assert(formatted.includes('<span class="cw-body">歌詞</span></span><span class="cw-boundary cw-boundary-trailing cw-boundary-upper" data-token-type="bar"><span>|</span></span>'));
 assert(formatted.includes('<span class="cw-segment cw-segment-has-upper"><span class="cw-chord"><span class="cw-code-token" data-token-type="chord">G</span> <span class="cw-rhythm-token" data-token-type="rhythm">≧==</span></span>'));
@@ -53,6 +53,23 @@ assert(plainBars.startsWith('<div class="cw-score-line cw-score-line-has-lyrics"
 assert.strictEqual((plainBars.match(/cw-boundary-leading/g) || []).length, 0);
 assert.strictEqual((plainBars.match(/cw-boundary-trailing/g) || []).length, 0);
 assert.strictEqual((plainBars.match(/cw-body-bar-token/g) || []).length, 2);
+assert(plainBars.includes("cw-body-bar-token cw-bar-token-line-start"));
+
+const partialMeasureAfterBar = preview.render("[C]----|(2/4)");
+assert(partialMeasureAfterBar.includes("cw-body-bar-token cw-body-bar-token-before-text"));
+
+const rhythmBeforeBracketedBar = preview.render("[|][Ab][----] [----][|][Ab7][--][(↓)][--] [----][|]");
+assert.strictEqual((rhythmBeforeBracketedBar.match(/cw-segment-has-trailing-upper-bar/g) || []).length, 2);
+assert.strictEqual((rhythmBeforeBracketedBar.match(/cw-boundary-trailing/g) || []).length, 2);
+
+const throughBarPair = preview.render("[|] |");
+assert(throughBarPair.includes("cw-boundary-leading cw-boundary-upper cw-boundary-line-start"));
+assert(throughBarPair.includes("cw-body-bar-token cw-bar-token-line-start"));
+assert(!throughBarPair.includes('<span class="cw-body"> <span'));
+assert(!throughBarPair.includes("cw-boundary-before-chord"));
+
+const leadingBarBeforeChord = preview.render("[|][DbM7]く");
+assert(leadingBarBeforeChord.includes("cw-boundary-line-start cw-boundary-before-chord"));
 
 const bracketedBars = preview.render("[|][C][----]歌詞[|]");
 assert.strictEqual((bracketedBars.match(/cw-boundary-upper/g) || []).length, 2);

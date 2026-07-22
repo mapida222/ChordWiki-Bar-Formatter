@@ -95,6 +95,17 @@ assert.strictEqual(CBFCorrectionInput.normalizeLine("4ss4", 2), "4ss4", "tempora
 assert.strictEqual(CBFCorrectionInput.normalizeLine("4s44s44", 4), "4s44s44", "values beyond the automatic chord count remain editable");
 assert.strictEqual(CBFCorrectionInput.normalizeLine("88888", 4), "88888", "an extra numeric value must not be deleted while typing");
 assert.strictEqual(CBFCorrectionInput.normalizeLine("^8@4*x", 1), "^8@4*x", "all supported modifiers must remain editable regardless of the automatic count");
+assert.strictEqual(CBFCorrectionInput.normalizeLine("00|26", 4), "00|26", "the explicit measure-head marker must survive normalization");
+
+const anchoredSource = "[|][C][----]前[D][----][|][E][----]後[F][----][|]";
+const anchored = CBFConverter.renderWithBeatCode(anchoredSource, "00|26", settings);
+assert.strictEqual(anchored.ok, true, "an anchored row correction must be accepted");
+assert.strictEqual(anchored.body, "[C]前[D][|][E][--]後[F][--][----][|]", "all slot widths are applied and the chord following | becomes the measure head");
+assert.strictEqual(CBFConverter.renderWithBeatCode(anchoredSource, "0000|", settings).ok, false, "an anchor without a following correction must be rejected");
+assert.strictEqual(CBFConverter.renderWithBeatCode(anchoredSource, "0||026", settings).ok, false, "more than one anchor must be rejected");
+const anchoredConversion = CBFConverter.convertChordText("[C][D][E][F]", settings, ["00|26"]);
+assert.strictEqual(anchoredConversion.output, "[C][D][|][E][--][F][--][----][|]", "the normal conversion path must apply every slot width and emit one bar at the anchor");
+assert.strictEqual(anchoredConversion.appliedCorrections, "00|26", "the applied row correction must retain its anchor");
 
 assert.deepStrictEqual(CBFCorrectionInput.smartBeatEdit("4444", 4, 4, "8"), { start: 3, end: 4, replacement: "8", caret: 4 }, "typing at line end overwrites the final beat");
 assert.deepStrictEqual(CBFCorrectionInput.smartBeatEdit("4^444", 1, 1, "8"), { start: 2, end: 3, replacement: "8", caret: 3 }, "typing before an accented beat changes its value without removing the accent");

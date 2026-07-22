@@ -69,6 +69,20 @@ if (spacedChordOnly !== "|[C]---- ----|[D]---- ----||[Bm7]---- ----|[Em7]---- --
   failures += 1;
   console.error(`FAIL chord-only hyphen spacing\nactual: ${spacedChordOnly}`);
 }
+const zeroSpacingCases = [
+  [16, "|[C]----|----|----|----|[G]----|----|----|----|"],
+  [8, "|[C]----|----|[G]----|----|"]
+];
+const zeroSpacingOutputs = zeroSpacingCases.map(([hyphenUnit, expected]) => {
+  const zeroSpacingSettings = { ...settings, measureCapacity: 4, hyphenUnit, hyphenSpacing: 0 };
+  const converted = CBFConverter.convertChordText("[C][G]", zeroSpacingSettings, []);
+  const output = CBFConverter.renderCompletedOutput(converted.output, [4], zeroSpacingSettings.hyphenSpacing).output;
+  return { hyphenUnit, expected, output };
+});
+if (zeroSpacingOutputs.some(({ expected, output }) => output !== expected)) {
+  failures += 1;
+  console.error(`FAIL zero disables spacing without limiting chord duration to one measure\n${zeroSpacingOutputs.map(({ hyphenUnit, expected, output }) => `${hyphenUnit}: expected ${expected}, actual ${output}`).join("\n")}`);
+}
 const manualEightBeatSpacing = CBFConverter.renderCompletedOutput(
   CBFConverter.convertChordText("[Bm]---- ----|[F#m/A]---- ----|[GM7]---- ----|[F#m7]---- ----|", { ...settings, hyphenUnit: 8 }, []).output,
   [4],
@@ -303,7 +317,7 @@ const xModifierLyrics = "[Am7]み)の気持[Bm7]ち知るま[C]で";
 const xModifierCases = [
   ["444", "[|][Am7]み)の気持[Bm7]ち知るま[|][C][----]で[|]"],
   ["444x", "[|][Am7]み)の気持[Bm7]ち知るま[|][C]で"],
-  ["44x4", "[|][Am7]み)の気持[Bm7]ち知るま[C]で　[|]"]
+  ["44x4", "[|][Am7][----]み)の気持[Bm7][----]ち知るま[C][----]で[|]"]
 ];
 xModifierCases.forEach(([code, expected]) => {
   const converted = CBFConverter.convertChordText(xModifierLyrics, settings, [code]);
@@ -334,6 +348,29 @@ if (CBFConverter.renderCompletedOutput(complexThreeChordRhythm, [4], 4).output !
   failures += 1;
   console.error("FAIL complex 4+2+2 rhythm must take priority over removal target 4");
 }
+const lyricSymbolRuns = [
+  ["[C]歌詞-->-が続く", "-->-"],
+  ["[C]歌詞>==>が続く", ">==>"],
+  ["[C]歌詞*=*が続く", "*=*"]
+];
+lyricSymbolRuns.forEach(([source, symbolRun]) => {
+  const actual = CBFConverter.convertChordText(source, settings, []).output;
+  if (!actual.includes(symbolRun) || actual.includes(`[${symbolRun}]`)) {
+    failures += 1;
+    console.error(`FAIL lyric symbols must remain ordinary text\nsource: ${source}\nactual: ${actual}`);
+  }
+});
+const threeChordRemovalCases = [
+  ["[|][G]あいう[C][--]え[G][--]お[|]", [4]],
+  ["[|][G][--]あいう[C][--]え[G][--]お[|]", [2]]
+];
+threeChordRemovalCases.forEach(([source, selectedCounts]) => {
+  const result = CBFConverter.renderCompletedOutput(source, selectedCounts, 4);
+  if (result.output !== source || result.removedHyphens !== 0 || result.changedMeasures !== 0) {
+    failures += 1;
+    console.error(`FAIL measures with three or more chords must preserve change-timing hyphens\nsource: ${source}\nactual: ${result.output}`);
+  }
+});
 function uniquePermutations(values) {
   if (values.length < 2) return [values];
   const permutations = [];
@@ -369,6 +406,12 @@ const simpleFourFourExpected = "[|][C]あいう[D]えおか[|]";
 if (CBFConverter.renderCompletedOutput(simpleFourFour, [4], 4).output !== simpleFourFourExpected) {
   failures += 1;
   console.error("FAIL simple 4+4 rhythm must still remove target-4 markers");
+}
+const shortFractionMissingTail = "[|][DbM7][---]に[C7sus4][-]日々の　[|]";
+const shortFractionRestoredTail = "[|][DbM7][---]に[C7sus4][-]日[----]々の　[|]";
+if (CBFConverter.renderCompletedOutput(shortFractionMissingTail, [4], 4).output !== shortFractionRestoredTail) {
+  failures += 1;
+  console.error("FAIL a 3+1 two-chord measure must restore its four-beat tail after the preposed lyric character");
 }
 const oneChordFourFour = "[|][C][----][----]歌詞続く[|]";
 const oneChordFourFourExpected = "[|][C]歌詞続く[|]";

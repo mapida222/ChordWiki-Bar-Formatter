@@ -29,6 +29,9 @@ assert.strictEqual(settings.load().hyphenUnit, 4);
 assert.strictEqual(settings.load().measureCapacity, 8);
 assert.strictEqual(settings.load().hyphenSpacing, 4);
 
+const zeroSpacing = settings.validate({ ...settings.defaults(), hyphenSpacing: 0 });
+assert.strictEqual(zeroSpacing.valid, true);
+assert.strictEqual(zeroSpacing.values.hyphenSpacing, 0);
 settings.save({ ...settings.defaults(), hyphenUnit: 5 });
 assert.strictEqual(settings.load("fourFour").hyphenUnit, 5);
 

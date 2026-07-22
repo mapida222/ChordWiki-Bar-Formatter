@@ -41,15 +41,18 @@
     }).join(" ");
   }
 
-  function decoratedBody(value) {
-    return Array.from(String(value), (character) => character === "|"
-      ? '<span class="cw-body-bar-token" data-token-type="bar">|</span>'
+  function decoratedBody(value, atLineStart = false, alignWithLeadingBoundary = false) {
+    const alignedValue = alignWithLeadingBoundary ? String(value).replace(/^\s+(?=\|)/, "") : String(value);
+    const characters = Array.from(alignedValue);
+    return characters.map((character, index) => character === "|"
+      ? `<span class="cw-body-bar-token${atLineStart && index === 0 ? " cw-bar-token-line-start" : ""}${characters[index + 1] && !/[\s\-=>≧○|*]/.test(characters[index + 1]) ? " cw-body-bar-token-before-text" : ""}" data-token-type="bar">|</span>`
       : decoratedText(character)).join("");
   }
 
-  function renderBoundary(position, row = "body", atLineStart = false) {
+  function renderBoundary(position, row = "body", atLineStart = false, beforeChord = false) {
     const classes = ["cw-boundary", `cw-boundary-${position}`, `cw-boundary-${row}`];
     if (atLineStart) classes.push("cw-boundary-line-start");
+    if (beforeChord) classes.push("cw-boundary-before-chord");
     return `<span class="${classes.join(" ")}" data-token-type="bar"><span>|</span></span>`;
   }
 
@@ -64,10 +67,10 @@
     if (hasTrailingBar) classes.push("cw-segment-has-trailing-bar");
     if (hasTrailingUpperBar) classes.push("cw-segment-has-trailing-upper-bar");
     if (upper.length) classes.push("cw-segment-has-upper");
-    const leadingBar = hasLeadingBar ? renderBoundary("leading", "upper", index === 0) : "";
+    const leadingBar = hasLeadingBar ? renderBoundary("leading", "upper", index === 0, upper.some((token) => !isRhythmToken(token))) : "";
     const trailingUpperBar = hasTrailingUpperBar ? renderBoundary("trailing", "upper") : "";
     const chord = upper.length ? `<span class="cw-chord">${decoratedUpper(upper)}</span>` : "";
-    const bodySpan = body ? `<span class="cw-body">${decoratedBody(body)}</span>` : "";
+    const bodySpan = body ? `<span class="cw-body">${decoratedBody(body, index === 0, hasLeadingBar)}</span>` : "";
     return `${leadingBar}<span class="${classes.join(" ")}">${chord}${bodySpan}</span>${trailingUpperBar}`;
   }
 

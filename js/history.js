@@ -24,6 +24,7 @@
     return JSON.stringify(stableValue({
       inputText: String(snapshot.inputText || ""),
       correctionText: String(snapshot.correctionText || ""),
+      rowAdoptionModes: Array.isArray(snapshot.rowAdoptionModes) ? snapshot.rowAdoptionModes : [],
       settings: snapshot.settings || {}
     }));
   }
@@ -89,6 +90,7 @@
         inputText: String(snapshot.inputText || ""),
         historyText: snapshot.historyText == null ? undefined : String(snapshot.historyText),
         correctionText: String(snapshot.correctionText || ""),
+        rowAdoptionModes: Array.isArray(snapshot.rowAdoptionModes) ? snapshot.rowAdoptionModes : [],
         settings: snapshot.settings || {},
         signature: entrySignature
       };
@@ -102,6 +104,7 @@
         title: titleFromText(snapshot.inputText, savedAt),
         inputText: String(snapshot.inputText || ""),
         correctionText: String(snapshot.correctionText || ""),
+        rowAdoptionModes: Array.isArray(snapshot.rowAdoptionModes) ? snapshot.rowAdoptionModes : [],
         settings: snapshot.settings || {},
         signature: signature(snapshot)
       };

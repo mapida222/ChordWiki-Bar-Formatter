@@ -5,17 +5,17 @@
     settingsGrid: $("#settings-grid"), settingsProfilePicker: $("#settings-profile-picker"), settingsRecommendationValues: $("#settings-recommendation-values"), customProfileNameField: $("#custom-profile-name-field"), customProfileName: $("#custom-profile-name"), settingsPanel: $("#settings-panel"), settingsShell: $("#settings-shell"), settingsBody: $("#settings-body"), settingsToggle: $("#settings-toggle"), settingsExampleToggle: $("#settings-example-toggle"), theme: $("#setting-theme"), fontSelect: $("#setting-editor-font"), fontSizeValue: $("#font-size-value"), scrollSync: $("#scroll-sync"), textColoring: $("#text-coloring"), boldCode: $("#bold-code"), addedBackground: $("#added-background"), plainEditBars: $("#plain-edit-bars"), finalBarsThrough: $("#final-bars-through"), previewTransposeMain: $("#preview-transpose-main"), previewTransposeMainDown: $("#preview-transpose-main-down"), previewTransposeMainUp: $("#preview-transpose-main-up"), previewSpellingMain: $("#preview-spelling-main"), previewTranspose: $("#preview-transpose"), previewTransposeDown: $("#preview-transpose-down"), previewTransposeUp: $("#preview-transpose-up"), previewSpelling: $("#preview-spelling"), previewDoubleSharp: $("#preview-double-sharp"), previewTheoretical: $("#preview-theoretical"), openScoreWindow: $("#open-score-window"),
     correctionCard: $(".correction-card"), correctionHeading: $(".correction-card .editor-heading"), correctionContext: $(".correction-context-bar"), outputHeading: $(".output-card .editor-heading"), removalControls: $(".removal-controls"), correction: $("#correction-text"), input: $("#input-text"), output: $("#output-text"), finalOutput: $("#final-output-text"), finalPreview: $("#final-score-preview"), committedOutput: $("#committed-output-text"),
     workspace: $(".workspace"), fontPanel: $(".font-panel"), displaySettingsShell: $("#display-settings-shell"), displaySettingsToggle: $("#display-settings-toggle"), correctionGuide: $(".correction-input-guide"), guideToggleAll: $("#guide-toggle-all"), correctionShell: $("#correction-shell"), inputShell: $("#input-shell"), outputShell: $("#output-shell"), finalOutputShell: $("#final-output-shell"),
-    correctionLines: $("#correction-lines"), inputLines: $("#input-lines"), outputLines: $("#output-lines"), finalOutputLines: $("#final-output-lines"), committedOutputLines: $("#committed-output-lines"),
+    correctionLines: $("#correction-lines"), correctionModes: $("#correction-modes"), inputLines: $("#input-lines"), outputLines: $("#output-lines"), finalOutputLines: $("#final-output-lines"), committedOutputLines: $("#committed-output-lines"),
     correctionHighlight: $("#correction-highlight"), inputHighlight: $("#input-highlight"), outputHighlight: $("#output-highlight"), finalOutputHighlight: $("#final-output-highlight"), committedOutputHighlight: $("#committed-output-highlight"),
     correctionCount: $("#correction-count"), correctionPosition: $("#correction-position"), correctionUndo: $("#correction-undo"), correctionRedo: $("#correction-redo"), correctionRefreshLine: $("#correction-refresh-line"), inputCount: $("#input-count"), outputCount: $("#output-count"), finalOutputCount: $("#final-output-count"), committedOutputCount: $("#committed-output-count"), committedOutputShell: $("#committed-output-shell"), committedOutputToggle: $("#committed-output-toggle"),
-    removalTargets: $("#hyphen-removal-targets"), removalSummary: $("#removal-summary"), measureCapacityWarning: $("#measure-capacity-warning"), measureCapacityWarningText: $("#measure-capacity-warning-text"), measureCapacityWarningOpen: $("#measure-capacity-warning-open"),
-    statusDetail: $("#status-detail"), toast: $("#toast"), helpDialog: $("#help-dialog"), historyDialog: $("#history-dialog"), historyList: $("#history-list"), historyPreviewPanel: $("#history-preview-panel"), historyPreview: $("#history-score-preview"), historyPreviewTitle: $("#history-preview-title"), historyPreviewDate: $("#history-preview-date"), historyRestore: $("#history-restore"), historyDeleteAll: $("#history-delete-all"), keySettingsDialog: $("#key-settings-dialog"), keySettingsList: $("#key-settings-list"), keySettingsPreview: $("#key-settings-score-preview")
+    removalTargets: $("#hyphen-removal-targets"), removalLinked: $("#hyphen-removal-linked"), lyricHyphenMode: $("#lyric-hyphen-mode"), removalSummary: $("#removal-summary"), measureCapacityWarning: $("#measure-capacity-warning"), measureCapacityWarningText: $("#measure-capacity-warning-text"), measureCapacityWarningOpen: $("#measure-capacity-warning-open"), measureCapacityWarningDismiss: $("#measure-capacity-warning-dismiss"),
+    statusDetail: $("#status-detail"), toast: $("#toast"), helpDialog: $("#help-dialog"), helpExamplePreview: $("#help-example-preview"), historyDialog: $("#history-dialog"), historyList: $("#history-list"), historyPreviewPanel: $("#history-preview-panel"), historyPreview: $("#history-score-preview"), historyPreviewTitle: $("#history-preview-title"), historyPreviewDate: $("#history-preview-date"), historyRestore: $("#history-restore"), historyDeleteAll: $("#history-delete-all"), keySettingsDialog: $("#key-settings-dialog"), keySettingsList: $("#key-settings-list"), keySettingsPreview: $("#key-settings-score-preview")
   };
   const correctionGuideItems = [...document.querySelectorAll(".guide-item")];
   function updateGuideToggleAll() {
     if (!elements.guideToggleAll) return;
     const allOpen = correctionGuideItems.length > 0 && correctionGuideItems.every((item) => item.open);
-    elements.guideToggleAll.textContent = allOpen ? "詳細をすべて閉じる▲" : "詳細をすべて表示▼";
+    elements.guideToggleAll.textContent = allOpen ? "すべてを閉じる▲" : "詳細を全て表示▼";
     elements.guideToggleAll.setAttribute("aria-expanded", String(allOpen));
   }
   elements.guideToggleAll?.addEventListener("click", () => {
@@ -26,6 +26,12 @@
   correctionGuideItems.forEach((item) => item.addEventListener("toggle", updateGuideToggleAll));
   updateGuideToggleAll();
   elements.output.title = "自由に直接編集できます。";
+  const HELP_EXAMPLE_PREVIEW_TEXT = [
+    "[|][C]あいうえ[G]お　かき[|][Am][--]く[G][--]け[F][----]こ[|]",
+    "[|][E]さしす[Am]せそ　たち[|][F][---]つて[D/F#][-]と[----][|]",
+    "なに[|][Gsus4]ぬねの　は[|][G]ひふ[G#dim]へほ[|]"
+  ].join("\n");
+  if (window.ChordWikiPreview) window.ChordWikiPreview.renderInto(elements.helpExamplePreview, HELP_EXAMPLE_PREVIEW_TEXT);
   let toastTimer;
   let conversionTimer;
   let pendingCorrectionRefresh = false;
@@ -48,6 +54,8 @@
   let manualOutputLines = new Set();
   let lastAppliedCorrectionLines = [];
   let inferenceFallbackCorrectionLines = [];
+  let correctionDisplayStates = [];
+  let rowAdoptionModes = [];
   let lastConvertedInputLines = [];
   let removalLinked = true;
   let historyTimer;
@@ -64,8 +72,11 @@
   const BOLD_CODE_STORAGE_KEY = "chordWikiBarFormatter.boldCode.v1";
   const ADDED_BACKGROUND_STORAGE_KEY = "chordWikiBarFormatter.addedBackground.v1";
   const REMOVAL_STORAGE_KEY = "chordWikiBarFormatter.hyphenRemovalTargets.v3";
+  const LYRIC_HYPHEN_MODE_STORAGE_KEY = "chordWikiBarFormatter.lyricHyphenMode.v1";
+  const LEGACY_HIDE_LYRIC_HYPHENS_STORAGE_KEY = "chordWikiBarFormatter.hideLyricHyphens.v1";
   const INPUT_STORAGE_KEY = "chordWikiBarFormatter.inputText.v1";
   const CORRECTION_STORAGE_KEY = "chordWikiBarFormatter.correctionText.v1";
+  const ROW_ADOPTION_MODES_STORAGE_KEY = "chordWikiBarFormatter.rowAdoptionModes.v1";
   const CORRECTION_SYNTAX_VERSION_KEY = "chordWikiBarFormatter.correctionSyntaxVersion";
   const LAYOUT_STORAGE_KEY = "chordWikiBarFormatter.editorLayout.v1";
   const DISPLAY_PANEL_STORAGE_KEY = "chordWikiBarFormatter.displayPanelOpen.v2";
@@ -123,14 +134,14 @@
   const INITIAL_CORRECTION = ["", "", "", "", "88349", "7944", "8c4", "", "4444", "43^9", "44^*3^*3^*a", "44332"].join("\n");
   const CUSTOM_PROFILE_NAME_STORAGE_KEY = "chordWikiBarFormatter.customProfileName.v1";
   const RECOMMENDED_VALUES = {
-    fourFour: [4, 8, 16, 24, 32],
-    sixEight: [3, 6, 9, 12, 24],
-    custom: [2, 3, 4, 6, 8, 9, 12, 16, 24, 32]
+    fourFour: [0, 4, 8, 16, 24, 32],
+    sixEight: [0, 3, 6, 9, 12, 24],
+    custom: [0, 2, 3, 4, 6, 8, 9, 12, 16, 24, 32]
   };
   const SETTING_GUIDES = {
     hyphenUnit: (defaultValue) => `コード直後に補うハイフン数です。デフォルト：${defaultValue}。`,
     measureCapacity: (defaultValue) => `1小節分に相当するハイフンの合計数です。デフォルト：${defaultValue}。`,
-    hyphenSpacing: () => "長く連続するハイフンを、指定した数ごとに空白で区切って読みやすくします。",
+    hyphenSpacing: () => "長く連続するハイフンを、指定した数ごとに空白で区切ります。0では区切りません。",
     shortFractionPrepose: () => "コード間の長さに端数ができたとき、歌詞を1文字手前へ移動します。する：歌詞を前へ寄せる（デフォルト）、しない：歌詞位置を変えない。",
     showContinuationChord: () => "コードがない小節に直前のコードを引き継ぎます。する：直前のコードを表示、しない：小節線のみ（デフォルト）。"
   };
@@ -264,19 +275,21 @@
     if (!values || !elements.input.value) {
       elements.measureCapacityWarning.hidden = true;
       elements.measureCapacityWarningText.textContent = "";
+      syncResultRowAlignment();
       return;
     }
-    const profile = CBFSettings.activeProfile();
-    const targetMeter = profile === "fourFour" ? "4/4" : profile === "sixEight" ? "6/8" : "";
-    const mismatch = CBFConverter.analyzeAuthoredMeasureCapacity(elements.input.value, values.measureCapacity, targetMeter);
+    const mismatch = CBFConverter.analyzeAuthoredMeasureCapacity(elements.input.value, values.measureCapacity);
     if (!mismatch) {
       elements.measureCapacityWarning.hidden = true;
       elements.measureCapacityWarningText.textContent = "";
+      syncResultRowAlignment();
       return;
     }
-    const lines = mismatch.lineNumbers.join(",");
-    elements.measureCapacityWarningText.textContent = `設定確認：変換前では「1小節${mismatch.detected}ハイフン」が中心（${lines}行目／全${mismatch.measureCount}小節）ですが、初期設定は${mismatch.configured}です。`;
+    elements.measureCapacityWarningText.textContent = `※変換前で使われている1小節のハイフン数が、初期設定と異なるようです。判定できた小節の約${mismatch.percentage}%が「1小節${mismatch.detected}ハイフン」です。初期設定を${mismatch.detected}に変更しますか？`;
+    elements.measureCapacityWarningOpen.dataset.detected = String(mismatch.detected);
+    elements.measureCapacityWarningOpen.textContent = `${mismatch.detected}に変更`;
     elements.measureCapacityWarning.hidden = false;
+    syncResultRowAlignment();
   }
   function lineCount(text) { return text.length ? text.split(/\r\n|\r|\n/).length : 0; }
   function updateCount(textarea, target) { target.textContent = `${textarea.value.length}文字 / ${lineCount(textarea.value)}行`; }
@@ -440,6 +453,46 @@
     updateEditorHighlight(textarea);
     applyLinkedPosition();
   }
+  const ROW_MODE_LABELS = { auto: "自動", edit: "行修正", source: "原文" };
+  function persistRowAdoptionModes() {
+    while (rowAdoptionModes.length && !rowAdoptionModes[rowAdoptionModes.length - 1]) rowAdoptionModes.pop();
+    localStorage.setItem(ROW_ADOPTION_MODES_STORAGE_KEY, JSON.stringify(rowAdoptionModes));
+  }
+  function effectiveRowMode(index) {
+    return rowAdoptionModes[index] || correctionDisplayStates[index] || "auto";
+  }
+  function updateCorrectionModes() {
+    if (!elements.correctionModes) return;
+    const count = Math.max(1, lineCount(elements.correction.value));
+    elements.correctionModes.innerHTML = Array.from({ length: count }, (_, index) => {
+      const state = correctionDisplayStates[index] || "none";
+      if (state === "none" && !(correctionSlotCounts[index] > 0)) return '<span class="correction-mode-row" aria-hidden="true"></span>';
+      const mode = effectiveRowMode(index);
+      const directlyEdited = mode === "edit" && manualOutputLines.has(index);
+      const displayMode = directlyEdited ? "direct" : mode;
+      const label = directlyEdited ? "直接" : ROW_MODE_LABELS[mode] || ROW_MODE_LABELS.auto;
+      const next = mode === "auto" ? "行修正" : mode === "edit" ? "原文" : "自動";
+      const detail = directlyEdited ? "05 変換後の直接編集を採用中。行修正値も反映します" : `${label}を採用中`;
+      return `<button type="button" class="correction-mode-row" data-line="${index}" data-mode="${displayMode}" aria-label="${index + 1}行目：${detail}。押すと${next}へ切替" title="${detail}（押すと${next}）">${label}</button>`;
+    }).join("");
+    elements.correctionModes.scrollTop = elements.correction.scrollTop;
+  }
+  function setRowAdoptionMode(index, mode) {
+    if (!(correctionSlotCounts[index] > 0) || !ROW_MODE_LABELS[mode]) return;
+    rowAdoptionModes[index] = mode;
+    if (mode !== "edit") manualOutputLines.delete(index);
+    persistRowAdoptionModes();
+    updateCorrectionModes();
+    convert({ changedLineIndices: new Set([index]) });
+    markActivity();
+  }
+  elements.correctionModes?.addEventListener("click", (event) => {
+    const button = event.target.closest("button[data-line]");
+    if (!button) return;
+    const index = Number(button.dataset.line);
+    const current = effectiveRowMode(index);
+    setRowAdoptionMode(index, current === "auto" ? "edit" : current === "edit" ? "source" : "auto");
+  });
   function updateCorrectionHistoryButtons() {
     elements.correctionUndo.disabled = correctionUndoStack.length === 0;
     elements.correctionRedo.disabled = correctionRedoStack.length === 0;
@@ -471,6 +524,7 @@
       elements.correction.scrollTop = scrollTop;
       elements.correction.scrollLeft = scrollLeft;
       elements.correctionLines.scrollTop = scrollTop;
+      if (elements.correctionModes) elements.correctionModes.scrollTop = scrollTop;
       syncHighlightScroll(elements.correction);
     };
     restoringCorrectionHistory = true;
@@ -601,13 +655,6 @@
     const lineHeight = Number.parseFloat(getComputedStyle(textarea).lineHeight) || 23;
     textarea.scrollTop = Math.max(0, target * lineHeight - textarea.clientHeight / 3);
   }
-  function rebuildCorrectionLineFromSource(lineIndex) {
-    manualOutputLines.delete(lineIndex);
-    outputManuallyEdited = manualOutputLines.size > 0;
-    replaceCorrectionLine(lineIndex, inferenceFallbackCorrectionLines[lineIndex] || "");
-    scheduleConversion(false, new Set([lineIndex]));
-    jumpToCorrectionLine(lineIndex + 1);
-  }
   function keepOutputAndRefreshCorrection(lineIndex) {
     const settings = validatedSettings();
     if (!settings.valid) return;
@@ -620,46 +667,16 @@
     }
     manualOutputLines.add(lineIndex);
     outputManuallyEdited = true;
+    updateCorrectionModes();
     replaceCorrectionLine(lineIndex, inferred);
     scheduleConversion(false, new Set([lineIndex]));
     jumpToCorrectionLine(lineIndex + 1);
     notify(`${lineIndex + 1}行目を変換後に合わせて更新しました。`);
   }
-  function appendCorrectionReview(row, error) {
-    const lineIndex = Math.max(0, Number(error.line) - 1);
-    const review = document.createElement("div");
-    review.className = "support-correction-review";
-    review.dataset.line = String(error.line);
-    [
-      ["変換前", editorLine(elements.input, lineIndex)],
-      ["変換後", editorLine(elements.output, lineIndex)],
-      ["行修正", editorLine(elements.correction, lineIndex)]
-    ].forEach(([label, value]) => {
-      const line = document.createElement("div");
-      const strong = document.createElement("strong");
-      strong.textContent = `${label}：`;
-      const code = document.createElement("code");
-      code.textContent = value || "（空行）";
-      line.append(strong, code);
-      review.append(line);
-    });
-    const actions = document.createElement("div");
-    actions.className = "support-review-actions";
-    [
-      ["変換前から作り直す", () => rebuildCorrectionLineFromSource(lineIndex)],
-      ["変換後を残して行修正を合わせる", () => keepOutputAndRefreshCorrection(lineIndex)],
-      ["変換前の行へ移動", () => focusEditorLine(elements.input, lineIndex)]
-    ].forEach(([label, action]) => {
-      const button = document.createElement("button");
-      button.type = "button";
-      button.className = "support-review-button";
-      button.textContent = label;
-      button.addEventListener("click", action);
-      actions.append(button);
-    });
-    review.append(actions);
-    row.append(review);
-  }
+  elements.correctionRefreshLine.addEventListener("click", () => {
+    const lineIndex = linkedLineIndex >= 0 ? linkedLineIndex : activeLineIndex(elements.output);
+    keepOutputAndRefreshCorrection(lineIndex);
+  });
   function renderSupport(messages, correctionErrors = []) {
     const items = Array.isArray(messages) ? messages : [messages];
     elements.statusDetail.textContent = "";
@@ -675,10 +692,8 @@
         button.className = "support-jump-button";
         button.textContent = `${error.line}行目を確認`;
         button.addEventListener("click", () => {
-          const existing = row.querySelector(".support-correction-review");
-          const sameLineIsOpen = existing?.dataset.line === String(error.line);
-          if (existing) existing.remove();
-          if (!sameLineIsOpen) appendCorrectionReview(row, error);
+          jumpToCorrectionLine(error.line);
+          elements.correctionCard.scrollIntoView({ behavior: "smooth", block: "center" });
         });
         row.append(button);
       });
@@ -700,6 +715,11 @@
     if (!parts.length) return [];
     if (parts.some((part) => !/^\d+$/.test(part) || Number(part) < 0 || Number(part) > 32)) return null;
     return [...new Set(parts.map(Number))];
+  }
+  function updateLyricHyphenControls() {
+    const targetMode = elements.lyricHyphenMode.value === "target";
+    elements.removalTargets.disabled = !targetMode;
+    elements.removalLinked.disabled = !targetMode;
   }
   function transposedPreviewText() {
     if (!window.ChordWikiTranspose) return elements.finalOutput.value;
@@ -769,13 +789,17 @@
     outputHighlightValue = mergedValue;
   }
   function updateRenderedOutputs(force = false, changedLineIndices = null) {
-    const targets = parseRemovalTargets(elements.removalTargets.value);
-    const invalid = targets === null;
+    const lyricHyphenMode = ["target", "minimize", "show"].includes(elements.lyricHyphenMode.value)
+      ? elements.lyricHyphenMode.value
+      : "target";
+    const parsedTargets = parseRemovalTargets(elements.removalTargets.value);
+    const invalid = lyricHyphenMode === "target" && parsedTargets === null;
     elements.removalTargets.setAttribute("aria-invalid", String(invalid));
     if (invalid) {
       elements.removalSummary.textContent = "0～32をカンマ区切りで入力してください";
       return;
     }
+    const targets = lyricHyphenMode === "target" ? parsedTargets : [0];
     localStorage.setItem(REMOVAL_STORAGE_KEY, elements.removalTargets.value.trim());
     if (outputManuallyEdited && !force) {
       elements.finalOutput.value = elements.output.value;
@@ -789,7 +813,7 @@
     }
     const activeSettings = validatedSettings({ persist: false });
     const hyphenSpacing = activeSettings.valid ? activeSettings.values.hyphenSpacing : 0;
-    const result = CBFConverter.renderCompletedOutput(convertedOutput, targets, hyphenSpacing);
+    const result = CBFConverter.renderCompletedOutput(convertedOutput, targets, hyphenSpacing, lyricHyphenMode === "minimize");
     const nextOutput = renderBars(result.output, elements.plainEditBars.checked);
     if (changedLineIndices?.size) {
       const previousValue = elements.output.value;
@@ -810,7 +834,9 @@
     updateLineNumbers(elements.output, elements.outputLines);
     updateCount(elements.finalOutput, elements.finalOutputCount);
     updateLineNumbers(elements.finalOutput, elements.finalOutputLines);
-    elements.removalSummary.textContent = targets.length === 0 || targets.includes(0)
+    elements.removalSummary.textContent = lyricHyphenMode === "minimize"
+      ? `歌詞行 ${result.hiddenLyricHyphens}個を省略（3コード以上は保持）`
+      : lyricHyphenMode === "show" || targets.length === 0 || targets.includes(0)
       ? "すべて表示"
       : `削除 ${result.removedHyphens}個 / ${result.changedMeasures}小節`;
   }
@@ -824,12 +850,14 @@
     return {
       inputText: elements.input.value,
       correctionText: elements.correction.value,
+      rowAdoptionModes: [...rowAdoptionModes],
       committedOutputText: elements.committedOutput.value,
       settings: {
         settingsProfile: CBFSettings.activeProfile(),
         converter: rawSettings(),
         removalTargets: elements.removalTargets.value,
         removalLinked,
+        lyricHyphenMode: elements.lyricHyphenMode.value,
         plainEditBars: elements.plainEditBars.checked,
         finalBarsThrough: elements.finalBarsThrough.checked,
         previewTranspose: Number.parseInt(elements.previewTranspose.value, 10) || 0,
@@ -892,6 +920,7 @@
     localStorage.setItem(PREVIEW_DOUBLE_SHARP_STORAGE_KEY, elements.previewDoubleSharp.value);
     localStorage.setItem(PREVIEW_KEY_SECTIONS_STORAGE_KEY, JSON.stringify(keySectionSettings));
     localStorage.setItem(REMOVAL_LINKED_STORAGE_KEY, String(removalLinked));
+    localStorage.setItem(LYRIC_HYPHEN_MODE_STORAGE_KEY, elements.lyricHyphenMode.value);
   }
   function restoreSnapshot(snapshot) {
     if (!snapshot) return;
@@ -903,6 +932,8 @@
       : CBFSettings.activeProfile();
     elements.input.value = String(snapshot.inputText || "");
     elements.correction.value = String(snapshot.correctionText || "");
+    rowAdoptionModes = Array.isArray(snapshot.rowAdoptionModes) ? snapshot.rowAdoptionModes.map((mode) => ROW_MODE_LABELS[mode] ? mode : "") : [];
+    persistRowAdoptionModes();
     resetCorrectionHistory();
     elements.committedOutput.value = String(snapshot.committedOutputText || "");
     localStorage.setItem(COMMITTED_OUTPUT_STORAGE_KEY, elements.committedOutput.value);
@@ -914,7 +945,14 @@
     const validatedConverterSettings = CBFSettings.validate(converterSettings);
     if (validatedConverterSettings.valid) CBFSettings.save(validatedConverterSettings.values);
     removalLinked = state.removalLinked !== false;
-    elements.removalTargets.value = state.removalTargets ?? String(converterSettings.hyphenUnit);
+    elements.removalLinked.checked = removalLinked;
+    elements.removalTargets.value = removalLinked
+      ? String(converterSettings.hyphenUnit)
+      : (state.removalTargets ?? String(converterSettings.hyphenUnit));
+    elements.lyricHyphenMode.value = ["target", "minimize", "show"].includes(state.lyricHyphenMode)
+      ? state.lyricHyphenMode
+      : (state.hideLyricHyphens ? "minimize" : "target");
+    updateLyricHyphenControls();
     elements.plainEditBars.checked = Boolean(state.plainEditBars);
     elements.finalBarsThrough.checked = Boolean(state.finalBarsThrough);
     elements.previewTranspose.value = String(Math.max(-12, Math.min(12, Number(state.previewTranspose) || 0)));
@@ -1116,26 +1154,31 @@
       updateMeasureCapacityWarning();
       convertedOutput = "";
       inferenceFallbackCorrectionLines = [];
+      correctionDisplayStates = [];
       elements.correction.value = "";
       correctionSlotCounts = [];
       authoredWhiteNoteCounts = [];
       resetCorrectionHistory();
       outputManuallyEdited = false;
       manualOutputLines.clear();
+      rowAdoptionModes = [];
+      persistRowAdoptionModes();
       lastConvertedInputLines = [""];
       updateRenderedOutputs(true);
       elements.correctionCount.textContent = `${lineCount(elements.correction.value)}行`;
       updateLineNumbers(elements.correction, elements.correctionLines);
+      updateCorrectionModes();
       localStorage.setItem(CORRECTION_STORAGE_KEY, elements.correction.value);
       renderSupport("入力内容はリアルタイムで右側へ反映されます。");
       return;
     }
+    updateMeasureCapacityWarning(settings.values);
     const sourceChanged = new Set(sourceChangedLineIndices || []);
     const currentCorrectionLines = elements.correction.value.split(/\r\n|\r|\n/);
     const rowCorrections = refreshCorrections
       ? []
       : currentCorrectionLines.map((line, index) => {
-        if (sourceChanged.has(index)) return "";
+        if (sourceChanged.has(index) && rowAdoptionModes[index] !== "source") return "";
         if (line === (inferenceFallbackCorrectionLines[index] || "")) return "";
         return line;
       });
@@ -1144,8 +1187,9 @@
       ? []
       : currentOutputLines.map((line, index) => manualOutputLines.has(index) && !sourceChanged.has(index) ? line : undefined);
     const previousCorrections = [...lastAppliedCorrectionLines];
-    const result = CBFConverter.convertChordText(elements.input.value, settings.values, rowCorrections, manualSources, previousCorrections);
+    const result = CBFConverter.convertChordText(elements.input.value, settings.values, rowCorrections, manualSources, previousCorrections, rowAdoptionModes);
     convertedOutput = result.output;
+    correctionDisplayStates = result.correctionStates || [];
     inferenceFallbackCorrectionLines = String(result.automaticCorrections || result.corrections).split(/\r\n|\r|\n/);
     if (!changedLineIndices?.size) {
       outputManuallyEdited = false;
@@ -1169,6 +1213,7 @@
     lastConvertedInputLines = elements.input.value.split(/\r\n|\r|\n/);
     elements.correctionCount.textContent = `${lineCount(elements.correction.value)}行`;
     updateLineNumbers(elements.correction, elements.correctionLines);
+    updateCorrectionModes();
     renderSupport(result.warnings, result.correctionErrors || []);
   }
   function scheduleConversion(refreshCorrections = false, changedLineIndices = null, sourceChangedLineIndices = null) {
@@ -1434,6 +1479,7 @@
   });
   elements.correction.addEventListener("input", () => {
     const caret = elements.correction.selectionStart;
+    const previousCorrectionLines = correctionHistoryValue.split(/\r\n|\r|\n/);
     const normalized = elements.correction.value.split(/\r\n|\r|\n/).map((line, index) => {
       const baseLimit = correctionSlotCounts[index] || 0;
       const authoredWhiteNotes = authoredWhiteNoteCounts[index] || 0;
@@ -1454,6 +1500,11 @@
     for (let index = 0; index < count; index += 1) {
       if ((correctionLines[index] || "") !== (lastAppliedCorrectionLines[index] || "")) changedLineIndices.add(index);
     }
+    correctionLines.forEach((line, index) => {
+      if (line !== (previousCorrectionLines[index] || "") && correctionSlotCounts[index] > 0) rowAdoptionModes[index] = "edit";
+    });
+    persistRowAdoptionModes();
+    updateCorrectionModes();
     scheduleConversion(false, changedLineIndices);
     updateCorrectionPosition();
     markActivity();
@@ -1488,7 +1539,8 @@
       elements.correction.dispatchEvent(new Event("input", { bubbles: true }));
       return;
     }
-    updateMeasureCapacityWarning(settings.values);
+    const currentSettings = validatedSettings({ persist: false });
+    if (currentSettings.valid) updateMeasureCapacityWarning(currentSettings.values);
     const pasted = CBFCorrectionInput.overwritePastedRows(value, selectionStart, pastedText, correctionSlotCounts.length);
     elements.correction.value = pasted.value;
     elements.correction.setSelectionRange(pasted.caret, pasted.caret);
@@ -1610,21 +1662,29 @@
   });
   elements.correctionUndo.addEventListener("click", undoCorrection);
   elements.correctionRedo.addEventListener("click", redoCorrection);
-  elements.correctionRefreshLine.addEventListener("click", () => {
-    const value = elements.correction.value;
-    const caret = elements.correction.selectionStart;
-    const lineIndex = value.slice(0, caret).split(/\r\n|\r|\n/).length - 1;
-    keepOutputAndRefreshCorrection(lineIndex);
-  });
   elements.input.addEventListener("input", () => {
     localStorage.setItem(INPUT_STORAGE_KEY, elements.input.value);
     updateCount(elements.input, elements.inputCount);
     updateLineNumbers(elements.input, elements.inputLines);
     const currentLines = elements.input.value.split(/\r\n|\r|\n/);
-    if (currentLines.length !== lastConvertedInputLines.length) scheduleConversion(true);
+    if (currentLines.length !== lastConvertedInputLines.length) {
+      const mapping = CBFConverter.alignLineIndices(lastConvertedInputLines, currentLines);
+      rowAdoptionModes = currentLines.map((_line, index) => {
+        const previousIndex = mapping[index];
+        return previousIndex >= 0 ? rowAdoptionModes[previousIndex] || "" : "";
+      });
+      persistRowAdoptionModes();
+      updateCorrectionModes();
+      scheduleConversion(true);
+    }
     else {
       const changedLines = new Set();
       currentLines.forEach((line, index) => { if (line !== (lastConvertedInputLines[index] || "")) changedLines.add(index); });
+      changedLines.forEach((index) => {
+        if (rowAdoptionModes[index] !== "source") rowAdoptionModes[index] = "auto";
+      });
+      persistRowAdoptionModes();
+      updateCorrectionModes();
       scheduleConversion(false, null, changedLines);
     }
     markActivity();
@@ -1656,6 +1716,10 @@
     if (previousLines.length === currentLines.length) {
       currentLines.forEach((line, index) => { if (line !== previousLines[index]) changedLineIndices.add(index); });
     } else currentLines.forEach((_line, index) => changedLineIndices.add(index));
+    changedLineIndices.forEach((index) => {
+      if (correctionSlotCounts[index] > 0) rowAdoptionModes[index] = "edit";
+    });
+    persistRowAdoptionModes();
     const correctionLines = elements.correction.value.split(/\r\n|\r|\n/);
     const settings = validatedSettings({ persist: false });
     if (settings.valid && previousLines.length !== currentLines.length) {
@@ -1708,6 +1772,7 @@
     localStorage.setItem(CORRECTION_STORAGE_KEY, elements.correction.value);
     elements.correctionCount.textContent = `${lineCount(elements.correction.value)}行`;
     updateLineNumbers(elements.correction, elements.correctionLines);
+    updateCorrectionModes();
     elements.finalOutput.value = elements.output.value;
     renderFinalPreview();
     updateCount(elements.output, elements.outputCount);
@@ -1718,6 +1783,23 @@
   });
   elements.removalTargets.addEventListener("input", () => {
     removalLinked = false;
+    elements.removalLinked.checked = false;
+    persistFeatureSettings();
+    updateRenderedOutputs();
+    markActivity();
+  });
+  elements.removalLinked.addEventListener("change", () => {
+    removalLinked = elements.removalLinked.checked;
+    if (removalLinked) {
+      elements.removalTargets.value = String(rawSettings().hyphenUnit);
+      localStorage.setItem(REMOVAL_STORAGE_KEY, elements.removalTargets.value);
+    }
+    persistFeatureSettings();
+    updateRenderedOutputs();
+    markActivity();
+  });
+  elements.lyricHyphenMode.addEventListener("change", () => {
+    updateLyricHyphenControls();
     persistFeatureSettings();
     updateRenderedOutputs();
     markActivity();
@@ -1795,12 +1877,22 @@
   elements.settingsToggle.addEventListener("click", () => setSettingsMode(settingsMode === "closed" ? "compact" : "closed"));
   elements.settingsExampleToggle.addEventListener("click", () => setSettingsMode(settingsMode === "expanded" ? "compact" : "expanded"));
   elements.measureCapacityWarningOpen.addEventListener("click", () => {
+    elements.measureCapacityWarning.hidden = true;
+    syncResultRowAlignment();
     setSettingsMode("compact");
     requestAnimationFrame(() => {
       const input = $("#setting-measureCapacity");
-      input?.focus();
-      input?.select();
+      const detected = elements.measureCapacityWarningOpen.dataset.detected;
+      if (!input || !detected) return;
+      input.value = detected;
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+      input.focus();
     });
+  });
+  elements.measureCapacityWarningDismiss.addEventListener("click", () => {
+    elements.measureCapacityWarning.hidden = true;
+    elements.measureCapacityWarningText.textContent = "";
+    syncResultRowAlignment();
   });
   function positionSettingsPanel() {
     const workspaceRect = elements.workspace.getBoundingClientRect();
@@ -1829,14 +1921,12 @@
   }
   function saveLayout() {
     const displayHeight = Number.parseFloat(elements.displaySettingsShell.style.height);
-    const guideHeight = Number.parseFloat(elements.correctionGuide.style.height);
     const layout = {
       leftWidth: elements.correctionCard.getBoundingClientRect().width,
       topHeight: elements.inputShell.getBoundingClientRect().height,
       resultHeight: elements.outputShell.getBoundingClientRect().height,
       finalHeight: elements.finalOutputShell.getBoundingClientRect().height,
-      displayHeight: Number.isFinite(displayHeight) ? displayHeight : null,
-      guideHeight: Number.isFinite(guideHeight) ? guideHeight : null
+      displayHeight: Number.isFinite(displayHeight) ? displayHeight : null
     };
     localStorage.setItem(LAYOUT_STORAGE_KEY, JSON.stringify(layout));
   }
@@ -1882,7 +1972,7 @@
       const layout = JSON.parse(localStorage.getItem(LAYOUT_STORAGE_KEY) || "null");
       if (!layout) return;
       if (Number.isFinite(layout.displayHeight)) elements.displaySettingsShell.style.height = `${layout.displayHeight}px`;
-      if (Number.isFinite(layout.guideHeight)) elements.correctionGuide.style.height = `${layout.guideHeight}px`;
+      elements.correctionGuide.style.removeProperty("height");
       if (Number.isFinite(layout.leftWidth)) setLeftColumnWidth(layout.leftWidth);
       if (Number.isFinite(layout.topHeight)) setRowHeight("top", layout.topHeight);
       if (Number.isFinite(layout.resultHeight)) setRowHeight("bottom", layout.resultHeight);
@@ -1982,11 +2072,30 @@
 
   const savedInput = localStorage.getItem(INPUT_STORAGE_KEY);
   let savedCorrection = localStorage.getItem(CORRECTION_STORAGE_KEY);
+  try {
+    const savedRowModes = JSON.parse(localStorage.getItem(ROW_ADOPTION_MODES_STORAGE_KEY) || "[]");
+    rowAdoptionModes = Array.isArray(savedRowModes) ? savedRowModes.map((mode) => ROW_MODE_LABELS[mode] ? mode : "") : [];
+  } catch (_error) { rowAdoptionModes = []; }
   if (savedCorrection !== null && localStorage.getItem(CORRECTION_SYNTAX_VERSION_KEY) !== "2") {
     savedCorrection = CBFCorrectionInput.migrateLegacyText(savedCorrection);
     localStorage.setItem(CORRECTION_STORAGE_KEY, savedCorrection);
   }
   localStorage.setItem(CORRECTION_SYNTAX_VERSION_KEY, "2");
+  let migratedLegacyNoEditRows = false;
+  if (savedCorrection !== null) {
+    const savedRows = savedCorrection.split(/\r\n|\r|\n/);
+    savedRows.forEach((line, index) => {
+      if (line.trim().toLowerCase() !== "n") return;
+      rowAdoptionModes[index] = "source";
+      savedRows[index] = "";
+      migratedLegacyNoEditRows = true;
+    });
+    if (migratedLegacyNoEditRows) {
+      savedCorrection = savedRows.join("\n");
+      localStorage.setItem(CORRECTION_STORAGE_KEY, savedCorrection);
+      persistRowAdoptionModes();
+    }
+  }
   const loadedSettings = CBFSettings.load();
   if (window.ChordWikiTranspose) {
     window.ChordWikiTranspose.fillTransposeSelect(elements.previewTranspose);
@@ -2028,7 +2137,17 @@
     keySectionSettings = Array.isArray(savedKeySections) ? savedKeySections : [];
   } catch (_error) { keySectionSettings = []; }
   removalLinked = localStorage.getItem(REMOVAL_LINKED_STORAGE_KEY) !== "false";
-  elements.removalTargets.value = localStorage.getItem(REMOVAL_STORAGE_KEY) ?? String(loadedSettings.hyphenUnit);
+  elements.removalLinked.checked = removalLinked;
+  elements.removalTargets.value = removalLinked
+    ? String(loadedSettings.hyphenUnit)
+    : (localStorage.getItem(REMOVAL_STORAGE_KEY) ?? String(loadedSettings.hyphenUnit));
+  {
+    const savedLyricHyphenMode = localStorage.getItem(LYRIC_HYPHEN_MODE_STORAGE_KEY);
+    elements.lyricHyphenMode.value = ["target", "minimize", "show"].includes(savedLyricHyphenMode)
+      ? savedLyricHyphenMode
+      : (localStorage.getItem(LEGACY_HIDE_LYRIC_HYPHENS_STORAGE_KEY) === "true" ? "minimize" : "target");
+    updateLyricHyphenControls();
+  }
   showScorePreview();
   {
     const savedDisplayPanel = localStorage.getItem(DISPLAY_PANEL_STORAGE_KEY);
@@ -2056,6 +2175,7 @@
     });
     editor.addEventListener("scroll", () => {
       gutter.scrollTop = editor.scrollTop;
+      if (editor === elements.correction && elements.correctionModes) elements.correctionModes.scrollTop = editor.scrollTop;
       syncHighlightScroll(editor);
       if (syncingScroll) return;
       const correctionResultPair = [elements.correction, elements.output];
@@ -2066,6 +2186,7 @@
         other.scrollTop = editor.scrollTop;
         other.scrollLeft = editor.scrollLeft;
         gutterByEditor.get(other).scrollTop = editor.scrollTop;
+        if (other === elements.correction && elements.correctionModes) elements.correctionModes.scrollTop = editor.scrollTop;
         syncHighlightScroll(other);
       });
       if (scrollSyncEnabled && elements.finalOutputShell.classList.contains("preview-mode")) {
@@ -2088,20 +2209,24 @@
       editor.scrollTop = elements.finalPreview.scrollTop;
       editor.scrollLeft = elements.finalPreview.scrollLeft;
       gutterByEditor.get(editor).scrollTop = elements.finalPreview.scrollTop;
+      if (editor === elements.correction && elements.correctionModes) elements.correctionModes.scrollTop = elements.finalPreview.scrollTop;
       syncHighlightScroll(editor);
     });
     requestAnimationFrame(() => { syncingScroll = false; });
   });
   updateLineNumbers(elements.correction, elements.correctionLines);
+  updateCorrectionModes();
   updateLineNumbers(elements.input, elements.inputLines);
   updateLineNumbers(elements.output, elements.outputLines);
   updateLineNumbers(elements.finalOutput, elements.finalOutputLines);
   updateLineNumbers(elements.committedOutput, elements.committedOutputLines);
-  convert({ refreshCorrections: false });
+  convert({ refreshCorrections: migratedLegacyNoEditRows });
   syncResultRowAlignment();
   if ("ResizeObserver" in window) {
     const resultAlignmentObserver = new ResizeObserver(syncResultRowAlignment);
-    [elements.correctionHeading, elements.correctionContext, elements.outputHeading, elements.removalControls].forEach((element) => resultAlignmentObserver.observe(element));
+    [elements.correctionHeading, elements.correctionContext, elements.outputHeading, elements.measureCapacityWarning, elements.removalControls].forEach((element) => resultAlignmentObserver.observe(element));
+    const settingsLayoutObserver = new ResizeObserver(positionSettingsPanel);
+    [elements.inputShell, elements.fontPanel, elements.settingsShell].forEach((element) => settingsLayoutObserver.observe(element));
   }
   positionSettingsPanel();
   window.addEventListener("resize", () => { positionSettingsPanel(); syncResultRowAlignment(); });
