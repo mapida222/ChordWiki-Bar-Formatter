@@ -23,11 +23,13 @@ const settings = context.window.CBFSettings;
 assert.strictEqual(settings.definitions.find((item) => item.key === "hyphenUnit").label, "コード直後のハイフン数");
 assert.strictEqual(settings.definitions.find((item) => item.key === "measureCapacity").label, "1小節の合計ハイフン数");
 assert.strictEqual(settings.definitions.find((item) => item.key === "shortFractionPrepose").label, "端数の歌詞前置き");
+assert.strictEqual(settings.definitions.find((item) => item.key === "longBeatLyricPlacement").label, "長い拍の歌詞配置");
 
 assert.strictEqual(settings.activeProfile(), "fourFour");
 assert.strictEqual(settings.load().hyphenUnit, 4);
 assert.strictEqual(settings.load().measureCapacity, 8);
 assert.strictEqual(settings.load().hyphenSpacing, 4);
+assert.strictEqual(settings.load().longBeatLyricPlacement, 1);
 
 const zeroSpacing = settings.validate({ ...settings.defaults(), hyphenSpacing: 0 });
 assert.strictEqual(zeroSpacing.valid, true);

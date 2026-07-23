@@ -353,14 +353,15 @@
     return graphemes;
   }
 
-  function longBeatLyricDistribution(unit, followingLyric, position, capacity, settings, syncopated, authoredBoundary) {
-    if (!authoredBoundary) return null;
+  function longBeatLyricDistribution(unit, followingLyric, position, capacity, settings, syncopated, authoredLyric) {
+    const placementMode = Number(settings.longBeatLyricPlacement ?? 0);
+    if (placementMode !== 1 && placementMode !== 2) return null;
     if (syncopated || unit.halfNote || unit.accents || unit.suffixStar || unit.noLeadingBar || unit.noTrailingBar) return null;
     if (followingLyric?.kind !== "text") return null;
-    const phraseEnd = followingLyric.value.indexOf("　");
-    if (phraseEnd <= 0) return null;
-    const phrase = followingLyric.value.slice(0, phraseEnd);
-    const characters = lyricGraphemes(phrase);
+    const authoredText = String(authoredLyric || "");
+    if (!authoredText || !followingLyric.value.startsWith(authoredText)) return null;
+    const phrase = authoredText.replace(/　+$/u, "");
+    const characters = lyricGraphemes(phrase.replace(/　/gu, ""));
     if (!characters.length) return null;
 
     const spacing = Math.max(0, Number(settings.hyphenSpacing) || 0);
@@ -376,16 +377,34 @@
     }
     if (markerCount < 2) return null;
 
-    const baseSize = Math.floor(characters.length / markerCount);
-    const remainder = characters.length % markerCount;
-    let characterIndex = 0;
-    const insertions = Array.from({ length: markerCount }, (_unused, markerIndex) => {
-      const size = baseSize + (markerIndex < remainder ? 1 : 0);
-      const insertion = characters.slice(characterIndex, characterIndex + size).join("");
-      characterIndex += size;
-      return insertion;
-    });
-    return { insertions, markerIndex: 0, phraseEnd };
+    let insertions;
+    if (placementMode === 1) {
+      const boundaryIndex = phrase.indexOf("　");
+      let front;
+      let back;
+      if (boundaryIndex > 0 && phrase.slice(boundaryIndex + 1).replace(/　/gu, "")) {
+        front = phrase.slice(0, boundaryIndex).replace(/　/gu, "");
+        back = phrase.slice(boundaryIndex + 1).replace(/^　+/u, "");
+      } else {
+        const frontSize = Math.ceil(characters.length / 2);
+        front = characters.slice(0, frontSize).join("");
+        back = characters.slice(frontSize).join("");
+      }
+      insertions = Array.from({ length: markerCount }, () => "");
+      insertions[0] = front;
+      insertions[markerCount - 1] = back;
+    } else {
+      const baseSize = Math.floor(characters.length / markerCount);
+      const remainder = characters.length % markerCount;
+      let characterIndex = 0;
+      insertions = Array.from({ length: markerCount }, (_unused, markerIndex) => {
+        const size = baseSize + (markerIndex < remainder ? 1 : 0);
+        const insertion = characters.slice(characterIndex, characterIndex + size).join("");
+        characterIndex += size;
+        return insertion;
+      });
+    }
+    return { insertions, markerIndex: 0, consumedLength: authoredText.length };
   }
 
   function insertDistributedLyric(rendered, distribution) {
@@ -423,11 +442,11 @@
     const effectiveCode = anchor?.fullCode || code;
     const parsedSourceTokens = parseTokens(body);
     const authoredTokens = parseTokens(authoredBody);
-    const authoredFullWidthBoundaries = [];
+    const authoredFollowingLyrics = [];
     authoredTokens.forEach((token, index) => {
       if (token.kind !== "chord") return;
       const followingText = authoredTokens[index + 1];
-      authoredFullWidthBoundaries.push(followingText?.kind === "text" && followingText.value.indexOf("　") > 0);
+      authoredFollowingLyrics.push(followingText?.kind === "text" ? followingText.value : "");
     });
     // Row corrections are the source of truth for both beat widths and bar positions.
     // Keeping bars from the automatically formatted body would force the old layout
@@ -451,11 +470,14 @@
     let suppressPendingBar = false;
     let suppressNextSourceBar = false;
     let trailingBarSuppressed = false;
-    function appendDuration(unit, continuationChord = "", followingLyric = null, authoredBoundary = false) {
+    function appendDuration(unit, continuationChord = "", followingLyric = null, authoredLyric = "") {
       let remaining = syncopated ? (unit.width * 2) + (unit.syncBefore ? 1 : 0) - (unit.syncAfter ? 1 : 0) : unit.width;
       if (remaining < 0) return;
-      const lyricDistribution = longBeatLyricDistribution(unit, followingLyric, position, capacity, settings, syncopated, authoredBoundary);
-      if (lyricDistribution) followingLyric.value = followingLyric.value.slice(lyricDistribution.phraseEnd);
+      const lyricDistribution = longBeatLyricDistribution(unit, followingLyric, position, capacity, settings, syncopated, authoredLyric);
+      if (lyricDistribution) {
+        followingLyric.value = followingLyric.value.slice(lyricDistribution.consumedLength);
+        if (followingLyric.value === "　") followingLyric.value = "";
+      }
       while (remaining > 0) {
         const available = capacity - position || capacity;
         const segmentWidth = Math.min(remaining, available);
@@ -555,10 +577,10 @@
           if (units.length - chordIndex > remainingSourceSlots) appendDuration(units[chordIndex++]);
         }
       } else if (!followedByWhiteNote) {
-        // The authored source decides whether a full-width space is a real phrase
-        // boundary. This prevents formatLyric's visual trailing pad from triggering
-        // long-beat distribution on lyrics that had no boundary in the input.
-        appendDuration(unit, token.value, sourceTokens[tokenIndex + 1], authoredFullWidthBoundaries[sourceChordOrdinal]);
+        // Only lyrics authored between this chord and the next chord (or line end)
+        // are eligible. This prevents formatLyric's visual trailing pad from being
+        // mistaken for user-authored text.
+        appendDuration(unit, token.value, sourceTokens[tokenIndex + 1], authoredFollowingLyrics[sourceChordOrdinal]);
       }
       sourceChordOrdinal += 1;
     }

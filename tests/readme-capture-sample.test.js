@@ -16,7 +16,7 @@ for (const expected of [
   "[F]細かい部分は[G]手動修正が",
   "[F]編集[G]お疲れ",
   'const INITIAL_CORRECTION = ["", "", "", "", "", "88448", "3535", "844", "", "4444", "628", "4s433a", "444^22"].join("\\n");',
-  "const INITIAL_SETTINGS = { measureCapacity: 8, hyphenUnit: 4, hyphenSpacing: 4, shortFractionPrepose: 1, showContinuationChord: 0 };",
+  "const INITIAL_SETTINGS = { measureCapacity: 8, hyphenUnit: 4, hyphenSpacing: 4, shortFractionPrepose: 1, longBeatLyricPlacement: 1, showContinuationChord: 0 };",
   'elements.lyricHyphenMode.value = "target";',
   'elements.removalTargets.value = "4,8";',
   "elements.removalLinked.checked = false;",

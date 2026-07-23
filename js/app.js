@@ -175,7 +175,7 @@
     "[F]編集[G]お疲れ[Csus4]様で[C]す！（ありが[N.C.]とう！）"
   ].join("\n");
   const INITIAL_CORRECTION = ["", "", "", "", "", "88448", "3535", "844", "", "4444", "628", "4s433a", "444^22"].join("\n");
-  const INITIAL_SETTINGS = { measureCapacity: 8, hyphenUnit: 4, hyphenSpacing: 4, shortFractionPrepose: 1, showContinuationChord: 0 };
+  const INITIAL_SETTINGS = { measureCapacity: 8, hyphenUnit: 4, hyphenSpacing: 4, shortFractionPrepose: 1, longBeatLyricPlacement: 1, showContinuationChord: 0 };
   const CUSTOM_PROFILE_NAME_STORAGE_KEY = "chordWikiBarFormatter.customProfileName.v1";
   const RECOMMENDED_VALUES = {
     fourFour: [0, 4, 8, 16, 24, 32],
@@ -187,6 +187,7 @@
     measureCapacity: (defaultValue) => `1小節分に相当するハイフンの合計数です。デフォルト：${defaultValue}。`,
     hyphenSpacing: () => "長く連続するハイフンを、指定した数ごとに空白で区切ります。0では区切りません。",
     shortFractionPrepose: () => "コード間の長さに端数ができたとき、歌詞を1文字手前へ移動します。する：歌詞を前へ寄せる（デフォルト）、しない：歌詞位置を変えない。",
+    longBeatLyricPlacement: () => "行修正で長い拍を指定したときの歌詞位置です。前後に分ける：最初と最後へ配置（おすすめ）、均等に分ける：すべての長さ記号へ配置、移動しない：従来どおり。",
     showContinuationChord: () => "コードがない小節に直前のコードを引き継ぎます。する：直前のコードを表示、しない：小節線のみ（デフォルト）。"
   };
   function customProfileName() { return localStorage.getItem(CUSTOM_PROFILE_NAME_STORAGE_KEY)?.trim() || "カスタム"; }
@@ -1303,7 +1304,7 @@
       elements.removalTargets.value = event.target.value;
       localStorage.setItem(REMOVAL_STORAGE_KEY, elements.removalTargets.value);
     }
-    if (["setting-shortFractionPrepose", "setting-showContinuationChord"].includes(event.target.id)) schedulePrioritySettingConversion();
+    if (["setting-shortFractionPrepose", "setting-longBeatLyricPlacement", "setting-showContinuationChord"].includes(event.target.id)) schedulePrioritySettingConversion();
     else scheduleConversion(true);
     markActivity();
   });

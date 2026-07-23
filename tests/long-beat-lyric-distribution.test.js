@@ -4,67 +4,73 @@ const assert = require("assert");
 global.window = global;
 require("../js/converter.js");
 
-const sixBeatSettings = {
+const settings = {
   hyphenUnit: 4,
   measureCapacity: 6,
   hyphenSpacing: 3,
   shortFractionPrepose: 1,
+  longBeatLyricPlacement: 1,
   showContinuationChord: 0
 };
 
-const longAcrossMeasures = CBFConverter.convertChordText(
+const source = "長（な[Fm]が）い旅（た[Bb]び）の途中　君[DbM7]に出逢い　うつ[Eb]ろう景色";
+
+const frontBack = CBFConverter.convertChordText(source, settings, ["cccc"]);
+assert.strictEqual(
+  frontBack.output,
+  "長（な[|][Fm][---]が）い[---][|][---][---]旅（た[|][Bb][---]び）の途中[---][|][---][---]君[|][DbM7][---]に出逢い[---][|][---][---]うつ[|][Eb][---]ろう[---][|][---][---]景色[|]",
+  "recommended mode should put lyric halves on the first and last visible markers"
+);
+
+const unchanged = CBFConverter.convertChordText(
+  source,
+  { ...settings, longBeatLyricPlacement: 0 },
+  ["cccc"]
+);
+assert.strictEqual(
+  unchanged.output,
+  "長（な[|][Fm][---][---][|][---][---]が）い旅（た[|][Bb][---][---][|][---][---]び）の途中　君[|][DbM7][---][---][|][---][---]に出逢い　うつ[|][Eb][---][---][|][---][---]ろう景色[|]",
+  "legacy mode should leave lyrics after the duration markers"
+);
+
+const uniform = CBFConverter.convertChordText(
+  source,
+  { ...settings, longBeatLyricPlacement: 2 },
+  ["cccc"]
+);
+assert.strictEqual(
+  uniform.output,
+  "長（な[|][Fm][---]が）[---]い旅[|][---]（[---]た[|][Bb][---]び）[---]の途[|][---]中[---]君[|][DbM7][---]に出[---]逢い[|][---]う[---]つ[|][Eb][---]ろ[---]う[|][---]景[---]色[|]",
+  "uniform mode should distribute grapheme clusters across every visible marker"
+);
+
+const fullWidthBoundary = CBFConverter.convertChordText(
   "[Bbm7]今日も　[Cm7]笑い合え[DbM7]る　居場所　紡ぐ",
-  sixBeatSettings,
+  settings,
   ["66c"]
 );
 assert.strictEqual(
-  longAcrossMeasures.output,
-  "[|][Bbm7][---]今日[---]も　[|][Cm7][---][---]笑い合え[|][DbM7][---]る[---][|][---][---]　居場所　紡ぐ[|]",
-  "row correction lyrics should be distributed across visible long-beat chunks"
-);
-
-const completed = CBFConverter.renderCompletedOutput(longAcrossMeasures.output, [6], 3);
-assert.strictEqual(
-  completed.output,
-  "[|][Bbm7]今日も　[|][Cm7]笑い合え[|][DbM7][---]る[---][|][---][---]　居場所　紡ぐ[|]",
-  "selected six-beat markers should still be removable after lyric distribution"
-);
-
-const fourChunkSettings = {
-  ...sixBeatSettings,
-  measureCapacity: 12
-};
-const fourChunks = CBFConverter.convertChordText(
-  "[DbM7]あなたをおもう　[DbM7]",
-  fourChunkSettings,
-  ["cc"]
-);
-assert.strictEqual(
-  fourChunks.output,
-  "[|][DbM7][---]あな[---]たを[---]おも[---]う　[|][DbM7][---][---][---][---][|]",
-  "seven lyric characters should be split 2, 2, 2 and 1 across four chunks"
+  fullWidthBoundary.output,
+  "[|][Bbm7][---]今日[---]も[|][Cm7][---]笑い[---]合え[|][DbM7][---]る[---][|][---][---]居場所　紡ぐ[|]",
+  "the first authored full-width space should split front/back placement without removing later spaces"
 );
 
 const fiveBeat = CBFConverter.convertChordText(
-  "[C]あいう　",
-  { ...sixBeatSettings, measureCapacity: 8 },
+  "[C]あいうえお",
+  { ...settings, measureCapacity: 8 },
   ["5"]
 );
 assert.strictEqual(
   fiveBeat.output,
-  "[|][C][---]あい[--]う　[|]",
-  "a five-beat value should distribute its remainder across two visible chunks"
+  "[|][C][---]あいう[--]えお[|]",
+  "odd lyric counts should give the extra grapheme to the front"
 );
 
-const noFullWidthBoundary = CBFConverter.convertChordText(
-  "[C]あいう",
-  { ...sixBeatSettings, measureCapacity: 8 },
-  ["5"]
-);
+const completed = CBFConverter.renderCompletedOutput(fullWidthBoundary.output, [6], 3);
 assert.strictEqual(
-  noFullWidthBoundary.output,
-  "[|][C][---][--]あいう　[|]",
-  "lyrics without a full-width-space boundary should keep the existing placement"
+  completed.output,
+  "[|][Bbm7]今日も[|][Cm7]笑い合え[|][DbM7][---]る[---][|][---][---]居場所　紡ぐ[|]",
+  "selected six-beat markers should still be removable after lyric placement"
 );
 
-console.log("PASS: long row-edit beats distribute lyrics by visible chunks without breaking hyphen removal");
+console.log("PASS: ROW-007 selectable long-beat lyric placement");
