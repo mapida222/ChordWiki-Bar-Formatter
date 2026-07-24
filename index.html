@@ -10,7 +10,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="ChordWikiのコード譜を小節単位に整形するブラウザアプリ">
   <title>ChordWiki Bar Formatter Web</title>
-  <link rel="stylesheet" href="style.css?v=20260722-33">
+  <link rel="stylesheet" href="style.css?v=20260724-36">
 </head>
 <body>
   <header class="app-header">
@@ -20,7 +20,8 @@
       <p class="subtitle">コード譜を、読みやすい小節表記へ。</p>
     </div>
     <div class="header-actions">
-  <button id="history-save" class="help-open-button" type="button" title="05. 変換後の表示を保存">履歴に追加</button>
+      <button id="history-save-completed-test" class="help-open-button temporary-test-button" type="button">完成譜面からテストデータを使用履歴に保存</button>
+      <button id="history-save" class="help-open-button" type="button" title="05. 変換後の表示を保存">履歴に追加</button>
       <button id="history-open" class="help-open-button" type="button">使用履歴</button>
       <button id="help-open" class="help-open-button" type="button">ヘルプ・使い方</button>
       <div class="privacy-badge" title="入力内容を外部へ送信しません">
@@ -382,7 +383,7 @@
         <div class="history-content">
           <div class="history-layout">
             <section class="history-list-panel" aria-label="使用履歴一覧">
-              <p class="history-note">05. 変換後の表示を「履歴に追加」で手動保存、入力停止から1分後、または結果のコピー成功時に自動保存します。履歴を採用すると、保存した変換後テキストが02. 変換前へ入ります。履歴はこのブラウザ内だけに7日間保持されます。</p>
+              <p class="history-note">05. 変換後の表示を「履歴に追加」で手動保存、入力停止から1分後、または結果のコピー成功時に自動保存します。履歴を採用すると、保存した変換後テキストが02. 変換前へ入ります。新しい履歴は入力・設定・初期出力をテストデータとしてローカル入出力できます。履歴はこのブラウザ内だけに7日間保持されます。</p>
               <div id="history-list" class="history-list"></div>
             </section>
             <section id="history-preview-panel" class="history-preview-panel" aria-labelledby="history-preview-title">
@@ -391,14 +392,27 @@
                   <h3 id="history-preview-title">履歴を選択してください</h3>
                   <p id="history-preview-date">一覧をクリックすると、ここに全体プレビューを表示します。</p>
                 </div>
-                <button id="history-restore" class="history-restore-button" type="button" disabled>変換前に採用</button>
+                <div class="history-preview-actions">
+                  <button id="history-export-test" class="history-secondary-button" type="button" disabled>テストデータ出力</button>
+                  <button id="history-restore" class="history-restore-button" type="button" disabled>変換前に採用</button>
+                </div>
               </header>
-              <div id="history-score-preview" class="chordwiki-preview history-score-preview" aria-label="選択した履歴の全体プレビュー">
+              <div id="history-preview-tabs" class="history-preview-tabs" role="tablist" aria-label="履歴プレビューの表示">
+                <button type="button" role="tab" data-history-preview-mode="input" aria-selected="false">変換前</button>
+                <button type="button" role="tab" data-history-preview-mode="output" aria-selected="false">変換後</button>
+                <button type="button" role="tab" data-history-preview-mode="score" aria-selected="true">譜面プレビュー</button>
+              </div>
+              <pre id="history-text-preview" class="history-text-preview" aria-label="選択した履歴のテキストプレビュー" hidden></pre>
+              <div id="history-score-preview" class="chordwiki-preview history-score-preview" aria-label="選択した履歴の譜面プレビュー">
                 <p class="history-preview-empty">履歴を選択すると、譜面全体を確認できます。</p>
               </div>
             </section>
           </div>
           <footer class="history-footer">
+            <div class="history-file-actions">
+              <button id="history-import-test" class="history-secondary-button" type="button">テストデータを読み込む</button>
+              <input id="history-import-file" type="file" accept="application/json,.json" hidden>
+            </div>
             <button id="history-delete-all" class="history-delete-button" type="button">使用履歴を削除</button>
           </footer>
         </div>
@@ -521,7 +535,8 @@
   <script src="js/correction-input.js?v=20260723-2" defer></script>
   <script src="js/transposer.js?v=20260716-7" defer></script>
   <script src="js/chordwiki-preview.js?v=20260722-3" defer></script>
-  <script src="js/history.js?v=20260718-4" defer></script>
-  <script src="js/app.js?v=20260724-8" defer></script>
+  <script src="js/history.js?v=20260724-6" defer></script>
+  <script src="js/test-data.js?v=20260724-5" defer></script>
+  <script src="js/app.js?v=20260724-10" defer></script>
 </body>
 </html>

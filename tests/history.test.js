@@ -24,10 +24,48 @@ if (!converted.saved || converted.entry.historyText !== convertedSnapshot.histor
 }
 if (store.saveHistory({ ...convertedSnapshot, inputText: "別の変換前" }).saved) throw new Error("same converted history text was saved twice");
 
+const legacyStorage = new MemoryStorage();
+const legacyStore = historyApi.createStore(legacyStorage, () => currentTime);
+const legacy = legacyStore.saveHistory({ historyText: "[|][C]旧履歴[|]" });
+const enriched = legacyStore.saveHistory({
+  historyText: "[|][C]旧履歴[|]",
+  inputText: "[C]入力",
+  initialOutputText: "[|][C][----]入力[|]",
+  idealOutputText: "[|][C]旧履歴[|]",
+  correctionText: "4",
+  settings: { converter: { hyphenUnit: 4 } }
+});
+if (
+  !legacy.saved
+  || !enriched.saved
+  || !enriched.enriched
+  || legacyStore.list().length !== 1
+  || enriched.entry.inputText !== "[C]入力"
+  || enriched.entry.initialOutputText !== "[|][C][----]入力[|]"
+) throw new Error("legacy history enrichment failed");
+
+currentTime += 60 * 1000;
+const testDataSnapshot = {
+  ...snapshot,
+  title: "song-001",
+  historyText: "[|][C]理想[|]",
+  testInputText: "[C]理想",
+  initialOutputText: "[|][C][----]初期[|]",
+  idealOutputText: "[|][C]理想[|]"
+};
+const testDataHistory = store.saveHistory(testDataSnapshot);
+if (
+  !testDataHistory.saved
+  || testDataHistory.entry.title !== "song-001"
+  || testDataHistory.entry.testInputText !== testDataSnapshot.testInputText
+  || testDataHistory.entry.initialOutputText !== testDataSnapshot.initialOutputText
+  || testDataHistory.entry.idealOutputText !== testDataSnapshot.idealOutputText
+) throw new Error("test data fields were not preserved in history");
+
 currentTime += 60 * 1000;
 const changed = { ...snapshot, inputText: "タイトルなし" };
 const second = store.saveHistory(changed);
-if (!second.saved || store.list().length !== 3 || second.entry.title === "タイトルなし") throw new Error("changed history/fallback title failed");
+if (!second.saved || store.list().length !== 4 || second.entry.title === "タイトルなし") throw new Error("changed history/fallback title failed");
 
 store.saveCrash(changed);
 const crash = store.getCrash();

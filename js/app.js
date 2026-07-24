@@ -9,7 +9,7 @@
     correctionHighlight: $("#correction-highlight"), inputHighlight: $("#input-highlight"), outputHighlight: $("#output-highlight"), finalOutputHighlight: $("#final-output-highlight"), committedOutputHighlight: $("#committed-output-highlight"),
     correctionCount: $("#correction-count"), correctionPosition: $("#correction-position"), correctionUndo: $("#correction-undo"), correctionRedo: $("#correction-redo"), correctionRefreshLine: $("#correction-refresh-line"), inputCount: $("#input-count"), outputCount: $("#output-count"), finalOutputCount: $("#final-output-count"), committedOutputCount: $("#committed-output-count"), committedOutputShell: $("#committed-output-shell"), committedOutputToggle: $("#committed-output-toggle"),
     removalTargets: $("#hyphen-removal-targets"), removalLinked: $("#hyphen-removal-linked"), lyricHyphenMode: $("#lyric-hyphen-mode"), removalSummary: $("#removal-summary"), measureCapacityWarning: $("#measure-capacity-warning"), measureCapacityWarningText: $("#measure-capacity-warning-text"), measureCapacityWarningOpen: $("#measure-capacity-warning-open"), measureCapacityWarningDismiss: $("#measure-capacity-warning-dismiss"),
-    statusDetail: $("#status-detail"), toast: $("#toast"), helpDialog: $("#help-dialog"), helpExamplePreview: $("#help-example-preview"), historyDialog: $("#history-dialog"), historyList: $("#history-list"), historyPreviewPanel: $("#history-preview-panel"), historyPreview: $("#history-score-preview"), historyPreviewTitle: $("#history-preview-title"), historyPreviewDate: $("#history-preview-date"), historyRestore: $("#history-restore"), historyDeleteAll: $("#history-delete-all"), keySettingsDialog: $("#key-settings-dialog"), keySettingsList: $("#key-settings-list"), keySettingsPreview: $("#key-settings-score-preview")
+    statusDetail: $("#status-detail"), toast: $("#toast"), helpDialog: $("#help-dialog"), helpExamplePreview: $("#help-example-preview"), historyDialog: $("#history-dialog"), historyList: $("#history-list"), historyPreviewPanel: $("#history-preview-panel"), historyPreviewTabs: $("#history-preview-tabs"), historyTextPreview: $("#history-text-preview"), historyPreview: $("#history-score-preview"), historyPreviewTitle: $("#history-preview-title"), historyPreviewDate: $("#history-preview-date"), historyRestore: $("#history-restore"), historyExportTest: $("#history-export-test"), historyImportTest: $("#history-import-test"), historyImportFile: $("#history-import-file"), historyDeleteAll: $("#history-delete-all"), keySettingsDialog: $("#key-settings-dialog"), keySettingsList: $("#key-settings-list"), keySettingsPreview: $("#key-settings-score-preview")
   };
   const correctionGuideItems = [...document.querySelectorAll(".guide-item")];
   const contextHelpButtons = [...document.querySelectorAll(".context-help-button")];
@@ -105,6 +105,7 @@
   let suppressActivity = false;
   let scorePreviewChannel = null;
   let selectedHistoryEntry = null;
+  let historyPreviewMode = "score";
   let keySectionSettings = [];
   let scoreWindowRevision = Date.now();
   const FONT_STORAGE_KEY = "chordWikiBarFormatter.editorFont.v1";
@@ -924,7 +925,23 @@
     };
   }
   function collectHistorySnapshot() {
-    return { historyText: elements.output.value };
+    const snapshot = collectSnapshot();
+    const activeSettings = validatedSettings({ persist: false });
+    let initialOutputText = convertedOutput;
+    if (activeSettings.valid && elements.input.value) {
+      const rowCorrections = elements.correction.value.split(/\r\n|\r|\n/);
+      initialOutputText = CBFConverter.convertChordText(
+        elements.input.value,
+        activeSettings.values,
+        rowCorrections
+      ).output;
+    }
+    return {
+      ...snapshot,
+      historyText: elements.output.value,
+      initialOutputText,
+      idealOutputText: elements.output.value
+    };
   }
   function saveCurrentHistory(manual = false, silent = false) {
     if (!elements.output.value.trim()) {
@@ -934,7 +951,7 @@
     try {
       const result = historyStore.saveHistory(collectHistorySnapshot());
       if (result.saved) {
-        if (!silent) notify(manual ? "使用履歴へ追加しました。" : "使用履歴へ保存しました。");
+        if (!silent) notify(result.enriched ? "既存の使用履歴へテストデータを追加しました。" : manual ? "使用履歴へ追加しました。" : "使用履歴へ保存しました。");
         if (elements.historyDialog.open) renderHistoryList();
         return true;
       }
@@ -942,6 +959,46 @@
       return false;
     } catch (_error) {
       notify("使用履歴を保存できませんでした。ブラウザの保存容量を確認してください。", true);
+      return false;
+    }
+  }
+  function saveCompletedScoreAsTestHistory() {
+    const idealOutputText = elements.committedOutput.value;
+    if (!idealOutputText.trim()) {
+      notify("07. 確定譜面テキストに完成譜面がありません。", true);
+      return false;
+    }
+    const settings = validatedSettings({ persist: false });
+    if (!settings.valid) {
+      notify("初期設定に範囲外または数値以外の項目があります。", true);
+      return false;
+    }
+    const testInputText = CBFTestData.stripFormatting(idealOutputText);
+    const rowCorrections = elements.correction.value.split(/\r\n|\r|\n/);
+    const initialOutputText = CBFConverter.convertChordText(
+      testInputText,
+      settings.values,
+      rowCorrections
+    ).output;
+    const snapshot = {
+      ...collectSnapshot(),
+      inputText: testInputText,
+      testInputText,
+      historyText: idealOutputText,
+      initialOutputText,
+      idealOutputText
+    };
+    try {
+      const result = historyStore.saveHistory(snapshot);
+      if (!result.saved) {
+        notify("同じ完成譜面のテストデータは使用履歴に保存済みです。");
+        return false;
+      }
+      if (elements.historyDialog.open) renderHistoryList();
+      notify("完成譜面からテストデータを使用履歴に保存しました。");
+      return true;
+    } catch (_error) {
+      notify("テストデータを使用履歴に保存できませんでした。", true);
       return false;
     }
   }
@@ -1132,8 +1189,31 @@
     elements.historyPreviewTitle.textContent = "履歴を選択してください";
     elements.historyPreviewDate.textContent = "一覧をクリックすると、ここに全体プレビューを表示します。";
     elements.historyRestore.disabled = true;
+    elements.historyExportTest.disabled = true;
+    elements.historyExportTest.title = "";
+    elements.historyTextPreview.textContent = "";
+    elements.historyTextPreview.hidden = true;
+    elements.historyPreview.hidden = false;
     elements.historyPreview.classList.remove("bars-through");
     elements.historyPreview.innerHTML = '<p class="history-preview-empty">履歴を選択すると、譜面全体を確認できます。</p>';
+    setHistoryPreviewMode(historyPreviewMode);
+  }
+  function setHistoryPreviewMode(mode) {
+    historyPreviewMode = ["input", "output", "score"].includes(mode) ? mode : "score";
+    elements.historyPreviewTabs.querySelectorAll("[data-history-preview-mode]").forEach((button) => {
+      button.setAttribute("aria-selected", String(button.dataset.historyPreviewMode === historyPreviewMode));
+    });
+    const showText = historyPreviewMode !== "score";
+    elements.historyTextPreview.hidden = !showText;
+    elements.historyPreview.hidden = showText;
+    if (!selectedHistoryEntry) return;
+    if (historyPreviewMode === "input") {
+      elements.historyTextPreview.innerHTML = colorizeText(String(selectedHistoryEntry.inputText || ""));
+    } else if (historyPreviewMode === "output") {
+      elements.historyTextPreview.innerHTML = colorizeText(historyPreviewText(selectedHistoryEntry));
+    } else if (window.ChordWikiPreview) {
+      window.ChordWikiPreview.renderInto(elements.historyPreview, historyPreviewText(selectedHistoryEntry));
+    }
   }
   function showHistoryPreview(entry, selectedButton) {
     selectedHistoryEntry = entry;
@@ -1145,8 +1225,11 @@
     elements.historyPreviewTitle.textContent = entry.title;
     elements.historyPreviewDate.textContent = formatSavedAt(entry.savedAt);
     elements.historyRestore.disabled = false;
+    const canExport = Boolean(entry.inputText && typeof entry.initialOutputText === "string");
+    elements.historyExportTest.disabled = !canExport;
+    elements.historyExportTest.title = canExport ? "" : "この履歴は入力と初期出力を含まない旧形式です";
     elements.historyPreview.classList.toggle("bars-through", Boolean(entry.settings?.finalBarsThrough));
-    if (window.ChordWikiPreview) window.ChordWikiPreview.renderInto(elements.historyPreview, historyPreviewText(entry));
+    setHistoryPreviewMode(historyPreviewMode);
   }
   function renderHistoryList() {
     elements.historyList.textContent = "";
@@ -1190,6 +1273,32 @@
   async function readClipboard() {
     if (navigator.clipboard?.readText) return navigator.clipboard.readText();
     throw new Error("clipboard read unavailable");
+  }
+  function safeTestDataFileName(name) {
+    const base = CBFTestData.titleForFileName(name).replace(/[\\/:*?"<>|]/g, "_").slice(0, 80);
+    return `${base || "test-data"}.cbf-test.json`;
+  }
+  function downloadTestData(entry) {
+    const testData = CBFTestData.create(entry);
+    const blob = new Blob([`${JSON.stringify(testData, null, 2)}\n`], { type: "application/json;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = safeTestDataFileName(testData.name);
+    document.body.append(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 0);
+  }
+  async function importTestDataFile(file) {
+    if (!file) return;
+    if (file.size > 20 * 1024 * 1024) throw new Error("20MBを超えるファイルは読み込めません。");
+    const testData = CBFTestData.parse(await file.text());
+    const result = historyStore.saveHistory(CBFTestData.toHistorySnapshot(testData));
+    if (!result.saved) throw new Error("同じテストデータはすでに履歴へ保存されています。");
+    renderHistoryList();
+    const importedButton = elements.historyList.querySelector(".history-item");
+    if (importedButton) importedButton.click();
   }
   function convert({ refreshCorrections = false, preserveUserEdits = false, changedLineIndices = null, sourceChangedLineIndices = null } = {}) {
     const settings = validatedSettings();
@@ -1452,6 +1561,7 @@
     if (event.target === elements.helpDialog) elements.helpDialog.close();
   });
   $("#history-save").addEventListener("click", () => saveCurrentHistory(true));
+  $("#history-save-completed-test").addEventListener("click", saveCompletedScoreAsTestHistory);
   $("#history-open").addEventListener("click", () => { renderHistoryList(); showDialog(elements.historyDialog); });
   $("#preview-key-settings").addEventListener("click", () => { renderKeySectionSettings(); showDialog(elements.keySettingsDialog); });
   $("#key-settings-close").addEventListener("click", () => closeDialog(elements.keySettingsDialog));
@@ -1485,6 +1595,10 @@
   elements.keySettingsList.addEventListener("change", renderKeySettingsPreview);
   $("#history-close").addEventListener("click", () => closeDialog(elements.historyDialog));
   elements.historyDialog.addEventListener("click", (event) => { if (event.target === elements.historyDialog) closeDialog(elements.historyDialog); });
+  elements.historyPreviewTabs.addEventListener("click", (event) => {
+    const button = event.target.closest("[data-history-preview-mode]");
+    if (button) setHistoryPreviewMode(button.dataset.historyPreviewMode);
+  });
   elements.historyRestore.addEventListener("click", () => {
     if (!selectedHistoryEntry) return;
     const historyText = historyPreviewText(selectedHistoryEntry);
@@ -1493,6 +1607,27 @@
     adoptHistoryAsInput(selectedHistoryEntry);
     closeDialog(elements.historyDialog);
     notify("履歴の変換後テキストを変換前へ採用しました。");
+  });
+  elements.historyExportTest.addEventListener("click", () => {
+    if (!selectedHistoryEntry) return;
+    try {
+      downloadTestData(selectedHistoryEntry);
+      notify("テストデータをローカルへ書き出しました。");
+    } catch (error) {
+      notify(error?.message || "テストデータを書き出せませんでした。", true);
+    }
+  });
+  elements.historyImportTest.addEventListener("click", () => elements.historyImportFile.click());
+  elements.historyImportFile.addEventListener("change", async () => {
+    const [file] = elements.historyImportFile.files || [];
+    try {
+      await importTestDataFile(file);
+      if (file) notify("テストデータを使用履歴へ読み込みました。");
+    } catch (error) {
+      notify(error?.message || "テストデータを読み込めませんでした。", true);
+    } finally {
+      elements.historyImportFile.value = "";
+    }
   });
   elements.historyDeleteAll.addEventListener("click", () => {
     if (!historyStore.list().length) return;
