@@ -84,25 +84,33 @@
       const duplicateIndex = entries.findIndex((entry) => entry.signature === entrySignature);
       if (duplicateIndex >= 0) {
         const current = entries[duplicateIndex];
+        const savedAt = now();
         const canEnrich = !current.inputText
           && Boolean(snapshot.inputText)
           && current.initialOutputText == null
           && snapshot.initialOutputText != null;
-        if (!canEnrich) return { saved: false, reason: "duplicate", entries };
-        const enriched = {
+        const refreshed = {
           ...current,
-          title: String(snapshot.title || "").trim() || current.title,
-          inputText: String(snapshot.inputText),
-          testInputText: snapshot.testInputText == null ? current.testInputText : String(snapshot.testInputText),
-          initialOutputText: String(snapshot.initialOutputText),
-          idealOutputText: snapshot.idealOutputText == null ? current.historyText : String(snapshot.idealOutputText),
-          correctionText: String(snapshot.correctionText || ""),
-          rowAdoptionModes: Array.isArray(snapshot.rowAdoptionModes) ? snapshot.rowAdoptionModes : [],
-          settings: snapshot.settings || {}
+          savedAt,
+          ...(canEnrich ? {
+            title: String(snapshot.title || "").trim() || current.title,
+            inputText: String(snapshot.inputText),
+            testInputText: snapshot.testInputText == null ? current.testInputText : String(snapshot.testInputText),
+            initialOutputText: String(snapshot.initialOutputText),
+            idealOutputText: snapshot.idealOutputText == null ? current.historyText : String(snapshot.idealOutputText),
+            correctionText: String(snapshot.correctionText || ""),
+            rowAdoptionModes: Array.isArray(snapshot.rowAdoptionModes) ? snapshot.rowAdoptionModes : [],
+            settings: snapshot.settings || {}
+          } : {})
         };
-        const nextEntries = [...entries];
-        nextEntries[duplicateIndex] = enriched;
-        return { saved: true, enriched: true, entry: enriched, entries: writeHistory(nextEntries) };
+        const nextEntries = [refreshed, ...entries.filter((_entry, index) => index !== duplicateIndex)];
+        return {
+          saved: true,
+          refreshed: true,
+          enriched: canEnrich,
+          entry: refreshed,
+          entries: writeHistory(nextEntries)
+        };
       }
       const savedAt = now();
       const entry = {

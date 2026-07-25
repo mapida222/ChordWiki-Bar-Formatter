@@ -102,6 +102,7 @@ assert(
 assert(css.includes(".history-footer { display: flex; flex-wrap: wrap;"));
 assert(app.includes("downloadTestData(selectedHistoryEntry)"));
 assert(app.includes("importTestDataFile(file)"));
+assert(app.includes("同じテストデータの日時を更新し、使用履歴の先頭へ移動しました。"));
 assert(app.includes('elements.testOutputLock.addEventListener("click", lockOutputAndCreateTestInput)'));
 assert(app.includes('elements.testOutputUnlock.addEventListener("click", unlockTestOutput)'));
 assert(app.includes("if (restoreTestLockedOutputs()) return;"));

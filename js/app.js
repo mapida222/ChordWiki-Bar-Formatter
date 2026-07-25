@@ -979,7 +979,16 @@
     try {
       const result = historyStore.saveHistory(collectHistorySnapshot());
       if (result.saved) {
-        if (!silent) notify(result.enriched ? "既存の使用履歴へテストデータを追加しました。" : manual ? "使用履歴へ追加しました。" : "使用履歴へ保存しました。");
+        if (!silent) {
+          const message = result.enriched
+            ? "既存の使用履歴へテストデータを追加し、先頭へ移動しました。"
+            : result.refreshed
+            ? "同じ内容の日時を更新し、使用履歴の先頭へ移動しました。"
+            : manual
+            ? "使用履歴へ追加しました。"
+            : "使用履歴へ保存しました。";
+          notify(message);
+        }
         if (elements.historyDialog.open) renderHistoryList();
         return true;
       }
@@ -1315,10 +1324,10 @@
     if (file.size > 20 * 1024 * 1024) throw new Error("20MBを超えるファイルは読み込めません。");
     const testData = CBFTestData.parse(await file.text());
     const result = historyStore.saveHistory(CBFTestData.toHistorySnapshot(testData));
-    if (!result.saved) throw new Error("同じテストデータはすでに履歴へ保存されています。");
     renderHistoryList();
     const importedButton = elements.historyList.querySelector(".history-item");
     if (importedButton) importedButton.click();
+    return result;
   }
   function convert({ refreshCorrections = false, preserveUserEdits = false, changedLineIndices = null, sourceChangedLineIndices = null } = {}) {
     const settings = validatedSettings();
@@ -1642,8 +1651,10 @@
   elements.historyImportFile.addEventListener("change", async () => {
     const [file] = elements.historyImportFile.files || [];
     try {
-      await importTestDataFile(file);
-      if (file) notify("テストデータを使用履歴へ読み込みました。");
+      const result = await importTestDataFile(file);
+      if (file) notify(result?.refreshed
+        ? "同じテストデータの日時を更新し、使用履歴の先頭へ移動しました。"
+        : "テストデータを使用履歴へ読み込みました。");
     } catch (error) {
       notify(error?.message || "テストデータを読み込めませんでした。", true);
     } finally {

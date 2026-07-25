@@ -15,14 +15,26 @@ const snapshot = { inputText: "{title:履歴テスト}\n[C]歌詞", correctionTe
 
 const first = store.saveHistory(snapshot);
 if (!first.saved || first.entry.title !== "履歴テスト" || store.list().length !== 1) throw new Error("history save/title failed");
-if (store.saveHistory(snapshot).saved || store.list().length !== 1) throw new Error("duplicate history was saved");
+currentTime += 60 * 1000;
+const refreshedFirst = store.saveHistory(snapshot);
+if (
+  !refreshedFirst.saved
+  || !refreshedFirst.refreshed
+  || refreshedFirst.entry.id !== first.entry.id
+  || refreshedFirst.entry.savedAt !== currentTime
+  || store.list().length !== 1
+) throw new Error("duplicate history was not refreshed");
 
 const convertedSnapshot = { ...snapshot, historyText: "{title:変換後履歴}\n[|][C][----]歌詞[|]" };
 const converted = store.saveHistory(convertedSnapshot);
 if (!converted.saved || converted.entry.historyText !== convertedSnapshot.historyText || converted.entry.title !== "変換後履歴") {
   throw new Error("converted history text was not preserved");
 }
-if (store.saveHistory({ ...convertedSnapshot, inputText: "別の変換前" }).saved) throw new Error("same converted history text was saved twice");
+currentTime += 60 * 1000;
+const refreshedConverted = store.saveHistory({ ...convertedSnapshot, inputText: "別の変換前" });
+if (!refreshedConverted.saved || !refreshedConverted.refreshed || store.list().length !== 2) {
+  throw new Error("same converted history text was not moved to the top");
+}
 
 const legacyStorage = new MemoryStorage();
 const legacyStore = historyApi.createStore(legacyStorage, () => currentTime);
@@ -66,6 +78,15 @@ currentTime += 60 * 1000;
 const changed = { ...snapshot, inputText: "タイトルなし" };
 const second = store.saveHistory(changed);
 if (!second.saved || store.list().length !== 4 || second.entry.title === "タイトルなし") throw new Error("changed history/fallback title failed");
+
+currentTime += 60 * 1000;
+const movedFirst = store.saveHistory(snapshot);
+if (
+  !movedFirst.refreshed
+  || store.list()[0].id !== first.entry.id
+  || store.list()[0].savedAt !== currentTime
+  || store.list().length !== 4
+) throw new Error("same history was not moved to the top");
 
 store.saveCrash(changed);
 const crash = store.getCrash();
