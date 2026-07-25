@@ -9,7 +9,7 @@
     correctionHighlight: $("#correction-highlight"), inputHighlight: $("#input-highlight"), outputHighlight: $("#output-highlight"), finalOutputHighlight: $("#final-output-highlight"), committedOutputHighlight: $("#committed-output-highlight"),
     correctionCount: $("#correction-count"), correctionPosition: $("#correction-position"), correctionUndo: $("#correction-undo"), correctionRedo: $("#correction-redo"), correctionRefreshLine: $("#correction-refresh-line"), inputCount: $("#input-count"), outputCount: $("#output-count"), finalOutputCount: $("#final-output-count"), committedOutputCount: $("#committed-output-count"), committedOutputShell: $("#committed-output-shell"), committedOutputToggle: $("#committed-output-toggle"),
     removalTargets: $("#hyphen-removal-targets"), removalLinked: $("#hyphen-removal-linked"), lyricHyphenMode: $("#lyric-hyphen-mode"), removalSummary: $("#removal-summary"), measureCapacityWarning: $("#measure-capacity-warning"), measureCapacityWarningText: $("#measure-capacity-warning-text"), measureCapacityWarningOpen: $("#measure-capacity-warning-open"), measureCapacityWarningDismiss: $("#measure-capacity-warning-dismiss"),
-    statusDetail: $("#status-detail"), toast: $("#toast"), helpDialog: $("#help-dialog"), helpExamplePreview: $("#help-example-preview"), historyDialog: $("#history-dialog"), historyList: $("#history-list"), historyPreviewPanel: $("#history-preview-panel"), historyPreviewTabs: $("#history-preview-tabs"), historyTextPreview: $("#history-text-preview"), historyPreview: $("#history-score-preview"), historyPreviewTitle: $("#history-preview-title"), historyPreviewDate: $("#history-preview-date"), historyRestore: $("#history-restore"), historyExportTest: $("#history-export-test"), historyImportTest: $("#history-import-test"), historyImportFile: $("#history-import-file"), historyDeleteAll: $("#history-delete-all"), keySettingsDialog: $("#key-settings-dialog"), keySettingsList: $("#key-settings-list"), keySettingsPreview: $("#key-settings-score-preview")
+    statusDetail: $("#status-detail"), toast: $("#toast"), helpDialog: $("#help-dialog"), helpExamplePreview: $("#help-example-preview"), historyDialog: $("#history-dialog"), historyList: $("#history-list"), historyPreviewPanel: $("#history-preview-panel"), historyPreviewTabs: $("#history-preview-tabs"), historyTextPreview: $("#history-text-preview"), historyPreview: $("#history-score-preview"), historyPreviewTitle: $("#history-preview-title"), historyPreviewDate: $("#history-preview-date"), historyRestore: $("#history-restore"), historyExportTest: $("#history-export-test"), historyImportTest: $("#history-import-test"), historyImportFile: $("#history-import-file"), historyDeleteAll: $("#history-delete-all"), testOutputLock: $("#test-output-lock"), testOutputUnlock: $("#test-output-unlock"), keySettingsDialog: $("#key-settings-dialog"), keySettingsList: $("#key-settings-list"), keySettingsPreview: $("#key-settings-score-preview")
   };
   const correctionGuideItems = [...document.querySelectorAll(".guide-item")];
   const contextHelpButtons = [...document.querySelectorAll(".context-help-button")];
@@ -94,6 +94,9 @@
   let outputHighlightValue = "";
   let outputAddedOffsets = new Set();
   let manualOutputLines = new Set();
+  let testOutputLocked = false;
+  let testLockedOutputText = "";
+  let testLockedOutputAddedOffsets = new Set();
   let lastAppliedCorrectionLines = [];
   let inferenceFallbackCorrectionLines = [];
   let correctionDisplayStates = [];
@@ -834,7 +837,28 @@
     });
     outputHighlightValue = mergedValue;
   }
+  function applyTestOutputLockState() {
+    elements.testOutputLock.hidden = testOutputLocked;
+    elements.testOutputUnlock.hidden = !testOutputLocked;
+    elements.output.readOnly = testOutputLocked;
+    elements.output.setAttribute("aria-readonly", String(testOutputLocked));
+  }
+  function restoreTestLockedOutputs() {
+    if (!testOutputLocked) return false;
+    elements.output.value = testLockedOutputText;
+    elements.finalOutput.value = testLockedOutputText;
+    outputHighlightValue = testLockedOutputText;
+    outputAddedOffsets = new Set(testLockedOutputAddedOffsets);
+    renderFinalPreview();
+    updateCount(elements.output, elements.outputCount);
+    updateLineNumbers(elements.output, elements.outputLines);
+    updateCount(elements.finalOutput, elements.finalOutputCount);
+    updateLineNumbers(elements.finalOutput, elements.finalOutputLines);
+    elements.removalSummary.textContent = "変換後をロック中（テストデータ確認）";
+    return true;
+  }
   function updateRenderedOutputs(force = false, changedLineIndices = null) {
+    if (restoreTestLockedOutputs()) return;
     const lyricHyphenMode = ["show", "target", "minimize", "all"].includes(elements.lyricHyphenMode.value)
       ? elements.lyricHyphenMode.value
       : "target";
@@ -944,6 +968,10 @@
     };
   }
   function saveCurrentHistory(manual = false, silent = false) {
+    if (testOutputLocked) {
+      if (manual) notify("確認用ロック中は使用履歴へ保存しません。解除後に保存してください。", true);
+      return false;
+    }
     if (!elements.output.value.trim()) {
       if (manual) notify("使用履歴へ追加する変換後テキストがありません。", true);
       return false;
@@ -962,45 +990,37 @@
       return false;
     }
   }
-  function saveCompletedScoreAsTestHistory() {
-    const idealOutputText = elements.committedOutput.value;
-    if (!idealOutputText.trim()) {
-      notify("07. 確定譜面テキストに完成譜面がありません。", true);
+  function lockOutputAndCreateTestInput() {
+    if (!elements.output.value.trim()) {
+      notify("05. 変換後にロックする内容がありません。", true);
       return false;
     }
-    const settings = validatedSettings({ persist: false });
-    if (!settings.valid) {
-      notify("初期設定に範囲外または数値以外の項目があります。", true);
-      return false;
-    }
-    const testInputText = CBFTestData.stripFormatting(idealOutputText);
-    const rowCorrections = elements.correction.value.split(/\r\n|\r|\n/);
-    const initialOutputText = CBFConverter.convertChordText(
-      testInputText,
-      settings.values,
-      rowCorrections
-    ).output;
-    const snapshot = {
-      ...collectSnapshot(),
-      inputText: testInputText,
-      testInputText,
-      historyText: idealOutputText,
-      initialOutputText,
-      idealOutputText
-    };
-    try {
-      const result = historyStore.saveHistory(snapshot);
-      if (!result.saved) {
-        notify("同じ完成譜面のテストデータは使用履歴に保存済みです。");
-        return false;
-      }
-      if (elements.historyDialog.open) renderHistoryList();
-      notify("完成譜面からテストデータを使用履歴に保存しました。");
-      return true;
-    } catch (_error) {
-      notify("テストデータを使用履歴に保存できませんでした。", true);
-      return false;
-    }
+    testLockedOutputText = elements.output.value;
+    testLockedOutputAddedOffsets = new Set(outputAddedOffsets);
+    testOutputLocked = true;
+    outputManuallyEdited = false;
+    manualOutputLines.clear();
+    applyTestOutputLockState();
+    elements.input.value = CBFTestData.stripFormatting(testLockedOutputText);
+    elements.input.dispatchEvent(new Event("input", { bubbles: true }));
+    restoreTestLockedOutputs();
+    elements.input.focus();
+    notify("変換後をロックし、テストデータ用の変換前を作成しました。");
+    return true;
+  }
+  function unlockTestOutput() {
+    if (!testOutputLocked) return;
+    testOutputLocked = false;
+    testLockedOutputText = "";
+    testLockedOutputAddedOffsets.clear();
+    applyTestOutputLockState();
+    clearTimeout(conversionTimer);
+    pendingCorrectionRefresh = false;
+    pendingCorrectionLineIndices.clear();
+    pendingSourceLineIndices.clear();
+    convert({ refreshCorrections: false });
+    markActivity();
+    notify("変換後のロックを解除し、現在の変換前を反映しました。");
   }
   function markActivity() {
     if (suppressActivity) return;
@@ -1561,7 +1581,8 @@
     if (event.target === elements.helpDialog) elements.helpDialog.close();
   });
   $("#history-save").addEventListener("click", () => saveCurrentHistory(true));
-  $("#history-save-completed-test").addEventListener("click", saveCompletedScoreAsTestHistory);
+  elements.testOutputLock.addEventListener("click", lockOutputAndCreateTestInput);
+  elements.testOutputUnlock.addEventListener("click", unlockTestOutput);
   $("#history-open").addEventListener("click", () => { renderHistoryList(); showDialog(elements.historyDialog); });
   $("#preview-key-settings").addEventListener("click", () => { renderKeySectionSettings(); showDialog(elements.keySettingsDialog); });
   $("#key-settings-close").addEventListener("click", () => closeDialog(elements.keySettingsDialog));
@@ -1957,6 +1978,7 @@
       updateCorrectionModes();
       scheduleConversion(false, null, changedLines);
     }
+    if (testOutputLocked) restoreTestLockedOutputs();
     markActivity();
   });
   $("#paste-input").addEventListener("click", async () => {
