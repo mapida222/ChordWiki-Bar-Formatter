@@ -114,6 +114,15 @@ assert.deepStrictEqual(CBFCorrectionInput.slotSelection("4^4s8", 0), { index: 0,
 assert.deepStrictEqual(CBFCorrectionInput.slotSelection("4^4s8", 1), { index: 1, start: 2, end: 3 }, "modifiers do not become selectable beat slots");
 assert.deepStrictEqual(CBFCorrectionInput.slotSelection("4^4s8", 99), { index: 2, start: 4, end: 5 }, "slot selection clamps to the final beat");
 assert.strictEqual(CBFCorrectionInput.slotSelection("^s|", 0), null, "a row without a beat has no slot selection");
+assert.strictEqual(CBFCorrectionInput.normalizeBeatInputCharacter("4"), "4", "an ASCII digit remains a beat input");
+assert.strictEqual(CBFCorrectionInput.normalizeBeatInputCharacter("４"), "4", "a full-width digit from Japanese input becomes an ASCII beat input");
+assert.strictEqual(CBFCorrectionInput.normalizeBeatInputCharacter("Ａ"), "a", "a full-width supported letter becomes a lowercase beat input");
+assert.strictEqual(CBFCorrectionInput.normalizeBeatInputCharacter("ｊ"), "", "an unsupported full-width letter is rejected");
+assert.strictEqual(CBFCorrectionInput.normalizeBeatInputCharacter("44"), "", "multiple characters are not treated as one beat input");
+assert.deepStrictEqual(CBFCorrectionInput.singleInsertedBeat("4444", "44344"), { index: 2, character: "3" }, "one natively inserted beat is detected");
+assert.deepStrictEqual(CBFCorrectionInput.singleInsertedBeat("44\n44", "44\n４44"), { index: 3, character: "4" }, "a full-width beat insertion is detected across rows");
+assert.strictEqual(CBFCorrectionInput.singleInsertedBeat("4444", "4434"), null, "a normal one-for-one replacement is not treated as insertion");
+assert.strictEqual(CBFCorrectionInput.singleInsertedBeat("4444", "^4444"), null, "a modifier insertion is not treated as an extra beat");
 assert.deepStrictEqual(CBFCorrectionInput.whiteNoteEdit("4444", 4, 4), { start: 3, end: 4, replacement: "@", caret: 4 }, "white note overwrites the final selected beat instead of adding a slot");
 assert.deepStrictEqual(CBFCorrectionInput.whiteNoteEdit("444^*4", 6, 6), { start: 3, end: 6, replacement: "@", caret: 4 }, "white note replaces existing modifiers and their beat without adding a slot");
 assert.deepStrictEqual(CBFCorrectionInput.appendBeatSlot("4444"), { text: "44440", selectionStart: 4, selectionEnd: 5 }, "explicit append adds one selected placeholder");

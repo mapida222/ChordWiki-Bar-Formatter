@@ -71,6 +71,27 @@
     return [...String(line || "").matchAll(BEAT_CHARACTER_PATTERN)];
   }
 
+  function normalizeBeatInputCharacter(value) {
+    const text = String(value || "");
+    if ([...text].length !== 1) return "";
+    const character = text.charCodeAt(0) >= 0xFF01 && text.charCodeAt(0) <= 0xFF5E
+      ? String.fromCharCode(text.charCodeAt(0) - 0xFEE0)
+      : text;
+    const normalized = character.toLowerCase();
+    return /^[0-9a-i@]$/.test(normalized) ? normalized : "";
+  }
+
+  function singleInsertedBeat(previousValue, currentValue) {
+    const previous = String(previousValue || "");
+    const current = String(currentValue || "");
+    if (current.length !== previous.length + 1) return null;
+    let index = 0;
+    while (index < previous.length && previous[index] === current[index]) index += 1;
+    if (`${current.slice(0, index)}${current.slice(index + 1)}` !== previous) return null;
+    const character = normalizeBeatInputCharacter(current[index]);
+    return character ? { index, character } : null;
+  }
+
   function normalizeLine(line, baseLimit, authoredWhiteNotes = 0) {
     const command = String(line || "").trim().toLowerCase();
     if (command === "n" || command === "s") return command;
@@ -215,5 +236,5 @@
     }).join("\n");
   }
 
-  window.CBFCorrectionInput = { groups, redistributeForLineBreaks, beatCharacters, normalizeLine, modifierInsertionAtLineEnd, needsInsertedWhiteNoteDuration, smartBeatEdit, slotSelection, whiteNoteEdit, nextLineStart, caretAfterLineEdit, overwritePastedRows, overwritePastedLine, appendBeatSlot, migrateLegacyText };
+  window.CBFCorrectionInput = { groups, redistributeForLineBreaks, beatCharacters, normalizeBeatInputCharacter, singleInsertedBeat, normalizeLine, modifierInsertionAtLineEnd, needsInsertedWhiteNoteDuration, smartBeatEdit, slotSelection, whiteNoteEdit, nextLineStart, caretAfterLineEdit, overwritePastedRows, overwritePastedLine, appendBeatSlot, migrateLegacyText };
 }());

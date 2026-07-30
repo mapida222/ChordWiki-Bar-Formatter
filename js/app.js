@@ -1775,7 +1775,50 @@
     elements.input.focus();
     notify(`${result.addedCount}か所へ[]を追加しました。`);
   });
-  elements.correction.addEventListener("input", () => {
+  let pendingNativeBeatReplacement = null;
+  elements.correction.addEventListener("input", (event) => {
+    if (pendingNativeBeatReplacement) {
+      const pending = pendingNativeBeatReplacement;
+      pendingNativeBeatReplacement = null;
+      elements.correction.value = pending.value;
+      elements.correction.setSelectionRange(pending.start, pending.end);
+      replaceActiveCorrectionBeat(pending.character);
+      return;
+    }
+    const insertedBeat = CBFCorrectionInput.singleInsertedBeat(correctionHistoryValue, elements.correction.value);
+    if (insertedBeat) {
+      const currentBeforeInsertion = elements.correction.value.slice(0, insertedBeat.index);
+      const lineIndex = currentBeforeInsertion.split(/\r\n|\r|\n/).length - 1;
+      const currentLine = elements.correction.value.split(/\r\n|\r|\n/)[lineIndex] || "";
+      const insertedWhiteNotes = Math.max(0, (currentLine.match(/@/g) || []).length - (authoredWhiteNoteCounts[lineIndex] || 0));
+      const allowedSlots = (correctionSlotCounts[lineIndex] || 0) + insertedWhiteNotes;
+      if (allowedSlots > 0 && CBFCorrectionInput.groups(currentLine).length > allowedSlots) {
+        const previousLine = correctionHistoryValue.split(/\r\n|\r|\n/)[lineIndex] || "";
+        const lineStart = correctionLineOffset(lineIndex);
+        const relativeIndex = insertedBeat.index - lineStart;
+        const beats = CBFCorrectionInput.beatCharacters(previousLine);
+        let slotIndex = beats.findIndex((beat) => beat.index >= relativeIndex);
+        if (slotIndex < 0) slotIndex = Math.max(0, beats.length - 1);
+        elements.correction.value = correctionHistoryValue;
+        selectCorrectionSlot(lineIndex, slotIndex);
+        replaceActiveCorrectionBeat(insertedBeat.character);
+        return;
+      }
+    }
+    const nativeCharacter = CBFCorrectionInput.normalizeBeatInputCharacter(event.data);
+    if (
+      nativeCharacter
+      && ["insertText", "insertCompositionText"].includes(event.inputType)
+      && correctionHistoryValue !== elements.correction.value
+    ) {
+      elements.correction.value = correctionHistoryValue;
+      selectCorrectionSlot(
+        linkedLineIndex >= 0 ? linkedLineIndex : 0,
+        linkedSlotIndex >= 0 ? linkedSlotIndex : 0
+      );
+      replaceActiveCorrectionBeat(nativeCharacter);
+      return;
+    }
     const caret = elements.correction.selectionStart;
     const previousCorrectionLines = correctionHistoryValue.split(/\r\n|\r|\n/);
     const normalized = elements.correction.value.split(/\r\n|\r|\n/).map((line, index) => {
@@ -1812,6 +1855,48 @@
     elements.correction.setSelectionRange(caret, caret);
     elements.correction.dispatchEvent(new Event("input", { bubbles: true }));
   }
+  function replaceActiveCorrectionBeat(inputCharacter) {
+    const character = CBFCorrectionInput.normalizeBeatInputCharacter(inputCharacter);
+    if (!character) return false;
+    const start = elements.correction.selectionStart;
+    const end = elements.correction.selectionEnd;
+    const value = elements.correction.value;
+    const lineStart = Math.max(value.lastIndexOf("\n", start - 1), value.lastIndexOf("\r", start - 1)) + 1;
+    const nextLf = value.indexOf("\n", start);
+    const nextCr = value.indexOf("\r", start);
+    const lineEndCandidates = [nextLf, nextCr].filter((position) => position >= 0);
+    const lineEnd = lineEndCandidates.length ? Math.min(...lineEndCandidates) : value.length;
+    const lineIndex = value.slice(0, lineStart).split(/\r\n|\r|\n/).length - 1;
+    const line = value.slice(lineStart, lineEnd);
+    const relativeStart = start - lineStart;
+    const relativeEnd = end - lineStart;
+    const edit = character === "@"
+      ? CBFCorrectionInput.whiteNoteEdit(line, relativeStart, relativeEnd)
+      : CBFCorrectionInput.needsInsertedWhiteNoteDuration(line, relativeStart, correctionSlotCounts[lineIndex] || 0, authoredWhiteNoteCounts[lineIndex] || 0)
+        ? { start: relativeStart, end: relativeEnd, replacement: character, caret: relativeStart + 1 }
+        : CBFCorrectionInput.smartBeatEdit(line, relativeStart, relativeEnd, character);
+    if (!edit) return false;
+    let nextCaret = lineStart + edit.caret;
+    nextCaret = CBFCorrectionInput.caretAfterLineEdit(value, lineEnd, nextCaret, character === "@");
+    replaceCorrectionText(lineStart + edit.start, lineStart + edit.end, edit.replacement, nextCaret);
+    return true;
+  }
+  elements.correction.addEventListener("beforeinput", (event) => {
+    if (!["insertText", "insertCompositionText"].includes(event.inputType)) return;
+    const character = CBFCorrectionInput.normalizeBeatInputCharacter(event.data);
+    if (!character) return;
+    if (event.cancelable) {
+      event.preventDefault();
+      replaceActiveCorrectionBeat(character);
+      return;
+    }
+    pendingNativeBeatReplacement = {
+      value: elements.correction.value,
+      start: elements.correction.selectionStart,
+      end: elements.correction.selectionEnd,
+      character
+    };
+  });
   elements.correction.addEventListener("paste", (event) => {
     const pastedText = event.clipboardData?.getData("text/plain");
     if (typeof pastedText !== "string") return;
@@ -1960,25 +2045,7 @@
     }
     if (/^[0-9a-i@]$/i.test(event.key)) {
       event.preventDefault();
-      const lineStart = Math.max(value.lastIndexOf("\n", start - 1), value.lastIndexOf("\r", start - 1)) + 1;
-      const nextLf = value.indexOf("\n", start);
-      const nextCr = value.indexOf("\r", start);
-      const lineEndCandidates = [nextLf, nextCr].filter((position) => position >= 0);
-      const lineEnd = lineEndCandidates.length ? Math.min(...lineEndCandidates) : value.length;
-      const lineIndex = value.slice(0, lineStart).split(/\r\n|\r|\n/).length - 1;
-      const line = value.slice(lineStart, lineEnd);
-      const relativeStart = start - lineStart;
-      const relativeEnd = end - lineStart;
-      const edit = event.key === "@"
-        ? CBFCorrectionInput.whiteNoteEdit(line, relativeStart, relativeEnd)
-        : CBFCorrectionInput.needsInsertedWhiteNoteDuration(line, relativeStart, correctionSlotCounts[lineIndex] || 0, authoredWhiteNoteCounts[lineIndex] || 0)
-          ? { start: relativeStart, end: relativeEnd, replacement: event.key.toLowerCase(), caret: relativeStart + 1 }
-          : CBFCorrectionInput.smartBeatEdit(line, relativeStart, relativeEnd, event.key);
-      if (edit) {
-        let nextCaret = lineStart + edit.caret;
-        nextCaret = CBFCorrectionInput.caretAfterLineEdit(value, lineEnd, nextCaret, event.key === "@");
-        replaceCorrectionText(lineStart + edit.start, lineStart + edit.end, edit.replacement, nextCaret);
-      }
+      replaceActiveCorrectionBeat(event.key);
     }
   });
   elements.correctionUndo.addEventListener("click", undoCorrection);
