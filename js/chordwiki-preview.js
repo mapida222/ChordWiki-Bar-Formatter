@@ -45,7 +45,7 @@
     const alignedValue = alignWithLeadingBoundary ? String(value).replace(/^\s+(?=\|)/, "") : String(value);
     const characters = Array.from(alignedValue);
     return characters.map((character, index) => character === "|"
-      ? `<span class="cw-body-bar-token${atLineStart && index === 0 ? " cw-bar-token-line-start" : ""}${characters[index + 1] && !/[\s\-=>≧○|*]/.test(characters[index + 1]) ? " cw-body-bar-token-before-text" : ""}" data-token-type="bar">|</span>`
+      ? `<span class="cw-body-bar-token${atLineStart && index === 0 ? " cw-bar-token-line-start" : ""}${characters[index - 1] === "-" && characters[index + 1] === "-" ? " cw-bar-between-hyphens" : ""}${characters[index + 1] && !/[\s\-=>≧○|*]/.test(characters[index + 1]) ? " cw-body-bar-token-before-text" : ""}" data-token-type="bar">|</span>`
       : decoratedText(character)).join("");
   }
 

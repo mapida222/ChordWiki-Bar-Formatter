@@ -22,7 +22,12 @@ assert(mixedRhythm.includes('<span class="cw-body">=<span class="cw-body-bar-tok
 const finalAccent = preview.render("|[F]----|[F]-[C]-[F]--|[N.C.]----|[F]>|");
 assert(finalAccent.includes('<span class="cw-body">&gt;<span class="cw-body-bar-token" data-token-type="bar">|</span></span>'));
 
+const barBetweenRhythm = preview.render("|[A]---- ---[Asus4]-|-[A]--[Asus4]- -[A]---|[A]---- ---[Asus4]-|-[A]--[Asus4]- -[A]---|");
+assert.strictEqual((barBetweenRhythm.match(/cw-bar-between-hyphens/g) || []).length, 2);
+assert(barBetweenRhythm.includes('<span class="cw-body">-<span class="cw-body-bar-token cw-bar-between-hyphens" data-token-type="bar">|</span>-</span>'));
+
 const css = fs.readFileSync(path.join(__dirname, "..", "style.css"), "utf8");
+const page = fs.readFileSync(path.join(__dirname, "..", "index.html"), "utf8");
 assert(css.includes(".cw-score-line { display: block; width: max-content; min-width: 100%; margin: 1em 0;"));
 assert(css.includes("top: -1.1em"));
 assert(css.includes("font-family: sans-serif"));
@@ -39,6 +44,8 @@ assert(css.includes(".cw-body { position: relative; left: -.8em; display: inline
 assert(css.includes(".cw-score-line-has-lyrics .cw-body-bar-token { top: 0; }"));
 assert(css.includes(".cw-score-line-has-lyrics .cw-body-bar-token-before-text { margin-right: .4em; }"));
 assert(css.includes(".bars-through .cw-boundary { color: transparent; }"));
+assert(css.includes(".cw-bar-between-hyphens { margin-right: .4em; }"));
+assert(page.includes("js/chordwiki-preview.js?v=20260731-4"));
 assert(css.includes(".cw-boundary-upper { top: -1.1em;"));
 assert(css.includes(".cw-boundary-leading { margin-right: .28em; }"));
 assert(css.includes(".cw-boundary-leading.cw-boundary-before-chord { margin-right: .08em; }"));
