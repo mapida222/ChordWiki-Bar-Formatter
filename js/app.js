@@ -370,7 +370,7 @@
     flushPlain();
     return className ? `<span class="${className}">${content}</span>` : content;
   }
-  function colorizeText(text, activeOffset = -1, addedOffsets = new Set()) {
+  function colorizeText(text, activeOffset = -1, addedOffsets = new Set(), linkedTokenOffset = -1) {
     const tokenPattern = /(\{[^{}\r\n]*\}|\[[^\[\]\r\n]*\]|\|)/g;
     let html = "";
     let lastIndex = 0;
@@ -385,6 +385,7 @@
         const inner = token.slice(1, -1);
         className = inner !== "|" && !/^[\s\-=>≧○]+$/.test(inner) ? "syntax-chord" : "syntax-bracket";
       }
+      if (match.index === linkedTokenOffset) className = `${className} linked-code-target`.trim();
       html += colorizeChunk(token, match.index, className, activeOffset, addedOffsets);
       lastIndex = match.index + token.length;
     }
@@ -432,6 +433,18 @@
     let offset = 0;
     for (let index = 0; index < lineIndex; index += 1) offset += lines[index].length + 1;
     return offset + slot.index;
+  }
+  function outputCodeOffsetAt(lineIndex, slotIndex) {
+    if (lineIndex < 0 || slotIndex < 0) return -1;
+    const lines = elements.output.value.split(/\r\n|\r|\n/);
+    const line = lines[lineIndex] || "";
+    const targets = [...line.matchAll(/\[([^\[\]\r\n]+)\]/g)]
+      .filter((match) => match[1] === "○" || CBFConverter.isChordSymbol(match[1]));
+    const target = targets[slotIndex];
+    if (!target) return -1;
+    let offset = 0;
+    for (let index = 0; index < lineIndex; index += 1) offset += lines[index].length + 1;
+    return offset + target.index;
   }
   function correctionLineOffset(lineIndex) {
     const lines = elements.correction.value.split(/\r\n|\r|\n/);
@@ -525,6 +538,7 @@
       highlight.style.setProperty("--active-line-height", `${lineHeight}px`);
     });
     updateEditorHighlight(elements.correction, correctionOffsetAt(linkedLineIndex, linkedSlotIndex));
+    updateEditorHighlight(elements.output, -1, outputCodeOffsetAt(linkedLineIndex, linkedSlotIndex));
     updateCorrectionPosition();
   }
   function updateActivePosition(textarea, _gutter, activate = false) {
@@ -544,13 +558,17 @@
     }
     applyLinkedPosition();
   }
-  function updateEditorHighlight(textarea, activeOffset = textarea === elements.correction ? correctionOffsetAt(linkedLineIndex, linkedSlotIndex) : -1) {
+  function updateEditorHighlight(
+    textarea,
+    activeOffset = textarea === elements.correction ? correctionOffsetAt(linkedLineIndex, linkedSlotIndex) : -1,
+    linkedTokenOffset = textarea === elements.output ? outputCodeOffsetAt(linkedLineIndex, linkedSlotIndex) : -1
+  ) {
     const highlight = highlightByEditor.get(textarea);
     if (!highlight) return;
     const addedOffsets = textarea === elements.output && elements.addedBackground.checked
       ? outputAddedOffsets
       : new Set();
-    highlight.innerHTML = colorizeText(textarea.value, activeOffset, addedOffsets);
+    highlight.innerHTML = colorizeText(textarea.value, activeOffset, addedOffsets, linkedTokenOffset);
     syncHighlightScroll(textarea);
   }
   function updateLineNumbers(textarea, gutter) {

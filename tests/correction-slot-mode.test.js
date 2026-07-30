@@ -20,6 +20,6 @@ assert(app.includes('event.key.toLowerCase() === "x" ? start + selectedBeat + 1 
 assert(app.includes('if (event.key === "|")'));
 assert(css.includes(".correction-card .editor-text-layer textarea { caret-color: transparent !important; }"));
 assert(html.includes('js/correction-input.js?v=20260731-3'));
-assert(html.includes('js/app.js?v=20260731-7'));
+assert(html.includes('js/app.js?v=20260731-8'));
 
 console.log("PASS: ROW-009 correction slot selection replaces without a visible text caret");

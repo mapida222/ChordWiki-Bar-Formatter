@@ -24,6 +24,7 @@
 | `ROW-008` | 「原文」採用行を最終表示でも未加工のまま保持 | 有効 | `js/app.js`、`js/converter.js`、`tests/conversion-bug-regressions.test.js` |
 | `ROW-009` | 行修正を文字カーソルではなく拍スロット単位で直接上書き | 有効 | `js/app.js`、`js/correction-input.js`、`style.css`、`tests/correction-slot-mode.test.js` |
 | `ROW-010` | IME・ソフトウェアキーボード経由でも拍スロットを追加せず上書き | 有効 | `js/app.js`、`js/correction-input.js`、`tests/correction-input.test.js`、`tests/correction-key-routing.test.js` |
+| `ROW-011` | 行修正で選択中の拍に対応する変換後コードを背景表示 | 有効 | `js/app.js`、`style.css`、`tests/linked-code-highlight.test.js` |
 | `CONVERT-001` | 歌詞行のハイフン省略モード | 有効 | `index.html`、`js/app.js`、`js/converter.js` |
 | `CONVERT-002` | 1小節3コード以上でタイミング用ハイフンを保持 | 有効 | `js/converter.js` |
 | `CONVERT-003` | コード・拍記号・小節線だけの行を歌詞と誤認しない | 有効 | `js/converter.js`、`tests/conversion-bug-regressions.test.js` |

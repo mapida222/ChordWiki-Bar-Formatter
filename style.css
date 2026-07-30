@@ -398,6 +398,7 @@ textarea { display: block; width: 100%; height: 100%; min-height: 0; resize: non
 .editor-highlight .syntax-key { color: var(--syntax-key); }
 .editor-highlight .syntax-directive { color: var(--syntax-directive); }
 .editor-highlight .active-character { color: var(--text); background: color-mix(in srgb, var(--focus) 34%, transparent); box-shadow: inset 0 -2px 0 var(--focus); }
+.editor-highlight .linked-code-target { border-radius: 3px; color: var(--text); background: color-mix(in srgb, var(--focus) 30%, transparent); box-shadow: inset 0 -2px 0 var(--focus); }
 .editor-highlight .generated-token { border-radius: 3px; color: var(--text); background: color-mix(in srgb, #48b86b 30%, transparent); box-shadow: inset 0 -2px 0 color-mix(in srgb, #26964a 82%, var(--text)); }
 .editor-text-layer.diff-visible textarea { color: transparent; caret-color: var(--text); background: transparent; }
 .editor-text-layer.linked-position-visible textarea { color: transparent; caret-color: var(--text); background: transparent; }
