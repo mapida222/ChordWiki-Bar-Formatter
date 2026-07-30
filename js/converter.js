@@ -31,28 +31,34 @@
     let index = 0;
     const hasAuthoredBar = line.includes("|");
     const flush = () => { if (text) { tokens.push({ kind: "text", value: text }); text = ""; } };
-    const isValidRhythmRun = (value) => /^(?:[>≧]+|[>≧]*[-=]+)$/u.test(value);
+    const isValidRhythmRun = (value) => /^[-=>≧]+$/u.test(value);
     const followsChordOrRhythm = () => !text && ["chord", "hyphen"].includes(tokens[tokens.length - 1]?.kind);
+    const pushBar = () => {
+      flush();
+      if (tokens[tokens.length - 1]?.kind !== "bar") tokens.push({ kind: "bar", value: "|" });
+    };
     const precedesMusicBoundary = (end) => {
       let next = end;
       while (next < line.length && /[ \t　]/u.test(line[next])) next += 1;
       return line[next] === "|" || line[next] === "[";
     };
     while (index < line.length) {
-      if (line.startsWith("[|]", index)) { flush(); tokens.push({ kind: "bar", value: "|" }); index += 3; continue; }
+      if (line.startsWith("[|]", index)) { pushBar(); index += 3; continue; }
       const char = line[index];
       if (char === "[") {
         const end = line.indexOf("]", index + 1);
         if (end < 0) { text += char; index += 1; continue; }
         const content = line.slice(index + 1, end);
         flush();
-        if (content === "|") tokens.push({ kind: "bar", value: "|" });
+        if (content === "|") {
+          if (tokens[tokens.length - 1]?.kind !== "bar") tokens.push({ kind: "bar", value: "|" });
+        }
         else if (content && [...content].every((part) => "-=>≧ ".includes(part))) tokens.push({ kind: "hyphen", value: content });
         else if (isChordSymbol(content)) tokens.push({ kind: "chord", value: normalizeChordSymbol(content) });
         else tokens.push({ kind: "text", value: `[${content}]` });
         index = end + 1; continue;
       }
-      if (char === "|") { flush(); tokens.push({ kind: "bar", value: "|" }); index += 1; continue; }
+      if (char === "|") { pushBar(); index += 1; continue; }
       if ("-=>≧".includes(char)) {
         let end = index;
         while (end < line.length && "-=>≧".includes(line[end])) end += 1;
@@ -1593,5 +1599,11 @@
     return [...new Set(remapped)].sort((left, right) => left - right);
   }
 
-  window.CBFConverter = { convertChordText, parseTokens, isChordSymbol, normalizeChordSymbol, moveDelayedRhythmAfterChord, suppressTrailingBarAfterParenthesizedFinalChord, renderWithBeatCode, mergeCorrectionScope, renderCompletedOutput, inferBeatCodeFromRenderedLine, mergeChangedLines, alignLineIndices, musicLineSignature, sameMusicStructure, alignMusicLineIndices, addedCharacterIndices, remapTrackedCharacterIndices, addContinuationChordsToManualRhythm, analyzeAuthoredMeasureCapacity };
+  function restoreSourceAdoptedLines(renderedText, sourceText, rowModes) {
+    const renderedLines = String(renderedText || "").split(/\r\n|\r|\n/);
+    const sourceLines = String(sourceText || "").split(/\r\n|\r|\n/);
+    return renderedLines.map((line, index) => rowModes?.[index] === "source" ? (sourceLines[index] ?? "") : line).join("\n");
+  }
+
+  window.CBFConverter = { convertChordText, parseTokens, isChordSymbol, normalizeChordSymbol, moveDelayedRhythmAfterChord, suppressTrailingBarAfterParenthesizedFinalChord, renderWithBeatCode, mergeCorrectionScope, renderCompletedOutput, restoreSourceAdoptedLines, inferBeatCodeFromRenderedLine, mergeChangedLines, alignLineIndices, musicLineSignature, sameMusicStructure, alignMusicLineIndices, addedCharacterIndices, remapTrackedCharacterIndices, addContinuationChordsToManualRhythm, analyzeAuthoredMeasureCapacity };
 }());

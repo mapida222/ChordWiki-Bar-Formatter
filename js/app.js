@@ -885,7 +885,8 @@
     const hyphenSpacing = activeSettings.valid ? activeSettings.values.hyphenSpacing : 0;
     const visibilityMode = lyricHyphenMode === "all" ? "all" : lyricHyphenMode === "minimize";
     const result = CBFConverter.renderCompletedOutput(convertedOutput, targets, hyphenSpacing, visibilityMode);
-    const nextOutput = renderBars(result.output, elements.plainEditBars.checked);
+    const renderedOutput = renderBars(result.output, elements.plainEditBars.checked);
+    const nextOutput = CBFConverter.restoreSourceAdoptedLines(renderedOutput, elements.input.value, rowAdoptionModes);
     if (changedLineIndices?.size) {
       const previousValue = elements.output.value;
       const mergedValue = CBFConverter.mergeChangedLines(previousValue, nextOutput, changedLineIndices);
@@ -1446,6 +1447,7 @@
     else scheduleConversion(true);
     markActivity();
   });
+  CBFNumericEntry.attach(elements.settingsGrid);
   elements.settingsGrid.addEventListener("click", (event) => {
     const button = event.target.closest("[data-setting-cycle]");
     if (!button) return;
@@ -2229,12 +2231,15 @@
       topHeight: elements.inputShell.getBoundingClientRect().height,
       resultHeight: elements.outputShell.getBoundingClientRect().height,
       finalHeight: elements.finalOutputShell.getBoundingClientRect().height,
+      committedHeight: elements.committedOutputShell.classList.contains("committed-collapsed")
+        ? Number.parseFloat(elements.workspace.style.getPropertyValue("--committed-editor-height")) || null
+        : elements.committedOutputShell.getBoundingClientRect().height,
       displayHeight: Number.isFinite(displayHeight) ? displayHeight : null
     };
     localStorage.setItem(LAYOUT_STORAGE_KEY, JSON.stringify(layout));
   }
   function resetLayout() {
-    ["--left-column-width", "--top-editor-height", "--result-editor-height", "--final-editor-height"].forEach((property) => elements.workspace.style.removeProperty(property));
+    ["--left-column-width", "--top-editor-height", "--result-editor-height", "--final-editor-height", "--committed-editor-height"].forEach((property) => elements.workspace.style.removeProperty(property));
     elements.displaySettingsShell.style.removeProperty("height");
     elements.correctionGuide.style.removeProperty("height");
     localStorage.removeItem(LAYOUT_STORAGE_KEY);
@@ -2280,6 +2285,7 @@
       if (Number.isFinite(layout.topHeight)) setRowHeight("top", layout.topHeight);
       if (Number.isFinite(layout.resultHeight)) setRowHeight("bottom", layout.resultHeight);
       if (Number.isFinite(layout.finalHeight)) setRowHeight("final", layout.finalHeight);
+      if (Number.isFinite(layout.committedHeight)) setRowHeight("committed", layout.committedHeight);
     } catch (_error) { /* 壊れた保存値は既定レイアウトを使う */ }
   }
   function setLeftColumnWidth(width) {
@@ -2315,7 +2321,13 @@
     });
   });
   function setRowHeight(row, height) {
-    const variable = row === "top" ? "--top-editor-height" : row === "final" ? "--final-editor-height" : "--result-editor-height";
+    const variable = row === "top"
+      ? "--top-editor-height"
+      : row === "final"
+        ? "--final-editor-height"
+        : row === "committed"
+          ? "--committed-editor-height"
+          : "--result-editor-height";
     const clamped = Math.max(54, Math.min(height, 1600));
     elements.workspace.style.setProperty(variable, `${clamped}px`);
     saveLayout();
@@ -2336,7 +2348,17 @@
     const columnMode = handle.dataset.column || "none";
     const panelName = handle.dataset.panel || "";
     const row = handle.dataset.row || "";
-    const verticalTarget = panelName === "display" ? elements.displaySettingsShell : panelName === "guide" ? elements.correctionGuide : row === "top" ? elements.inputShell : row === "final" ? elements.finalOutputShell : elements.outputShell;
+    const verticalTarget = panelName === "display"
+      ? elements.displaySettingsShell
+      : panelName === "guide"
+        ? elements.correctionGuide
+        : row === "top"
+          ? elements.inputShell
+          : row === "final"
+            ? elements.finalOutputShell
+            : row === "committed"
+              ? elements.committedOutputShell
+              : elements.outputShell;
     handle.addEventListener("pointerdown", (event) => {
       startX = event.clientX;
       startY = event.clientY;

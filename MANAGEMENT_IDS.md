@@ -21,10 +21,16 @@
 | `ROW-005` | 行修正の上書き入力と更新キャッシュ対策 | 有効 | `index.html`、`js/app.js`、`tests/correction-key-routing.test.js` |
 | `ROW-006` | 歌詞末尾の1文字と絵文字の間へ補完拍を配置 | 廃止 | 文節を自動判定できないため撤回。長さ記号は小節先頭へまとめる |
 | `ROW-007` | 行修正の長い拍へ歌詞を選択方式で配置 | 有効 | `js/settings.js`、`js/converter.js`、`tests/long-beat-lyric-distribution.test.js` |
+| `ROW-008` | 「原文」採用行を最終表示でも未加工のまま保持 | 有効 | `js/app.js`、`js/converter.js`、`tests/conversion-bug-regressions.test.js` |
 | `CONVERT-001` | 歌詞行のハイフン省略モード | 有効 | `index.html`、`js/app.js`、`js/converter.js` |
 | `CONVERT-002` | 1小節3コード以上でタイミング用ハイフンを保持 | 有効 | `js/converter.js` |
+| `CONVERT-003` | コード・拍記号・小節線だけの行を歌詞と誤認しない | 有効 | `js/converter.js`、`tests/conversion-bug-regressions.test.js` |
+| `CONVERT-004` | 隣接する小節線を1本へ正規化 | 有効 | `js/converter.js`、`tests/conversion-bug-regressions.test.js` |
+| `SETTINGS-001` | 数値設定のフォーカス直後入力で既存値を置換 | 有効 | `js/numeric-entry.js`、`js/app.js`、`tests/numeric-entry.test.js` |
+| `SETTINGS-002` | 端数歌詞前置きと長い拍の歌詞配置の優先関係 | 調査済み | `js/converter.js`、`tests/long-beat-lyric-distribution.test.js` |
 | `WARNING-001` | 変換前と初期設定の1小節ハイフン数不一致警告 | 有効 | `js/app.js`、`js/converter.js` |
 | `LAYOUT-001` | 行修正枠と変換後枠の入力欄上端を揃える | 有効 | `style.css`、`js/app.js` |
+| `LAYOUT-002` | 確定譜面テキスト枠の右下リサイズとサイズ保存 | 有効 | `index.html`、`style.css`、`js/app.js`、`tests/committed-resize.test.js` |
 | `PREVIEW-001` | 譜面プレビューのベスト条件 | 基準 | `LAYOUT_REFERENCE.md`、`layout-snapshots/2026-07-22-good/`、Gitタグ `preview-layout-best-2026-07-22` |
 | `HISTORY-001` | 編集中・コピー成功時の使用履歴保存 | 有効 | `js/app.js`、`index.html`、`tests/history-triggers.test.js` |
 | `HISTORY-002` | 使用履歴のローカルテストデータ入出力 | 有効 | `js/app.js`、`js/test-data.js`、`index.html`、`tests/test-data.test.js` |

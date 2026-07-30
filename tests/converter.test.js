@@ -65,7 +65,7 @@ const spacedChordOnly = CBFConverter.renderCompletedOutput(
   [4],
   4
 ).output;
-if (spacedChordOnly !== "|[C]---- ----|[D]---- ----||[Bm7]---- ----|[Em7]---- ----|") {
+if (spacedChordOnly !== "|[C]---- ----|[D]---- ----|[Bm7]---- ----|[Em7]---- ----|") {
   failures += 1;
   console.error(`FAIL chord-only hyphen spacing\nactual: ${spacedChordOnly}`);
 }

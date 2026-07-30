@@ -35,8 +35,8 @@ assert.strictEqual(
 );
 assert.strictEqual(
   convert("|[C]---- ----||---- ----|", true),
-  "[|][C][----] [----][|][|][C][----] [----][|]",
-  "an empty measure or double bar receives no phantom chord"
+  "[|][C][----] [----][|][C][----] [----][|]",
+  "a duplicate authored bar is normalized before chord continuation"
 );
 
 const directManual = "|[C]MANUAL---- ----|---- ----|";

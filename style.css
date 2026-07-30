@@ -274,6 +274,7 @@ main { padding: 12px 0 28px; }
 .committed-card .editor-shell { height: var(--committed-editor-height); border-color: var(--accent); }
 .committed-card .editor-shell.committed-collapsed { height: 43px; min-height: 43px; overflow: hidden; }
 .committed-card .editor-shell.committed-collapsed textarea, .committed-card .editor-shell.committed-collapsed .editor-highlight { overflow: hidden; white-space: pre; }
+.committed-card .editor-shell.committed-collapsed + .frame-resize-corner { display: none; }
 .removal-controls { display: grid; grid-template-columns: max-content minmax(190px, 230px) minmax(72px, 100px) max-content; align-items: center; gap: 6px 8px; margin-bottom: 6px; color: var(--muted); font-size: .7rem; }
 .measure-capacity-warning { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 0 0 6px; padding: 6px 8px; border: 1px solid #d5912c; border-left-width: 4px; border-radius: 3px; color: var(--text); background: color-mix(in srgb, var(--panel) 82%, #d5912c); font-size: .72rem; line-height: 1.45; }
 .measure-capacity-warning[hidden] { display: none; }

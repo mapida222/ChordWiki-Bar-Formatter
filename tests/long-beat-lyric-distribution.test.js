@@ -73,4 +73,30 @@ assert.strictEqual(
   "selected six-beat markers should still be removable after lyric placement"
 );
 
+const overlappingSettingsSource = "[C]前[G]あいうえ";
+const longPlacementWithPrepose = CBFConverter.convertChordText(
+  overlappingSettingsSource,
+  { ...settings, measureCapacity: 8, hyphenSpacing: 4, shortFractionPrepose: 1 },
+  ["6c"]
+).output;
+const longPlacementWithoutPrepose = CBFConverter.convertChordText(
+  overlappingSettingsSource,
+  { ...settings, measureCapacity: 8, hyphenSpacing: 4, shortFractionPrepose: 0 },
+  ["6c"]
+).output;
+assert.strictEqual(
+  longPlacementWithPrepose,
+  longPlacementWithoutPrepose,
+  "eligible long-beat placement takes priority instead of being repositioned again by fractional prepose"
+);
+assert.notStrictEqual(
+  longPlacementWithPrepose,
+  CBFConverter.convertChordText(
+    overlappingSettingsSource,
+    { ...settings, measureCapacity: 8, hyphenSpacing: 4, shortFractionPrepose: 1, longBeatLyricPlacement: 0 },
+    ["6c"]
+  ).output,
+  "fractional prepose remains active when long-beat placement is disabled"
+);
+
 console.log("PASS: ROW-007 selectable long-beat lyric placement");
