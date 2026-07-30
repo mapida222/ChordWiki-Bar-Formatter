@@ -123,6 +123,14 @@
     return { start: target.index, end: target.index + target[0].length, replacement: character, caret: target.index + 1 };
   }
 
+  function slotSelection(line, slotIndex) {
+    const beats = beatCharacters(line);
+    if (!beats.length) return null;
+    const index = Math.max(0, Math.min(beats.length - 1, Number(slotIndex) || 0));
+    const target = beats[index];
+    return { index, start: target.index, end: target.index + target[0].length };
+  }
+
   function whiteNoteEdit(line, start, end) {
     const text = String(line || "");
     const from = Math.max(0, Math.min(Number(start) || 0, text.length));
@@ -207,5 +215,5 @@
     }).join("\n");
   }
 
-  window.CBFCorrectionInput = { groups, redistributeForLineBreaks, beatCharacters, normalizeLine, modifierInsertionAtLineEnd, needsInsertedWhiteNoteDuration, smartBeatEdit, whiteNoteEdit, nextLineStart, caretAfterLineEdit, overwritePastedRows, overwritePastedLine, appendBeatSlot, migrateLegacyText };
+  window.CBFCorrectionInput = { groups, redistributeForLineBreaks, beatCharacters, normalizeLine, modifierInsertionAtLineEnd, needsInsertedWhiteNoteDuration, smartBeatEdit, slotSelection, whiteNoteEdit, nextLineStart, caretAfterLineEdit, overwritePastedRows, overwritePastedLine, appendBeatSlot, migrateLegacyText };
 }());

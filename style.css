@@ -387,6 +387,7 @@ main { padding: 12px 0 28px; }
 textarea { display: block; width: 100%; height: 100%; min-height: 0; resize: none; padding: 14px; border: 0; border-radius: 0; outline: none; color: var(--text); background: var(--panel); font-family: var(--editor-font); font-size: var(--editor-font-size); line-height: 1.65; font-variant-ligatures: none; tab-size: 4; }
 .editor-text-layer { position: relative; overflow: hidden; width: 100%; min-width: 0; height: 100%; background: var(--panel); }
 .editor-text-layer textarea { position: absolute; inset: 0; z-index: 1; }
+.correction-card .editor-text-layer textarea { caret-color: transparent !important; }
 .editor-highlight { position: absolute; top: 0; left: 0; z-index: 0; width: max-content; min-width: 100%; min-height: 100%; margin: 0; padding: 14px; color: var(--text); background: transparent; font-family: var(--editor-font); font-size: var(--editor-font-size); font-weight: 400; line-height: 1.65; font-variant-ligatures: none; tab-size: 4; white-space: pre; pointer-events: none; }
 .editor-highlight.active-line-visible { background-image: linear-gradient(color-mix(in srgb, var(--focus) 14%, transparent), color-mix(in srgb, var(--focus) 14%, transparent)); background-repeat: no-repeat; background-position: 0 var(--active-line-top, 0); background-size: 100% var(--active-line-height, 1.65em); }
 .colorized-editors .editor-text-layer textarea { color: transparent; caret-color: var(--text); background: transparent; }

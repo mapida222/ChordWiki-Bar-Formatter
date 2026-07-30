@@ -433,6 +433,54 @@
     for (let index = 0; index < lineIndex; index += 1) offset += lines[index].length + 1;
     return offset + slot.index;
   }
+  function correctionLineOffset(lineIndex) {
+    const lines = elements.correction.value.split(/\r\n|\r|\n/);
+    let offset = 0;
+    for (let index = 0; index < Math.max(0, lineIndex); index += 1) offset += (lines[index] || "").length + 1;
+    return offset;
+  }
+  function selectCorrectionSlot(lineIndex, slotIndex) {
+    const lines = elements.correction.value.split(/\r\n|\r|\n/);
+    const resolvedLine = Math.max(0, Math.min(lines.length - 1, lineIndex));
+    const selection = CBFCorrectionInput.slotSelection(lines[resolvedLine] || "", slotIndex);
+    linkedLineIndex = resolvedLine;
+    linkedSlotIndex = selection?.index ?? -1;
+    const lineOffset = correctionLineOffset(resolvedLine);
+    const start = selection ? lineOffset + selection.start : lineOffset;
+    const end = selection ? lineOffset + selection.end : lineOffset;
+    if (elements.correction.selectionStart !== start || elements.correction.selectionEnd !== end) {
+      elements.correction.setSelectionRange(start, end);
+    }
+    applyLinkedPosition();
+  }
+  function moveCorrectionSlot(key) {
+    const lines = elements.correction.value.split(/\r\n|\r|\n/);
+    let lineIndex = linkedLineIndex >= 0 ? linkedLineIndex : activeLineIndex(elements.correction);
+    let slotIndex = linkedSlotIndex;
+    const slots = () => correctionSlots(lines[lineIndex] || "");
+    if (key === "ArrowLeft") {
+      if (slotIndex > 0) slotIndex -= 1;
+      else if (lineIndex > 0) {
+        lineIndex -= 1;
+        slotIndex = Math.max(0, correctionSlots(lines[lineIndex] || "").length - 1);
+      }
+    } else if (key === "ArrowRight") {
+      if (slotIndex >= 0 && slotIndex < slots().length - 1) slotIndex += 1;
+      else if (lineIndex < lines.length - 1) {
+        lineIndex += 1;
+        slotIndex = 0;
+      }
+    } else if (key === "ArrowUp") {
+      lineIndex = Math.max(0, lineIndex - 1);
+    } else if (key === "ArrowDown") {
+      lineIndex = Math.min(lines.length - 1, lineIndex + 1);
+    } else if (key === "Home") {
+      slotIndex = 0;
+    } else if (key === "End") {
+      slotIndex = Math.max(0, slots().length - 1);
+    }
+    selectCorrectionSlot(lineIndex, slotIndex);
+  }
   function correctionTargetAt(lineIndex, slotIndex) {
     const sourceLine = elements.input.value.split(/\r\n|\r|\n/)[lineIndex] || "";
     const targets = [];
@@ -483,6 +531,16 @@
     if (activate) {
       linkedLineIndex = activeLineIndex(textarea);
       linkedSlotIndex = slotIndexAt(textarea, linkedLineIndex, lineColumnAtSelection(textarea));
+      if (textarea === elements.correction && textarea.selectionEnd - textarea.selectionStart <= 1) {
+        const selection = CBFCorrectionInput.slotSelection(textarea.value.split(/\r\n|\r|\n/)[linkedLineIndex] || "", linkedSlotIndex);
+        if (selection) {
+          const lineOffset = correctionLineOffset(linkedLineIndex);
+          const start = lineOffset + selection.start;
+          const end = lineOffset + selection.end;
+          if (textarea.selectionStart !== start || textarea.selectionEnd !== end) textarea.setSelectionRange(start, end);
+          linkedSlotIndex = selection.index;
+        }
+      }
     }
     applyLinkedPosition();
   }
@@ -1746,7 +1804,7 @@
     persistRowAdoptionModes();
     updateCorrectionModes();
     scheduleConversion(false, changedLineIndices);
-    updateCorrectionPosition();
+    updateActivePosition(elements.correction, elements.correctionLines, true);
     markActivity();
   });
   function replaceCorrectionText(start, end, replacement, caret) {
@@ -1804,6 +1862,11 @@
     const start = elements.correction.selectionStart;
     const end = elements.correction.selectionEnd;
     const value = elements.correction.value;
+    if (!event.shiftKey && ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Home", "End"].includes(event.key)) {
+      event.preventDefault();
+      moveCorrectionSlot(event.key);
+      return;
+    }
     if (event.key === "Backspace") {
       event.preventDefault();
       if (start !== end) {
@@ -1842,7 +1905,10 @@
       const after = line.slice(relativeEnd);
       const hasPreviousValue = /[0-9a-i@]/i.test(before);
       const hasFollowingValue = /[0-9a-i@]/i.test(after);
-      if (hasPreviousValue && (hasFollowingValue || relativeStart === line.length)) {
+      const selectedBeat = relativeEnd - relativeStart === 1 && /^[0-9a-i@]$/i.test(line.slice(relativeStart, relativeEnd));
+      if (selectedBeat && (hasFollowingValue || relativeEnd === line.length)) {
+        replaceCorrectionText(end, end, "s", end + 1);
+      } else if (hasPreviousValue && (hasFollowingValue || relativeStart === line.length)) {
         replaceCorrectionText(start, end, "s", start + 1);
       } else if (!line.trim() || line.trim().toLowerCase() === "n" || !hasPreviousValue) {
         replaceCorrectionText(lineStart, lineEnd, "s", lineStart + 1);
@@ -1858,7 +1924,7 @@
       if (end > start) {
         const selectedBeat = value.slice(start, end).search(/[0-9a-i@]/i);
         if (selectedBeat >= 0) {
-          const insertionPoint = start + selectedBeat;
+          const insertionPoint = event.key.toLowerCase() === "x" ? start + selectedBeat + 1 : start + selectedBeat;
           event.preventDefault();
           replaceCorrectionText(insertionPoint, insertionPoint, event.key.toLowerCase(), insertionPoint + 1);
           return;
@@ -1871,6 +1937,21 @@
           return;
         }
       }
+    }
+    if (event.key === "|") {
+      event.preventDefault();
+      const lineStart = Math.max(value.lastIndexOf("\n", start - 1), value.lastIndexOf("\r", start - 1)) + 1;
+      const nextLf = value.indexOf("\n", start);
+      const nextCr = value.indexOf("\r", start);
+      const lineEndCandidates = [nextLf, nextCr].filter((position) => position >= 0);
+      const lineEnd = lineEndCandidates.length ? Math.min(...lineEndCandidates) : value.length;
+      const line = value.slice(lineStart, lineEnd);
+      if (line.includes("|")) {
+        notify("行修正の小節頭記号|は1行に1個だけ指定できます。", true);
+        return;
+      }
+      replaceCorrectionText(start, start, "|", start + 1);
+      return;
     }
     if (/^[j-mo-rt-wyz]$/i.test(event.key)) {
       event.preventDefault();
