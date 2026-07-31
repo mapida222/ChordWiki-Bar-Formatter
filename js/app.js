@@ -1839,7 +1839,7 @@
       pendingNativeBeatReplacement = null;
       elements.correction.value = pending.value;
       elements.correction.setSelectionRange(pending.start, pending.end);
-      replaceActiveCorrectionBeat(pending.character);
+      [...pending.characters].forEach((character) => replaceActiveCorrectionBeat(character));
       return;
     }
     const insertedBeat = CBFCorrectionInput.singleInsertedBeat(correctionHistoryValue, elements.correction.value);
@@ -1862,9 +1862,9 @@
         return;
       }
     }
-    const nativeCharacter = CBFCorrectionInput.normalizeBeatInputCharacter(event.data);
+    const nativeCharacters = CBFCorrectionInput.normalizeBeatInputSequence(event.data);
     if (
-      nativeCharacter
+      nativeCharacters
       && ["insertText", "insertCompositionText"].includes(event.inputType)
       && correctionHistoryValue !== elements.correction.value
     ) {
@@ -1873,7 +1873,7 @@
         linkedLineIndex >= 0 ? linkedLineIndex : 0,
         linkedSlotIndex >= 0 ? linkedSlotIndex : 0
       );
-      replaceActiveCorrectionBeat(nativeCharacter);
+      [...nativeCharacters].forEach((character) => replaceActiveCorrectionBeat(character));
       return;
     }
     const caret = elements.correction.selectionStart;
@@ -1945,18 +1945,18 @@
   }
   elements.correction.addEventListener("beforeinput", (event) => {
     if (!["insertText", "insertCompositionText"].includes(event.inputType)) return;
-    const character = CBFCorrectionInput.normalizeBeatInputCharacter(event.data);
-    if (!character) return;
+    const characters = CBFCorrectionInput.normalizeBeatInputSequence(event.data);
+    if (!characters) return;
     if (event.cancelable) {
       event.preventDefault();
-      replaceActiveCorrectionBeat(character);
+      [...characters].forEach((character) => replaceActiveCorrectionBeat(character));
       return;
     }
     pendingNativeBeatReplacement = {
       value: elements.correction.value,
       start: elements.correction.selectionStart,
       end: elements.correction.selectionEnd,
-      character
+      characters
     };
   });
   elements.correction.addEventListener("paste", (event) => {

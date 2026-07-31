@@ -81,6 +81,13 @@
     return /^[0-9a-i@]$/.test(normalized) ? normalized : "";
   }
 
+  function normalizeBeatInputSequence(value) {
+    const characters = [...String(value || "")];
+    if (!characters.length) return "";
+    const normalized = characters.map((character) => normalizeBeatInputCharacter(character));
+    return normalized.every(Boolean) ? normalized.join("") : "";
+  }
+
   function singleInsertedBeat(previousValue, currentValue) {
     const previous = String(previousValue || "");
     const current = String(currentValue || "");
@@ -93,13 +100,16 @@
   }
 
   function normalizeLine(line, baseLimit, authoredWhiteNotes = 0) {
-    const command = String(line || "").trim().toLowerCase();
+    const normalizedWidth = [...String(line || "")]
+      .map((character) => normalizeBeatInputCharacter(character) || character)
+      .join("");
+    const command = normalizedWidth.trim().toLowerCase();
     if (command === "n" || command === "s") return command;
     // Do not use the automatically detected chord count as an input limit.
     // A user may add a chord in the rendered text first and then add its row-edit
     // value, or may temporarily type an incomplete expression while editing.
     // Validation belongs to conversion, not to the textarea's input handler.
-    return String(line || "").replace(/[^0-9a-isn@x\^*|]/gi, "").toLowerCase();
+    return normalizedWidth.replace(/[^0-9a-isn@x\^*|]/gi, "").toLowerCase();
   }
 
   function modifierInsertionAtLineEnd(line, key) {
@@ -210,8 +220,13 @@
     }
     if (target[0] === "@") return { start: target.index, end: target.index + 1, replacement: "@", caret: target.index + 1 };
     const modifierPrefix = text.slice(0, target.index).match(/[\^*]+$/);
-    const replacementStart = modifierPrefix ? target.index - modifierPrefix[0].length : target.index;
-    return { start: replacementStart, end: target.index + target[0].length, replacement: "@", caret: replacementStart + 1 };
+    let replacementStart = modifierPrefix ? target.index - modifierPrefix[0].length : target.index;
+    while (replacementStart > 0 && /[x\^*]/i.test(text[replacementStart - 1])) replacementStart -= 1;
+    if (text[replacementStart - 1]?.toLowerCase() === "s") replacementStart -= 1;
+    let replacementEnd = target.index + target[0].length;
+    while (replacementEnd < text.length && /[x*]/i.test(text[replacementEnd])) replacementEnd += 1;
+    if (text[replacementEnd]?.toLowerCase() === "s") replacementEnd += 1;
+    return { start: replacementStart, end: replacementEnd, replacement: "@", caret: replacementStart + 1 };
   }
 
   function nextLineStart(text, lineEnd) {
@@ -282,5 +297,5 @@
     }).join("\n");
   }
 
-  window.CBFCorrectionInput = { groups, redistributeForLineBreaks, beatCharacters, normalizeBeatInputCharacter, singleInsertedBeat, normalizeLine, modifierInsertionAtLineEnd, needsInsertedWhiteNoteDuration, smartBeatEdit, slotSelection, clearBeatEdit, syncopationRemovalEdit, whiteNoteEdit, nextLineStart, caretAfterLineEdit, overwritePastedRows, overwritePastedLine, appendBeatSlot, migrateLegacyText };
+  window.CBFCorrectionInput = { groups, redistributeForLineBreaks, beatCharacters, normalizeBeatInputCharacter, normalizeBeatInputSequence, singleInsertedBeat, normalizeLine, modifierInsertionAtLineEnd, needsInsertedWhiteNoteDuration, smartBeatEdit, slotSelection, clearBeatEdit, syncopationRemovalEdit, whiteNoteEdit, nextLineStart, caretAfterLineEdit, overwritePastedRows, overwritePastedLine, appendBeatSlot, migrateLegacyText };
 }());

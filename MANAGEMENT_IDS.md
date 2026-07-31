@@ -26,7 +26,7 @@
 | `ROW-010` | IME・ソフトウェアキーボード経由でも拍スロットを追加せず上書き | 有効 | `js/app.js`、`js/correction-input.js`、`tests/correction-input.test.js`、`tests/correction-key-routing.test.js` |
 | `ROW-011` | 行修正で選択中の拍に対応する変換後コードを背景表示 | 有効 | `js/app.js`、`style.css`、`tests/linked-code-highlight.test.js` |
 | `ROW-012` | 別行の行修正中も変換後の直接編集状態を保持 | 有効 | `js/app.js`、`tests/row-adoption-modes.test.js` |
-| `ROW-013` | 白玉の長さ入力と複合記号（`@8`・`8s`）の解除操作 | 有効 | `js/app.js`、`js/correction-input.js`、`tests/correction-input.test.js` |
+| `ROW-013` | 白玉の長さ入力と複合記号（`@8`・`8s`）の解除操作 | 有効 | `js/app.js`、`js/correction-input.js`、`tests/correction-input.test.js`、`tests/white-note-regression-matrix.test.js` |
 | `CONVERT-001` | 歌詞行のハイフン省略モード | 有効 | `index.html`、`js/app.js`、`js/converter.js` |
 | `CONVERT-002` | 1小節3コード以上でタイミング用ハイフンを保持 | 有効 | `js/converter.js` |
 | `CONVERT-003` | コード・拍記号・小節線だけの行を歌詞と誤認しない | 有効 | `js/converter.js`、`tests/conversion-bug-regressions.test.js` |
