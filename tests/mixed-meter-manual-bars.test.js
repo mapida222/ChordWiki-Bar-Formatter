@@ -43,4 +43,19 @@ const manual = CBFConverter.convertChordText(source.split("\n")[1], settings, ["
 assert.strictEqual(manual.output, "[|][E][----][|][G#m7][----][|][A][----][|][A][-][B][--][|]");
 assert.strictEqual(manual.corrections, "44412");
 
+const crossBarSource = "[A]---- ---[Asus4]-|-[A]--[Asus4]- -[A]---|[A]---- ---[Asus4]-|-[A]--[Asus4]- -[A]---|";
+const crossBarSettings = { ...settings, measureCapacity: 8 };
+const crossBarResult = CBFConverter.convertChordText(crossBarSource, crossBarSettings, []);
+const crossBarCompleted = CBFConverter.renderCompletedOutput(crossBarResult.output, [0], 0);
+assert.strictEqual(
+  crossBarCompleted.output,
+  `|${crossBarSource}`,
+  "authored cross-bar rhythm must preserve the existing output layout"
+);
+assert.strictEqual(
+  crossBarResult.corrections,
+  "7222372223",
+  "automatic correction must include rhythm marks after an authored bar"
+);
+
 console.log("PASS: authored mixed-meter bars survive automatic correction refresh");

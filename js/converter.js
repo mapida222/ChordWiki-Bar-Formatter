@@ -720,6 +720,15 @@
     return width;
   }
 
+  function explicitRhythmUntilNextChord(tokens, chordIndex) {
+    let width = 0;
+    for (let index = chordIndex + 1; index < tokens.length; index += 1) {
+      if (tokens[index].kind === "chord") break;
+      width += rhythmWidth(tokens[index]);
+    }
+    return width;
+  }
+
   function authoredSyncBoundary(tokens, previousChordIndex, chordIndex) {
     if (previousChordIndex < 0 || chordIndex <= previousChordIndex) return false;
     const between = tokens.slice(previousChordIndex + 1, chordIndex);
@@ -768,7 +777,7 @@
     const durationByTokenIndex = new Map();
     const inferredRhythmByTokenIndex = new Map();
     const chordInfos = tokens.map((token, index) => token.kind === "chord"
-      ? { index, explicitWidth: explicitRhythmAfterChord(tokens, index) }
+      ? { index, explicitWidth: explicitRhythmUntilNextChord(tokens, index) }
       : null).filter(Boolean);
     chordInfos.forEach((info) => durationByTokenIndex.set(info.index, info.explicitWidth || unit));
     const initialTotal = chordInfos.reduce((sum, info) => sum + durationByTokenIndex.get(info.index), 0);
@@ -808,8 +817,9 @@
         return;
       }
       const duration = durationByTokenIndex.get(index) || unit;
+      const layoutDuration = explicitRhythmAfterChord(tokens, index) || duration;
       const continuesAuthoredSync = authoredSyncBoundary(tokens, previousChordTokenIndex, index);
-      if (!measureOpen || (!continuesAuthoredSync && (position >= capacity || (position > 0 && position + duration > capacity)))) {
+      if (!measureOpen || (!continuesAuthoredSync && (position >= capacity || (position > 0 && position + layoutDuration > capacity)))) {
         const lastBarIndex = output.findLastIndex((part) => part.kind === "bar");
         const lastChordIndex = output.findLastIndex((part) => part.kind === "chord");
         if (lastBarIndex < 0 || lastBarIndex < lastChordIndex) output.push({ kind: "bar", value: "|" });
@@ -819,7 +829,7 @@
       output.push(token);
       if (inferredRhythmByTokenIndex.has(index)) output.push({ kind: "hyphen", value: inferredRhythmByTokenIndex.get(index) });
       durations.push(duration);
-      position += duration;
+      position += layoutDuration;
       previousChordTokenIndex = index;
     });
     if (output[output.length - 1]?.kind !== "bar") output.push({ kind: "bar", value: "|" });

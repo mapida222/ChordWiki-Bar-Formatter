@@ -29,6 +29,7 @@
 | `CONVERT-002` | 1小節3コード以上でタイミング用ハイフンを保持 | 有効 | `js/converter.js` |
 | `CONVERT-003` | コード・拍記号・小節線だけの行を歌詞と誤認しない | 有効 | `js/converter.js`、`tests/conversion-bug-regressions.test.js` |
 | `CONVERT-004` | 隣接する小節線を1本へ正規化 | 有効 | `js/converter.js`、`tests/conversion-bug-regressions.test.js` |
+| `CONVERT-005` | 既存小節線をまたぐ拍記号を同一コード長として自動認識 | 有効 | `js/converter.js`、`tests/mixed-meter-manual-bars.test.js` |
 | `SETTINGS-001` | 数値設定のフォーカス直後入力で既存値を置換 | 有効 | `js/numeric-entry.js`、`js/app.js`、`tests/numeric-entry.test.js` |
 | `SETTINGS-002` | 端数歌詞前置きと長い拍の歌詞配置の優先関係 | 調査済み | `js/converter.js`、`tests/long-beat-lyric-distribution.test.js` |
 | `WARNING-001` | 変換前と初期設定の1小節ハイフン数不一致警告 | 有効 | `js/app.js`、`js/converter.js` |
