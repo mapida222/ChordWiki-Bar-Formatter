@@ -33,6 +33,20 @@ const mixed = CBFConverter.convertChordText("plain\n[C]lyrics", settings, ["", "
 assert.strictEqual(mixed.output, "plain\n[C]lyrics");
 assert.deepStrictEqual(mixed.correctionStates, ["none", "source"]);
 
+const twoRows = CBFConverter.convertChordText("[C]first[G]line\n[Am]second[F]line", settings, [], [], [], []);
+const twoRowOutput = twoRows.output.split("\n");
+const directlyEditedSecondRow = twoRowOutput[1].replace(/\[\|\]$/, "【direct edit】[|]");
+const otherRowCorrection = CBFConverter.convertChordText(
+  "[C]first[G]line\n[Am]second[F]line",
+  settings,
+  ["24", "44"],
+  [undefined, directlyEditedSecondRow],
+  twoRows.corrections.split("\n"),
+  ["edit", "edit"]
+);
+assert.strictEqual(otherRowCorrection.output.split("\n")[1], directlyEditedSecondRow);
+assert.strictEqual(otherRowCorrection.correctionStates[1], "edit");
+
 const root = path.join(__dirname, "..");
 const html = fs.readFileSync(path.join(root, "index.html"), "utf8");
 const css = fs.readFileSync(path.join(root, "style.css"), "utf8");
@@ -49,5 +63,7 @@ assert(css.includes('button.correction-mode-row[data-mode="direct"]'));
 assert(app.includes('const ROW_MODE_LABELS = { auto: "自動", edit: "行修正", source: "原文" };'));
 assert(app.includes('const directlyEdited = mode === "edit" && manualOutputLines.has(index);'));
 assert(app.includes('if (musicStructureChanged && rowAdoptionModes[index] !== "source") rowAdoptionModes[index] = "auto";'));
+assert(app.includes('if (!preserveUserEdits && !changedLineIndices?.size) {'));
+assert(app.includes('preserveUserEdits: !refresh,'));
 
-console.log("PASS: automatic, row-edit, direct-edit and source adoption states");
+console.log("PASS: automatic, row-edit, cross-row direct-edit and source adoption states");

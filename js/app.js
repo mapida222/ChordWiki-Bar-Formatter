@@ -1476,7 +1476,7 @@
     convertedOutput = result.output;
     correctionDisplayStates = result.correctionStates || [];
     inferenceFallbackCorrectionLines = String(result.automaticCorrections || result.corrections).split(/\r\n|\r|\n/);
-    if (!changedLineIndices?.size) {
+    if (!preserveUserEdits && !changedLineIndices?.size) {
       outputManuallyEdited = false;
       manualOutputLines.clear();
     }
@@ -1513,7 +1513,12 @@
       pendingCorrectionRefresh = false;
       pendingCorrectionLineIndices.clear();
       pendingSourceLineIndices.clear();
-      convert({ refreshCorrections: refresh, changedLineIndices: changed?.size ? changed : null, sourceChangedLineIndices: sourceChanged?.size ? sourceChanged : null });
+      convert({
+        refreshCorrections: refresh,
+        preserveUserEdits: !refresh,
+        changedLineIndices: changed?.size ? changed : null,
+        sourceChangedLineIndices: sourceChanged?.size ? sourceChanged : null
+      });
     }, 100);
   }
 
