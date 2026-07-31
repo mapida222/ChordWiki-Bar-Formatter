@@ -152,6 +152,52 @@
     return { index, start: target.index, end: target.index + target[0].length };
   }
 
+  function selectedBeat(line, start, end) {
+    const text = String(line || "");
+    const from = Math.max(0, Math.min(Number(start) || 0, text.length));
+    const to = Math.max(from, Math.min(Number(end) || from, text.length));
+    const beats = beatCharacters(text);
+    if (!beats.length) return null;
+    let index = to > from
+      ? beats.findIndex((match) => match.index >= from && match.index < to)
+      : beats.findIndex((match) => match.index >= from);
+    if (index < 0) index = beats.length - 1;
+    return { text, beats, index, target: beats[index] };
+  }
+
+  function clearBeatEdit(line, start, end) {
+    const selected = selectedBeat(line, start, end);
+    if (!selected) return null;
+    const { text, beats, index, target } = selected;
+    let editStart = target.index;
+    let editEnd = target.index + target[0].length;
+    const previous = beats[index - 1];
+    const next = beats[index + 1];
+    const separatorBefore = previous ? text.slice(previous.index + previous[0].length, target.index) : "";
+    if (previous?.[0] === "@" && separatorBefore === "") editStart = previous.index;
+    else if (separatorBefore === "s") editStart = target.index - 1;
+    else while (editStart > 0 && /[x\^*]/i.test(text[editStart - 1])) editStart -= 1;
+
+    if (target[0] === "@" && next && text.slice(editEnd, next.index) === "") {
+      editEnd = next.index + next[0].length;
+    }
+    while (editEnd < text.length && /[x*]/i.test(text[editEnd])) editEnd += 1;
+    if (text[editEnd]?.toLowerCase() === "s") editEnd += 1;
+    return { start: editStart, end: editEnd, replacement: "0", caret: editStart + 1 };
+  }
+
+  function syncopationRemovalEdit(line, start, end) {
+    const selected = selectedBeat(line, start, end);
+    if (!selected) return null;
+    const { text, target } = selected;
+    const after = target.index + target[0].length;
+    if (text[after]?.toLowerCase() === "s") return { start: after, end: after + 1, replacement: "", caret: after };
+    if (target.index > 0 && text[target.index - 1]?.toLowerCase() === "s") {
+      return { start: target.index - 1, end: target.index, replacement: "", caret: target.index - 1 };
+    }
+    return null;
+  }
+
   function whiteNoteEdit(line, start, end) {
     const text = String(line || "");
     const from = Math.max(0, Math.min(Number(start) || 0, text.length));
@@ -236,5 +282,5 @@
     }).join("\n");
   }
 
-  window.CBFCorrectionInput = { groups, redistributeForLineBreaks, beatCharacters, normalizeBeatInputCharacter, singleInsertedBeat, normalizeLine, modifierInsertionAtLineEnd, needsInsertedWhiteNoteDuration, smartBeatEdit, slotSelection, whiteNoteEdit, nextLineStart, caretAfterLineEdit, overwritePastedRows, overwritePastedLine, appendBeatSlot, migrateLegacyText };
+  window.CBFCorrectionInput = { groups, redistributeForLineBreaks, beatCharacters, normalizeBeatInputCharacter, singleInsertedBeat, normalizeLine, modifierInsertionAtLineEnd, needsInsertedWhiteNoteDuration, smartBeatEdit, slotSelection, clearBeatEdit, syncopationRemovalEdit, whiteNoteEdit, nextLineStart, caretAfterLineEdit, overwritePastedRows, overwritePastedLine, appendBeatSlot, migrateLegacyText };
 }());

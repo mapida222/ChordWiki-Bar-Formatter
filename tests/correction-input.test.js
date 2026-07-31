@@ -125,6 +125,11 @@ assert.strictEqual(CBFCorrectionInput.singleInsertedBeat("4444", "4434"), null, 
 assert.strictEqual(CBFCorrectionInput.singleInsertedBeat("4444", "^4444"), null, "a modifier insertion is not treated as an extra beat");
 assert.deepStrictEqual(CBFCorrectionInput.whiteNoteEdit("4444", 4, 4), { start: 3, end: 4, replacement: "@", caret: 4 }, "white note overwrites the final selected beat instead of adding a slot");
 assert.deepStrictEqual(CBFCorrectionInput.whiteNoteEdit("444^*4", 6, 6), { start: 3, end: 6, replacement: "@", caret: 4 }, "white note replaces existing modifiers and their beat without adding a slot");
+assert.deepStrictEqual(CBFCorrectionInput.clearBeatEdit("@844", 1, 2), { start: 0, end: 2, replacement: "0", caret: 1 }, "@8 clears as one white-note edit unit");
+assert.deepStrictEqual(CBFCorrectionInput.clearBeatEdit("8s44", 0, 1), { start: 0, end: 2, replacement: "0", caret: 1 }, "8s clears without leaving an orphan sync marker");
+assert.deepStrictEqual(CBFCorrectionInput.clearBeatEdit("8s44", 2, 3), { start: 1, end: 3, replacement: "0", caret: 2 }, "deleting the beat after s also removes the sync marker");
+assert.deepStrictEqual(CBFCorrectionInput.syncopationRemovalEdit("8s44", 0, 1), { start: 1, end: 2, replacement: "", caret: 1 }, "pressing s again removes the selected following sync marker");
+assert.deepStrictEqual(CBFCorrectionInput.syncopationRemovalEdit("8s44", 2, 3), { start: 1, end: 2, replacement: "", caret: 1 }, "either side of a sync boundary can remove s");
 assert.deepStrictEqual(CBFCorrectionInput.appendBeatSlot("4444"), { text: "44440", selectionStart: 4, selectionEnd: 5 }, "explicit append adds one selected placeholder");
 assert.deepStrictEqual(CBFCorrectionInput.appendBeatSlot("n"), { text: "0", selectionStart: 0, selectionEnd: 1 }, "explicit append replaces a line command with one selected placeholder");
 ["s4", "4s", "*4s4", "4s^4", "@s4", "0s4"].forEach((code) => {

@@ -546,7 +546,16 @@
       linkedLineIndex = activeLineIndex(textarea);
       linkedSlotIndex = slotIndexAt(textarea, linkedLineIndex, lineColumnAtSelection(textarea));
       if (textarea === elements.correction && textarea.selectionEnd - textarea.selectionStart <= 1) {
-        const selection = CBFCorrectionInput.slotSelection(textarea.value.split(/\r\n|\r|\n/)[linkedLineIndex] || "", linkedSlotIndex);
+        const correctionLine = textarea.value.split(/\r\n|\r|\n/)[linkedLineIndex] || "";
+        const correctionColumn = lineColumnAtSelection(textarea);
+        const awaitingWhiteNoteDuration = textarea.selectionStart === textarea.selectionEnd
+          && CBFCorrectionInput.needsInsertedWhiteNoteDuration(
+            correctionLine,
+            correctionColumn,
+            correctionSlotCounts[linkedLineIndex] || 0,
+            authoredWhiteNoteCounts[linkedLineIndex] || 0
+          );
+        const selection = awaitingWhiteNoteDuration ? null : CBFCorrectionInput.slotSelection(correctionLine, linkedSlotIndex);
         if (selection) {
           const lineOffset = correctionLineOffset(linkedLineIndex);
           const start = lineOffset + selection.start;
@@ -1921,12 +1930,17 @@
     const edit = character === "@"
       ? CBFCorrectionInput.whiteNoteEdit(line, relativeStart, relativeEnd)
       : CBFCorrectionInput.needsInsertedWhiteNoteDuration(line, relativeStart, correctionSlotCounts[lineIndex] || 0, authoredWhiteNoteCounts[lineIndex] || 0)
-        ? { start: relativeStart, end: relativeEnd, replacement: character, caret: relativeStart + 1 }
+        ? { start: relativeStart, end: relativeStart, replacement: character, caret: relativeStart + 1 }
         : CBFCorrectionInput.smartBeatEdit(line, relativeStart, relativeEnd, character);
     if (!edit) return false;
     let nextCaret = lineStart + edit.caret;
     nextCaret = CBFCorrectionInput.caretAfterLineEdit(value, lineEnd, nextCaret, character === "@");
     replaceCorrectionText(lineStart + edit.start, lineStart + edit.end, edit.replacement, nextCaret);
+    if (character === "@") {
+      elements.correction.setSelectionRange(nextCaret, nextCaret);
+      linkedLineIndex = lineIndex;
+      applyLinkedPosition();
+    }
     return true;
   }
   elements.correction.addEventListener("beforeinput", (event) => {
@@ -2003,8 +2017,17 @@
     if (event.key === "Backspace") {
       event.preventDefault();
       if (start !== end) {
-        const replacement = value.slice(start, end).replace(/[^\r\n]/g, "0");
-        replaceCorrectionText(start, end, replacement, start);
+        const lineStart = Math.max(value.lastIndexOf("\n", start - 1), value.lastIndexOf("\r", start - 1)) + 1;
+        const nextLf = value.indexOf("\n", start);
+        const nextCr = value.indexOf("\r", start);
+        const lineEndCandidates = [nextLf, nextCr].filter((position) => position >= 0);
+        const lineEnd = lineEndCandidates.length ? Math.min(...lineEndCandidates) : value.length;
+        const clear = end <= lineEnd ? CBFCorrectionInput.clearBeatEdit(value.slice(lineStart, lineEnd), start - lineStart, end - lineStart) : null;
+        if (clear) replaceCorrectionText(lineStart + clear.start, lineStart + clear.end, clear.replacement, lineStart + clear.caret);
+        else {
+          const replacement = value.slice(start, end).replace(/[^\r\n]/g, "0");
+          replaceCorrectionText(start, end, replacement, start);
+        }
       } else if (start > 0 && !/[\r\n]/.test(value[start - 1])) {
         replaceCorrectionText(start - 1, start, "0", start - 1);
       }
@@ -2013,8 +2036,17 @@
     if (event.key === "Delete") {
       event.preventDefault();
       if (start !== end) {
-        const replacement = value.slice(start, end).replace(/[^\r\n]/g, "0");
-        replaceCorrectionText(start, end, replacement, start);
+        const lineStart = Math.max(value.lastIndexOf("\n", start - 1), value.lastIndexOf("\r", start - 1)) + 1;
+        const nextLf = value.indexOf("\n", start);
+        const nextCr = value.indexOf("\r", start);
+        const lineEndCandidates = [nextLf, nextCr].filter((position) => position >= 0);
+        const lineEnd = lineEndCandidates.length ? Math.min(...lineEndCandidates) : value.length;
+        const clear = end <= lineEnd ? CBFCorrectionInput.clearBeatEdit(value.slice(lineStart, lineEnd), start - lineStart, end - lineStart) : null;
+        if (clear) replaceCorrectionText(lineStart + clear.start, lineStart + clear.end, clear.replacement, lineStart + clear.caret);
+        else {
+          const replacement = value.slice(start, end).replace(/[^\r\n]/g, "0");
+          replaceCorrectionText(start, end, replacement, start);
+        }
       } else if (start < value.length && !/[\r\n]/.test(value[start])) {
         replaceCorrectionText(start, start + 1, "0", start);
       }
@@ -2034,6 +2066,11 @@
       }
       const relativeStart = start - lineStart;
       const relativeEnd = end - lineStart;
+      const removal = CBFCorrectionInput.syncopationRemovalEdit(line, relativeStart, relativeEnd);
+      if (removal) {
+        replaceCorrectionText(lineStart + removal.start, lineStart + removal.end, removal.replacement, lineStart + removal.caret);
+        return;
+      }
       const before = line.slice(0, relativeStart);
       const after = line.slice(relativeEnd);
       const hasPreviousValue = /[0-9a-i@]/i.test(before);
