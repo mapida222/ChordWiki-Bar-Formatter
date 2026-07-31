@@ -25,14 +25,37 @@ if (
   || store.list().length !== 1
 ) throw new Error("duplicate history was not refreshed");
 
-const convertedSnapshot = { ...snapshot, historyText: "{title:変換後履歴}\n[|][C][----]歌詞[|]" };
+const convertedSnapshot = {
+  ...snapshot,
+  historyText: "{title:変換後履歴}\n[|][C][----]歌詞[|]",
+  committedOutputText: "{title:確定譜面}\n|[C]歌詞|"
+};
 const converted = store.saveHistory(convertedSnapshot);
-if (!converted.saved || converted.entry.historyText !== convertedSnapshot.historyText || converted.entry.title !== "変換後履歴") {
+if (
+  !converted.saved
+  || converted.entry.historyText !== convertedSnapshot.historyText
+  || converted.entry.committedOutputText !== convertedSnapshot.committedOutputText
+  || converted.entry.title !== "変換後履歴"
+) {
   throw new Error("converted history text was not preserved");
 }
 currentTime += 60 * 1000;
-const refreshedConverted = store.saveHistory({ ...convertedSnapshot, inputText: "別の変換前" });
-if (!refreshedConverted.saved || !refreshedConverted.refreshed || store.list().length !== 2) {
+const refreshedConverted = store.saveHistory({
+  ...convertedSnapshot,
+  inputText: "別の変換前",
+  correctionText: "8",
+  committedOutputText: "|[C]更新した確定譜面|",
+  settings: { converter: { hyphenUnit: 8 }, theme: "dark" }
+});
+if (
+  !refreshedConverted.saved
+  || !refreshedConverted.refreshed
+  || refreshedConverted.entry.inputText !== "別の変換前"
+  || refreshedConverted.entry.correctionText !== "8"
+  || refreshedConverted.entry.committedOutputText !== "|[C]更新した確定譜面|"
+  || refreshedConverted.entry.settings.theme !== "dark"
+  || store.list().length !== 2
+) {
   throw new Error("same converted history text was not moved to the top");
 }
 

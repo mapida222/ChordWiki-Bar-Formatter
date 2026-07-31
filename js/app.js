@@ -1284,10 +1284,29 @@
     const converted = CBFConverter.convertChordText(String(entry.inputText || ""), converterSettings, rowCorrections);
     return converted.output;
   }
-  function adoptHistoryAsInput(entry) {
-    const text = historyPreviewText(entry);
-    elements.input.value = text;
-    elements.input.dispatchEvent(new Event("input", { bubbles: true }));
+  function restoreHistoryWorkState(entry) {
+    restoreSnapshot(entry);
+    if (typeof entry.historyText === "string") {
+      const generatedLines = elements.output.value.split(/\r\n|\r|\n/);
+      const restoredText = String(entry.historyText);
+      const restoredLines = restoredText.split(/\r\n|\r|\n/);
+      const lineMapping = CBFConverter.alignLineIndices(generatedLines, restoredLines);
+      manualOutputLines = new Set();
+      restoredLines.forEach((line, index) => {
+        const generatedIndex = lineMapping[index];
+        if (generatedIndex < 0 || line !== generatedLines[generatedIndex]) manualOutputLines.add(index);
+      });
+      elements.output.value = restoredText;
+      elements.finalOutput.value = restoredText;
+      outputManuallyEdited = manualOutputLines.size > 0;
+      resetOutputAddedOffsets();
+      renderFinalPreview();
+      updateCount(elements.output, elements.outputCount);
+      updateLineNumbers(elements.output, elements.outputLines);
+      updateCount(elements.finalOutput, elements.finalOutputCount);
+      updateLineNumbers(elements.finalOutput, elements.finalOutputLines);
+      updateCorrectionModes();
+    }
     elements.input.focus();
   }
   function clearHistoryPreview() {
@@ -1709,12 +1728,18 @@
   });
   elements.historyRestore.addEventListener("click", () => {
     if (!selectedHistoryEntry) return;
-    const historyText = historyPreviewText(selectedHistoryEntry);
-    const differs = elements.input.value !== historyText;
-    if (differs && elements.input.value.trim() && !window.confirm("現在の変換前テキストを、履歴の変換後テキストで上書きします。よろしいですか？")) return;
-    adoptHistoryAsInput(selectedHistoryEntry);
+    const currentSnapshot = collectSnapshot();
+    const differs = currentSnapshot.inputText !== String(selectedHistoryEntry.inputText || "")
+      || currentSnapshot.correctionText !== String(selectedHistoryEntry.correctionText || "")
+      || currentSnapshot.committedOutputText !== String(selectedHistoryEntry.committedOutputText || "")
+      || elements.output.value !== historyPreviewText(selectedHistoryEntry)
+      || JSON.stringify(currentSnapshot.rowAdoptionModes) !== JSON.stringify(selectedHistoryEntry.rowAdoptionModes || [])
+      || JSON.stringify(currentSnapshot.settings) !== JSON.stringify(selectedHistoryEntry.settings || {});
+    if (differs && (elements.input.value.trim() || elements.output.value.trim())
+        && !window.confirm("現在の作業内容と設定を、履歴を保存した時の状態で上書きします。よろしいですか？")) return;
+    restoreHistoryWorkState(selectedHistoryEntry);
     closeDialog(elements.historyDialog);
-    notify("履歴の変換後テキストを変換前へ採用しました。");
+    notify("履歴を保存した時の作業状態を復元しました。");
   });
   elements.historyExportTest.addEventListener("click", () => {
     if (!selectedHistoryEntry) return;

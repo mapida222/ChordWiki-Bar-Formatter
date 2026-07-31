@@ -92,15 +92,17 @@
         const refreshed = {
           ...current,
           savedAt,
+          ...(snapshot.inputText != null ? { inputText: String(snapshot.inputText) } : {}),
+          ...(snapshot.testInputText != null ? { testInputText: String(snapshot.testInputText) } : {}),
+          ...(snapshot.initialOutputText != null ? { initialOutputText: String(snapshot.initialOutputText) } : {}),
+          ...(snapshot.idealOutputText != null ? { idealOutputText: String(snapshot.idealOutputText) } : {}),
+          ...(snapshot.committedOutputText != null ? { committedOutputText: String(snapshot.committedOutputText) } : {}),
+          ...(snapshot.correctionText != null ? { correctionText: String(snapshot.correctionText) } : {}),
+          ...(Array.isArray(snapshot.rowAdoptionModes) ? { rowAdoptionModes: snapshot.rowAdoptionModes } : {}),
+          ...(snapshot.settings && typeof snapshot.settings === "object" ? { settings: snapshot.settings } : {}),
           ...(canEnrich ? {
             title: String(snapshot.title || "").trim() || current.title,
-            inputText: String(snapshot.inputText),
-            testInputText: snapshot.testInputText == null ? current.testInputText : String(snapshot.testInputText),
-            initialOutputText: String(snapshot.initialOutputText),
-            idealOutputText: snapshot.idealOutputText == null ? current.historyText : String(snapshot.idealOutputText),
-            correctionText: String(snapshot.correctionText || ""),
-            rowAdoptionModes: Array.isArray(snapshot.rowAdoptionModes) ? snapshot.rowAdoptionModes : [],
-            settings: snapshot.settings || {}
+            idealOutputText: snapshot.idealOutputText == null ? current.historyText : String(snapshot.idealOutputText)
           } : {})
         };
         const nextEntries = [refreshed, ...entries.filter((_entry, index) => index !== duplicateIndex)];
@@ -122,6 +124,7 @@
         testInputText: snapshot.testInputText == null ? undefined : String(snapshot.testInputText),
         initialOutputText: snapshot.initialOutputText == null ? undefined : String(snapshot.initialOutputText),
         idealOutputText: snapshot.idealOutputText == null ? undefined : String(snapshot.idealOutputText),
+        committedOutputText: snapshot.committedOutputText == null ? undefined : String(snapshot.committedOutputText),
         correctionText: String(snapshot.correctionText || ""),
         rowAdoptionModes: Array.isArray(snapshot.rowAdoptionModes) ? snapshot.rowAdoptionModes : [],
         settings: snapshot.settings || {},
@@ -136,6 +139,7 @@
         savedAt,
         title: titleFromText(snapshot.inputText, savedAt),
         inputText: String(snapshot.inputText || ""),
+        committedOutputText: String(snapshot.committedOutputText || ""),
         correctionText: String(snapshot.correctionText || ""),
         rowAdoptionModes: Array.isArray(snapshot.rowAdoptionModes) ? snapshot.rowAdoptionModes : [],
         settings: snapshot.settings || {},

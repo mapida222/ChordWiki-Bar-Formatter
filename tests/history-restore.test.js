@@ -1,0 +1,34 @@
+"use strict";
+
+const assert = require("assert");
+const fs = require("fs");
+const path = require("path");
+
+const root = path.resolve(__dirname, "..");
+const html = fs.readFileSync(path.join(root, "index.html"), "utf8");
+const app = fs.readFileSync(path.join(root, "js", "app.js"), "utf8");
+
+assert(html.includes('id="history-restore" class="history-restore-button" type="button" disabled>保存時の状態を復元</button>'));
+assert(html.includes("変換前・行修正・設定・変換後・確定譜面を保存時の内容へ戻します。"));
+
+const restoreStart = app.indexOf("function restoreHistoryWorkState(entry)");
+const restoreEnd = app.indexOf("function clearHistoryPreview()", restoreStart);
+assert(restoreStart >= 0 && restoreEnd > restoreStart, "history work-state restore function must exist");
+const restoreBody = app.slice(restoreStart, restoreEnd);
+assert(restoreBody.includes("restoreSnapshot(entry);"), "saved input, corrections, row modes and settings must be restored");
+assert(restoreBody.includes('typeof entry.historyText === "string"'), "saved output must be restored when available");
+assert(restoreBody.includes("elements.output.value = restoredText;"), "saved result text must be restored exactly");
+assert(restoreBody.includes("elements.finalOutput.value = restoredText;"), "score text must follow the restored result");
+assert(restoreBody.includes("manualOutputLines = new Set();"), "direct output edits must stay tracked after restoration");
+assert(restoreBody.includes("CBFConverter.alignLineIndices(generatedLines, restoredLines)"));
+
+assert(app.includes("restoreHistoryWorkState(selectedHistoryEntry);"));
+assert(app.includes("現在の作業内容と設定を、履歴を保存した時の状態で上書きします。よろしいですか？"));
+assert(app.includes("履歴を保存した時の作業状態を復元しました。"));
+assert(!app.includes("adoptHistoryAsInput"), "legacy output-to-input adoption must no longer be used");
+
+const historyStore = fs.readFileSync(path.join(root, "js", "history.js"), "utf8");
+assert(historyStore.includes("committedOutputText: snapshot.committedOutputText == null ? undefined : String(snapshot.committedOutputText)"));
+assert(historyStore.includes("snapshot.committedOutputText != null ? { committedOutputText: String(snapshot.committedOutputText) }"));
+
+console.log("PASS: HISTORY-003 restores the complete saved work state");
