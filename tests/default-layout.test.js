@@ -19,7 +19,7 @@ assert(css.includes("--top-editor-height: clamp(210px, 24vh, 230px)"), "the sour
 assert(css.includes("border: 2px solid color-mix(in srgb, var(--correction-line) 78%, var(--line))"), "the row-edit context frame must have a clear solid outline");
 assert(css.includes("border-radius: 8px"), "the row-edit context frame must have rounded corners");
 assert(css.includes(".settings-column-resize-edge { display: none; }"), "the redundant settings resize line must not cross the settings panel");
-assert(html.includes("style.css?v=20260802-14"));
+assert(html.includes("style.css?v=20260802-16"));
 assert(html.includes("js/app.js?v=20260802-35"));
 
 console.log("PASS: LAYOUT-003 compact default layout and clear row-edit context frame");

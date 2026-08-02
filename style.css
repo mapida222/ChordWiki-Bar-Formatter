@@ -126,6 +126,11 @@ main { padding: 12px 0 28px; }
 .community-feedback-label strong { font-size: .76rem; line-height: 1.18; }
 .community-feedback-label small { color: var(--muted); font-size: .6rem; font-weight: 500; line-height: 1.18; white-space: nowrap; }
 .community-feedback-icon { flex: 0 0 auto; color: var(--correction-line); font-size: 1.18rem; line-height: 1; }
+.community-github { grid-column: 1 / -1; height: 42px; min-height: 42px; border-color: color-mix(in srgb, var(--text) 24%, var(--line)); }
+.community-github-label { display: grid; gap: 1px; min-width: 0; }
+.community-github-label strong { font-size: .76rem; line-height: 1.18; }
+.community-github-label small { color: var(--muted); font-size: .6rem; font-weight: 500; line-height: 1.18; }
+.community-github-icon { flex: 0 0 auto; color: var(--muted); font-size: 1rem; line-height: 1; }
 .support-menu { min-width: 0; }
 .support-menu summary { border-color: color-mix(in srgb, var(--source-line) 38%, var(--line)); list-style: none; }
 .support-menu summary::-webkit-details-marker { display: none; }
@@ -521,7 +526,7 @@ textarea::placeholder { color: var(--muted); opacity: .7; }
 .help-flow-back { grid-area: back; transform: rotate(180deg); }
 .help-io > p { margin: 7px 0 0; color: var(--muted); font-size: .8rem; line-height: 1.5; }
 .help-flow-answer { margin: -1px 0 8px; color: var(--text); font-size: .72rem; line-height: 1.5; }
-.help-flow-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; margin: 0; padding: 0; list-style: none; }
+.help-flow-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px; margin: 0; padding: 0; list-style: none; }
 .help-flow-grid li { position: relative; display: grid; grid-template-columns: 32px minmax(0, 1fr); align-items: center; gap: 8px; min-width: 0; padding: 8px 9px; border: 1px solid var(--line); border-left: 3px solid var(--accent); border-radius: 5px; background: color-mix(in srgb, var(--panel) 94%, var(--accent)); }
 .help-flow-grid li:not(:last-child)::after { content: "➜"; position: absolute; top: 50%; right: -17px; color: var(--accent); font-size: 1rem; font-weight: 900; transform: translateY(-50%); }
 .help-flow-grid li > span { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; color: var(--panel); background: var(--accent); font: 900 .8rem/1 var(--mono); }
@@ -543,6 +548,10 @@ textarea::placeholder { color: var(--muted); opacity: .7; }
 .help-task-card h4 { margin: 0; font-size: .86rem; line-height: 1.4; }
 .help-task-card p { margin: 0; color: var(--muted); font-size: .8rem; line-height: 1.6; }
 .help-task-card p code { color: var(--text); font-family: var(--mono); font-weight: 800; }
+.help-state-list { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 5px; margin: 0; padding: 0; list-style: none; }
+.help-state-list li { display: grid; grid-template-columns: max-content minmax(0, 1fr); align-items: start; gap: 6px; min-width: 0; padding: 6px 7px; border-radius: 3px; background: color-mix(in srgb, var(--panel) 92%, var(--line)); }
+.help-state-list strong { color: var(--accent); font-size: .72rem; line-height: 1.5; }
+.help-state-list span { color: var(--text); font-size: .72rem; line-height: 1.5; }
 .help-setting-values { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 5px; margin: 0; }
 .help-setting-values > div { display: grid; grid-template-columns: minmax(0, 1fr) max-content; align-items: center; gap: 7px; min-width: 0; padding: 6px 7px; border: 0; border-radius: 3px; background: color-mix(in srgb, var(--panel) 92%, var(--line)); }
 .help-setting-values dt, .help-setting-values dd { margin: 0; }
@@ -725,6 +734,7 @@ textarea::placeholder { color: var(--muted); opacity: .7; }
   .help-flow-grid { grid-template-columns: 1fr; gap: 5px; }
   .help-flow-grid li::after { display: none; }
   .help-task-grid { grid-template-columns: 1fr; }
+  .help-state-list { grid-template-columns: 1fr; }
   .help-setting-values { grid-template-columns: 1fr; }
   .help-example-flow { grid-template-columns: 1fr; }
   .help-example-flow > b { justify-self: center; transform: rotate(90deg); }
