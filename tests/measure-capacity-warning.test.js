@@ -25,8 +25,12 @@ const app = fs.readFileSync(require("path").join(__dirname, "..", "js", "app.js"
 assert(app.includes("analyzeAuthoredMeasureCapacity(elements.input.value, values.measureCapacity)"));
 assert(!app.includes("analyzeAuthoredMeasureCapacity(elements.input.value, values.measureCapacity, targetMeter)"));
 assert(app.includes("判定できた小節の約${mismatch.percentage}%"));
-assert(app.includes("初期設定を${mismatch.detected}に変更しますか？"));
-assert(app.includes('`${mismatch.detected}に変更`'));
+assert(app.includes("6/8拍子タブへ切り替え、合計${mismatch.detected}を適用しますか？"));
+assert(app.includes('[3, 6, 9, 12].includes(mismatch.detected)'));
+assert(app.includes('elements.measureCapacityWarningOpen.dataset.profile = useSixEightProfile ? "sixEight" : ""'));
+assert(app.includes('`6/8・${mismatch.detected}を適用`'));
+assert(app.includes('CBFSettings.setActiveProfile("sixEight")'));
+assert(app.includes('input.value = String(detected)'));
 assert(app.includes('input.dispatchEvent(new Event("input", { bubbles: true }))'));
 assert(app.includes("updateMeasureCapacityWarning(settings.values);"));
 assert(index.includes('id="measure-capacity-warning-dismiss"'));

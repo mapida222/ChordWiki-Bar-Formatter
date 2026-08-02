@@ -21,9 +21,17 @@ assert.strictEqual(sample.correctionErrors.length, 1);
 assert.strictEqual(sample.correctionErrors[0].line, 1);
 assert.ok(sample.correctionErrors[0].message.includes("1個多い"));
 
+const clearedOutput = CBFConverter.convertChordText("[C]", settings, [], ["歌詞だけ"]);
+assert.strictEqual(clearedOutput.output, "歌詞だけ");
+assert.strictEqual(clearedOutput.corrections, "");
+assert.strictEqual(clearedOutput.automaticCorrections, "");
+assert.deepStrictEqual(clearedOutput.correctionSlotCounts, [0]);
+assert.deepStrictEqual(clearedOutput.correctionStates, ["none"]);
+
 const app = fs.readFileSync(path.join(__dirname, "../js/app.js"), "utf8");
 assert.ok(app.includes("行目を確認"));
 assert.ok(app.includes("jumpToCorrectionLine(error.line)"));
+assert.ok(app.includes("行修正を空欄にしました"));
 assert.ok(app.includes('elements.correctionCard.scrollIntoView({ behavior: "smooth", block: "center" })'));
 assert.ok(!app.includes("support-correction-review"));
 assert.ok(!app.includes("変換前から作り直す"));

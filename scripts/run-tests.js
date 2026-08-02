@@ -21,7 +21,7 @@ for (const test of tests) {
   if (result.status !== 0) failures += 1;
 }
 
-for (const file of ["js/app.js", "js/converter.js", "js/numeric-entry.js"]) {
+for (const file of ["js/app.js", "js/converter.js", "js/numeric-entry.js", "js/row-edit-test.js"]) {
   const result = spawnSync(process.execPath, ["--check", path.join(root, file)], {
     cwd: root,
     encoding: "utf8"

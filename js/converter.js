@@ -1,7 +1,7 @@
 ﻿(function () {
   "use strict";
   const NOTE = "[A-G](?:##|bb|#|b|x)?";
-  const CHORD_RE = new RegExp(`^(?:N\\.?C\\.?|${NOTE}(?:(?:maj|min|m|M|dim|aug|sus|add|omit|no)[A-Za-z0-9+#b()°oΔ-]*|[0-9+()°Δ-][A-Za-z0-9+#b()°oΔ-]*|o[0-9()]*)?(?:/${NOTE})?)$`);
+  const CHORD_RE = new RegExp(`^(?:N\\.?C\\.?|${NOTE}(?:(?:maj|min|m|M|dim|aug|sus|add|omit|no)[A-Za-z0-9+#b(),°oΔ-]*|[0-9+()°Δ-][A-Za-z0-9+#b(),°oΔ-]*|o[0-9(),]*)?(?:/${NOTE})?)$`);
   const LABEL_DEF_RE = /^\s*([A-Za-z]{2})\s*:\s*([0-9A-Za-z@^*%]*)\s+(.*)$/;
   const LABEL_REF_RE = /^\s*\{([A-Za-z]{2})\}\s*$/;
   const COPY_RE = /^\s*copy\s+([A-Za-z]{2})\s*->\s*([A-Za-z]{2})\s*$/i;
@@ -89,6 +89,69 @@
       return `[${token.value}]`;
     }).join("");
   }
+  function padLyricAfterBracketedBars(text) {
+    // `[|]` is rendered over the following character in ChordWiki's inline
+    // layout. Keep a full-width gap before a lyric, but never before a chord
+    // bracket or another bar.
+    return String(text || "").replace(/\[\|\](?=[\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Han}A-Za-z0-9])/gu, "[|]　");
+  }
+
+  // A manually written rhythm-only line is already ChordWiki's compact source
+  // notation (`[C]-- --|`). Bracketing each hyphen group would add empty text
+  // brackets. Time signatures, spacing and a white-note marker are notation,
+  // not lyrics, so they keep the compact rhythm form.
+  const ARRANGEMENT_PARENTHESIS_RE = /[（(]\s*(?:key|capo|tempo|guitar|bass|piano|drums?|vocal|synth|strings?|percussion|intro|outro|interlude|solo|break|instrumental)\b[^）)]*[）)]/iu;
+  function isStandaloneWaveMarker(value) {
+    return /^[\s　]*[～~][\s　]*$/u.test(String(value || ""));
+  }
+  function hasInlineArrangementNotation(tokens) {
+    return tokens.some((token) => token.kind === "text" && (isStandaloneWaveMarker(token.value) || ARRANGEMENT_PARENTHESIS_RE.test(token.value)));
+  }
+  function normalizeStandaloneWaveMarkers(tokens) {
+    return tokens.map((token) => {
+      if (token.kind !== "text") return token;
+      const match = token.value.match(/^([\s　]*)[～~]([\s　]*)$/u);
+      return match ? { kind: "text", value: `${match[1]}[○]${match[2]}` } : token;
+    });
+  }
+  function hasMeaningfulLyricText(tokens) {
+    let musicStarted = false;
+    return tokens.some((token) => {
+      if (token.kind !== "text") {
+        if (["bar", "chord", "hyphen"].includes(token.kind)) musicStarted = true;
+        return false;
+      }
+      let value = token.value;
+      // A closed parenthesized label before the first bar/chord, such as
+      // (Synth), names an instrumental part. It is notation, not a lyric.
+      if (!musicStarted) value = value.replace(/^(?:[ \t　]*(?:\([^()\r\n]*\)|（[^（）\r\n]*）))+/u, "");
+      value = value.replace(ARRANGEMENT_PARENTHESIS_RE, "");
+      if (isStandaloneWaveMarker(value)) value = "";
+      const content = value
+        .replace(/\(\s*\d+\s*\/\s*\d+\s*\)/g, "")
+        .replace(/\[○\]/g, "")
+        .replace(/[=>≧]/g, "")
+        .replace(/[\s　.:：]/g, "");
+      return Boolean(content);
+    });
+  }
+
+  function hasLeadingMeterAnnotation(tokens) {
+    const first = tokens.find((token) => token.kind !== "text" || token.value.trim());
+    return first?.kind === "text" && /^\s*\(\s*\d+\s*\/\s*\d+\s*\)/.test(first.value);
+  }
+
+  function serializeManualRhythmTokens(tokens, settings) {
+    // Keep the established bracketed intro formatting. The compact source form
+    // is for an explicitly metered, lyric-free chord/rhythm line such as (3/4).
+    if (hasMeaningfulLyricText(tokens) || !hasLeadingMeterAnnotation(tokens)) return serializeTokens(tokens, settings);
+    return tokens.map((token) => {
+      if (token.kind === "chord") return `[${token.value}]`;
+      if (token.kind === "bar") return "[|]";
+      if (token.kind === "hyphen") return token.value;
+      return token.value;
+    }).join("");
+  }
 
   const chordsOf = (tokens) => tokens.filter((token) => token.kind === "chord").map((token) => token.value);
   const hasChords = (tokens) => tokens.some((token) => token.kind === "chord");
@@ -97,13 +160,102 @@
     const finalToken = tokens[tokens.length - 1];
     const previousToken = tokens[tokens.length - 2];
     if (finalToken?.kind !== "text" || previousToken?.kind !== "bar") return null;
-    if (!/^[ \t　]{2,}[（(].+[）)]\s*$/u.test(finalToken.value)) return null;
-    return { musicTokens: tokens.slice(0, -1), suffix: finalToken.value };
+    // A trailing Repeat/Fadeout-style note is an arrangement annotation, not
+    // a lyric.  Keep readable parenthesized dialogue as lyrics; only common
+    // arrangement labels and strings made solely of notation characters form
+    // an annotation suffix.
+    const parenthesizedTrailingNote = /^[ \t　]+[（(].+[）)]\s*$/u.test(finalToken.value);
+    const readable = finalToken.value
+      .replace(/[（(]\s*(?:repeat|fade(?:out)?|fine|coda|segno|d\.?\s*[cs]\.?|to\s+coda|vamp|intro|outro|interlude|solo|break|instrumental|synth)\b[^）)]*[）)]/giu, "")
+      .replace(/[\s　.:：,，、;；!?！？…・･\-–—_=+*/\\|<>〈〉《》「」『』【】［］(){}\[\]]/gu, "");
+    if (readable && !parenthesizedTrailingNote) return null;
+    return { musicTokens: tokens.slice(0, -1), suffix: finalToken.value, preserveCompact: !readable };
   }
   function isCodeOnly(tokens) {
     const annotation = splitTrailingCodeAnnotation(tokens);
     const musicTokens = annotation?.musicTokens || tokens;
-    return hasChords(musicTokens) && musicTokens.every((token) => token.kind !== "text" || !token.value.replace(/\(\d+\s*\/\s*\d+\)/g, "").replace(/[\s.:：]/g, ""));
+    const hasWhiteNote = musicTokens.some((token) => token.kind === "text" && token.value.includes("[○]"));
+    return hasChords(musicTokens) && !hasWhiteNote && !hasMeaningfulLyricText(musicTokens);
+  }
+
+  // A line may contain both sung measures and explicitly authored instrumental
+  // measures.  Classify those measures independently: a vocal such as (ah...)
+  // is lyric text here, while spaces and meter annotations are not.
+  function hasMeaningfulMeasureLyricText(tokens) {
+    return tokens.some((token) => {
+      if (token.kind !== "text") return false;
+      let value = token.value.replace(ARRANGEMENT_PARENTHESIS_RE, "");
+      if (isStandaloneWaveMarker(value)) value = "";
+      const content = value
+        .replace(/\(\s*\d+\s*\/\s*\d+\s*\)/g, "")
+        .replace(/\[○\]/g, "")
+        .replace(/[=>≧]/g, "")
+        .replace(/[\s　.:：]/g, "");
+      return Boolean(content);
+    });
+  }
+
+  function splitMeasureSpans(tokens) {
+    const spans = [{ tokens: [], indices: [] }];
+    const bars = [];
+    tokens.forEach((token, index) => {
+      if (token.kind === "bar") {
+        bars.push(token);
+        spans.push({ tokens: [], indices: [] });
+      } else {
+        spans[spans.length - 1].tokens.push(token);
+        spans[spans.length - 1].indices.push(index);
+      }
+    });
+    return { spans, bars };
+  }
+
+  function isCodeOnlyMeasure(tokens) {
+    const hasWhiteNote = tokens.some((token) => token.kind === "text" && token.value.includes("[○]"));
+    const hasMeterAnnotation = tokens.some((token) => token.kind === "text" && /\(\s*\d+\s*\/\s*\d+\s*\)/.test(token.value));
+    return hasChords(tokens) && !hasWhiteNote && !hasMeterAnnotation && !hasMeaningfulMeasureLyricText(tokens);
+  }
+
+  function hasMixedLyricAndCodeOnlyMeasures(tokens) {
+    const { spans } = splitMeasureSpans(tokens);
+    return spans.some((span) => hasChords(span.tokens) && hasMeaningfulMeasureLyricText(span.tokens))
+      && spans.filter((span) => isCodeOnlyMeasure(span.tokens)).length >= 2;
+  }
+
+  function serializeMixedMeasureTokens(tokens, settings) {
+    const { spans, bars } = splitMeasureSpans(tokens);
+    const codeOnly = spans.map((span) => isCodeOnlyMeasure(span.tokens));
+    const output = [];
+    spans.forEach((span, index) => {
+      output.push(codeOnly[index]
+        ? serializeCodeOnlyTokens(span.tokens, settings.hyphenSpacing)
+        : serializeTokens(span.tokens, settings));
+      if (index >= bars.length) return;
+      const nextIsCodeOnly = codeOnly[index + 1];
+      const trailingCodeOnlyBar = index + 1 === spans.length - 1 && !spans[index + 1].tokens.length && codeOnly[index];
+      output.push(nextIsCodeOnly || trailingCodeOnlyBar ? "|" : "[|]");
+    });
+    return output.join("");
+  }
+  // In a lyric line followed by two or more authored rhythm measures, retain
+  // the authored rhythm exactly while giving the lyric measures their normal
+  // ChordWiki bar brackets.  This keeps dense `>==` patterns out of lyric
+  // layout logic altogether.
+  function serializeMixedAuthoredSource(tokens, settings) {
+    const { spans, bars } = splitMeasureSpans(tokens);
+    const codeOnly = spans.map((span) => isCodeOnlyMeasure(span.tokens));
+    const output = [];
+    spans.forEach((span, index) => {
+      if (codeOnly[index]) {
+        output.push(span.tokens.map((token) => token.kind === "chord" ? `[${token.value}]` : token.value).join(""));
+      } else {
+        let rendered = serializeTokens(span.tokens, settings);
+        if (!chordsOf(span.tokens).length) rendered = rendered.replace(/^ /u, "　").replace(/ $/u, "　");
+        output.push(rendered);
+      }
+      if (index < bars.length) output.push(codeOnly[index] ? "|" : "[|]");
+    });
+    return output.join("");
   }
   function encodeBeatValue(width) {
     if (width >= 0 && width <= 9) return String(width);
@@ -123,7 +275,7 @@
   function beatCodeUnits(code) {
     const units = [];
     let modifiers = "";
-    let pendingSync = false;
+    let pendingSync = 0;
     const characters = [...code.trim()];
     for (let index = 0; index < characters.length; index += 1) {
       const character = characters[index];
@@ -135,14 +287,22 @@
       if (suffixNoBar) { previousUnit.noTrailingBar = true; continue; }
       if (character === "^" || character === "*" || character.toLowerCase() === "x") { modifiers += character.toLowerCase(); continue; }
       if (character.toLowerCase() === "s") {
-        if (modifiers || !previousUnit || previousUnit.width <= 0 || previousUnit.syncAfter || previousUnit.whiteNoteMarker || previousUnit.halfNote || previousUnit.accents) return null;
-        previousUnit.syncAfter = true;
-        pendingSync = true;
+        if (modifiers && modifiers !== "*") return null;
+        const syncAmount = modifiers === "*" ? 1 : 2;
+        if (previousUnit && (previousUnit.width <= 0 || previousUnit.syncAfter || previousUnit.whiteNoteMarker || previousUnit.halfNote || previousUnit.accents)) return null;
+        if (previousUnit) previousUnit.syncAfter = syncAmount;
+        pendingSync = syncAmount;
+        modifiers = "";
+        continue;
+      }
+      if (character === "?") {
+        if (modifiers || pendingSync) return null;
+        units.push({ width: 0, accents: 0, halfNote: false, noLeadingBar: false, noTrailingBar: false, whiteNoteMarker: false, suffixStar: false, protectedMarker: true, syncBefore: 0, syncAfter: 0 });
         continue;
       }
       const width = decodeBeatValue(character);
       if (width === null) return null;
-      const unit = { width, accents: (modifiers.match(/\^/g) || []).length, halfNote: modifiers.includes("*"), noLeadingBar: modifiers.includes("x"), noTrailingBar: false, whiteNoteMarker: character === "@", suffixStar: false, syncBefore: pendingSync, syncAfter: false };
+      const unit = { width, accents: (modifiers.match(/\^/g) || []).length, halfNote: modifiers.includes("*"), noLeadingBar: modifiers.includes("x"), noTrailingBar: false, whiteNoteMarker: character === "@", suffixStar: false, syncBefore: pendingSync, syncAfter: 0 };
       if (pendingSync && (unit.width <= 0 || unit.whiteNoteMarker || unit.halfNote || unit.accents)) return null;
       units.push(unit);
       pendingSync = false;
@@ -151,34 +311,27 @@
     return modifiers || pendingSync ? null : units;
   }
   function serializeBeatUnit(unit) {
+    if (unit.protectedMarker) return "?";
     const value = encodeBeatValue(unit.width);
     if (value === null) return null;
     return `${unit.noLeadingBar ? "x" : ""}${"^".repeat(unit.accents || 0)}${unit.halfNote ? "*" : ""}${unit.whiteNoteMarker ? "@" : value}${unit.noTrailingBar ? "x" : ""}`;
   }
-  function allSyncopatedCode(code) {
-    const units = beatCodeUnits(code);
-    if (!units || units.length < 2 || units.some((unit) => unit.whiteNoteMarker || unit.halfNote || unit.accents || unit.syncBefore || unit.syncAfter)) return null;
-    const groups = units.map(serializeBeatUnit);
-    if (groups.some((group) => group === null)) return null;
-    return groups.map((group, index) => `${group}${index % 2 === 0 && index + 1 < groups.length ? "s" : ""}`).join("");
-  }
   function expandedComparableUnits(code, slotCount) {
     const units = beatCodeUnits(String(code || ""));
     if (!units?.length) return null;
-    if (units.length === 1 && slotCount > 1) return Array.from({ length: slotCount }, () => ({ ...units[0] }));
     return units.length === slotCount ? units : null;
   }
   function correctionUnitSignature(unit) {
     return [
       unit.width, unit.accents || 0, Boolean(unit.halfNote), Boolean(unit.noLeadingBar),
       Boolean(unit.noTrailingBar), Boolean(unit.whiteNoteMarker), Boolean(unit.suffixStar),
-      Boolean(unit.syncBefore), Boolean(unit.syncAfter)
+      Number(unit.syncBefore) || 0, Number(unit.syncAfter) || 0
     ].join(":");
   }
   function correctionRhythmSignature(unit) {
     return [
       unit.width, unit.accents || 0, Boolean(unit.halfNote), Boolean(unit.whiteNoteMarker),
-      Boolean(unit.suffixStar), Boolean(unit.syncBefore), Boolean(unit.syncAfter)
+      Boolean(unit.suffixStar), Number(unit.syncBefore) || 0, Number(unit.syncAfter) || 0
     ].join(":");
   }
   function leadingBarAndBody(interval) {
@@ -211,7 +364,7 @@
     if (!previousUnits || !nextUnits) return renderedBody;
 
     const capacity = Math.max(1, Number(settings.measureCapacity) || 1) * 2;
-    const fineWidth = (unit) => (unit.width * 2) + (unit.syncBefore ? 1 : 0) - (unit.syncAfter ? 1 : 0);
+    const fineWidth = (unit) => (unit.width * 2) + (Number(unit.syncBefore) || 0) - (Number(unit.syncAfter) || 0);
     if (current.intervals.length !== rendered.intervals.length) {
       const commonCount = Math.min(previousUnits.length, nextUnits.length);
       let commonPrefix = 0;
@@ -289,6 +442,18 @@
       else expanded += code;
     });
     return expanded;
+  }
+  function encodeTerminalWhiteNote(code, body) {
+    const tokens = parseTokens(body);
+    let finalChordIndex = -1;
+    let chordCount = 0;
+    tokens.forEach((token, index) => { if (token.kind === "chord") { finalChordIndex = index; chordCount += 1; } });
+    if (chordCount < 2) return code;
+    if (finalChordIndex < 0 || tokens[finalChordIndex + 1]?.kind !== "text" || tokens[finalChordIndex + 1].value !== "[○]") return code;
+    if (tokens.slice(finalChordIndex + 2).some((token) => token.kind === "hyphen")) return code;
+    const units = beatCodeUnits(code);
+    if (!units?.length) return code;
+    return [...units.slice(0, -1).map(serializeBeatUnit), "@"].join("");
   }
   function compactUniform(code) { return code && [...code].every((char) => char === code[0]) ? code[0] : code; }
   function beatMarker(width) { return `[${"-".repeat(width)}]`; }
@@ -441,12 +606,19 @@
     return { ok: true, forcedBarBeforeSlot: precedingUnits.length, fullCode: before + after };
   }
 
-  function renderWithBeatCode(body, code, settings, authoredBody = body) {
+  function renderWithBeatCode(body, code, settings, authoredBody = body, automaticCode = "") {
     const anchor = correctionBarAnchor(code);
     if (anchor && !anchor.ok) return anchor;
     const forcedBarBeforeSlot = anchor?.forcedBarBeforeSlot ?? -1;
     const effectiveCode = anchor?.fullCode || code;
     const parsedSourceTokens = parseTokens(body);
+    const protectedRhythms = [];
+    parsedSourceTokens.forEach((token, index) => {
+      if (token.kind !== "chord") return;
+      const nextChord = parsedSourceTokens.findIndex((following, followingIndex) => followingIndex > index && following.kind === "chord");
+      const end = nextChord < 0 ? parsedSourceTokens.length : nextChord;
+      protectedRhythms.push(parsedSourceTokens.slice(index + 1, end).filter((following) => following.kind === "hyphen").map((following) => following.value));
+    });
     const authoredTokens = parseTokens(authoredBody);
     const authoredFollowingLyrics = [];
     authoredTokens.forEach((token, index) => {
@@ -462,22 +634,32 @@
     const whiteNoteCount = sourceTokens.filter((token) => token.kind === "text" && token.value === "[○]").length;
     const slotCount = chordCount + whiteNoteCount;
     let units = beatCodeUnits(effectiveCode);
+    const automaticUnits = beatCodeUnits(automaticCode);
     if (!units || !units.length) return { ok: false, message: "行修正値は数字（0～9）、長さ文字（a～i）、記号（^、*、@、x、s、|）で入力してください。nは行修正しない指定です。" };
-    if (units.length === 1 && slotCount > 1) units = Array.from({ length: slotCount }, () => ({ ...units[0] }));
-    if (units.length < slotCount) return { ok: false, message: beatCountError(slotCount, units.length) };
+    if (units.length < slotCount) {
+      if (!automaticUnits || automaticUnits.length !== slotCount) return { ok: false, message: beatCountError(slotCount, units.length) };
+      const tail = automaticUnits.slice(units.length).map((unit) => ({ ...unit }));
+      if (tail.length) tail[0].syncBefore = 0;
+      units = [...units, ...tail];
+    }
+    units.forEach((unit, index) => {
+      if (!unit.protectedMarker) return;
+      unit.width = [...(protectedRhythms[index] || []).join("")].filter((character) => "-=>≧".includes(character)).length;
+    });
 
     const syncopated = units.some((unit) => unit.syncBefore || unit.syncAfter);
     const capacity = settings.measureCapacity * (syncopated ? 2 : 1);
     const parts = [];
     let chordIndex = 0;
-    let position = 0;
-    let musicStarted = false;
+    const leadingSync = syncopated ? Number(units[0]?.syncBefore) || 0 : 0;
+    let position = leadingSync ? capacity - leadingSync : 0;
+    let musicStarted = Boolean(leadingSync);
     let pendingBar = false;
     let suppressPendingBar = false;
     let suppressNextSourceBar = false;
     let trailingBarSuppressed = false;
     function appendDuration(unit, continuationChord = "", followingLyric = null, authoredLyric = "") {
-      let remaining = syncopated ? (unit.width * 2) + (unit.syncBefore ? 1 : 0) - (unit.syncAfter ? 1 : 0) : unit.width;
+      let remaining = syncopated ? (unit.width * 2) + (Number(unit.syncBefore) || 0) - (Number(unit.syncAfter) || 0) : unit.width;
       if (remaining < 0) return;
       const lyricDistribution = longBeatLyricDistribution(unit, followingLyric, position, capacity, settings, syncopated, authoredLyric);
       if (lyricDistribution) {
@@ -575,12 +757,27 @@
       parts.push(`[${token.value}]`);
       suppressNextSourceBar = unit.noTrailingBar;
       const followedByWhiteNote = sourceTokens[tokenIndex + 1]?.kind === "text" && sourceTokens[tokenIndex + 1].value === "[○]";
-      if (unit.whiteNoteMarker) {
+      if (unit.protectedMarker) {
+        const rhythm = protectedRhythms[sourceChordOrdinal] || [];
+        rhythm.forEach((value) => parts.push(`[${value}]`));
+        position += unit.width;
+        if (position >= capacity) {
+          pendingBar = true;
+          position %= capacity;
+        }
+      } else if (unit.whiteNoteMarker) {
         if (!followedByWhiteNote) {
           parts.push("[○]");
           const remainingSourceSlots = sourceTokens.slice(tokenIndex + 1)
             .filter((remaining) => remaining.kind === "chord" || (remaining.kind === "text" && remaining.value === "[○]")).length;
           if (units.length - chordIndex > remainingSourceSlots) appendDuration(units[chordIndex++]);
+          else {
+            // Replacing a visible beat such as 4 with @ creates a white note
+            // with the configured default beat length. @4 remains available
+            // when a different white-note duration is wanted explicitly.
+            const durationUnit = { ...unit, width: Math.max(1, Number(settings.hyphenUnit) || 1), whiteNoteMarker: false };
+            appendDuration(durationUnit);
+          }
         }
       } else if (!followedByWhiteNote) {
         // Only lyrics authored between this chord and the next chord (or line end)
@@ -780,6 +977,23 @@
       ? { index, explicitWidth: explicitRhythmUntilNextChord(tokens, index) }
       : null).filter(Boolean);
     chordInfos.forEach((info) => durationByTokenIndex.set(info.index, info.explicitWidth || unit));
+    const mixedMeasures = hasMixedLyricAndCodeOnlyMeasures(tokens);
+    if (mixedMeasures) {
+      const { spans } = splitMeasureSpans(tokens);
+      spans.forEach((span) => {
+        const chordIndices = span.indices.filter((index) => tokens[index].kind === "chord");
+        if (!chordIndices.length || span.tokens.some((token) => token.kind === "hyphen")) return;
+        const baseWidth = Math.floor(capacity / chordIndices.length);
+        if (baseWidth < 1) return;
+        chordIndices.forEach((tokenIndex, chordIndex) => {
+          const width = chordIndex === chordIndices.length - 1
+            ? capacity - baseWidth * (chordIndices.length - 1)
+            : baseWidth;
+          durationByTokenIndex.set(tokenIndex, width);
+          inferredRhythmByTokenIndex.set(tokenIndex, "-".repeat(width));
+        });
+      });
+    }
     const initialTotal = chordInfos.reduce((sum, info) => sum + durationByTokenIndex.get(info.index), 0);
     const fourMeasureCapacity = capacity * 4;
     for (let infoIndex = chordInfos.length - 1; infoIndex >= 0; infoIndex -= 1) {
@@ -802,8 +1016,14 @@
         break;
       }
     }
-    let position = 0;
-    let measureOpen = false;
+    const firstChordTokenIndex = tokens.findIndex((token) => token.kind === "chord");
+    const firstAuthoredBarIndex = tokens.findIndex((token, index) => index > firstChordTokenIndex && token.kind === "bar");
+    const leadingRhythm = firstChordTokenIndex >= 0 && firstAuthoredBarIndex > firstChordTokenIndex
+      ? tokens.slice(firstChordTokenIndex + 1, firstAuthoredBarIndex).filter((token) => token.kind === "hyphen").map((token) => token.value.replace(/ /g, "")).join("")
+      : "";
+    const leadingPickupWidth = leadingRhythm === "=" || leadingRhythm === "-" ? 1 : 0;
+    let position = leadingPickupWidth ? capacity - leadingPickupWidth : 0;
+    let measureOpen = Boolean(leadingPickupWidth);
     let previousChordTokenIndex = -1;
     tokens.forEach((token, index) => {
       if (token.kind === "bar") {
@@ -835,10 +1055,12 @@
     if (output[output.length - 1]?.kind !== "bar") output.push({ kind: "bar", value: "|" });
     const encodedDurations = durations.map((duration) => encodeBeatValue(Math.min(duration, 32)));
     let beatCode = encodedDurations.every(Boolean) ? compactUniform(encodedDurations.join("")) : "n";
-    const body = serializeTokens(output, settings);
+    const body = mixedMeasures
+      ? serializeMixedMeasureTokens(output, settings)
+      : serializeManualRhythmTokens(output, settings);
     const inferredSyncCode = inferBeatCodeFromRenderedLine(body, beatCode, settings);
     if (inferredSyncCode?.includes("s")) beatCode = inferredSyncCode;
-    return { body, beatCode, target: true, partial: true };
+    return { body, beatCode, target: true, partial: true, mixedMeasures };
   }
 
   function isNoChordSymbol(value) {
@@ -879,11 +1101,25 @@
     if (!hasChords(tokens)) return { body: line, beatCode: "", target: false };
     const annotation = splitTrailingCodeAnnotation(tokens);
     const musicTokens = annotation?.musicTokens || tokens;
-    const result = hasHyphens(musicTokens)
-      ? formatManualRhythm(moveDelayedRhythmAfterChord(musicTokens, settings.measureCapacity), settings)
-      : isCodeOnly(musicTokens) ? formatChordOnly(musicTokens, settings) : formatLyric(musicTokens, settings);
-    const body = suppressTrailingBarAfterParenthesizedFinalChord(result.body) + (annotation?.suffix || "");
-    return { ...result, body };
+    const manualRhythm = hasHyphens(musicTokens);
+    const inlineArrangementNotation = hasInlineArrangementNotation(musicTokens);
+    const normalizedMusicTokens = normalizeStandaloneWaveMarkers(musicTokens);
+    // Only retain raw mixed spans when the author explicitly starts the line
+    // with a bar.  Ordinary lyric lines that merely continue into code-only
+    // measures still use the established mixed-measure conversion.
+    const mixedAuthoredSource = manualRhythm && musicTokens[0]?.kind === "bar" && hasMixedLyricAndCodeOnlyMeasures(musicTokens);
+    const preserveCompactSource = manualRhythm && !hasMeaningfulLyricText(musicTokens)
+      && (annotation?.preserveCompact || inlineArrangementNotation || /^[ \t　]|[ \t　]$/u.test(line) || /^[ \t　]*(?:\((?!\s*\d+\s*\/)[^()\r\n]*\)|（(?!\s*\d+\s*[\/／])[^（）\r\n]*）)[ \t　]*(?:\[\|\]|\|)/u.test(line));
+    const result = manualRhythm
+      ? formatManualRhythm(moveDelayedRhythmAfterChord(normalizedMusicTokens, settings.measureCapacity), settings)
+      : isCodeOnly(normalizedMusicTokens) ? formatChordOnly(normalizedMusicTokens, settings) : formatLyric(normalizedMusicTokens, settings);
+    const rawBody = preserveCompactSource
+      ? line
+      : mixedAuthoredSource
+        ? serializeMixedAuthoredSource(musicTokens, settings)
+      : suppressTrailingBarAfterParenthesizedFinalChord(result.body) + (annotation?.suffix || "");
+    const body = rawBody;
+    return { ...result, body, preserveCompactSource, mixedMeasures: mixedAuthoredSource ? false : result.mixedMeasures };
   }
   function suppressTrailingBarAfterParenthesizedFinalChord(line) {
     const tokens = parseTokens(String(line || ""));
@@ -896,7 +1132,7 @@
   function alignLabels(lines) {
     const parsed = lines.map((line) => line.match(LABEL_DEF_RE));
     const width = Math.max(0, ...parsed.filter(Boolean).map((match) => `${match[1]}:${match[2]}`.length));
-    return lines.map((line, index) => parsed[index] ? `${parsed[index][1]}:${parsed[index][2]}${" ".repeat(width - `${parsed[index][1]}:${parsed[index][2]}`.length + 1)}${parsed[index][3]}`.trimEnd() : line);
+    return lines.map((line, index) => parsed[index] ? `${parsed[index][1]}:${parsed[index][2]}${" ".repeat(width - `${parsed[index][1]}:${parsed[index][2]}`.length + 1)}${parsed[index][3]}` : line);
   }
 
   function summarizeLineNumbers(values) {
@@ -983,7 +1219,9 @@
     const warnings = [];
     const partialLines = [];
     const partialOutputIndices = new Set();
+    const mixedMeasureOutputIndices = new Set();
     const labels = new Map();
+    const compactSourceLines = new Map();
     let block = 0;
     let lineNumber = 0;
     let inBlankRun = false;
@@ -1000,14 +1238,16 @@
       const reference = line.match(LABEL_REF_RE);
       if (reference) { const name = reference[1].toLowerCase(); const found = labels.get(name); if (!found) warnings.push(`UnknownLabelError: ${name}`); output.push(found ? found.body : `UnknownLabelError: ${name}`); return; }
       const definition = line.match(LABEL_DEF_RE);
-      if (definition) { const name = definition[1].toLowerCase(); const result = formatLine(definition[3], settings); const beatCode = definition[2] || result.beatCode; labels.set(name, { name, beatCode, body: result.body }); output.push(`${name}:${beatCode} ${result.body}`.trimEnd()); return; }
+      if (definition) { const name = definition[1].toLowerCase(); const result = formatLine(definition[3], settings); const beatCode = definition[2] || result.beatCode; labels.set(name, { name, beatCode, body: result.body }); output.push(`${name}:${beatCode} ${result.body}`); return; }
       if (DIRECTIVE_RE.test(line)) { output.push(line); return; }
       const result = formatLine(line, settings);
       if (result.partial) {
         partialLines.push(sourceIndex + 1);
         partialOutputIndices.add(output.length);
       }
-      if (result.target) output.push(`${labelName(block, lineNumber++)}:${result.beatCode} ${result.body}`.trimEnd());
+      if (result.mixedMeasures) mixedMeasureOutputIndices.add(output.length);
+      if (result.preserveCompactSource) compactSourceLines.set(output.length, result.body);
+      if (result.target) output.push(`${labelName(block, lineNumber++)}:${result.beatCode} ${result.body}`);
       else output.push(result.body);
     });
     if (partialLines.length) {
@@ -1034,48 +1274,99 @@
         bodyLines.push(line);
         return;
       }
-      const automaticCode = expandedBeatCode(match[2], match[3]);
+      const requestedMode = ["auto", "edit", "source", "none", "recovered", "fixed"].includes(rowModes[outputIndex]) ? rowModes[outputIndex] : "";
+      const automaticCode = encodeTerminalWhiteNote(expandedBeatCode(match[2], match[3]), match[3]);
+      const displayedEnteredCode = (rowCorrections[outputIndex] || "").trim();
+      let manualBody = !["auto", "source"].includes(requestedMode) && typeof manualOutputLines[outputIndex] === "string"
+        ? manualOutputLines[outputIndex]
+        : null;
+      // Older conversions wrapped a compact instrumental source in [|] and
+      // bracketed rhythm tokens. If its unchanged automatic row value and edit
+      // state remain in local storage, they must not override the newly
+      // recognized source-preserving form.
+      if (compactSourceLines.has(outputIndex) && displayedEnteredCode === automaticCode) manualBody = null;
+      const manualTokens = manualBody === null ? null : parseTokens(manualBody);
+      const manualHasTarget = manualTokens?.some((token) => token.kind === "chord" || (token.kind === "text" && token.value === "[○]"));
+      // A manually cleared result row has no rhythm target. Do not retain the
+      // source line's automatic code, or the correction column would describe
+      // music that is no longer present in the displayed result.
+      if (manualBody !== null && (requestedMode === "none" || !manualHasTarget)) {
+        correctionLines.push("");
+        automaticCorrectionLines.push("");
+        appliedCorrectionLines.push("");
+        correctionSlotCounts.push(0);
+        authoredWhiteNoteCounts.push(0);
+        correctionStates.push("none");
+        bodyLines.push(manualBody);
+        return;
+      }
       automaticCorrectionLines.push(automaticCode);
       const automaticTokens = parseTokens(match[3]);
       const automaticSlotCount = chordsOf(automaticTokens).length + automaticTokens.filter((token) => token.kind === "text" && token.value === "[○]").length;
       correctionSlotCounts.push(beatCodeUnits(automaticCode)?.length || automaticSlotCount);
       authoredWhiteNoteCounts.push(automaticTokens.filter((token) => token.kind === "text" && token.value === "[○]").length);
-      const displayedEnteredCode = (rowCorrections[outputIndex] || "").trim();
-      const requestedMode = ["auto", "edit", "source"].includes(rowModes[outputIndex]) ? rowModes[outputIndex] : "";
       const useAutomatic = requestedMode === "auto";
       const useSource = requestedMode === "source";
+      // A source line with unsupported rhythm syntax is preserved as-is.
+      // It becomes editable only when the user deliberately enters a row code.
+      const sourceIsUnsupported = partialOutputIndices.has(outputIndex)
+        && hasUnsupportedRowRhythm(match[3]);
+      if (sourceIsUnsupported && requestedMode !== "edit") {
+        const protectedCode = protectUnsupportedCorrectionSlots(automaticCode, match[3]);
+        correctionLines.push(protectedCode);
+        appliedCorrectionLines.push(protectedCode);
+        correctionStates.push("fixed");
+        bodyLines.push(addContinuationChordsToManualRhythm(match[3], settings));
+        return;
+      }
+      if (requestedMode === "fixed" && manualBody !== null) {
+        correctionLines.push("");
+        appliedCorrectionLines.push("");
+        correctionStates.push("fixed");
+        bodyLines.push(manualBody);
+        return;
+      }
+      // A recovered code is a suggested editing value.  Keep the exact
+      // converted line locked until the user changes that value, because
+      // compact output often omits the hyphens that the code would render.
+      if (requestedMode === "recovered" && manualBody !== null) {
+        correctionLines.push(displayedEnteredCode || automaticCode);
+        appliedCorrectionLines.push(displayedEnteredCode || automaticCode);
+        correctionStates.push("recovered");
+        bodyLines.push(manualBody);
+        return;
+      }
       const enteredCode = useAutomatic || useSource ? "" : partialOutputIndices.has(outputIndex) && displayedEnteredCode === automaticCode
         ? ""
         : displayedEnteredCode;
       const displayedCode = displayedEnteredCode || automaticCode;
       const previousCode = (previousRowCorrections[outputIndex] || "").trim();
       let appliedCode = enteredCode ? (previousCode || automaticCode) : automaticCode;
-      const manualBody = !useAutomatic && !useSource && typeof manualOutputLines[outputIndex] === "string" ? manualOutputLines[outputIndex] : null;
-      let renderedBody = manualBody ?? match[3];
+      let renderedBody = manualBody ?? compactSourceLines.get(outputIndex) ?? match[3];
       if (enteredCode.toLowerCase() === "n") appliedCode = "n";
       else if (enteredCode) {
-        const effectiveCode = enteredCode.toLowerCase() === "s" ? allSyncopatedCode(automaticCode) : enteredCode;
-        if (!effectiveCode) correctionErrors.push({ line: outputIndex + 1, message: "この行は全シンコペーションへ自動展開できません。4s4のように個別指定してください。" });
-        else {
-          // When this line was edited in the output, retain its lyrics/chords and
-          // rebuild only rhythm and bar placement from the row correction.
-          // The row code owns white-note markers when it is explicitly edited.
-          // Rebuild them from @ so a later row edit can add or remove [○].
-          const anchoredCorrection = enteredCode.includes("|");
-          const rowEditSource = anchoredCorrection ? renderedBody : renderedBody.replaceAll("[○]", "");
-          const rendered = renderWithBeatCode(rowEditSource, effectiveCode, settings, manualBody ?? lines[outputIndex] ?? rowEditSource);
-          if (rendered.ok) {
-            renderedBody = manualBody && previousCode && previousCode !== enteredCode && !anchoredCorrection && !previousCode.includes("|")
-              ? mergeCorrectionScope(manualBody, rendered.body, previousCode, enteredCode, settings)
-              : rendered.body;
-            appliedCode = enteredCode;
-          }
-          else correctionErrors.push({ line: outputIndex + 1, message: rendered.message });
+        const effectiveCode = enteredCode;
+        // When this line was edited in the output, retain its lyrics/chords and
+        // rebuild only rhythm and bar placement from the row correction.
+        // The row code owns white-note markers when it is explicitly edited.
+        // Rebuild them from @ so a later row edit can add or remove [○].
+        const anchoredCorrection = enteredCode.includes("|");
+        const rowEditSource = anchoredCorrection ? renderedBody : renderedBody.replaceAll("[○]", "");
+        const rendered = renderWithBeatCode(rowEditSource, effectiveCode, settings, manualBody ?? lines[outputIndex] ?? rowEditSource, automaticCode);
+        if (rendered.ok) {
+          renderedBody = manualBody && previousCode && previousCode !== enteredCode && !anchoredCorrection && !previousCode.includes("|")
+            ? mergeCorrectionScope(manualBody, rendered.body, previousCode, enteredCode, settings)
+            : rendered.body;
+          appliedCode = enteredCode;
         }
+        else correctionErrors.push({ line: outputIndex + 1, message: rendered.message });
       }
       renderedBody = suppressTrailingBarAfterParenthesizedFinalChord(renderedBody);
       if (partialOutputIndices.has(outputIndex) && manualBody === null) {
         renderedBody = addContinuationChordsToManualRhythm(renderedBody, settings);
+      }
+      if (mixedMeasureOutputIndices.has(outputIndex) && !useSource) {
+        renderedBody = serializeMixedMeasureTokens(parseTokens(renderedBody), settings);
       }
       if (useSource) renderedBody = lines[outputIndex] ?? renderedBody;
       correctionLines.push(displayedCode);
@@ -1091,10 +1382,10 @@
     groupedCorrectionErrors.forEach((errorLines, message) => {
       warnings.push(`行修正エラー（${summarizeLineNumbers(errorLines)}行目）：${message}`);
     });
-    return { output: bodyLines.join("\n"), corrections: correctionLines.join("\n"), automaticCorrections: automaticCorrectionLines.join("\n"), appliedCorrections: appliedCorrectionLines.join("\n"), correctionSlotCounts, authoredWhiteNoteCounts, correctionStates, correctionErrors, warnings: [...new Set(warnings)], settings, rowCorrections };
+    return { output: padLyricAfterBracketedBars(bodyLines.join("\n")), corrections: correctionLines.join("\n"), automaticCorrections: automaticCorrectionLines.join("\n"), appliedCorrections: appliedCorrectionLines.join("\n"), correctionSlotCounts, authoredWhiteNoteCounts, correctionStates, correctionErrors, warnings: [...new Set(warnings)], settings, rowCorrections };
   }
 
-  function removeSelectedLyricHyphens(tokens, selectedCounts) {
+  function removeSelectedLyricHyphens(tokens, selectedCounts, keepSingleCharacterHyphens = false) {
     if (!selectedCounts.length || selectedCounts.includes(0) || isCodeOnly(tokens)) return { tokens: [...tokens], removedHyphens: 0, changedMeasures: 0 };
     const selected = new Set(selectedCounts);
     const measures = [];
@@ -1168,13 +1459,30 @@
       const uniformAttachedFourFour = measureRhythmWidth === 8 && !hasOrphanRhythm && validGroups === chordCount
         && allHyphensSelected && new Set(signatures).size === 1 && signatures[0] === 4;
       const mixedCompleteEightBeat = selected.size === 1 && selected.has(4) && measureRhythmWidth === 8 && !uniformAttachedFourFour;
+      const removableSingleLyricMeasure = hasSingleLyricCharacter && chordCount === 1
+        && measureRhythmWidth === 8 && !hasOrphanRhythm && allHyphensSelected;
+      // A one-character lyric is often written with its duration on both sides
+      // (e.g. [C][----]は[----]).  The trailing duration is deliberately not
+      // attached to the chord, so it is an "orphan" rhythm token above.  Treat
+      // this completed one-chord measure as one unit for the setting instead of
+      // leaving only that trailing token behind.
+      const allHyphensAreSelectedPureRhythm = hyphenIndices.size > 0
+        && [...hyphenIndices].every((tokenIndex) => {
+          const width = measure[tokenIndex].value.replace(/ /g, "").length;
+          return /^-+$/.test(measure[tokenIndex].value.replace(/ /g, "")) && selected.has(width);
+        });
+      const removableSplitSingleLyricMeasure = hasSingleLyricCharacter && chordCount === 1
+        && measureRhythmWidth === 8 && allHyphensAreSelectedPureRhythm;
       // With three or more chord changes in one measure, the rhythm markers are
       // needed to show where each change occurs, even when their widths match a
       // selected removal target.
-      const shouldRemove = chordCount < 3 && !hasSingleLyricCharacter && !hasWhiteNote && !hasExpressiveRhythm && !mixedCompleteEightBeat && chordCount >= 1 && validGroups === chordCount && removable.size > 0 && allHyphensSelected && new Set(signatures).size === 1 && lyricsFollowEveryGroup;
+      const shouldRemoveSingleLyricHyphens = hasSingleLyricCharacter && !keepSingleCharacterHyphens
+        && (removableSingleLyricMeasure || removableSplitSingleLyricMeasure)
+        && !hasWhiteNote && !hasExpressiveRhythm;
+      const shouldRemove = shouldRemoveSingleLyricHyphens || (chordCount < 3 && (!hasSingleLyricCharacter || (removableSingleLyricMeasure && !keepSingleCharacterHyphens)) && !hasWhiteNote && !hasExpressiveRhythm && !mixedCompleteEightBeat && chordCount >= 1 && validGroups === chordCount && removable.size > 0 && allHyphensSelected && new Set(signatures).size === 1 && lyricsFollowEveryGroup);
       if (shouldRemove) changedMeasures += 1;
       measure.forEach((token, tokenIndex) => {
-        if (shouldRemove && removable.has(tokenIndex)) removedHyphens += token.value.replace(/ /g, "").length;
+        if (shouldRemove && (removable.has(tokenIndex) || (shouldRemoveSingleLyricHyphens && hyphenIndices.has(tokenIndex)))) removedHyphens += token.value.replace(/ /g, "").length;
         else output.push(token);
       });
     });
@@ -1271,7 +1579,7 @@
     // Spacing is only a separator inside one continuous rhythm run. Never leave
     // that separator between the final beat and a following bar line ("-|"),
     // including text that was already rendered by an earlier conversion.
-    return output.join("").replace(/[ \t　]+(?=\|)/g, "");
+    return output.join("").replace(/([-=>≧])[ \t　]+(?=\|)/g, "$1");
   }
 
   function hideLyricHyphens(tokens, includeDenseMeasures = false) {
@@ -1296,7 +1604,7 @@
     return { tokens: output, hiddenHyphens };
   }
 
-  function renderCompletedOutput(text, selectedCounts = [4], hyphenSpacing = 0, hideLyricHyphenMarkers = false) {
+  function renderCompletedOutput(text, selectedCounts = [4], hyphenSpacing = 0, hideLyricHyphenMarkers = false, keepSingleCharacterHyphens = false) {
     let removedHyphens = 0;
     let changedMeasures = 0;
     let hiddenLyricHyphens = 0;
@@ -1304,43 +1612,72 @@
       if (DIRECTIVE_RE.test(line)) return line;
       const parsed = restoreShortFractionMeasureTail(parseTokens(line), selectedCounts);
       const codeOnly = isCodeOnly(parsed);
-      const result = removeSelectedLyricHyphens(parsed, selectedCounts);
+      const mixedMeasures = hasMixedLyricAndCodeOnlyMeasures(parsed);
+      const result = removeSelectedLyricHyphens(parsed, selectedCounts, keepSingleCharacterHyphens);
       removedHyphens += result.removedHyphens;
       changedMeasures += result.changedMeasures;
       const hideAllLyricHyphens = hideLyricHyphenMarkers === "all";
       const visibility = hideLyricHyphenMarkers ? hideLyricHyphens(result.tokens, hideAllLyricHyphens) : { tokens: result.tokens, hiddenHyphens: 0 };
       hiddenLyricHyphens += visibility.hiddenHyphens;
-      if (!codeOnly) return serializeTokens(padShortTrailingLyric(visibility.tokens), { hyphenSpacing: 0 });
-      return serializeCodeOnlyTokens(result.tokens, hyphenSpacing);
+      if (mixedMeasures) return padLyricAfterBracketedBars(serializeMixedMeasureTokens(padShortTrailingLyric(visibility.tokens), { hyphenSpacing }));
+      if (!codeOnly) return padLyricAfterBracketedBars(serializeTokens(padShortTrailingLyric(visibility.tokens), { hyphenSpacing: 0 }));
+      return padLyricAfterBracketedBars(serializeCodeOnlyTokens(result.tokens, hyphenSpacing));
     }).join("\n");
     return { output, removedHyphens, changedMeasures, hiddenLyricHyphens };
+  }
+
+  // A correction accent can only be placed before a duration.  Once an
+  // accent appears inside a run (for example -->->-), no row-edit code can
+  // reproduce it without moving the accent, so the whole row must be fixed.
+  function hasUnsupportedRowRhythm(line) {
+    const tokens = parseTokens(String(line || ""));
+    return tokens.some((token) => token.kind === "hyphen" && /-[>≧]/.test(token.value.replace(/[ \t　]/g, "")));
+  }
+
+  function protectUnsupportedCorrectionSlots(code, line) {
+    const units = beatCodeUnits(code);
+    if (!units?.length) return code;
+    const tokens = parseTokens(String(line || ""));
+    const chordIndices = tokens.map((token, index) => token.kind === "chord" ? index : -1).filter((index) => index >= 0);
+    chordIndices.forEach((tokenIndex, chordIndex) => {
+      const next = chordIndices[chordIndex + 1] ?? tokens.length;
+      const rhythm = tokens.slice(tokenIndex + 1, next).filter((token) => token.kind === "hyphen").map((token) => token.value).join("");
+      if (/-[>≧]/.test(rhythm.replace(/[ \t　]/g, "")) && units[chordIndex]) units[chordIndex].protectedMarker = true;
+    });
+    return units.map(serializeBeatUnit).join("");
   }
 
   function inferBeatCodeFromRenderedLine(line, fallbackCode, settings) {
     const tokens = parseTokens(String(line || ""));
     const chordIndices = tokens.map((token, index) => token.kind === "chord" ? index : -1).filter((index) => index >= 0);
     if (!chordIndices.length) return null;
+    const whiteNoteCode = inferWhiteNoteBeatCode(tokens, chordIndices, settings);
+    if (whiteNoteCode) return whiteNoteCode;
     const fallbackAnchor = correctionBarAnchor(fallbackCode);
     const anchorIndex = fallbackAnchor?.ok ? fallbackAnchor.forcedBarBeforeSlot : null;
     const fallbackValue = anchorIndex === null ? String(fallbackCode || "") : String(fallbackCode || "").replace("|", "");
     let fallbackUnits = beatCodeUnits(fallbackValue);
-    if (!fallbackUnits?.length) {
+    if (!fallbackUnits?.length || fallbackUnits.some((unit) => unit.whiteNoteMarker)
+        || fallbackUnits.length !== chordIndices.length) {
       const defaultWidth = Math.max(1, Math.min(Number(settings.hyphenUnit) || 4, 32));
       fallbackUnits = Array.from({ length: chordIndices.length }, () => ({
         width: defaultWidth, accents: 0, halfNote: false, noLeadingBar: false, noTrailingBar: false, whiteNoteMarker: false, suffixStar: false
       }));
     }
-    if (fallbackUnits.some((unit) => unit.whiteNoteMarker)) return null;
-    if (fallbackUnits.length === 1 && chordIndices.length > 1) fallbackUnits = Array.from({ length: chordIndices.length }, () => ({ ...fallbackUnits[0] }));
     if (fallbackUnits.length !== chordIndices.length) return null;
-    const units = fallbackUnits.map((unit) => ({ ...unit, noLeadingBar: false, noTrailingBar: false, syncBefore: false, syncAfter: false }));
+    const units = fallbackUnits.map((unit) => ({ ...unit, noLeadingBar: false, noTrailingBar: false, syncBefore: 0, syncAfter: 0 }));
     const renderedRhythms = [];
     const renderedFineWidths = [];
+    let hasUnsupportedInternalAccent = false;
     chordIndices.forEach((tokenIndex, chordIndex) => {
       const nextChordIndex = chordIndices[chordIndex + 1] ?? tokens.length;
       const segment = tokens.slice(tokenIndex + 1, nextChordIndex);
       const rhythm = segment.filter((token) => token.kind === "hyphen").map((token) => token.value).join("");
       renderedRhythms[chordIndex] = rhythm.replace(/ /g, "");
+      // Row correction accents can only be prefixed to one duration. An accent
+      // that appears after a hyphen would be changed into a different rhythm
+      // by a guessed ^ code, so it must remain a manual result line.
+      if (/[>≧]/.test(rhythm) && rhythm.search(/[>≧]/) > 0) hasUnsupportedInternalAccent = true;
       renderedFineWidths[chordIndex] = 0;
       const visibleWidth = [...rhythm].filter((character) => "-=>≧".includes(character)).length;
       if (visibleWidth) {
@@ -1348,7 +1685,15 @@
         units[chordIndex].halfNote = /[=≧]/.test(rhythm);
         units[chordIndex].accents = (rhythm.match(/[>≧]/g) || []).length;
       }
+      const whiteNote = segment.some((token) => token.kind === "text" && token.value === "[○]");
+      if (whiteNote && !visibleWidth) {
+        units[chordIndex].whiteNoteMarker = true;
+        units[chordIndex].width = 0;
+        units[chordIndex].halfNote = false;
+        units[chordIndex].accents = 0;
+      }
     });
+    if (hasUnsupportedInternalAccent) return null;
     renderedFineWidths.forEach((_width, index) => {
       renderedFineWidths[index] = [...(renderedRhythms[index] || "")].reduce((sum, character) => {
         if (character === "-" || character === ">") return sum + 2;
@@ -1356,32 +1701,55 @@
         return sum;
       }, 0);
     });
+    const firstChordIndex = chordIndices[0];
+    const firstChordEnd = chordIndices[1] ?? tokens.length;
+    const firstSegment = tokens.slice(firstChordIndex + 1, firstChordEnd);
+    const firstBarOffset = firstSegment.findIndex((token) => token.kind === "bar");
+    if (firstBarOffset > 0) {
+      const beforeBarRhythm = firstSegment.slice(0, firstBarOffset)
+        .filter((token) => token.kind === "hyphen")
+        .map((token) => token.value.replace(/ /g, ""))
+        .join("");
+      const leadingAmount = beforeBarRhythm === "=" ? 1 : beforeBarRhythm === "-" ? 2 : 0;
+      const totalFine = renderedFineWidths[0] || 0;
+      if (leadingAmount && totalFine > leadingAmount && (totalFine - leadingAmount) % 2 === 0) {
+        units[0].width = (totalFine - leadingAmount) / 2;
+        units[0].halfNote = false;
+        units[0].accents = 0;
+        units[0].syncBefore = leadingAmount;
+      }
+    }
     for (let index = 0; index + 1 < units.length; index += 1) {
       const leftRhythm = renderedRhythms[index] || "";
       const rightRhythm = renderedRhythms[index + 1] || "";
       const leftFine = renderedFineWidths[index] || 0;
       const rightFine = renderedFineWidths[index + 1] || 0;
-      const syncBoundary = !/[>≧]/.test(leftRhythm + rightRhythm)
+      const halfSyncBoundary = !/[>≧]/.test(leftRhythm + rightRhythm)
         && leftRhythm.endsWith("=") && rightRhythm.startsWith("=")
         && leftFine % 2 === 1 && rightFine % 2 === 1 && leftFine >= 1 && rightFine >= 3;
-      if (!syncBoundary) continue;
-      units[index].width = (leftFine + 1) / 2;
+      const defaultWidth = Math.max(1, Number(settings.hyphenUnit) || 1);
+      const fullSyncBoundary = !/[=>≧]/.test(leftRhythm + rightRhythm)
+        && leftFine % 2 === 0 && rightFine % 2 === 0
+        && leftFine / 2 + 1 === defaultWidth
+        && rightFine / 2 - 1 === defaultWidth;
+      if (!halfSyncBoundary && !fullSyncBoundary) continue;
+      const syncAmount = halfSyncBoundary ? 1 : 2;
+      units[index].width = (leftFine + syncAmount) / 2;
       units[index].halfNote = false;
       units[index].accents = 0;
-      units[index].syncAfter = true;
-      units[index + 1].width = (rightFine - 1) / 2;
+      units[index].syncAfter = syncAmount;
+      units[index + 1].width = (rightFine - syncAmount) / 2;
       units[index + 1].halfNote = false;
       units[index + 1].accents = 0;
-      units[index + 1].syncBefore = true;
+      units[index + 1].syncBefore = syncAmount;
       index += 1;
     }
-    const firstChordIndex = chordIndices[0];
-    units[0].noLeadingBar = !tokens.slice(0, firstChordIndex).some((token) => token.kind === "bar");
+    units[0].noLeadingBar = !units[0].syncBefore && !tokens.slice(0, firstChordIndex).some((token) => token.kind === "bar");
     const inferredSyncopated = units.some((unit) => unit.syncBefore || unit.syncAfter);
     const inferredCapacity = settings.measureCapacity * (inferredSyncopated ? 2 : 1);
-    let position = 0;
+    let position = inferredSyncopated && units[0].syncBefore ? inferredCapacity - units[0].syncBefore : 0;
     units.forEach((unit, index) => {
-      position += inferredSyncopated ? (unit.width * 2) + (unit.syncBefore ? 1 : 0) - (unit.syncAfter ? 1 : 0) : unit.width;
+      position += inferredSyncopated ? (unit.width * 2) + (Number(unit.syncBefore) || 0) - (Number(unit.syncAfter) || 0) : unit.width;
       const nextChordIndex = chordIndices[index + 1];
       if (nextChordIndex !== undefined && position >= inferredCapacity) {
         const hasBoundary = tokens.slice(chordIndices[index] + 1, nextChordIndex).some((token) => token.kind === "bar");
@@ -1392,12 +1760,81 @@
     const finalChordIndex = chordIndices[chordIndices.length - 1];
     const finalChordValue = tokens[finalChordIndex]?.value || "";
     const parenthesizedFinalChord = finalChordValue.startsWith("(") && finalChordValue.endsWith(")");
+    if (parenthesizedFinalChord && !(renderedRhythms[renderedRhythms.length - 1] || "")) units[units.length - 1].width = 0;
     if (!parenthesizedFinalChord && !tokens.slice(finalChordIndex + 1).some((token) => token.kind === "bar")) units[units.length - 1].noTrailingBar = true;
     const inferredCodes = units.map((unit) => serializeBeatUnit({ ...unit, width: Math.min(unit.width, 32) }));
     if (!inferredCodes.every(Boolean)) return "n";
-    const inferredGroups = inferredCodes.map((code, index) => `${code}${units[index].syncAfter ? "s" : ""}`);
+    const inferredGroups = inferredCodes.map((code, index) => {
+      const sync = Number(units[index].syncAfter) || 0;
+      return `${code}${sync === 1 ? "*s" : sync === 2 ? "s" : ""}`;
+    });
+    const leadingSync = Number(units[0]?.syncBefore) || 0;
+    if (leadingSync) inferredGroups[0] = `${leadingSync === 1 ? "*s" : "s"}${inferredGroups[0]}`;
     if (anchorIndex !== null && anchorIndex < inferredGroups.length) inferredGroups.splice(anchorIndex, 0, "|");
     return inferredGroups.join("");
+  }
+
+  // A white note occupies its own row-edit slot.  When a duration follows it,
+  // keep both slots so [E][○][----][----] becomes @8 rather than losing the
+  // white-note marker or collapsing it into one value.
+  function inferWhiteNoteBeatCode(tokens, chordIndices, settings) {
+    const hasWhiteNote = chordIndices.some((tokenIndex, chordIndex) => {
+      const next = chordIndices[chordIndex + 1] ?? tokens.length;
+      return tokens.slice(tokenIndex + 1, next).some((token) => token.kind === "text" && token.value === "[○]");
+    });
+    if (!hasWhiteNote) return null;
+    const defaultWidth = Math.max(1, Math.min(Number(settings.hyphenUnit) || 4, 32));
+    const groups = [];
+    chordIndices.forEach((tokenIndex, chordIndex) => {
+      const next = chordIndices[chordIndex + 1] ?? tokens.length;
+      const segment = tokens.slice(tokenIndex + 1, next);
+      const whiteNote = segment.some((token) => token.kind === "text" && token.value === "[○]");
+      const rhythm = segment.filter((token) => token.kind === "hyphen").map((token) => token.value).join("").replace(/[ \t　]/g, "");
+      if (whiteNote) groups.push("@");
+      const width = [...rhythm].filter((character) => "-=>≧".includes(character)).length;
+      if (width) {
+        if (/[>≧]/.test(rhythm) && rhythm.search(/[>≧]/) > 0) { groups.push("?"); return; }
+        const value = encodeBeatValue(Math.min(width, 32));
+        groups.push(`${"^".repeat((rhythm.match(/[>≧]/g) || []).length)}${/[=≧]/.test(rhythm) ? "*" : ""}${value || "?"}`);
+      } else if (!whiteNote) {
+        groups.push(encodeBeatValue(defaultWidth) || "4");
+      }
+    });
+    return groups.join("");
+  }
+
+  function recoverySignature(line) {
+    const tokens = parseTokens(String(line || ""));
+    const signature = [];
+    let rhythm = "";
+    const flushRhythm = () => {
+      if (rhythm) signature.push(`R:${rhythm}`);
+      rhythm = "";
+    };
+    tokens.forEach((token, index) => {
+      if (token.kind === "hyphen") {
+        rhythm += token.value.replace(/[ \t　]/g, "");
+        return;
+      }
+      const whitespaceBetweenRhythm = token.kind === "text" && /^[ \t　]+$/.test(token.value)
+        && tokens[index - 1]?.kind === "hyphen" && tokens[index + 1]?.kind === "hyphen";
+      if (whitespaceBetweenRhythm) return;
+      flushRhythm();
+      if (token.kind === "chord") signature.push(`C:${token.value}`);
+      else if (token.kind === "bar") signature.push("B");
+      else signature.push(`T:${token.value}`);
+    });
+    flushRhythm();
+    return signature.join("\u001f");
+  }
+
+  function recoverBeatCodeFromRenderedLine(line, fallbackCode, settings) {
+    const code = inferBeatCodeFromRenderedLine(line, fallbackCode, settings);
+    if (!code || code === "n") return null;
+    const rendered = renderWithBeatCode(line, code, settings, line);
+    const recoveredBody = rendered.ok ? suppressTrailingBarAfterParenthesizedFinalChord(rendered.body) : "";
+    if (!rendered.ok || recoverySignature(recoveredBody) !== recoverySignature(line)) return null;
+    return code;
   }
 
   function mergeChangedLines(currentText, nextText, changedIndices) {
@@ -1615,5 +2052,5 @@
     return renderedLines.map((line, index) => rowModes?.[index] === "source" ? (sourceLines[index] ?? "") : line).join("\n");
   }
 
-  window.CBFConverter = { convertChordText, parseTokens, isChordSymbol, normalizeChordSymbol, moveDelayedRhythmAfterChord, suppressTrailingBarAfterParenthesizedFinalChord, renderWithBeatCode, mergeCorrectionScope, renderCompletedOutput, restoreSourceAdoptedLines, inferBeatCodeFromRenderedLine, mergeChangedLines, alignLineIndices, musicLineSignature, sameMusicStructure, alignMusicLineIndices, addedCharacterIndices, remapTrackedCharacterIndices, addContinuationChordsToManualRhythm, analyzeAuthoredMeasureCapacity };
+  window.CBFConverter = { convertChordText, parseTokens, isChordSymbol, normalizeChordSymbol, moveDelayedRhythmAfterChord, suppressTrailingBarAfterParenthesizedFinalChord, renderWithBeatCode, mergeCorrectionScope, renderCompletedOutput, restoreSourceAdoptedLines, inferBeatCodeFromRenderedLine, recoverBeatCodeFromRenderedLine, protectUnsupportedCorrectionSlots, mergeChangedLines, alignLineIndices, musicLineSignature, sameMusicStructure, alignMusicLineIndices, addedCharacterIndices, remapTrackedCharacterIndices, addContinuationChordsToManualRhythm, analyzeAuthoredMeasureCapacity };
 }());

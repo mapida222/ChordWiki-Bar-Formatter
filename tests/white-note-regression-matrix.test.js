@@ -33,6 +33,8 @@ matrix.forEach(([label, source, correction, whiteNoteCount]) => {
   assert.deepStrictEqual(result.correctionErrors, [], `${label}: correction must be accepted`);
   assert.strictEqual((result.output.match(/\[○\]/g) || []).length, whiteNoteCount, `${label}: white-note count`);
 });
+const replacementWhiteNote = CBFConverter.convertChordText("[C][D][E][F]", settings, ["3@21"]);
+assert.strictEqual(replacementWhiteNote.output, "[|][C][---][D][○][----][E][-][|][-][F][-][|]", "replacing 4 with @ keeps a default white-note hyphen without adding a visible duration value");
 
 function replaceWithWhiteNote(line, start, end, duration) {
   const edit = CBFCorrectionInput.whiteNoteEdit(line, start, end);
@@ -54,7 +56,7 @@ function replaceWithWhiteNote(line, start, end, duration) {
 
 assert.strictEqual(CBFCorrectionInput.normalizeBeatInputSequence("＠８"), "@8");
 assert.strictEqual(CBFCorrectionInput.normalizeLine("＠８", 1), "@8");
-assert.deepStrictEqual(CBFCorrectionInput.clearBeatEdit("@844", 1, 2), { start: 0, end: 2, replacement: "0", caret: 1 });
+assert.deepStrictEqual(CBFCorrectionInput.clearBeatEdit("@844", 1, 2), { start: 1, end: 2, replacement: "", caret: 1 });
 
 const multipleLines = CBFConverter.convertChordText("[C]a[G]b\n[Am]c[F]d", settings, ["44", "@44"]);
 assert.strictEqual(multipleLines.corrections, "44\n@44");
@@ -62,7 +64,7 @@ assert.deepStrictEqual(multipleLines.correctionErrors, []);
 assert.strictEqual((multipleLines.output.match(/\[○\]/g) || []).length, 1);
 
 const sampleSource = "[F]a[G]b[E7]c[E7/G#]d[Am7]e";
-const sampleCorrection = "4s433a";
+const sampleCorrection = "4*s433a";
 const sampleSlots = CBFCorrectionInput.beatCharacters(sampleCorrection);
 sampleSlots.forEach((slot, index) => {
   const selection = CBFCorrectionInput.slotSelection(sampleCorrection, index);

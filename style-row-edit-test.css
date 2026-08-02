@@ -1,0 +1,4 @@
+/* ROW-017: No row panel or artificial caret is added in the text-mode test. */
+.row-edit-text-mode #correction-text[data-row-edit-text-mode="true"] {
+  caret-color: var(--focus);
+}

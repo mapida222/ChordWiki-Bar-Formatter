@@ -41,7 +41,7 @@ const syntaxCases = [
   ["*^4", "[|][C][≧===][|]"],
   ["^*4", "[|][C][≧===][|]"],
   ["^^*4", "[|][C][≧≧==][|]"],
-  ["@", "[|][C][○][|]"],
+  ["@", "[|][C][○][----][|]"],
   ["@4", "[|][C][○][----][|]"],
   ["@4*", "[|][C][○][----*][|]"],
   ["x4", "[C][----][|]"],
@@ -83,13 +83,22 @@ assert.strictEqual(CBFCorrectionInput.normalizeLine("44x4", 3), "44x4", "suffix 
 assert.strictEqual(CBFCorrectionInput.normalizeLine("444@4", 4, 0), "444@4", "inserted white-note duration may add one slot");
 assert.strictEqual(CBFCorrectionInput.normalizeLine("@4*", 2, 1), "@4*", "authored white-note suffix must survive normalization");
 assert.strictEqual(CBFCorrectionInput.modifierInsertionAtLineEnd("@4", "*"), null, "white-note star remains a suffix");
+assert.deepStrictEqual(CBFCorrectionInput.boundarySymbolEdit("88888", 0, "x"), { start: 0, end: 0, replacement: "x", caret: 1 }, "x inserts at the true line-start boundary");
+assert.deepStrictEqual(CBFCorrectionInput.boundarySymbolEdit("88888", 5, "x"), { start: 5, end: 5, replacement: "x", caret: 6 }, "x inserts at the true line-end boundary without padding");
+assert.deepStrictEqual(CBFCorrectionInput.boundarySymbolEdit("88888", 2, "^"), { start: 2, end: 2, replacement: "^", caret: 3 }, "accent inserts at the clicked text boundary");
+assert.deepStrictEqual(CBFCorrectionInput.boundarySymbolEdit("88888", 2, "*"), { start: 2, end: 2, replacement: "*", caret: 3 }, "half-value marker inserts at the clicked text boundary");
+assert.deepStrictEqual(CBFCorrectionInput.boundarySymbolEdit("88888", 2, "|"), { start: 2, end: 2, replacement: "|", caret: 3 }, "bar anchor inserts at the clicked text boundary");
+assert.deepStrictEqual(CBFCorrectionInput.boundarySymbolEdit("88888", 2, "/"), { start: 2, end: 2, replacement: "|", caret: 3 }, "slash is an alias for the bar anchor");
+assert.deepStrictEqual(CBFCorrectionInput.boundarySymbolEdit("88s888", 3, "s"), { start: 2, end: 3, replacement: "", caret: 2 }, "sync marker toggles off from either side of its boundary");
 assert.strictEqual(CBFCorrectionInput.needsInsertedWhiteNoteDuration("4@44", 2, 4, 0), true, "a new white note may insert its duration before later slots");
 assert.strictEqual(CBFCorrectionInput.needsInsertedWhiteNoteDuration("4@844", 2, 4, 0), false, "a white note with a duration must not add another slot");
 assert.strictEqual(CBFCorrectionInput.needsInsertedWhiteNoteDuration("@844", 1, 4, 1), false, "an authored white note must overwrite its existing duration");
 assert.deepStrictEqual(CBFCorrectionInput.groups("4s44s4"), ["4", "4", "4", "4"], "sync markers do not consume chord slots");
 assert.strictEqual(CBFCorrectionInput.normalizeLine("4s44s4", 4), "4s44s4", "selected sync boundaries survive normalization");
 assert.strictEqual(CBFCorrectionInput.normalizeLine("4s", 2), "4s", "a trailing sync marker survives while the next value is being entered");
-assert.strictEqual(CBFCorrectionInput.normalizeLine("s", 4), "s", "standalone s remains the all-sync command");
+assert.strictEqual(CBFCorrectionInput.normalizeLine("s", 4), "s", "a leading s survives while its first value is being entered");
+assert.deepStrictEqual(CBFCorrectionInput.smartBeatEdit("s", 1, 1, "4"), { start: 1, end: 1, replacement: "4", caret: 2 }, "typing a value after a leading s keeps the sync marker");
+assert.deepStrictEqual(CBFCorrectionInput.smartBeatEdit("*s", 2, 2, "4"), { start: 2, end: 2, replacement: "4", caret: 3 }, "typing a value after a leading *s keeps the half-sync marker");
 assert.strictEqual(CBFCorrectionInput.normalizeLine("n", 4), "n", "standalone n remains the no-edit command");
 assert.strictEqual(CBFCorrectionInput.normalizeLine("4ss4", 2), "4ss4", "temporarily incomplete sync input is not rewritten while typing");
 assert.strictEqual(CBFCorrectionInput.normalizeLine("4s44s44", 4), "4s44s44", "values beyond the automatic chord count remain editable");
@@ -114,6 +123,8 @@ assert.deepStrictEqual(CBFCorrectionInput.slotSelection("4^4s8", 0), { index: 0,
 assert.deepStrictEqual(CBFCorrectionInput.slotSelection("4^4s8", 1), { index: 1, start: 2, end: 3 }, "modifiers do not become selectable beat slots");
 assert.deepStrictEqual(CBFCorrectionInput.slotSelection("4^4s8", 99), { index: 2, start: 4, end: 5 }, "slot selection clamps to the final beat");
 assert.strictEqual(CBFCorrectionInput.slotSelection("^s|", 0), null, "a row without a beat has no slot selection");
+assert.strictEqual(CBFCorrectionInput.nextLineWithBeatSlot(["628", "", "4"], 0), 2, "finishing a row skips blank correction rows and finds the next editable beat");
+assert.strictEqual(CBFCorrectionInput.nextLineWithBeatSlot(["628", "", ""], 0), -1, "finishing the final editable row does not select an empty row");
 assert.strictEqual(CBFCorrectionInput.normalizeBeatInputCharacter("4"), "4", "an ASCII digit remains a beat input");
 assert.strictEqual(CBFCorrectionInput.normalizeBeatInputCharacter("４"), "4", "a full-width digit from Japanese input becomes an ASCII beat input");
 assert.strictEqual(CBFCorrectionInput.normalizeBeatInputCharacter("Ａ"), "a", "a full-width supported letter becomes a lowercase beat input");
@@ -121,6 +132,16 @@ assert.strictEqual(CBFCorrectionInput.normalizeBeatInputCharacter("ｊ"), "", "a
 assert.strictEqual(CBFCorrectionInput.normalizeBeatInputCharacter("44"), "", "multiple characters are not treated as one beat input");
 assert.strictEqual(CBFCorrectionInput.normalizeBeatInputSequence("＠８"), "@8", "a multi-character Japanese IME commit normalizes as a beat sequence");
 assert.strictEqual(CBFCorrectionInput.normalizeBeatInputSequence("４４"), "44", "multiple full-width digits normalize in order");
+assert.strictEqual(CBFCorrectionInput.isRecentInputCommit("2", 1000, "2", 1250), true, "a delayed composition commit within 500ms is ignored after crossing to the next row");
+assert.strictEqual(CBFCorrectionInput.isRecentInputCommit("2", 1000, "2", 1501), false, "a later independent beat is not mistaken for the previous input event");
+assert.strictEqual(CBFCorrectionInput.isRecentInputCommit("2", 1000, "8", 1100), false, "a different beat is never suppressed");
+assert.strictEqual(CBFCorrectionInput.incrementalCompositionBeatInput("", "4"), "4", "the first IME composition beat is applied");
+assert.strictEqual(CBFCorrectionInput.incrementalCompositionBeatInput("4", "44"), "4", "a cumulative IME composition applies only its newly added beat");
+assert.strictEqual(CBFCorrectionInput.incrementalCompositionBeatInput("44", "444"), "4", "a later cumulative IME update still advances one slot only");
+assert.strictEqual(CBFCorrectionInput.normalizeBoundarySymbolSequence("ｘ＾＊ｓ｜"), "x^*s|", "full-width IME symbols normalize to supported row-edit symbols");
+assert.strictEqual(CBFCorrectionInput.normalizeBoundarySymbolSequence("x^*s|"), "x^*s|", "ASCII boundary symbols remain supported");
+assert.strictEqual(CBFCorrectionInput.normalizeBoundarySymbolSequence("/"), "|", "slash normalizes to the bar-anchor symbol");
+assert.strictEqual(CBFCorrectionInput.normalizeBoundarySymbolSequence("あ"), "", "unrelated IME text is not treated as a row-edit symbol");
 assert.strictEqual(CBFCorrectionInput.normalizeBeatInputSequence("＠ｊ"), "", "a sequence containing unsupported characters is rejected as a unit");
 assert.strictEqual(CBFCorrectionInput.normalizeLine("＠８", 1), "@8", "full-width white-note input survives even when the browser omits input-event character data");
 assert.deepStrictEqual(CBFCorrectionInput.singleInsertedBeat("4444", "44344"), { index: 2, character: "3" }, "one natively inserted beat is detected");
@@ -132,11 +153,16 @@ assert.deepStrictEqual(CBFCorrectionInput.whiteNoteEdit("444^*4", 6, 6), { start
 assert.deepStrictEqual(CBFCorrectionInput.whiteNoteEdit("4s4", 0, 1), { start: 0, end: 2, replacement: "@", caret: 1 }, "white note replaces a beat together with its following sync marker");
 assert.deepStrictEqual(CBFCorrectionInput.whiteNoteEdit("4s4", 2, 3), { start: 1, end: 3, replacement: "@", caret: 2 }, "white note replaces a beat together with its preceding sync marker");
 assert.deepStrictEqual(CBFCorrectionInput.whiteNoteEdit("x^4x4", 2, 3), { start: 0, end: 4, replacement: "@", caret: 1 }, "white note removes prefix and suffix modifiers belonging to the selected beat");
-assert.deepStrictEqual(CBFCorrectionInput.clearBeatEdit("@844", 1, 2), { start: 0, end: 2, replacement: "0", caret: 1 }, "@8 clears as one white-note edit unit");
-assert.deepStrictEqual(CBFCorrectionInput.clearBeatEdit("8s44", 0, 1), { start: 0, end: 2, replacement: "0", caret: 1 }, "8s clears without leaving an orphan sync marker");
-assert.deepStrictEqual(CBFCorrectionInput.clearBeatEdit("8s44", 2, 3), { start: 1, end: 3, replacement: "0", caret: 2 }, "deleting the beat after s also removes the sync marker");
-assert.deepStrictEqual(CBFCorrectionInput.syncopationRemovalEdit("8s44", 0, 1), { start: 1, end: 2, replacement: "", caret: 1 }, "pressing s again removes the selected following sync marker");
+assert.deepStrictEqual(CBFCorrectionInput.clearBeatEdit("@844", 1, 2), { start: 1, end: 2, replacement: "", caret: 1 }, "deleting the white-note duration removes that character and leaves @");
+assert.deepStrictEqual(CBFCorrectionInput.clearBeatEdit("8s44", 0, 1), { start: 0, end: 1, replacement: "", caret: 0 }, "deleting the left beat leaves a leading sync marker and shifts values left");
+assert.deepStrictEqual(CBFCorrectionInput.clearBeatEdit("8s44", 2, 3), { start: 2, end: 3, replacement: "", caret: 2 }, "the low-level beat deletion removes only the selected value");
+assert.strictEqual(CBFCorrectionInput.syncopationRemovalEdit("8s44", 0, 1), null, "the sync marker is retained when its left beat is selected");
 assert.deepStrictEqual(CBFCorrectionInput.syncopationRemovalEdit("8s44", 2, 3), { start: 1, end: 2, replacement: "", caret: 1 }, "either side of a sync boundary can remove s");
+assert.deepStrictEqual(CBFCorrectionInput.deletionEdit("4s4", 0, 1), { start: 0, end: 1, replacement: "", caret: 0 }, "deleting the left beat leaves s4 as a valid leading sync expression");
+assert.deepStrictEqual(CBFCorrectionInput.deletionEdit("4s4", 2, 3), { start: 1, end: 2, replacement: "", caret: 1 }, "the first deletion removes only the preceding sync marker");
+assert.deepStrictEqual(CBFCorrectionInput.deletionEdit("4*s4", 3, 4), { start: 1, end: 3, replacement: "", caret: 1 }, "deleting the right beat removes the complete *s boundary first");
+assert.deepStrictEqual(CBFCorrectionInput.deletionEdit("4*s4", 0, 1), { start: 0, end: 1, replacement: "", caret: 0 }, "deleting the left beat leaves *s4 as a leading half-sync expression");
+assert.deepStrictEqual(CBFCorrectionInput.deletionEdit("44", 0, 1), { start: 0, end: 1, replacement: "", caret: 0 }, "a plain selected beat is physically removed and later values shift left");
 assert.deepStrictEqual(CBFCorrectionInput.appendBeatSlot("4444"), { text: "44440", selectionStart: 4, selectionEnd: 5 }, "explicit append adds one selected placeholder");
 assert.deepStrictEqual(CBFCorrectionInput.appendBeatSlot("n"), { text: "0", selectionStart: 0, selectionEnd: 1 }, "explicit append replaces a line command with one selected placeholder");
 ["s4", "4s", "*4s4", "4s^4", "@s4", "0s4"].forEach((code) => {

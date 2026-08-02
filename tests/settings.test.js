@@ -24,12 +24,30 @@ assert.strictEqual(settings.definitions.find((item) => item.key === "hyphenUnit"
 assert.strictEqual(settings.definitions.find((item) => item.key === "measureCapacity").label, "1小節の合計ハイフン数");
 assert.strictEqual(settings.definitions.find((item) => item.key === "shortFractionPrepose").label, "端数の歌詞前置き");
 assert.strictEqual(settings.definitions.find((item) => item.key === "longBeatLyricPlacement").label, "長い拍の歌詞配置");
+assert.strictEqual(settings.definitions.find((item) => item.key === "singleCharacterHyphens").label, "1文字歌詞のハイフン有無");
+settings.definitions.forEach((item) => {
+  assert.ok(item.examples.length >= 2, `${item.label}には比較できる例を表示する`);
+  assert.ok(item.examples.some((example) => example.includes("→")), `${item.label}の例は変換結果を示す`);
+});
+assert.strictEqual(
+  JSON.stringify(settings.definitions.find((item) => item.key === "measureCapacity").examples),
+  JSON.stringify(["4 → [|][A][----][|][B][----][|][C#m7][----][|]", "6 → [|][A][---][---][|][B][---][C#m7][---][|]", "8 → [|][A][----][----][|][B][----][C#m7][----][|]（デフォルト）"])
+);
+assert.strictEqual(
+  JSON.stringify(settings.definitions.map((item) => item.key)),
+  JSON.stringify(["measureCapacity", "hyphenUnit", "hyphenSpacing", "showContinuationChord", "longBeatLyricPlacement", "shortFractionPrepose", "singleCharacterHyphens"])
+);
+assert.strictEqual(
+  JSON.stringify(settings.definitions.find((item) => item.key === "hyphenUnit").examples),
+  JSON.stringify(["2 → [A][--][B][--][C#m7][--]", "3 → [A][---][B][---][C#m7][---]", "4 → [A][----][B][----][C#m7][----]（デフォルト）"])
+);
 
 assert.strictEqual(settings.activeProfile(), "fourFour");
 assert.strictEqual(settings.load().hyphenUnit, 4);
 assert.strictEqual(settings.load().measureCapacity, 8);
 assert.strictEqual(settings.load().hyphenSpacing, 4);
 assert.strictEqual(settings.load().longBeatLyricPlacement, 1);
+assert.strictEqual(settings.load().singleCharacterHyphens, 0);
 
 const zeroSpacing = settings.validate({ ...settings.defaults(), hyphenSpacing: 0 });
 assert.strictEqual(zeroSpacing.valid, true);

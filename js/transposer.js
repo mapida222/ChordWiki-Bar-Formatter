@@ -207,6 +207,10 @@
       if (parts) {
         const { match, spacing } = parts;
         result = `${match[1]}{${match[2]}:${spacing[1]}${context.targetKey || spacing[2]}${spacing[3]}}${match[4]}`;
+      } else if (/^\s*\{[^{}\r\n]*\}\s*$/u.test(line)) {
+        // Comments, titles and other ChordWiki directives are prose/metadata.
+        // Their brackets may look like chord tokens, but must not be transposed.
+        result = line;
       } else result = line.replace(/\[([^\[\]\r\n]*)\]/g, (whole, token) => {
         const transposed = transposeChordToken(token, amount, context.preference, context.theoretical, context.letterShift, context.scaleSpellings, doubleSharpStyle);
         return transposed === token ? whole : `[${transposed}]`;

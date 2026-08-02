@@ -19,7 +19,20 @@ assert(diffBackgroundHandler[1].includes("updateEditorHighlight(elements.output)
 assert(!/scheduleConversion|positionSettingsPanel|syncResultRowAlignment/.test(diffBackgroundHandler[1]));
 assert(html.includes('<button id="correction-refresh-line" type="button"'));
 assert(html.includes("↻ この行を更新"));
+assert(html.includes('<button id="correction-rebuild-all" class="correction-rebuild-button" type="button"'));
+assert(html.includes("↻ 変換後から行修正を復元"));
+assert(html.includes("「?」は自動変換できなかった位置です。その部分の変換後表示を保持します。"));
+assert(html.includes('aria-label="行修正を復元の説明"'));
+assert(html.includes("異常時用の復旧機能です。変換後の全行から行修正値を推論し直します。"));
+assert(html.includes('class="correction-position-with-help"'));
+assert(css.includes(".correction-position-with-help { display: grid;"));
+assert(css.includes(".correction-position-with-help > .context-help { position: absolute; top: 4px; right: 4px; }"));
+assert.strictEqual((html.match(/data-correction-symbol=/g) || []).length, 0);
+assert(css.includes(".correction-rebuild-button {"));
+assert(!css.includes(".correction-refresh-help { position: absolute;"));
 assert(app.includes('correctionRefreshLine: $("#correction-refresh-line")'));
+assert(app.includes('correctionRebuildAll: $("#correction-rebuild-all")'));
+assert(app.includes("function rebuildCorrectionsFromOutput()"));
 assert(app.includes('elements.correctionRefreshLine.addEventListener("click"'));
 assert(app.includes("keepOutputAndRefreshCorrection(lineIndex)"));
 assert(css.includes("grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.35fr);"));
@@ -51,7 +64,16 @@ const targetOption = html.indexOf('<option value="target" selected>指定数だ�
 const minimizeOption = html.indexOf('<option value="minimize">できるだけ省略</option>');
 const allOption = html.indexOf('<option value="all">すべて省略</option>');
 assert(showOption >= 0 && showOption < targetOption && targetOption < minimizeOption && minimizeOption < allOption);
-assert.strictEqual((html.match(/class="context-help-button"/g) || []).length, 4);
+assert.strictEqual((html.match(/class="context-help-button"/g) || []).length, 5);
+assert.strictEqual((html.match(/class="context-help-title"/g) || []).length, 5);
+[
+  "03. 初期設定・使用例",
+  "04. 行修正",
+  "04. 行修正：変換後から復元",
+  "05. 変換後：歌詞行のハイフン",
+  "06. 譜面プレビュー"
+].forEach((title) => assert(html.includes(`class="context-help-title">${title}</strong>`), `${title} help title`));
+assert(css.includes(".context-help-title { display: block;"));
 assert(html.includes("表示方法を選びます。<br>「省略しない」：すべてのハイフンを表示します。"));
 assert(html.includes("複数指定はカンマ区切りで入力します（例：4,8）。"));
 assert(html.includes("「できるだけ省略」：コードチェンジの位置が必要な箇所を残して省略します。"));

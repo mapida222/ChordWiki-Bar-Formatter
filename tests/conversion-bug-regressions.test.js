@@ -64,4 +64,45 @@ assert.strictEqual(
   "bar-like text inside metadata must not be normalized"
 );
 
-console.log("PASS: CONVERT-003/004 and ROW-008 conversion regressions");
+const synthManualRows = [
+  "(Synth)|[G#m]---- [E]----|[F#]---- [B]--[F#/A#]--|[G#m]---- [E]----|[F#]---- [B]--[F#/A#]--|",
+  "　　　　|[G#m]---- [E]----|[F#]---- [B]--[F#/A#]--|[G#m]---- [E]----|[F#]---- [B]----|"
+].join("\n");
+assert.strictEqual(
+  CBFConverter.convertChordText(synthManualRows, settings, []).output,
+  synthManualRows,
+  "a parenthesized instrumental label and leading full-width spaces must not turn compact manual rhythm into a lyric line"
+);
+const synthConverted = CBFConverter.convertChordText(synthManualRows, settings, []);
+assert.strictEqual(
+  CBFConverter.renderCompletedOutput(synthConverted.output, [4], settings.hyphenSpacing).output,
+  synthManualRows,
+  "the completed-output display pass must also recognize (Synth) as notation and leave both compact rows untouched"
+);
+const legacyBracketedSynth = "(Synth)[|][G#m][----] [E][----][|][F#][----] [B][--][F#/A#][--][|][G#m][----] [E][----][|][F#][----] [B][--][F#/A#][--][|]";
+assert.strictEqual(
+  CBFConverter.convertChordText(
+    synthManualRows.split("\n")[0],
+    settings,
+    ["4442244422"],
+    [legacyBracketedSynth],
+    ["4442244422"],
+    ["edit"]
+  ).output,
+  synthManualRows.split("\n")[0],
+  "a stale automatic correction and legacy edit state must not re-bracket a newly recognized instrumental source row"
+);
+const edgeWhitespaceManualRow = "  (Synth)|[C]---- [G]----|　 ";
+assert.strictEqual(
+  CBFConverter.convertChordText(edgeWhitespaceManualRow, settings, []).output,
+  edgeWhitespaceManualRow,
+  "leading and trailing spaces on a preserved instrumental row must remain byte-for-byte intact"
+);
+const repeatAnnotatedRhythm = "[E]-[E/B]-[E]-[E/B]-|[E]-[E/B]-[E]-[E/B]-|[E]-[E/B]-[E]-[E/B]-|[E]-[E/B]-[E]-[E/B]-|･･･ (Repeat...)";
+assert.strictEqual(
+  CBFConverter.convertChordText(repeatAnnotatedRhythm, settings, []).output,
+  repeatAnnotatedRhythm,
+  "a trailing parenthesized repeat note and notation-only marks must not turn a compact rhythm row into lyrics"
+);
+
+console.log("PASS: CONVERT-003/004/008 and ROW-008 conversion regressions");

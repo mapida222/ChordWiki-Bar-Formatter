@@ -10,7 +10,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="ChordWikiのコード譜を小節単位に整形するブラウザアプリ">
   <title>ChordWiki Bar Formatter Web</title>
-  <link rel="stylesheet" href="style.css?v=20260731-39">
+  <link rel="stylesheet" href="style.css?v=20260802-14">
+  <link rel="stylesheet" href="style-row-edit-test.css?v=20260801-3">
 </head>
 <body>
   <header class="app-header">
@@ -20,8 +21,6 @@
       <p class="subtitle">コード譜を、読みやすい小節表記へ。</p>
     </div>
     <div class="header-actions">
-      <button id="test-output-lock" class="help-open-button temporary-test-button" type="button">変換後をロックし、テストデータ用に変換前を作成反映</button>
-      <button id="test-output-unlock" class="help-open-button temporary-test-button" type="button" hidden>変換後のロックを解除</button>
       <button id="history-save" class="help-open-button" type="button" title="05. 変換後の表示を保存">履歴に追加</button>
       <button id="history-open" class="help-open-button" type="button">使用履歴</button>
       <button id="help-open" class="help-open-button" type="button">ヘルプ・使い方</button>
@@ -37,7 +36,7 @@
         <div class="editor-heading">
           <h2 id="display-settings-title" class="compact-editor-title">01. 表示設定 <span>/ DISPLAY</span></h2>
         </div>
-        <div id="display-settings-shell" class="display-settings-shell">
+        <div id="display-settings-shell" class="display-settings-shell display-collapsed">
         <div class="display-primary-actions">
           <button id="display-settings-toggle" class="text-button display-toggle-button" type="button" aria-expanded="false" aria-controls="display-settings-body">設定を開く▼</button>
           <button id="reset-layout" class="text-button layout-reset-button" type="button">レイアウトと表示を初期化</button>
@@ -105,7 +104,7 @@
         <div class="editor-heading">
           <div class="settings-heading-copy">
             <h2 id="settings-title" class="compact-editor-title">03. 初期設定・使用例 <span>/ SETTINGS</span></h2>
-            <span class="context-help"><button class="context-help-button" type="button" aria-label="初期設定の説明" aria-expanded="false" aria-controls="help-tip-settings">?</button><span id="help-tip-settings" class="context-help-popover" role="tooltip" hidden>曲の拍子に合わせて、自動で補うハイフン数と1小節分の長さを設定します。</span></span>
+            <span class="context-help"><button class="context-help-button" type="button" aria-label="初期設定の説明" aria-expanded="false" aria-controls="help-tip-settings">?</button><span id="help-tip-settings" class="context-help-popover" role="tooltip" hidden><strong class="context-help-title">03. 初期設定・使用例</strong>曲の拍子に合わせて、自動で補うハイフン数と1小節分の長さを設定します。</span></span>
           </div>
         </div>
         <div id="settings-shell" class="settings-shell">
@@ -136,11 +135,11 @@
 
       <article class="editor-card correction-card">
         <div class="editor-heading">
-          <div class="heading-with-help"><h2 class="compact-editor-title"><label for="correction-text">04. 行修正 <span>/ ROW EDIT</span></label></h2><span class="context-help"><button class="context-help-button" type="button" aria-label="行修正の説明" aria-expanded="false" aria-controls="help-tip-correction">?</button><span id="help-tip-correction" class="context-help-popover" role="tooltip" hidden>1行のコード順に対応する数字や記号を上書きして、音の長さや小節位置を調整します。<br>入力例と記号の意味は、下の「行修正で使える記号」で確認できます。</span></span></div>
+          <div class="heading-with-help"><h2 class="compact-editor-title"><label for="correction-text">04. 行修正 <span>/ ROW EDIT</span></label></h2><span class="context-help"><button class="context-help-button" type="button" aria-label="行修正の説明" aria-expanded="false" aria-controls="help-tip-correction">?</button><span id="help-tip-correction" class="context-help-popover" role="tooltip" hidden><strong class="context-help-title">04. 行修正</strong>1行のコード順に対応する数字や記号を上書きして、音の長さや小節位置を調整します。<br>入力例と記号の意味は、下の「行修正で使える記号」で確認できます。<br>「?」は自動変換できなかった位置です。その部分の変換後表示を保持します。</span></span></div>
           <span id="correction-count" class="counter">0行</span>
         </div>
         <div class="correction-context-bar">
-          <span id="correction-position" class="correction-position" aria-live="polite">行修正をクリックすると現在位置を表示します</span>
+          <span class="correction-position-with-help"><span id="correction-position" class="correction-position" aria-live="polite">行修正をクリックすると現在位置を表示します</span><button id="correction-rebuild-all" class="correction-rebuild-button" type="button" title="変換後の全行から行修正を作り直す">↻ 変換後から行修正を復元</button><span class="context-help"><button class="context-help-button" type="button" aria-label="行修正を復元の説明" aria-expanded="false" aria-controls="help-tip-correction-rebuild">?</button><span id="help-tip-correction-rebuild" class="context-help-popover" role="tooltip" hidden><strong class="context-help-title">04. 行修正：変換後から復元</strong>異常時用の復旧機能です。変換後の全行から行修正値を推論し直します。<br>現在の行修正値は置き換わりますが、変換後の表示内容は維持されます。コード・白玉がない行は空欄になります。</span></span></span>
           <div class="correction-history-actions" role="group" aria-label="行修正の操作">
             <button id="correction-undo" type="button" disabled title="元に戻す（Ctrl+Z）">↶ 戻す</button>
             <button id="correction-redo" type="button" disabled title="やり直す（Ctrl+Y）">↷ 進む</button>
@@ -150,7 +149,7 @@
         <div id="correction-shell" class="editor-shell">
           <div class="correction-column-headings" aria-hidden="true"><span>No.</span><span>修正値</span><span>採用中</span></div>
           <div id="correction-lines" class="line-numbers" aria-hidden="true"></div>
-          <div class="editor-text-layer"><pre id="correction-highlight" class="editor-highlight" aria-hidden="true"></pre><textarea id="correction-text" wrap="off" spellcheck="false" placeholder="&#10;&#10;&#10;&#10;&#10;88448&#10;3535&#10;844&#10;&#10;4444&#10;628&#10;4s433a&#10;444^22"></textarea></div>
+          <div class="editor-text-layer"><pre id="correction-highlight" class="editor-highlight" aria-hidden="true"></pre><textarea id="correction-text" wrap="off" spellcheck="false" placeholder="&#10;&#10;&#10;&#10;&#10;88448&#10;3535&#10;844&#10;&#10;4444&#10;628&#10;4*s433a&#10;444^22"></textarea></div>
           <div id="correction-modes" class="correction-modes" aria-label="行ごとの採用方法"></div>
         </div>
         <div class="frame-resize-corner two-axis" data-row="bottom" data-column="direct" role="separator" aria-label="行修正枠の幅と高さを調整" tabindex="0"></div>
@@ -168,31 +167,35 @@
             <div class="guide-quick-list">
               <details class="guide-item">
                 <summary><code class="guide-input">0～9</code><span>ハイフン数</span><span class="guide-item-arrow" aria-hidden="true">▼</span></summary>
-                <div class="guide-item-detail"><p><strong class="guide-detail-label">意味</strong><span class="guide-detail-value">コード直後に入れるハイフンの数です。</span></p><p><strong class="guide-detail-label">入力⇒結果①</strong><span class="guide-detail-value"><code class="guide-input">4</code><span class="guide-arrow">⇒</span><code class="guide-output">[----]</code></span></p><p><strong class="guide-detail-label">入力⇒結果②</strong><span class="guide-detail-value"><code class="guide-input">4444</code><span class="guide-arrow">⇒</span><code class="guide-output">[C][----][G][----][Am][----][F][----]</code></span></p></div>
+                <div class="guide-item-detail"><p><strong class="guide-detail-label">意味</strong><span class="guide-detail-value">コード直後に入れるハイフンの数です。値は左のコードから順に対応し、不足した右端は自動値を使います。1文字だけでも全コードへ繰り返しません。</span></p><p><strong class="guide-detail-label">入力⇒結果①</strong><span class="guide-detail-value"><code class="guide-input">4</code><span class="guide-arrow">⇒</span><code class="guide-output">[----]</code></span></p><p><strong class="guide-detail-label">入力⇒結果②</strong><span class="guide-detail-value"><code class="guide-input">4444</code><span class="guide-arrow">⇒</span><code class="guide-output">[C][----][G][----][Am][----][F][----]</code></span></p></div>
               </details>
               <details class="guide-item">
                 <summary><code class="guide-input">a～i</code><span>10以上のハイフン数</span><span class="guide-item-arrow" aria-hidden="true">▼</span></summary>
                 <div class="guide-item-detail"><p class="guide-detail-heading">文字列説明：</p><p><strong class="guide-detail-label">意味</strong><span class="guide-detail-value">1文字で10個以上のハイフン数を指定します。</span></p><p><strong class="guide-detail-label">入力→結果</strong><span class="guide-detail-value"><code class="guide-input">a</code><span class="guide-arrow">→</span><code class="guide-output">[----------]</code></span></p><p><strong class="guide-detail-label">対応</strong><span class="guide-detail-value"><code class="guide-input">a=10、b=11、c=12、d=13、e=14、f=15、g=16、h=24、i=32</code></span></p></div>
               </details>
               <details class="guide-item">
-                <summary><code class="guide-input">*</code><span>=（ハイフンの半分音価）</span><span class="guide-item-arrow" aria-hidden="true">▼</span></summary>
+                <summary><code class="guide-input">*</code><span>=：ハイフンの半分音価</span><span class="guide-item-arrow" aria-hidden="true">▼</span></summary>
                 <div class="guide-item-detail"><p class="guide-detail-heading">文字列説明：</p><p><strong class="guide-detail-label">意味</strong><span class="guide-detail-value"><code class="guide-output">=</code>はハイフン1個の半分の音価です。</span></p><p><strong class="guide-detail-label">入力→結果</strong><span class="guide-detail-value"><code class="guide-input">*4</code><span class="guide-arrow">→</span><code class="guide-output">[====]</code></span></p></div>
               </details>
               <details class="guide-item">
-                <summary><code class="guide-input">^</code><span>アクセント</span><span class="guide-item-arrow" aria-hidden="true">▼</span></summary>
+                <summary><code class="guide-input">^</code><span>&gt;：アクセント</span><span class="guide-item-arrow" aria-hidden="true">▼</span></summary>
                 <div class="guide-item-detail"><p class="guide-detail-heading">文字列説明：</p><p><strong class="guide-detail-label">意味</strong><span class="guide-detail-value">ハイフン表記の先頭へアクセントを付けます。</span></p><p><strong class="guide-detail-label">入力→結果①</strong><span class="guide-detail-value"><code class="guide-input">^4</code><span class="guide-arrow">→</span><code class="guide-output">[&gt;---]</code></span></p><p><strong class="guide-detail-label">入力→結果②</strong><span class="guide-detail-value"><code class="guide-input">^^4</code><span class="guide-arrow">→</span><code class="guide-output">[&gt;&gt;--]</code></span></p><p><strong class="guide-detail-label">組合せ</strong><span class="guide-detail-value"><code class="guide-input">^*4</code><span class="guide-arrow">→</span><code class="guide-output">[≧===]</code></span></p></div>
               </details>
               <details class="guide-item">
-                <summary><code class="guide-input">@</code><span>白玉</span><span class="guide-item-arrow" aria-hidden="true">▼</span></summary>
-                <div class="guide-item-detail"><p class="guide-detail-heading">文字列説明：</p><p><strong class="guide-detail-label">意味</strong><span class="guide-detail-value">対象コードへ白玉<code class="guide-output">[○]</code>を付けます。<code class="guide-input">@</code>の後に長さを続けて入力します。</span></p><p><strong class="guide-detail-label">入力→結果①</strong><span class="guide-detail-value"><code class="guide-input">@</code><span class="guide-arrow">→</span><code class="guide-output">[○]</code></span></p><p><strong class="guide-detail-label">入力→結果②</strong><span class="guide-detail-value"><code class="guide-input">@4</code><span class="guide-arrow">→</span><code class="guide-output">[○][----]</code></span></p><p><strong class="guide-detail-label">解除</strong><span class="guide-detail-value"><code class="guide-input">@4</code>の<code class="guide-input">@</code>または長さを選び、BackspaceかDeleteでまとめて<code class="guide-input">0</code>へ戻せます。</span></p></div>
+                <summary><code class="guide-input">@</code><span>○：白玉</span><span class="guide-item-arrow" aria-hidden="true">▼</span></summary>
+                <div class="guide-item-detail"><p class="guide-detail-heading">文字列説明：</p><p><strong class="guide-detail-label">意味</strong><span class="guide-detail-value">対象コードへ白玉<code class="guide-output">[○]</code>を付けます。<code class="guide-input">@</code>の後に長さを続けて入力します。</span></p><p><strong class="guide-detail-label">入力→結果①</strong><span class="guide-detail-value"><code class="guide-input">@</code><span class="guide-arrow">→</span><code class="guide-output">[○]</code></span></p><p><strong class="guide-detail-label">入力→結果②</strong><span class="guide-detail-value"><code class="guide-input">@4</code><span class="guide-arrow">→</span><code class="guide-output">[○][----]</code></span></p><p><strong class="guide-detail-label">解除</strong><span class="guide-detail-value">選択中の文字をBackspaceかDeleteで削除します。値が不足した右端は自動値になります。</span></p></div>
               </details>
               <details class="guide-item">
-                <summary><code class="guide-input">s</code><span>半音価のシンコペーション</span><span class="guide-item-arrow" aria-hidden="true">▼</span></summary>
-                <div class="guide-item-detail"><p><strong class="guide-detail-label">意味</strong><span class="guide-detail-value">次のコードを半音価だけ早く鳴らします。その分、前のコードは半音価短くなります。</span></p><p><strong class="guide-detail-label">入力→結果</strong><span class="guide-detail-value"><code class="guide-input">4s4</code><span class="guide-arrow">→</span><code class="guide-output">[C][---=][G][=][----]</code></span></p><p><strong class="guide-detail-label">解除</strong><span class="guide-detail-value">同じ境界でもう一度<code class="guide-input">s</code>を押します。BackspaceかDeleteでは、選択中の拍と<code class="guide-input">s</code>をまとめて<code class="guide-input">0</code>へ戻せます。</span></p></div>
+                <summary><code class="guide-input">s</code><span>-：ハイフンシンコペーション</span><span class="guide-item-arrow" aria-hidden="true">▼</span></summary>
+                <div class="guide-item-detail"><p><strong class="guide-detail-label">意味</strong><span class="guide-detail-value">次のコードをハイフン1個分早く鳴らします。小節線の位置は動かしません。行頭にも入力できます。</span></p><p><strong class="guide-detail-label">結果</strong><span class="guide-detail-value"><code class="guide-output">-|----</code></span></p><p><strong class="guide-detail-label">入力→結果</strong><span class="guide-detail-value"><code class="guide-input">4s4</code><span class="guide-arrow">→</span><code class="guide-output">[C][---][G][-][----]</code></span></p><p><strong class="guide-detail-label">削除</strong><span class="guide-detail-value"><code class="guide-input">4s4</code>の右の拍でBackspaceかDeleteを押すと<code class="guide-input">s</code>だけ消えて<code class="guide-input">44</code>になります。左の拍なら数字だけを削除して<code class="guide-input">s4</code>を残します。</span></p></div>
               </details>
               <details class="guide-item">
-                <summary><code class="guide-input">|</code><span>小節頭を指定</span><span class="guide-item-arrow" aria-hidden="true">▼</span></summary>
-                <div class="guide-item-detail"><p><strong class="guide-detail-label">意味</strong><span class="guide-detail-value"><code class="guide-input">|</code>の位置へ優先的に小節線を加え、直後のコードを小節頭にします。</span></p><p><strong class="guide-detail-label">入力→結果</strong><span class="guide-detail-value"><code class="guide-input">22|44</code><span class="guide-arrow">→</span><code class="guide-output">[G][--][G#dim][--][|][C][----][G/B][----][|]</code></span></p></div>
+                <summary><code class="guide-input">*s</code><span>=：イコールシンコペーション</span><span class="guide-item-arrow" aria-hidden="true">▼</span></summary>
+                <div class="guide-item-detail"><p><strong class="guide-detail-label">意味</strong><span class="guide-detail-value">次のコードを<code class="guide-output">=</code>1個分早く鳴らします。小節線の位置は動かしません。行頭にも入力できます。</span></p><p><strong class="guide-detail-label">結果</strong><span class="guide-detail-value"><code class="guide-output">=|----</code></span></p><p><strong class="guide-detail-label">入力→結果</strong><span class="guide-detail-value"><code class="guide-input">*s44*s44</code><span class="guide-arrow">→</span><code class="guide-output">[A]=|----[Bm7]---=[C#m7]=|----[D]----|</code></span></p></div>
+              </details>
+              <details class="guide-item">
+                <summary><code class="guide-input">| /</code><span>小節頭を指定</span><span class="guide-item-arrow" aria-hidden="true">▼</span></summary>
+                <div class="guide-item-detail"><p><strong class="guide-detail-label">意味</strong><span class="guide-detail-value"><code class="guide-input">|</code>または<code class="guide-input">/</code>の位置へ優先的に小節線を加え、直後のコードを小節頭にします。</span></p><p><strong class="guide-detail-label">入力→結果</strong><span class="guide-detail-value"><code class="guide-input">22/44</code><span class="guide-arrow">→</span><code class="guide-output">[G][--][G#dim][--][|][C][----][G/B][----][|]</code></span></p></div>
               </details>
               <details class="guide-item">
                 <summary><code class="guide-input">x</code><span>小節線消去</span><span class="guide-item-arrow" aria-hidden="true">▼</span></summary>
@@ -255,6 +258,7 @@
           <div id="input-lines" class="line-numbers" aria-hidden="true"></div>
           <div class="editor-text-layer"><pre id="input-highlight" class="editor-highlight" aria-hidden="true"></pre><textarea id="input-text" wrap="off" spellcheck="false" placeholder="{title:変換テスト用サンプル}&#10;{subtitle:これは実在する楽曲ではありません}&#10;{comment:ChordWiki Bar Formatterの機能確認用ダミー歌詞です}&#10;{c:BPM=100　　4/4拍子　-：8分音符　＝：16分音符　&gt;：8分音符アクセント　≧：16分音符アクセント　○：白玉}&#10;{key:C}&#10;[C]ChordPro形式の[G]テキストを貼ると　[Am]自動[G]で小節線[F]と長さ記号を追記します&#10;[E]原曲と異[Am]なる部分は　[F]行修正の[D/F#]数値を変えて&#10;[Gsus4]ハイフン数を[G]合わせます　[G#dim]&#10;&#10;[Am]＝(イコール)表示は*([G#aug]アスタリスク)で、[C/G]＞(アクセント)は[F#m7-5]^(キャレット)で&#10;[F]入力[G]できま[C]す&#10;[F]細かい部分は[G]手動修正が[E7]必[E7/G#]要[Am7]です🙏🏻&#10;[F]編集[G]お疲れ[Csus4]様で[C]す！（ありが[N.C.]とう！）"></textarea></div>
         </div>
+        <div class="frame-resize-edge" data-row="top" role="separator" aria-label="変換前枠の高さを調整" aria-orientation="horizontal" tabindex="0"></div>
         <div class="frame-resize-corner two-axis" data-row="top" data-column="inverse" role="separator" aria-label="変換前枠の幅と高さを調整" tabindex="0"></div>
       </article>
 
@@ -277,7 +281,7 @@
           </div>
         </div>
         <div class="removal-controls">
-          <span class="removal-label-with-help"><label for="lyric-hyphen-mode">歌詞行のハイフン</label><span class="context-help"><button class="context-help-button" type="button" aria-label="歌詞行のハイフン省略の説明" aria-expanded="false" aria-controls="help-tip-lyric-hyphens">?</button><span id="help-tip-lyric-hyphens" class="context-help-popover" role="tooltip" hidden>歌詞行に付いたハイフンの表示方法を選びます。<br>「省略しない」：すべてのハイフンを表示します。<br>「指定数だけ省略」：入力した長さだけ省略します。複数指定はカンマ区切りで入力します（例：4,8）。<br>「できるだけ省略」：コードチェンジの位置が必要な箇所を残して省略します。<br>「すべて省略」：タイミング情報も含めて省略します。</span></span></span>
+          <span class="removal-label-with-help"><label for="lyric-hyphen-mode">歌詞行のハイフン</label><span class="context-help"><button class="context-help-button" type="button" aria-label="歌詞行のハイフン省略の説明" aria-expanded="false" aria-controls="help-tip-lyric-hyphens">?</button><span id="help-tip-lyric-hyphens" class="context-help-popover" role="tooltip" hidden><strong class="context-help-title">05. 変換後：歌詞行のハイフン</strong>歌詞行に付いたハイフンの表示方法を選びます。<br>「省略しない」：すべてのハイフンを表示します。<br>「指定数だけ省略」：入力した長さだけ省略します。複数指定はカンマ区切りで入力します（例：4,8）。<br>「できるだけ省略」：コードチェンジの位置が必要な箇所を残して省略します。<br>「すべて省略」：タイミング情報も含めて省略します。</span></span></span>
           <select id="lyric-hyphen-mode" aria-describedby="removal-summary">
             <option value="show">省略しない</option>
             <option value="target" selected>指定数だけ省略（カスタム・おすすめ）</option>
@@ -293,13 +297,14 @@
           <div id="output-lines" class="line-numbers" aria-hidden="true"></div>
           <div class="editor-text-layer"><pre id="output-highlight" class="editor-highlight" aria-hidden="true"></pre><textarea id="output-text" wrap="off" spellcheck="false" placeholder="{title:変換テスト用サンプル}&#10;{subtitle:これは実在する楽曲ではありません}&#10;{comment:ChordWiki Bar Formatterの機能確認用ダミー歌詞です}&#10;{c:BPM=100　　4/4拍子　-：8分音符　＝：16分音符　&gt;：8分音符アクセント　≧：16分音符アクセント　○：白玉}&#10;{key:C}&#10;[|][C]ChordPro形式の[|][G]テキストを貼ると　[|][Am]自動[G]で小節線[|][F]と長さ記号を追記します[|]&#10;[|][E][---]原曲と異[Am][-]な[----]る部分は　[|][F][---]行修正の[D/F#][-]数[----]値を変えて[|]&#10;[|][Gsus4]ハイフン数を[|][G][----]合わせます　[G#dim][----][|]&#10;&#10;[|][Am]＝(イコール)表示は*([G#aug]アスタリスク)で、[|][C/G]＞(アクセント)は[F#m7-5]^(キャレット)で[|]&#10;[|][F][----][--]入力[G][--]できま[|][C][----]す[----][|]&#10;[|][F][---=]細かい部分は[G][=]手[----]動修正が[|][E7][---]必[E7/G#][---]要[Am7][--]で[|][----][----]す🙏🏻[|]&#10;[|][F]編集[G]お疲れ[|][Csus4][----]様で[C][&gt;-]す！（ありが[N.C.][--]とう！）[|]"></textarea></div>
         </div>
+        <div class="frame-resize-edge" data-row="bottom" role="separator" aria-label="変換後枠の高さを調整" aria-orientation="horizontal" tabindex="0"></div>
         <div class="frame-resize-corner two-axis" data-row="bottom" data-column="inverse" role="separator" aria-label="変換後枠の幅と高さを調整" tabindex="0"></div>
       </article>
 
       <div class="right-lower-stack">
       <article class="editor-card final-card">
         <div class="editor-heading">
-          <div class="heading-with-help"><h2 class="compact-editor-title">06. 譜面プレビュー <span>/ SCORE</span></h2><span class="context-help"><button class="context-help-button" type="button" aria-label="譜面プレビューの説明" aria-expanded="false" aria-controls="help-tip-preview">?</button><span id="help-tip-preview" class="context-help-popover" role="tooltip" hidden>変換結果を譜面に近い形で確認します。<br>移調、音名表記、小節線の表示を変更しても、変換前の原文は書き換わりません。</span></span></div>
+          <div class="heading-with-help"><h2 class="compact-editor-title">06. 譜面プレビュー <span>/ SCORE</span></h2><span class="context-help"><button class="context-help-button" type="button" aria-label="譜面プレビューの説明" aria-expanded="false" aria-controls="help-tip-preview">?</button><span id="help-tip-preview" class="context-help-popover" role="tooltip" hidden><strong class="context-help-title">06. 譜面プレビュー</strong>変換結果を譜面に近い形で確認します。<br>移調、音名表記、小節線の表示を変更しても、変換前の原文は書き換わりません。</span></span></div>
           <div class="editor-tools preview-heading-tools">
             <span id="final-output-count" class="counter">0文字 / 0行</span>
             <button id="copy-final-output" class="icon-button" type="button" aria-label="譜面用テキストをコピー" title="譜面用テキストをコピー"><span class="copy-icon" aria-hidden="true"></span></button>
@@ -531,15 +536,16 @@
   </main>
 
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
-  <script src="js/settings.js?v=20260724-2" defer></script>
+  <script src="js/settings.js?v=20260802-9" defer></script>
   <script src="js/numeric-entry.js?v=20260731-1" defer></script>
-  <script src="js/converter.js?v=20260731-1" defer></script>
+  <script src="js/converter.js?v=20260802-26" defer></script>
   <script src="js/input-brackets.js?v=20260718-5" defer></script>
-  <script src="js/correction-input.js?v=20260731-7" defer></script>
-  <script src="js/transposer.js?v=20260716-7" defer></script>
+  <script src="js/correction-input.js?v=20260802-10" defer></script>
+  <script src="js/transposer.js?v=20260802-8" defer></script>
   <script src="js/chordwiki-preview.js?v=20260731-4" defer></script>
   <script src="js/history.js?v=20260725-7" defer></script>
   <script src="js/test-data.js?v=20260724-5" defer></script>
-  <script src="js/app.js?v=20260731-10" defer></script>
+  <script src="js/app.js?v=20260802-35" defer></script>
+  <script src="js/row-edit-test.js?v=20260801-8" defer></script>
 </body>
 </html>

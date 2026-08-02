@@ -1,10 +1,10 @@
 (function () {
   "use strict";
 
-  const GROUP_SOURCE = "@|[x\\^*]*[0-9a-i](?:[x*](?=@|s|[x\\^*]*[0-9a-i]|$))?";
+  const GROUP_SOURCE = "\\?|@|[x\\^*]*[0-9a-i](?:[x*](?=@|\\?|s|[x\\^*]*[0-9a-i]|$))?";
   const GROUP_PATTERN = new RegExp(GROUP_SOURCE, "gi");
-  const PART_PATTERN = new RegExp(`${GROUP_SOURCE}|s|\\|`, "gi");
-  const BEAT_CHARACTER_PATTERN = /[0-9a-i@]/gi;
+  const PART_PATTERN = new RegExp(`${GROUP_SOURCE}|\\*s|s|\\|`, "gi");
+  const BEAT_CHARACTER_PATTERN = /[0-9a-i@?]/gi;
 
   function groups(line) {
     const value = String(line || "").trim().toLowerCase();
@@ -18,23 +18,33 @@
     (previousLines || []).forEach((line, lineIndex) => {
       const slotCount = Math.max(0, Number(previousSlotCounts?.[lineIndex]) || 0);
       const command = String(line || "").trim().toLowerCase();
-      if (command === "n" || command === "s") {
+      if (command === "n") {
         for (let index = 0; index < slotCount; index += 1) flattened.push({ command });
         return;
       }
       const text = String(line || "");
       const matches = [...text.matchAll(new RegExp(GROUP_SOURCE, "gi"))];
-      if (matches.length !== slotCount) {
+      if (matches.length > slotCount) {
         for (let index = 0; index < slotCount; index += 1) flattened.push(null);
         return;
       }
+      const boundarySymbols = (value) => (String(value || "").match(/\*s|s|\|/gi) || []).join("");
       matches.forEach((match, index) => {
         const previous = matches[index - 1];
-        const separatorBefore = previous
-          ? text.slice(previous.index + previous[0].length, match.index).replace(/[^s|]/gi, "")
-          : "";
+        let separatorBefore = previous
+          ? boundarySymbols(text.slice(previous.index + previous[0].length, match.index))
+          : boundarySymbols(text.slice(0, match.index));
+        // GROUP_SOURCE normally treats a trailing * as a duration suffix. When
+        // it sits immediately before s, however, the pair is the half-sync
+        // boundary *s and must move together if the source row is split.
+        if (previous?.[0].endsWith("*") && separatorBefore.startsWith("s")) {
+          const previousItem = flattened[flattened.length - 1];
+          if (previousItem?.value?.endsWith("*")) previousItem.value = previousItem.value.slice(0, -1);
+          separatorBefore = `*${separatorBefore}`;
+        }
         flattened.push({ value: match[0], separatorBefore });
       });
+      for (let index = matches.length; index < slotCount; index += 1) flattened.push(null);
     });
 
     const expectedSlots = (currentSlotCounts || []).reduce((sum, count) => sum + Math.max(0, Number(count) || 0), 0);
@@ -53,18 +63,25 @@
         preserved[lineIndex] = true;
         return "n";
       }
-      if (items.every((item) => item?.command === "s")) {
-        preserved[lineIndex] = true;
-        return "s";
-      }
-      if (!items.every((item) => item?.value)) {
+      const firstMissing = items.findIndex((item) => !item?.value);
+      const supplied = firstMissing < 0 ? items : items.slice(0, firstMissing);
+      if (firstMissing >= 0 && items.slice(firstMissing).some((item) => item?.value)) {
         preserved[lineIndex] = false;
         return "";
       }
       preserved[lineIndex] = true;
-      return items.map((item, index) => `${index ? item.separatorBefore : ""}${item.value}`).join("");
+      return supplied.map((item, index) => `${index ? item.separatorBefore || "" : (item.separatorBefore || "").replace(/\|/g, "")}${item.value}`).join("");
     });
     return { lines, preserved };
+  }
+
+  function synchronizeLineBreakLayout(previousText, currentText, correctionLines, previousSlotCounts, currentSlotCounts) {
+    const normalize = (value) => String(value || "").replace(/\r\n|\r/g, "\n");
+    const previous = normalize(previousText);
+    const current = normalize(currentText);
+    if (previous === current || previous.replace(/\n/g, "") !== current.replace(/\n/g, "")) return null;
+    const corrections = redistributeForLineBreaks(correctionLines, previousSlotCounts, currentSlotCounts);
+    return { corrections, lineCount: current.split("\n").length };
   }
 
   function beatCharacters(line) {
@@ -78,13 +95,42 @@
       ? String.fromCharCode(text.charCodeAt(0) - 0xFEE0)
       : text;
     const normalized = character.toLowerCase();
-    return /^[0-9a-i@]$/.test(normalized) ? normalized : "";
+    return /^[0-9a-i@?]$/.test(normalized) ? normalized : "";
   }
 
   function normalizeBeatInputSequence(value) {
     const characters = [...String(value || "")];
     if (!characters.length) return "";
     const normalized = characters.map((character) => normalizeBeatInputCharacter(character));
+    return normalized.every(Boolean) ? normalized.join("") : "";
+  }
+
+  function isRecentInputCommit(pendingCharacter, pendingAt, character, now = Date.now()) {
+    const age = Number(now) - Number(pendingAt);
+    return Boolean(character) && character === pendingCharacter && age >= 0 && age <= 500;
+  }
+
+  function incrementalCompositionBeatInput(previousValue, currentValue) {
+    const previous = String(previousValue || "");
+    const current = String(currentValue || "");
+    if (!current || current === previous || previous.startsWith(current)) return "";
+    if (current.startsWith(previous)) return current.slice(previous.length);
+    let sharedLength = 0;
+    while (sharedLength < previous.length && sharedLength < current.length && previous[sharedLength] === current[sharedLength]) sharedLength += 1;
+    return current.slice(sharedLength);
+  }
+
+  function normalizeBoundarySymbolSequence(value) {
+    const characters = [...String(value || "")];
+    if (!characters.length) return "";
+    const normalized = characters.map((character) => {
+      const ascii = character.charCodeAt(0) >= 0xFF01 && character.charCodeAt(0) <= 0xFF5E
+        ? String.fromCharCode(character.charCodeAt(0) - 0xFEE0)
+        : character;
+      const symbol = ascii.toLowerCase();
+      if (symbol === "/") return "|";
+      return /^[x\^*s|]$/.test(symbol) ? symbol : "";
+    });
     return normalized.every(Boolean) ? normalized.join("") : "";
   }
 
@@ -109,7 +155,7 @@
     // A user may add a chord in the rendered text first and then add its row-edit
     // value, or may temporarily type an incomplete expression while editing.
     // Validation belongs to conversion, not to the textarea's input handler.
-    return normalizedWidth.replace(/[^0-9a-isn@x\^*|]/gi, "").toLowerCase();
+    return normalizedWidth.replace(/\//g, "|").replace(/[^0-9a-isn@?x\^*|]/gi, "").toLowerCase();
   }
 
   function modifierInsertionAtLineEnd(line, key) {
@@ -142,16 +188,47 @@
   function smartBeatEdit(line, start, end, key) {
     const text = String(line || "");
     const character = String(key || "").toLowerCase();
-    if (!/^[0-9a-i]$/.test(character)) return null;
+    if (!/^[0-9a-i?]$/.test(character)) return null;
     const from = Math.max(0, Math.min(Number(start) || 0, text.length));
     const to = Math.max(from, Math.min(Number(end) || from, text.length));
     if (to > from) return { start: from, end: to, replacement: character, caret: from + 1 };
     const beats = beatCharacters(text);
-    if (!beats.length || text.trim().toLowerCase() === "n" || text.trim().toLowerCase() === "s") {
+    if (text.trim().toLowerCase() === "n") {
       return { start: 0, end: text.length, replacement: character, caret: 1 };
     }
+    if (!beats.length && /^\*?s$/i.test(text.trim())) {
+      return { start: text.length, end: text.length, replacement: character, caret: text.length + 1 };
+    }
+    if (!beats.length) return { start: 0, end: text.length, replacement: character, caret: 1 };
     const target = beats.find((match) => match.index >= from) || beats[beats.length - 1];
     return { start: target.index, end: target.index + target[0].length, replacement: character, caret: target.index + 1 };
+  }
+
+  function boundarySymbolEdit(line, column, key) {
+    const text = String(line || "");
+    const symbol = String(key || "").toLowerCase() === "/" ? "|" : String(key || "").toLowerCase();
+    if (!["x", "^", "*", "s", "|"].includes(symbol)) return null;
+    const caret = Math.max(0, Math.min(text.length, Number(column) || 0));
+    if (symbol === "|") {
+      if (text.includes("|")) return { error: "duplicate-bar-anchor" };
+      return { start: caret, end: caret, replacement: symbol, caret: caret + 1 };
+    }
+    if (symbol === "s") {
+      if (text[caret]?.toLowerCase() === "s") {
+        const start = text[caret - 1] === "*" ? caret - 1 : caret;
+        return { start, end: caret + 1, replacement: "", caret: start };
+      }
+      if (text[caret - 1]?.toLowerCase() === "s") {
+        const start = text[caret - 2] === "*" ? caret - 2 : caret - 1;
+        return { start, end: caret, replacement: "", caret: start };
+      }
+      const syncPrefixLength = text[caret - 1] === "*" ? 1 : 0;
+      const hasPreviousValue = /[0-9a-i@]/i.test(text.slice(0, caret - syncPrefixLength));
+      const hasFollowingValue = /[0-9a-i@]/i.test(text.slice(caret));
+      const leadingBoundary = !hasPreviousValue && caret - syncPrefixLength === 0;
+      if ((!hasPreviousValue && !leadingBoundary) || !hasFollowingValue) return { error: "invalid-sync-boundary" };
+    }
+    return { start: caret, end: caret, replacement: symbol, caret: caret + 1 };
   }
 
   function slotSelection(line, slotIndex) {
@@ -160,6 +237,15 @@
     const index = Math.max(0, Math.min(beats.length - 1, Number(slotIndex) || 0));
     const target = beats[index];
     return { index, start: target.index, end: target.index + target[0].length };
+  }
+
+  function nextLineWithBeatSlot(lines, currentLineIndex) {
+    const start = Math.max(-1, Number(currentLineIndex) || 0);
+    const values = Array.isArray(lines) ? lines : [];
+    for (let index = start + 1; index < values.length; index += 1) {
+      if (groups(values[index]).length) return index;
+    }
+    return -1;
   }
 
   function selectedBeat(line, start, end) {
@@ -181,19 +267,9 @@
     const { text, beats, index, target } = selected;
     let editStart = target.index;
     let editEnd = target.index + target[0].length;
-    const previous = beats[index - 1];
-    const next = beats[index + 1];
-    const separatorBefore = previous ? text.slice(previous.index + previous[0].length, target.index) : "";
-    if (previous?.[0] === "@" && separatorBefore === "") editStart = previous.index;
-    else if (separatorBefore === "s") editStart = target.index - 1;
-    else while (editStart > 0 && /[x\^*]/i.test(text[editStart - 1])) editStart -= 1;
-
-    if (target[0] === "@" && next && text.slice(editEnd, next.index) === "") {
-      editEnd = next.index + next[0].length;
-    }
-    while (editEnd < text.length && /[x*]/i.test(text[editEnd])) editEnd += 1;
-    if (text[editEnd]?.toLowerCase() === "s") editEnd += 1;
-    return { start: editStart, end: editEnd, replacement: "0", caret: editStart + 1 };
+    while (editStart > 0 && /[x\^*]/i.test(text[editStart - 1])) editStart -= 1;
+    while (editEnd < text.length && /[x*]/i.test(text[editEnd]) && text[editEnd + 1]?.toLowerCase() !== "s") editEnd += 1;
+    return { start: editStart, end: editEnd, replacement: "", caret: editStart };
   }
 
   function syncopationRemovalEdit(line, start, end) {
@@ -201,11 +277,15 @@
     if (!selected) return null;
     const { text, target } = selected;
     const after = target.index + target[0].length;
-    if (text[after]?.toLowerCase() === "s") return { start: after, end: after + 1, replacement: "", caret: after };
     if (target.index > 0 && text[target.index - 1]?.toLowerCase() === "s") {
-      return { start: target.index - 1, end: target.index, replacement: "", caret: target.index - 1 };
+      const removalStart = text[target.index - 2] === "*" ? target.index - 2 : target.index - 1;
+      return { start: removalStart, end: target.index, replacement: "", caret: removalStart };
     }
     return null;
+  }
+
+  function deletionEdit(line, start, end) {
+    return syncopationRemovalEdit(line, start, end) || clearBeatEdit(line, start, end);
   }
 
   function whiteNoteEdit(line, start, end) {
@@ -241,6 +321,21 @@
     const caret = Math.max(0, Number(editCaret) || 0);
     if (keepOnCurrentLine || caret < lineEnd) return caret;
     return nextLineStart(text, lineEnd);
+  }
+
+  function scrollTopForLineMargin(currentScrollTop, clientHeight, lineHeight, lineIndex, lineCount, marginLines = 1, paddingTop = 0, bottomMarginLines = marginLines) {
+    const height = Math.max(1, Number(lineHeight) || 1);
+    const count = Math.max(1, Number(lineCount) || 1);
+    const index = Math.max(0, Math.min(count - 1, Number(lineIndex) || 0));
+    const margin = Math.max(0, Number(marginLines) || 0);
+    const bottomMargin = Math.max(0, Number(bottomMarginLines) || 0);
+    const current = Math.max(0, Number(currentScrollTop) || 0);
+    const viewport = Math.max(height, Number(clientHeight) || height);
+    const visibleTop = Math.max(0, Number(paddingTop) || 0) + Math.max(0, index - margin) * height;
+    const visibleBottom = Math.max(0, Number(paddingTop) || 0) + Math.min(count, index + bottomMargin + 1) * height;
+    if (visibleTop < current) return Math.max(0, visibleTop);
+    if (visibleBottom > current + viewport) return Math.max(0, visibleBottom - viewport);
+    return current;
   }
 
   function overwritePastedRows(text, selectionStart, pastedText, maximumRows = 0) {
@@ -286,7 +381,8 @@
 
   function appendBeatSlot(line) {
     const text = String(line || "");
-    if (text.trim().toLowerCase() === "n" || text.trim().toLowerCase() === "s") return { text: "0", selectionStart: 0, selectionEnd: 1 };
+    if (text.trim().toLowerCase() === "n") return { text: "0", selectionStart: 0, selectionEnd: 1 };
+    if (/^\*?s$/i.test(text.trim())) return { text: `${text}0`, selectionStart: text.length, selectionEnd: text.length + 1 };
     return { text: `${text}0`, selectionStart: text.length, selectionEnd: text.length + 1 };
   }
 
@@ -297,5 +393,5 @@
     }).join("\n");
   }
 
-  window.CBFCorrectionInput = { groups, redistributeForLineBreaks, beatCharacters, normalizeBeatInputCharacter, normalizeBeatInputSequence, singleInsertedBeat, normalizeLine, modifierInsertionAtLineEnd, needsInsertedWhiteNoteDuration, smartBeatEdit, slotSelection, clearBeatEdit, syncopationRemovalEdit, whiteNoteEdit, nextLineStart, caretAfterLineEdit, overwritePastedRows, overwritePastedLine, appendBeatSlot, migrateLegacyText };
+  window.CBFCorrectionInput = { groups, redistributeForLineBreaks, synchronizeLineBreakLayout, beatCharacters, normalizeBeatInputCharacter, normalizeBeatInputSequence, isRecentInputCommit, incrementalCompositionBeatInput, normalizeBoundarySymbolSequence, singleInsertedBeat, normalizeLine, modifierInsertionAtLineEnd, boundarySymbolEdit, needsInsertedWhiteNoteDuration, smartBeatEdit, slotSelection, nextLineWithBeatSlot, clearBeatEdit, syncopationRemovalEdit, deletionEdit, whiteNoteEdit, nextLineStart, caretAfterLineEdit, scrollTopForLineMargin, overwritePastedRows, overwritePastedLine, appendBeatSlot, migrateLegacyText };
 }());

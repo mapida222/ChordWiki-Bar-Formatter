@@ -67,6 +67,11 @@ assert.strictEqual(transposer.transposeText("{key:Cm}\n[Cm]", 3, "sharp", false)
 assert.strictEqual(transposer.transposeText("{key:C}\n[C]", 1, "sharp", false), "{key:Db}\n[C#]");
 assert.strictEqual(transposer.transposeText("{key:C}\n[C]", 10, "sharp", false), "{key:Bb}\n[A#]");
 assert.strictEqual(transposer.transposeText("{key:Cm}\n[Cm]", 1, "flat", false), "{key:C#m}\n[Dbm]");
+assert.strictEqual(
+  transposer.transposeText("{ci:[C]}\n{ci: Drums}\n{title:Chorus}\n{subtitle:Chorus}\n[C]歌詞", 2, "sharp"),
+  "{ci:[C]}\n{ci: Drums}\n{title:Chorus}\n{subtitle:Chorus}\n[D]歌詞",
+  "コメント・タイトル系ディレクティブの中身は移調しない"
+);
 
 const source = "{key:C#}\n[|][C#][----]歌詞[F#m7-5][-][C#/G#][|][N.C.]";
 assert.strictEqual(

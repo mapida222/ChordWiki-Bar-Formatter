@@ -76,7 +76,12 @@ const incompleteEdit = CBFConverter.convertChordText(
   [manualFirstMeasure],
   ["4444"]
 );
-assert.strictEqual(incompleteEdit.appliedCorrections, "4444", "an incomplete input is retained but is not recorded as applied");
-assert(incompleteEdit.warnings.some((warning) => warning.includes("行修正エラー")));
+assert.strictEqual(incompleteEdit.appliedCorrections, "44", "a partial input is applied from the left and recorded without repeating it");
+assert.deepStrictEqual(incompleteEdit.correctionErrors, [], "the missing right tail uses automatic values instead of becoming an error");
+
+const singleValueEdit = CBFConverter.convertChordText("[C][D][E][F]", settings, ["2"]);
+assert.strictEqual(singleValueEdit.appliedCorrections, "2", "one entered value remains one explicit value instead of expanding to every chord");
+assert.strictEqual(singleValueEdit.automaticCorrections, "8888");
+assert.strictEqual(singleValueEdit.output, "[|][C][--][D][--][----][|][--][E][--][----][|][--][F][--][----][|][--][|]", "only the first chord changes and the automatic right tail remains intact");
 
 console.log("PASS: latest edit wins inside the affected measure while other manual measures remain intact");

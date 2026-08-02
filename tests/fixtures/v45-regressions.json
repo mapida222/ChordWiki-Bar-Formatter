@@ -76,10 +76,10 @@
                                 "output":  "[|][C][---][G][-][----][|]"
                             },
                             {
-                                "name":  "at inserts a white note marker",
+                                "name":  "at inserts a white note with the default duration",
                                 "input":  "[C]",
                                 "code":  "@",
-                                "output":  "[|][C][○][|]"
+                                "output":  "[|][C][○][----][|]"
                             },
                             {
                                 "name":  "at slot followed by duration renders white note timing",
@@ -159,7 +159,7 @@
                             {
                                 "name":  "syncopated line keeps phrase-ambiguous trailing lyrics after the full-measure rhythm",
                                 "input":  "[F]細かい部分は[G]手動修正が[E7]必[E7/G#]要[Am7]です🙏🏻",
-                                "code":  "4s433a",
+                                  "code":  "4*s433a",
                                 "output":  "[|][F][---=]細かい部分は[G][=]手[----]動修正が[|][E7][---]必[E7/G#][---]要[Am7][--]で[|][----][----]す🙏🏻[|]"
                             },
                             {

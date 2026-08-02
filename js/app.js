@@ -7,9 +7,9 @@
     workspace: $(".workspace"), fontPanel: $(".font-panel"), displaySettingsShell: $("#display-settings-shell"), displaySettingsToggle: $("#display-settings-toggle"), correctionGuide: $(".correction-input-guide"), guideToggleAll: $("#guide-toggle-all"), correctionShell: $("#correction-shell"), inputShell: $("#input-shell"), outputShell: $("#output-shell"), finalOutputShell: $("#final-output-shell"),
     correctionLines: $("#correction-lines"), correctionModes: $("#correction-modes"), inputLines: $("#input-lines"), outputLines: $("#output-lines"), finalOutputLines: $("#final-output-lines"), committedOutputLines: $("#committed-output-lines"),
     correctionHighlight: $("#correction-highlight"), inputHighlight: $("#input-highlight"), outputHighlight: $("#output-highlight"), finalOutputHighlight: $("#final-output-highlight"), committedOutputHighlight: $("#committed-output-highlight"),
-    correctionCount: $("#correction-count"), correctionPosition: $("#correction-position"), correctionUndo: $("#correction-undo"), correctionRedo: $("#correction-redo"), correctionRefreshLine: $("#correction-refresh-line"), inputCount: $("#input-count"), outputCount: $("#output-count"), finalOutputCount: $("#final-output-count"), committedOutputCount: $("#committed-output-count"), committedOutputShell: $("#committed-output-shell"), committedOutputToggle: $("#committed-output-toggle"),
+    correctionCount: $("#correction-count"), correctionPosition: $("#correction-position"), correctionUndo: $("#correction-undo"), correctionRedo: $("#correction-redo"), correctionRefreshLine: $("#correction-refresh-line"), correctionRebuildAll: $("#correction-rebuild-all"), inputCount: $("#input-count"), outputCount: $("#output-count"), finalOutputCount: $("#final-output-count"), committedOutputCount: $("#committed-output-count"), committedOutputShell: $("#committed-output-shell"), committedOutputToggle: $("#committed-output-toggle"),
     removalTargets: $("#hyphen-removal-targets"), removalLinked: $("#hyphen-removal-linked"), lyricHyphenMode: $("#lyric-hyphen-mode"), removalSummary: $("#removal-summary"), measureCapacityWarning: $("#measure-capacity-warning"), measureCapacityWarningText: $("#measure-capacity-warning-text"), measureCapacityWarningOpen: $("#measure-capacity-warning-open"), measureCapacityWarningDismiss: $("#measure-capacity-warning-dismiss"),
-    statusDetail: $("#status-detail"), toast: $("#toast"), helpDialog: $("#help-dialog"), helpExamplePreview: $("#help-example-preview"), historyDialog: $("#history-dialog"), historyList: $("#history-list"), historyPreviewPanel: $("#history-preview-panel"), historyPreviewTabs: $("#history-preview-tabs"), historyTextPreview: $("#history-text-preview"), historyPreview: $("#history-score-preview"), historyPreviewTitle: $("#history-preview-title"), historyPreviewDate: $("#history-preview-date"), historyRestore: $("#history-restore"), historyExportTest: $("#history-export-test"), historyImportTest: $("#history-import-test"), historyImportFile: $("#history-import-file"), historyDeleteAll: $("#history-delete-all"), testOutputLock: $("#test-output-lock"), testOutputUnlock: $("#test-output-unlock"), keySettingsDialog: $("#key-settings-dialog"), keySettingsList: $("#key-settings-list"), keySettingsPreview: $("#key-settings-score-preview")
+    statusDetail: $("#status-detail"), toast: $("#toast"), helpDialog: $("#help-dialog"), helpExamplePreview: $("#help-example-preview"), historyDialog: $("#history-dialog"), historyList: $("#history-list"), historyPreviewPanel: $("#history-preview-panel"), historyPreviewTabs: $("#history-preview-tabs"), historyTextPreview: $("#history-text-preview"), historyPreview: $("#history-score-preview"), historyPreviewTitle: $("#history-preview-title"), historyPreviewDate: $("#history-preview-date"), historyRestore: $("#history-restore"), historyExportTest: $("#history-export-test"), historyImportTest: $("#history-import-test"), historyImportFile: $("#history-import-file"), historyDeleteAll: $("#history-delete-all"), keySettingsDialog: $("#key-settings-dialog"), keySettingsList: $("#key-settings-list"), keySettingsPreview: $("#key-settings-score-preview")
   };
   const correctionGuideItems = [...document.querySelectorAll(".guide-item")];
   const contextHelpButtons = [...document.querySelectorAll(".context-help-button")];
@@ -83,10 +83,16 @@
   let authoredWhiteNoteCounts = [];
   let linkedLineIndex = -1;
   let linkedSlotIndex = -1;
+  let correctionSymbolOffset = -1;
+  let correctionCaretMode = "slot";
   let correctionUndoStack = [];
   let correctionRedoStack = [];
   let correctionHistoryValue = "";
   let restoringCorrectionHistory = false;
+  let correctionCompositionValue = "";
+  let pendingCompositionCommit = "";
+  let pendingCompositionCommitAt = 0;
+  let restoringPasteScroll = false;
   let scrollSyncEnabled = true;
   let settingsMode = "closed";
   let convertedOutput = "";
@@ -94,9 +100,6 @@
   let outputHighlightValue = "";
   let outputAddedOffsets = new Set();
   let manualOutputLines = new Set();
-  let testOutputLocked = false;
-  let testLockedOutputText = "";
-  let testLockedOutputAddedOffsets = new Set();
   let lastAppliedCorrectionLines = [];
   let inferenceFallbackCorrectionLines = [];
   let correctionDisplayStates = [];
@@ -124,8 +127,8 @@
   const CORRECTION_STORAGE_KEY = "chordWikiBarFormatter.correctionText.v1";
   const ROW_ADOPTION_MODES_STORAGE_KEY = "chordWikiBarFormatter.rowAdoptionModes.v1";
   const CORRECTION_SYNTAX_VERSION_KEY = "chordWikiBarFormatter.correctionSyntaxVersion";
-  const LAYOUT_STORAGE_KEY = "chordWikiBarFormatter.editorLayout.v1";
-  const DISPLAY_PANEL_STORAGE_KEY = "chordWikiBarFormatter.displayPanelOpen.v2";
+  const LAYOUT_STORAGE_KEY = "chordWikiBarFormatter.editorLayout.v2";
+  const DISPLAY_PANEL_STORAGE_KEY = "chordWikiBarFormatter.displayPanelOpen.v3";
   const THEME_STORAGE_KEY = "chordWikiBarFormatter.theme.v1";
   const PLAIN_EDIT_BARS_STORAGE_KEY = "chordWikiBarFormatter.plainEditBars.v1";
   const FINAL_BARS_THROUGH_STORAGE_KEY = "chordWikiBarFormatter.finalBarsThrough.v1";
@@ -178,8 +181,8 @@
     "[F]細かい部分は[G]手動修正が[E7]必[E7/G#]要[Am7]です🙏🏻",
     "[F]編集[G]お疲れ[Csus4]様で[C]す！（ありが[N.C.]とう！）"
   ].join("\n");
-  const INITIAL_CORRECTION = ["", "", "", "", "", "88448", "3535", "844", "", "4444", "628", "4s433a", "444^22"].join("\n");
-  const INITIAL_SETTINGS = { measureCapacity: 8, hyphenUnit: 4, hyphenSpacing: 4, shortFractionPrepose: 1, longBeatLyricPlacement: 1, showContinuationChord: 0 };
+  const INITIAL_CORRECTION = ["", "", "", "", "", "88448", "3535", "844", "", "4444", "628", "4*s433a", "444^22"].join("\n");
+  const INITIAL_SETTINGS = { measureCapacity: 8, hyphenUnit: 4, hyphenSpacing: 4, shortFractionPrepose: 1, longBeatLyricPlacement: 1, singleCharacterHyphens: 0, showContinuationChord: 0 };
   const CUSTOM_PROFILE_NAME_STORAGE_KEY = "chordWikiBarFormatter.customProfileName.v1";
   const RECOMMENDED_VALUES = {
     fourFour: [0, 4, 8, 16, 24, 32],
@@ -192,6 +195,7 @@
     hyphenSpacing: () => "長く連続するハイフンを、指定した数ごとに空白で区切ります。0では区切りません。",
     shortFractionPrepose: () => "コード間の長さに端数ができたとき、歌詞を1文字手前へ移動します。する：歌詞を前へ寄せる（デフォルト）、しない：歌詞位置を変えない。",
     longBeatLyricPlacement: () => "行修正で長い拍を指定したときの歌詞位置です。前後に分ける：最初と最後へ配置（おすすめ）、均等に分ける：すべての長さ記号へ配置、移動しない：従来どおり。",
+    singleCharacterHyphens: () => "1文字だけで完結する小節のハイフンです。省略する：歌詞だけを表示（デフォルト）、残す：拍の長さを表示。",
     showContinuationChord: () => "コードがない小節に直前のコードを引き継ぎます。する：直前のコードを表示、しない：小節線のみ（デフォルト）。"
   };
   function customProfileName() { return localStorage.getItem(CUSTOM_PROFILE_NAME_STORAGE_KEY)?.trim() || "カスタム"; }
@@ -334,9 +338,13 @@
       syncResultRowAlignment();
       return;
     }
-    elements.measureCapacityWarningText.textContent = `※変換前で使われている1小節のハイフン数が、初期設定と異なるようです。判定できた小節の約${mismatch.percentage}%が「1小節${mismatch.detected}ハイフン」です。初期設定を${mismatch.detected}に変更しますか？`;
+    const useSixEightProfile = [3, 6, 9, 12].includes(mismatch.detected);
+    elements.measureCapacityWarningText.textContent = useSixEightProfile
+      ? `※変換前で使われている1小節のハイフン数が、初期設定と異なるようです。判定できた小節の約${mismatch.percentage}%が「1小節${mismatch.detected}ハイフン」です。6/8拍子タブへ切り替え、合計${mismatch.detected}を適用しますか？`
+      : `※変換前で使われている1小節のハイフン数が、初期設定と異なるようです。判定できた小節の約${mismatch.percentage}%が「1小節${mismatch.detected}ハイフン」です。初期設定を${mismatch.detected}に変更しますか？`;
     elements.measureCapacityWarningOpen.dataset.detected = String(mismatch.detected);
-    elements.measureCapacityWarningOpen.textContent = `${mismatch.detected}に変更`;
+    elements.measureCapacityWarningOpen.dataset.profile = useSixEightProfile ? "sixEight" : "";
+    elements.measureCapacityWarningOpen.textContent = useSixEightProfile ? `6/8・${mismatch.detected}を適用` : `${mismatch.detected}に変更`;
     elements.measureCapacityWarning.hidden = false;
     syncResultRowAlignment();
   }
@@ -452,18 +460,42 @@
     for (let index = 0; index < Math.max(0, lineIndex); index += 1) offset += (lines[index] || "").length + 1;
     return offset;
   }
+  function keepCorrectionLineInView(lineIndex) {
+    // A correction paste may update the active slot as part of its input event.
+    // Keep that bookkeeping, but do not let it move the viewport captured at
+    // the start of the paste.
+    if (restoringPasteScroll) return;
+    const computed = getComputedStyle(elements.correction);
+    const lineHeight = Number.parseFloat(computed.lineHeight) || 23;
+    const nextScrollTop = CBFCorrectionInput.scrollTopForLineMargin(
+      elements.correction.scrollTop,
+      elements.correction.clientHeight,
+      lineHeight,
+      lineIndex,
+      lineCount(elements.correction.value),
+      1,
+      Number.parseFloat(computed.paddingTop) || 0,
+      2
+    );
+    if (nextScrollTop !== elements.correction.scrollTop) elements.correction.scrollTop = nextScrollTop;
+  }
   function selectCorrectionSlot(lineIndex, slotIndex) {
     const lines = elements.correction.value.split(/\r\n|\r|\n/);
     const resolvedLine = Math.max(0, Math.min(lines.length - 1, lineIndex));
     const selection = CBFCorrectionInput.slotSelection(lines[resolvedLine] || "", slotIndex);
     linkedLineIndex = resolvedLine;
     linkedSlotIndex = selection?.index ?? -1;
+    correctionCaretMode = "slot";
     const lineOffset = correctionLineOffset(resolvedLine);
     const start = selection ? lineOffset + selection.start : lineOffset;
     const end = selection ? lineOffset + selection.end : lineOffset;
+    // Symbol input (^, *, s, x, |) uses this offset.  Keep it aligned with
+    // the visible slot selected by arrows, clicks, or completed beat input.
+    correctionSymbolOffset = start;
     if (elements.correction.selectionStart !== start || elements.correction.selectionEnd !== end) {
       elements.correction.setSelectionRange(start, end);
     }
+    keepCorrectionLineInView(resolvedLine);
     applyLinkedPosition();
   }
   function moveCorrectionSlot(key) {
@@ -541,11 +573,15 @@
     updateEditorHighlight(elements.output, -1, outputCodeOffsetAt(linkedLineIndex, linkedSlotIndex));
     updateCorrectionPosition();
   }
-  function updateActivePosition(textarea, _gutter, activate = false) {
+  function updateActivePosition(textarea, _gutter, activate = false, eventType = "") {
     if (activate) {
       linkedLineIndex = activeLineIndex(textarea);
       linkedSlotIndex = slotIndexAt(textarea, linkedLineIndex, lineColumnAtSelection(textarea));
       if (textarea === elements.correction && textarea.selectionEnd - textarea.selectionStart <= 1) {
+        if (eventType === "click" || eventType === "focus") {
+          correctionSymbolOffset = textarea.selectionStart;
+          correctionCaretMode = "slot";
+        }
         const correctionLine = textarea.value.split(/\r\n|\r|\n/)[linkedLineIndex] || "";
         const correctionColumn = lineColumnAtSelection(textarea);
         const awaitingWhiteNoteDuration = textarea.selectionStart === textarea.selectionEnd
@@ -555,7 +591,7 @@
             correctionSlotCounts[linkedLineIndex] || 0,
             authoredWhiteNoteCounts[linkedLineIndex] || 0
           );
-        const selection = awaitingWhiteNoteDuration ? null : CBFCorrectionInput.slotSelection(correctionLine, linkedSlotIndex);
+        const selection = awaitingWhiteNoteDuration || correctionCaretMode === "boundary" ? null : CBFCorrectionInput.slotSelection(correctionLine, linkedSlotIndex);
         if (selection) {
           const lineOffset = correctionLineOffset(linkedLineIndex);
           const start = lineOffset + selection.start;
@@ -565,6 +601,7 @@
         }
       }
     }
+    if (activate && textarea === elements.correction) keepCorrectionLineInView(linkedLineIndex);
     applyLinkedPosition();
   }
   function updateEditorHighlight(
@@ -587,7 +624,7 @@
     updateEditorHighlight(textarea);
     applyLinkedPosition();
   }
-  const ROW_MODE_LABELS = { auto: "自動", edit: "行修正", source: "原文" };
+  const ROW_MODE_LABELS = { auto: "自動", edit: "修正", source: "固定", recovered: "固定", fixed: "固定" };
   function persistRowAdoptionModes() {
     while (rowAdoptionModes.length && !rowAdoptionModes[rowAdoptionModes.length - 1]) rowAdoptionModes.pop();
     localStorage.setItem(ROW_ADOPTION_MODES_STORAGE_KEY, JSON.stringify(rowAdoptionModes));
@@ -603,10 +640,11 @@
       if (state === "none" && !(correctionSlotCounts[index] > 0)) return '<span class="correction-mode-row" aria-hidden="true"></span>';
       const mode = effectiveRowMode(index);
       const directlyEdited = mode === "edit" && manualOutputLines.has(index);
-      const displayMode = directlyEdited ? "direct" : mode;
-      const label = directlyEdited ? "直接" : ROW_MODE_LABELS[mode] || ROW_MODE_LABELS.auto;
-      const next = mode === "auto" ? "行修正" : mode === "edit" ? "原文" : "自動";
-      const detail = directlyEdited ? "05 変換後の直接編集を採用中。行修正値も反映します" : `${label}を採用中`;
+      const fixed = directlyEdited || mode === "source" || mode === "recovered" || mode === "fixed";
+      const displayMode = fixed ? "fixed" : mode;
+      const label = fixed ? "固定" : ROW_MODE_LABELS[mode] || ROW_MODE_LABELS.auto;
+      const next = mode === "auto" ? "修正" : mode === "edit" ? "固定" : mode === "source" ? "自動" : "修正";
+      const detail = directlyEdited ? "変換後を直接編集した内容を保持中。行修正を変更すると修正へ切り替わります" : mode === "recovered" ? "復元した行修正値を表示中。変更するまで変換後を保持します" : mode === "fixed" ? "非対応の表記を保持中。行修正では上書きしません" : `${label}を採用中`;
       return `<button type="button" class="correction-mode-row" data-line="${index}" data-mode="${displayMode}" aria-label="${index + 1}行目：${detail}。押すと${next}へ切替" title="${detail}（押すと${next}）">${label}</button>`;
     }).join("");
     elements.correctionModes.scrollTop = elements.correction.scrollTop;
@@ -625,7 +663,7 @@
     if (!button) return;
     const index = Number(button.dataset.line);
     const current = effectiveRowMode(index);
-    setRowAdoptionMode(index, current === "auto" ? "edit" : current === "edit" ? "source" : "auto");
+    setRowAdoptionMode(index, current === "auto" ? "edit" : current === "edit" ? "source" : current === "source" ? "auto" : "edit");
   });
   function updateCorrectionHistoryButtons() {
     elements.correctionUndo.disabled = correctionUndoStack.length === 0;
@@ -795,6 +833,16 @@
     const outputLine = editorLine(elements.output, lineIndex);
     const inferred = CBFConverter.inferBeatCodeFromRenderedLine(outputLine, inferenceFallbackCorrectionLines[lineIndex] || "", settings.values);
     if (!inferred) {
+      const hasTarget = CBFConverter.parseTokens(outputLine).some((token) => token.kind === "chord" || (token.kind === "text" && token.value === "[○]"));
+      if (!hasTarget) {
+        manualOutputLines.add(lineIndex);
+        outputManuallyEdited = true;
+        replaceCorrectionLine(lineIndex, "");
+        scheduleConversion(false, new Set([lineIndex]));
+        updateCorrectionModes();
+        notify(`${lineIndex + 1}行目にはコード・白玉がないため、行修正を空欄にしました。`);
+        return;
+      }
       focusEditorLine(elements.output, lineIndex);
       notify("この変換後行から行修正を作れませんでした。変換後の行を確認してください。", true);
       return;
@@ -803,14 +851,48 @@
     outputManuallyEdited = true;
     updateCorrectionModes();
     replaceCorrectionLine(lineIndex, inferred);
+    rowAdoptionModes[lineIndex] = "recovered";
+    persistRowAdoptionModes();
     scheduleConversion(false, new Set([lineIndex]));
     jumpToCorrectionLine(lineIndex + 1);
     notify(`${lineIndex + 1}行目を変換後に合わせて更新しました。`);
   }
   elements.correctionRefreshLine.addEventListener("click", () => {
+    const scrollPositions = captureEditorScrollPositions();
     const lineIndex = linkedLineIndex >= 0 ? linkedLineIndex : activeLineIndex(elements.output);
     keepOutputAndRefreshCorrection(lineIndex);
+    restoreEditorScrollPositions(scrollPositions);
   });
+  function rebuildCorrectionsFromOutput() {
+    const settings = validatedSettings();
+    if (!settings.valid) return;
+    const outputLines = elements.output.value.split(/\r\n|\r|\n/);
+    const rebuilt = outputLines.map((line, index) => CBFConverter.inferBeatCodeFromRenderedLine(
+      line,
+      inferenceFallbackCorrectionLines[index] || "",
+      settings.values
+    ) || "");
+    const targetRows = rebuilt.filter(Boolean).length;
+    const unresolvedRows = outputLines.length - targetRows;
+    if (!window.confirm(`変換後の${outputLines.length}行から行修正を復元します。\n現在の行修正値は${targetRows}行分が置き換わります。\n変換後の表示内容は変更しません。`)) return;
+    elements.correction.value = rebuilt.join("\n");
+    // Let the normal input path save this restoration as one undoable change.
+    elements.correction.dispatchEvent(new Event("input", { bubbles: true }));
+    correctionSlotCounts = rebuilt.map((code) => CBFCorrectionInput.groups(code).length);
+    authoredWhiteNoteCounts = outputLines.map((line) => CBFConverter.parseTokens(line)
+      .filter((token) => token.kind === "text" && token.value === "[○]").length);
+    // Force this conversion to use the reconstructed values rather than
+    // considering them identical to the former automatic fallback.
+    inferenceFallbackCorrectionLines = rebuilt.map(() => "");
+    lastAppliedCorrectionLines = [...rebuilt];
+    manualOutputLines = new Set(outputLines.map((_line, index) => index));
+    rowAdoptionModes = rebuilt.map((code) => code ? "recovered" : "none");
+    persistRowAdoptionModes();
+    updateCorrectionModes();
+    scheduleConversion(false, new Set(outputLines.map((_line, index) => index)));
+    notify(`変換後から${targetRows}行分の行修正を復元しました。${unresolvedRows ? ` ${unresolvedRows}行は復元できないため空欄です。` : ""}`);
+  }
+  elements.correctionRebuildAll.addEventListener("click", rebuildCorrectionsFromOutput);
   function renderSupport(messages, correctionErrors = []) {
     const items = Array.isArray(messages) ? messages : [messages];
     elements.statusDetail.textContent = "";
@@ -922,28 +1004,7 @@
     });
     outputHighlightValue = mergedValue;
   }
-  function applyTestOutputLockState() {
-    elements.testOutputLock.hidden = testOutputLocked;
-    elements.testOutputUnlock.hidden = !testOutputLocked;
-    elements.output.readOnly = testOutputLocked;
-    elements.output.setAttribute("aria-readonly", String(testOutputLocked));
-  }
-  function restoreTestLockedOutputs() {
-    if (!testOutputLocked) return false;
-    elements.output.value = testLockedOutputText;
-    elements.finalOutput.value = testLockedOutputText;
-    outputHighlightValue = testLockedOutputText;
-    outputAddedOffsets = new Set(testLockedOutputAddedOffsets);
-    renderFinalPreview();
-    updateCount(elements.output, elements.outputCount);
-    updateLineNumbers(elements.output, elements.outputLines);
-    updateCount(elements.finalOutput, elements.finalOutputCount);
-    updateLineNumbers(elements.finalOutput, elements.finalOutputLines);
-    elements.removalSummary.textContent = "変換後をロック中（テストデータ確認）";
-    return true;
-  }
   function updateRenderedOutputs(force = false, changedLineIndices = null) {
-    if (restoreTestLockedOutputs()) return;
     const lyricHyphenMode = ["show", "target", "minimize", "all"].includes(elements.lyricHyphenMode.value)
       ? elements.lyricHyphenMode.value
       : "target";
@@ -968,8 +1029,9 @@
     }
     const activeSettings = validatedSettings({ persist: false });
     const hyphenSpacing = activeSettings.valid ? activeSettings.values.hyphenSpacing : 0;
+    const keepSingleCharacterHyphens = Boolean(activeSettings.valid && activeSettings.values.singleCharacterHyphens);
     const visibilityMode = lyricHyphenMode === "all" ? "all" : lyricHyphenMode === "minimize";
-    const result = CBFConverter.renderCompletedOutput(convertedOutput, targets, hyphenSpacing, visibilityMode);
+    const result = CBFConverter.renderCompletedOutput(convertedOutput, targets, hyphenSpacing, visibilityMode, keepSingleCharacterHyphens);
     const renderedOutput = renderBars(result.output, elements.plainEditBars.checked);
     const nextOutput = CBFConverter.restoreSourceAdoptedLines(renderedOutput, elements.input.value, rowAdoptionModes);
     if (changedLineIndices?.size) {
@@ -1054,10 +1116,6 @@
     };
   }
   function saveCurrentHistory(manual = false, silent = false) {
-    if (testOutputLocked) {
-      if (manual) notify("確認用ロック中は使用履歴へ保存しません。解除後に保存してください。", true);
-      return false;
-    }
     if (!elements.output.value.trim()) {
       if (manual) notify("使用履歴へ追加する変換後テキストがありません。", true);
       return false;
@@ -1084,38 +1142,6 @@
       notify("使用履歴を保存できませんでした。ブラウザの保存容量を確認してください。", true);
       return false;
     }
-  }
-  function lockOutputAndCreateTestInput() {
-    if (!elements.output.value.trim()) {
-      notify("05. 変換後にロックする内容がありません。", true);
-      return false;
-    }
-    testLockedOutputText = elements.output.value;
-    testLockedOutputAddedOffsets = new Set(outputAddedOffsets);
-    testOutputLocked = true;
-    outputManuallyEdited = false;
-    manualOutputLines.clear();
-    applyTestOutputLockState();
-    elements.input.value = CBFTestData.stripFormatting(testLockedOutputText);
-    elements.input.dispatchEvent(new Event("input", { bubbles: true }));
-    restoreTestLockedOutputs();
-    elements.input.focus();
-    notify("変換後をロックし、テストデータ用の変換前を作成しました。");
-    return true;
-  }
-  function unlockTestOutput() {
-    if (!testOutputLocked) return;
-    testOutputLocked = false;
-    testLockedOutputText = "";
-    testLockedOutputAddedOffsets.clear();
-    applyTestOutputLockState();
-    clearTimeout(conversionTimer);
-    pendingCorrectionRefresh = false;
-    pendingCorrectionLineIndices.clear();
-    pendingSourceLineIndices.clear();
-    convert({ refreshCorrections: false });
-    markActivity();
-    notify("変換後のロックを解除し、現在の変換前を反映しました。");
   }
   function markActivity() {
     if (suppressActivity) return;
@@ -1408,6 +1434,30 @@
     if (navigator.clipboard?.readText) return navigator.clipboard.readText();
     throw new Error("clipboard read unavailable");
   }
+  const pasteScrollEditors = [elements.correction, elements.input, elements.output, elements.finalOutput, elements.committedOutput];
+  function captureEditorScrollPositions() {
+    return pasteScrollEditors.map((editor) => ({ editor, top: editor.scrollTop, left: editor.scrollLeft }));
+  }
+  function restoreEditorScrollPositions(positions) {
+    restoringPasteScroll = true;
+    // Browsers reveal the new caret after the paste event. Restore the viewport
+    // after that native movement and after the input/highlight handlers finish.
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      positions.forEach(({ editor, top, left }) => {
+        editor.scrollTop = top;
+        editor.scrollLeft = left;
+        const gutter = gutterByEditor.get(editor);
+        if (gutter) gutter.scrollTop = top;
+        if (editor === elements.correction && elements.correctionModes) elements.correctionModes.scrollTop = top;
+        syncHighlightScroll(editor);
+      });
+      requestAnimationFrame(() => { restoringPasteScroll = false; });
+    }));
+  }
+  function preserveEditorScrollOnPaste() {
+    restoreEditorScrollPositions(captureEditorScrollPositions());
+  }
+  pasteScrollEditors.forEach((editor) => editor.addEventListener("paste", preserveEditorScrollOnPaste));
   function safeTestDataFileName(name) {
     const base = CBFTestData.titleForFileName(name).replace(/[\\/:*?"<>|]/g, "_").slice(0, 80);
     return `${base || "test-data"}.cbf-test.json`;
@@ -1701,8 +1751,6 @@
     if (event.target === elements.helpDialog) elements.helpDialog.close();
   });
   $("#history-save").addEventListener("click", () => saveCurrentHistory(true));
-  elements.testOutputLock.addEventListener("click", lockOutputAndCreateTestInput);
-  elements.testOutputUnlock.addEventListener("click", unlockTestOutput);
   $("#history-open").addEventListener("click", () => { renderHistoryList(); showDialog(elements.historyDialog); });
   $("#preview-key-settings").addEventListener("click", () => { renderKeySectionSettings(); showDialog(elements.keySettingsDialog); });
   $("#key-settings-close").addEventListener("click", () => closeDialog(elements.keySettingsDialog));
@@ -1863,6 +1911,7 @@
       }
     }
     const nativeCharacters = CBFCorrectionInput.normalizeBeatInputSequence(event.data);
+    const nativeSymbols = CBFCorrectionInput.normalizeBoundarySymbolSequence(event.data);
     if (
       nativeCharacters
       && ["insertText", "insertCompositionText"].includes(event.inputType)
@@ -1874,6 +1923,39 @@
         linkedSlotIndex >= 0 ? linkedSlotIndex : 0
       );
       [...nativeCharacters].forEach((character) => replaceActiveCorrectionBeat(character));
+      return;
+    }
+    if (
+      nativeSymbols
+      && ["insertText", "insertCompositionText"].includes(event.inputType)
+      && correctionHistoryValue !== elements.correction.value
+    ) {
+      elements.correction.value = correctionHistoryValue;
+      [...nativeSymbols].forEach((symbol) => {
+        const value = elements.correction.value;
+        const offset = Math.max(0, Math.min(value.length, correctionSymbolOffset));
+        const lineStart = Math.max(value.lastIndexOf("\n", offset - 1), value.lastIndexOf("\r", offset - 1)) + 1;
+        const nextLf = value.indexOf("\n", offset);
+        const nextCr = value.indexOf("\r", offset);
+        const lineEndCandidates = [nextLf, nextCr].filter((position) => position >= 0);
+        const lineEnd = lineEndCandidates.length ? Math.min(...lineEndCandidates) : value.length;
+        applyBoundarySymbol(symbol, value, lineStart, lineEnd);
+      });
+      return;
+    }
+    if (
+      event.data
+      && ["insertText", "insertCompositionText"].includes(event.inputType)
+      && !nativeCharacters
+      && !nativeSymbols
+      && correctionHistoryValue !== elements.correction.value
+    ) {
+      elements.correction.value = correctionHistoryValue;
+      selectCorrectionSlot(
+        linkedLineIndex >= 0 ? linkedLineIndex : 0,
+        linkedSlotIndex >= 0 ? linkedSlotIndex : 0
+      );
+      notify("行修正で使えない文字は入力できません。", true);
       return;
     }
     const caret = elements.correction.selectionStart;
@@ -1904,7 +1986,7 @@
     persistRowAdoptionModes();
     updateCorrectionModes();
     scheduleConversion(false, changedLineIndices);
-    updateActivePosition(elements.correction, elements.correctionLines, true);
+    updateActivePosition(elements.correction, elements.correctionLines, true, "input");
     markActivity();
   });
   function replaceCorrectionText(start, end, replacement, caret) {
@@ -1912,9 +1994,36 @@
     elements.correction.setSelectionRange(caret, caret);
     elements.correction.dispatchEvent(new Event("input", { bubbles: true }));
   }
+  function applyBoundarySymbol(key, value, lineStart, lineEnd) {
+    if (correctionSymbolOffset < lineStart || correctionSymbolOffset > lineEnd) return false;
+    const edit = CBFCorrectionInput.boundarySymbolEdit(
+      value.slice(lineStart, lineEnd),
+      correctionSymbolOffset - lineStart,
+      key
+    );
+    if (!edit) return false;
+    if (edit.error === "duplicate-bar-anchor") {
+      notify("行修正の小節頭記号|は1行に1個だけ指定できます。", true);
+      return true;
+    }
+    if (edit.error === "invalid-sync-boundary") {
+      notify("sは行頭、または2つの長さ指定の間へ入力してください。", true);
+      return true;
+    }
+    const editStart = lineStart + edit.start;
+    const editEnd = lineStart + edit.end;
+    correctionSymbolOffset = lineStart + edit.caret;
+    correctionCaretMode = "boundary";
+    // Boundary symbols update the active slot too. Preserve every viewport so
+    // that a | or / entered in a lower row never jumps the editor to that row.
+    restoreEditorScrollPositions(captureEditorScrollPositions());
+    replaceCorrectionText(editStart, editEnd, edit.replacement, correctionSymbolOffset);
+    return true;
+  }
   function replaceActiveCorrectionBeat(inputCharacter) {
     const character = CBFCorrectionInput.normalizeBeatInputCharacter(inputCharacter);
     if (!character) return false;
+    correctionCaretMode = "slot";
     const start = elements.correction.selectionStart;
     const end = elements.correction.selectionEnd;
     const value = elements.correction.value;
@@ -1925,11 +2034,21 @@
     const lineEnd = lineEndCandidates.length ? Math.min(...lineEndCandidates) : value.length;
     const lineIndex = value.slice(0, lineStart).split(/\r\n|\r|\n/).length - 1;
     const line = value.slice(lineStart, lineEnd);
-    const relativeStart = start - lineStart;
-    const relativeEnd = end - lineStart;
+    const rawRelativeStart = start - lineStart;
+    const rawRelativeEnd = end - lineStart;
+    const awaitingWhiteNoteDuration = character !== "@"
+      && CBFCorrectionInput.needsInsertedWhiteNoteDuration(line, rawRelativeStart, correctionSlotCounts[lineIndex] || 0, authoredWhiteNoteCounts[lineIndex] || 0);
+    // The visible slot selection is authoritative. A browser may briefly
+    // collapse the hidden textarea selection between key events; using that
+    // caret would target the following beat and appear to skip one slot.
+    const selectedSlot = !awaitingWhiteNoteDuration && correctionCaretMode === "slot" && linkedLineIndex === lineIndex
+      ? CBFCorrectionInput.slotSelection(line, linkedSlotIndex)
+      : null;
+    const relativeStart = selectedSlot?.start ?? rawRelativeStart;
+    const relativeEnd = selectedSlot?.end ?? rawRelativeEnd;
     const edit = character === "@"
       ? CBFCorrectionInput.whiteNoteEdit(line, relativeStart, relativeEnd)
-      : CBFCorrectionInput.needsInsertedWhiteNoteDuration(line, relativeStart, correctionSlotCounts[lineIndex] || 0, authoredWhiteNoteCounts[lineIndex] || 0)
+      : awaitingWhiteNoteDuration
         ? { start: relativeStart, end: relativeStart, replacement: character, caret: relativeStart + 1 }
         : CBFCorrectionInput.smartBeatEdit(line, relativeStart, relativeEnd, character);
     if (!edit) return false;
@@ -1940,12 +2059,82 @@
       elements.correction.setSelectionRange(nextCaret, nextCaret);
       linkedLineIndex = lineIndex;
       applyLinkedPosition();
+    } else if (selectedSlot) {
+      const correctionLines = elements.correction.value.split(/\r\n|\r|\n/);
+      const editedLine = correctionLines[lineIndex] || "";
+      const editedLineSlotCount = CBFCorrectionInput.groups(editedLine).length;
+      if (selectedSlot.index + 1 < editedLineSlotCount) selectCorrectionSlot(lineIndex, selectedSlot.index + 1);
+      else {
+        const nextLineIndex = CBFCorrectionInput.nextLineWithBeatSlot(correctionLines, lineIndex);
+        if (nextLineIndex >= 0) selectCorrectionSlot(nextLineIndex, 0);
+        else selectCorrectionSlot(lineIndex, Math.max(0, editedLineSlotCount - 1));
+      }
     }
     return true;
   }
+  const correctionSymbolButtons = [...document.querySelectorAll("[data-correction-symbol]")];
+  correctionSymbolButtons.forEach((button) => {
+    button.addEventListener("pointerdown", (event) => event.preventDefault());
+    button.addEventListener("click", () => {
+      const symbol = button.dataset.correctionSymbol || "";
+      if (linkedLineIndex < 0 || correctionSymbolOffset < 0) {
+        elements.correction.focus();
+        notify("先に行修正の数字または数字の間を選んでください。", true);
+        return;
+      }
+      if (symbol === "@") {
+        replaceActiveCorrectionBeat(symbol);
+        elements.correction.focus({ preventScroll: true });
+        return;
+      }
+      const value = elements.correction.value;
+      const offset = Math.max(0, Math.min(value.length, correctionSymbolOffset));
+      const lineStart = Math.max(value.lastIndexOf("\n", offset - 1), value.lastIndexOf("\r", offset - 1)) + 1;
+      const nextLf = value.indexOf("\n", offset);
+      const nextCr = value.indexOf("\r", offset);
+      const lineEndCandidates = [nextLf, nextCr].filter((position) => position >= 0);
+      const lineEnd = lineEndCandidates.length ? Math.min(...lineEndCandidates) : value.length;
+      applyBoundarySymbol(symbol, value, lineStart, lineEnd);
+      elements.correction.focus({ preventScroll: true });
+    });
+  });
   elements.correction.addEventListener("beforeinput", (event) => {
     if (!["insertText", "insertCompositionText"].includes(event.inputType)) return;
-    const characters = CBFCorrectionInput.normalizeBeatInputSequence(event.data);
+    const normalizedCharacters = CBFCorrectionInput.normalizeBeatInputSequence(event.data);
+    const characters = event.inputType === "insertCompositionText"
+      ? CBFCorrectionInput.incrementalCompositionBeatInput(correctionCompositionValue, normalizedCharacters)
+      : normalizedCharacters;
+    if (event.inputType === "insertCompositionText") correctionCompositionValue = normalizedCharacters;
+    const symbols = CBFCorrectionInput.normalizeBoundarySymbolSequence(event.data);
+    if (event.inputType === "insertText" && !event.isComposing
+        && CBFCorrectionInput.isRecentInputCommit(pendingCompositionCommit, pendingCompositionCommitAt, characters)) {
+      pendingCompositionCommit = "";
+      pendingCompositionCommitAt = 0;
+      if (event.cancelable) event.preventDefault();
+      else {
+        pendingNativeBeatReplacement = {
+          value: elements.correction.value,
+          start: elements.correction.selectionStart,
+          end: elements.correction.selectionEnd,
+          characters: ""
+        };
+      }
+      return;
+    }
+    if (symbols && event.cancelable) {
+      event.preventDefault();
+      [...symbols].forEach((symbol) => {
+        const value = elements.correction.value;
+        const offset = Math.max(0, Math.min(value.length, correctionSymbolOffset));
+        const lineStart = Math.max(value.lastIndexOf("\n", offset - 1), value.lastIndexOf("\r", offset - 1)) + 1;
+        const nextLf = value.indexOf("\n", offset);
+        const nextCr = value.indexOf("\r", offset);
+        const lineEndCandidates = [nextLf, nextCr].filter((position) => position >= 0);
+        const lineEnd = lineEndCandidates.length ? Math.min(...lineEndCandidates) : value.length;
+        applyBoundarySymbol(symbol, value, lineStart, lineEnd);
+      });
+      return;
+    }
     if (!characters) return;
     if (event.cancelable) {
       event.preventDefault();
@@ -1958,6 +2147,16 @@
       end: elements.correction.selectionEnd,
       characters
     };
+  });
+  elements.correction.addEventListener("compositionstart", () => {
+    correctionCompositionValue = "";
+    pendingCompositionCommit = "";
+    pendingCompositionCommitAt = 0;
+  });
+  elements.correction.addEventListener("compositionend", (event) => {
+    pendingCompositionCommit = CBFCorrectionInput.normalizeBeatInputSequence(event.data) || correctionCompositionValue;
+    pendingCompositionCommitAt = Date.now();
+    correctionCompositionValue = "";
   });
   elements.correction.addEventListener("paste", (event) => {
     const pastedText = event.clipboardData?.getData("text/plain");
@@ -2006,6 +2205,9 @@
       return;
     }
     if (event.ctrlKey || event.metaKey || event.altKey) return;
+    // During IME composition, beforeinput is the single source of truth.
+    // Handling the same physical key here would advance two row-edit slots.
+    if (event.isComposing || event.keyCode === 229) return;
     const start = elements.correction.selectionStart;
     const end = elements.correction.selectionEnd;
     const value = elements.correction.value;
@@ -2013,6 +2215,24 @@
       event.preventDefault();
       moveCorrectionSlot(event.key);
       return;
+    }
+    if (event.key === "Enter") {
+      // Row corrections are structurally one row per converted-output row.
+      // Enter navigates instead of creating an extra, unpaired correction row.
+      event.preventDefault();
+      moveCorrectionSlot("ArrowDown");
+      return;
+    }
+    if (/^[x\^*s|\/]$/i.test(event.key)) {
+      const lineStart = Math.max(value.lastIndexOf("\n", start - 1), value.lastIndexOf("\r", start - 1)) + 1;
+      const nextLf = value.indexOf("\n", start);
+      const nextCr = value.indexOf("\r", start);
+      const lineEndCandidates = [nextLf, nextCr].filter((position) => position >= 0);
+      const lineEnd = lineEndCandidates.length ? Math.min(...lineEndCandidates) : value.length;
+      if (applyBoundarySymbol(event.key, value, lineStart, lineEnd)) {
+        event.preventDefault();
+        return;
+      }
     }
     if (event.key === "Backspace") {
       event.preventDefault();
@@ -2022,14 +2242,14 @@
         const nextCr = value.indexOf("\r", start);
         const lineEndCandidates = [nextLf, nextCr].filter((position) => position >= 0);
         const lineEnd = lineEndCandidates.length ? Math.min(...lineEndCandidates) : value.length;
-        const clear = end <= lineEnd ? CBFCorrectionInput.clearBeatEdit(value.slice(lineStart, lineEnd), start - lineStart, end - lineStart) : null;
+        const clear = end <= lineEnd ? CBFCorrectionInput.deletionEdit(value.slice(lineStart, lineEnd), start - lineStart, end - lineStart) : null;
         if (clear) replaceCorrectionText(lineStart + clear.start, lineStart + clear.end, clear.replacement, lineStart + clear.caret);
         else {
-          const replacement = value.slice(start, end).replace(/[^\r\n]/g, "0");
+          const replacement = value.slice(start, end).replace(/[^\r\n]/g, "");
           replaceCorrectionText(start, end, replacement, start);
         }
       } else if (start > 0 && !/[\r\n]/.test(value[start - 1])) {
-        replaceCorrectionText(start - 1, start, "0", start - 1);
+        replaceCorrectionText(start - 1, start, "", start - 1);
       }
       return;
     }
@@ -2041,14 +2261,14 @@
         const nextCr = value.indexOf("\r", start);
         const lineEndCandidates = [nextLf, nextCr].filter((position) => position >= 0);
         const lineEnd = lineEndCandidates.length ? Math.min(...lineEndCandidates) : value.length;
-        const clear = end <= lineEnd ? CBFCorrectionInput.clearBeatEdit(value.slice(lineStart, lineEnd), start - lineStart, end - lineStart) : null;
+        const clear = end <= lineEnd ? CBFCorrectionInput.deletionEdit(value.slice(lineStart, lineEnd), start - lineStart, end - lineStart) : null;
         if (clear) replaceCorrectionText(lineStart + clear.start, lineStart + clear.end, clear.replacement, lineStart + clear.caret);
         else {
-          const replacement = value.slice(start, end).replace(/[^\r\n]/g, "0");
+          const replacement = value.slice(start, end).replace(/[^\r\n]/g, "");
           replaceCorrectionText(start, end, replacement, start);
         }
       } else if (start < value.length && !/[\r\n]/.test(value[start])) {
-        replaceCorrectionText(start, start + 1, "0", start);
+        replaceCorrectionText(start, start + 1, "", start);
       }
       return;
     }
@@ -2082,7 +2302,7 @@
         replaceCorrectionText(start, end, "s", start + 1);
       } else if (!line.trim() || line.trim().toLowerCase() === "n" || !hasPreviousValue) {
         replaceCorrectionText(lineStart, lineEnd, "s", lineStart + 1);
-      } else notify("sは2つの長さ指定の間へ入力してください。", true);
+      } else notify("sは行頭、または2つの長さ指定の間へ入力してください。", true);
       return;
     }
     if (/^[x\^*]$/i.test(event.key)) {
@@ -2128,9 +2348,12 @@
       notify("長さはa～g（10～16）、h（24）、i（32）で指定してください。", true);
       return;
     }
-    if (/^[0-9a-i@]$/i.test(event.key)) {
+    // Beats are intentionally handled only by beforeinput/input. This gives
+    // full-width IME input and numpad input the exact same single route.
+    if (/^[0-9a-i@]$/i.test(event.key)) return;
+    if (event.key.length === 1 && !event.isComposing) {
       event.preventDefault();
-      replaceActiveCorrectionBeat(event.key);
+      notify("行修正で使えない文字は入力できません。", true);
     }
   });
   elements.correctionUndo.addEventListener("click", undoCorrection);
@@ -2143,23 +2366,30 @@
     if (currentLines.length !== lastConvertedInputLines.length) {
       const previousLines = [...lastConvertedInputLines];
       const mapping = CBFConverter.alignMusicLineIndices(previousLines, currentLines);
-      const lineBreakOnly = previousLines.join("") === currentLines.join("");
       const chordCounts = (lines) => lines.map((line) => CBFConverter.parseTokens(line).filter((token) => token.kind === "chord").length);
-      const previousChordCounts = lineBreakOnly ? chordCounts(previousLines) : [];
-      const currentChordCounts = lineBreakOnly ? chordCounts(currentLines) : [];
-      const redistributeCorrections = (values) => lineBreakOnly
-        ? CBFCorrectionInput.redistributeForLineBreaks(values, previousChordCounts, currentChordCounts)
-        : null;
+      const previousChordCounts = chordCounts(previousLines);
+      const currentChordCounts = chordCounts(currentLines);
+      const synchronizeLineBreaks = (values) => CBFCorrectionInput.synchronizeLineBreakLayout(
+        previousLines.join("\n"),
+        currentLines.join("\n"),
+        values,
+        previousChordCounts,
+        currentChordCounts
+      );
+      const lineBreakSync = synchronizeLineBreaks(elements.correction.value.split(/\r\n|\r|\n/));
+      const lineBreakOnly = Boolean(lineBreakSync);
+      const redistributeCorrections = (values) => synchronizeLineBreaks(values)?.corrections || null;
       const remapArray = (values, fallback) => currentLines.map((_line, index) => {
         const previousIndex = mapping[index];
         return previousIndex >= 0 ? values[previousIndex] ?? fallback : fallback;
       });
       const remapText = (value) => remapArray(String(value || "").split(/\r\n|\r|\n/), "").join("\n");
       const previousCorrectionLines = elements.correction.value.split(/\r\n|\r|\n/);
-      const redistributedCorrections = redistributeCorrections(previousCorrectionLines);
+      const redistributedCorrections = lineBreakSync?.corrections || null;
       const remapCorrectionArray = (values, fallback = "") => {
         const redistributed = redistributeCorrections(values);
         return currentLines.map((_line, index) => {
+          if (lineBreakOnly && redistributed?.preserved[index]) return redistributed.lines[index];
           const previousIndex = mapping[index];
           if (previousIndex >= 0) return values[previousIndex] ?? fallback;
           return redistributed?.preserved[index] ? redistributed.lines[index] : fallback;
@@ -2176,11 +2406,14 @@
       inferenceFallbackCorrectionLines = remapCorrectionArray(inferenceFallbackCorrectionLines);
       lastAppliedCorrectionLines = remapCorrectionArray(lastAppliedCorrectionLines);
       correctionSlotCounts = currentLines.map((_line, index) => {
+        if (lineBreakOnly && redistributedCorrections?.preserved[index]) return CBFCorrectionInput.groups(redistributedCorrections.lines[index]).length;
         const previousIndex = mapping[index];
         if (previousIndex >= 0) return correctionSlotCounts[previousIndex] || 0;
         return redistributedCorrections?.preserved[index] ? CBFCorrectionInput.groups(redistributedCorrections.lines[index]).length : 0;
       });
-      authoredWhiteNoteCounts = remapArray(authoredWhiteNoteCounts, 0);
+      authoredWhiteNoteCounts = lineBreakOnly
+        ? currentLines.map((line) => CBFConverter.parseTokens(line).filter((token) => token.kind === "text" && token.value === "[○]").length)
+        : remapArray(authoredWhiteNoteCounts, 0);
       correctionDisplayStates = currentLines.map((_line, index) => {
         const previousIndex = mapping[index];
         if (previousIndex >= 0) return correctionDisplayStates[previousIndex] || "none";
@@ -2224,15 +2457,16 @@
       updateCorrectionModes();
       scheduleConversion(false, null, changedLines);
     }
-    if (testOutputLocked) restoreTestLockedOutputs();
     markActivity();
   });
   $("#paste-input").addEventListener("click", async () => {
     try {
       const text = await readClipboard();
+      const scrollPositions = captureEditorScrollPositions();
       elements.input.setRangeText(text, elements.input.selectionStart, elements.input.selectionEnd, "end");
       elements.input.dispatchEvent(new Event("input", { bubbles: true }));
       elements.input.focus();
+      restoreEditorScrollPositions(scrollPositions);
       notify("変換前へ貼り付けました。");
     } catch (_error) {
       elements.input.focus();
@@ -2266,6 +2500,17 @@
       const previousFallbackLines = [...inferenceFallbackCorrectionLines];
       const previousSlotCounts = [...correctionSlotCounts];
       const previousWhiteNoteCounts = [...authoredWhiteNoteCounts];
+      const currentOutputSlotCounts = currentLines.map((line) => CBFConverter.parseTokens(line)
+        .filter((token) => token.kind === "chord" || (token.kind === "text" && token.value === "[○]")).length);
+      const lineBreakSync = CBFCorrectionInput.synchronizeLineBreakLayout(
+        previousLines.join("\n"),
+        currentLines.join("\n"),
+        correctionLines,
+        previousSlotCounts,
+        currentOutputSlotCounts
+      );
+      const lineBreakOnly = Boolean(lineBreakSync);
+      const redistributedCorrections = lineBreakSync?.corrections || null;
       const nextCorrectionLines = [];
       const nextFallbackLines = [];
       const nextSlotCounts = [];
@@ -2273,17 +2518,26 @@
       const nextManualLines = new Set();
       currentLines.forEach((line, lineIndex) => {
         const previousIndex = lineMapping[lineIndex];
-        const mappedCorrection = previousIndex >= 0 ? correctionLines[previousIndex] || "" : "";
+        const redistributedCorrection = redistributedCorrections?.preserved[lineIndex]
+          ? redistributedCorrections.lines[lineIndex]
+          : null;
+        const mappedCorrection = redistributedCorrection ?? (previousIndex >= 0 ? correctionLines[previousIndex] || "" : "");
         const mappedFallback = previousIndex >= 0 ? previousFallbackLines[previousIndex] || mappedCorrection : "";
-        const inferred = previousIndex >= 0
+        const inferred = redistributedCorrection !== null
+          ? redistributedCorrection
+          : previousIndex >= 0
           ? mappedCorrection
-          : CBFConverter.inferBeatCodeFromRenderedLine(line, mappedFallback, settings.values) || "";
+          : CBFConverter.recoverBeatCodeFromRenderedLine(line, mappedFallback, settings.values) || "";
         nextCorrectionLines[lineIndex] = inferred;
         nextFallbackLines[lineIndex] = inferred || mappedFallback;
-        nextSlotCounts[lineIndex] = previousIndex >= 0
+        nextSlotCounts[lineIndex] = redistributedCorrection !== null
+          ? CBFCorrectionInput.groups(redistributedCorrection).length
+          : previousIndex >= 0
           ? previousSlotCounts[previousIndex] || 0
           : CBFCorrectionInput.groups(inferred).length;
-        nextWhiteNoteCounts[lineIndex] = previousIndex >= 0 ? previousWhiteNoteCounts[previousIndex] || 0 : 0;
+        nextWhiteNoteCounts[lineIndex] = lineBreakOnly
+          ? CBFConverter.parseTokens(line).filter((token) => token.kind === "text" && token.value === "[○]").length
+          : previousIndex >= 0 ? previousWhiteNoteCounts[previousIndex] || 0 : 0;
         if (previousIndex < 0 || previousManualLines.has(previousIndex)) nextManualLines.add(lineIndex);
       });
       elements.correction.value = nextCorrectionLines.join("\n");
@@ -2296,16 +2550,66 @@
       changedLineIndices.forEach((lineIndex) => {
         const enteredCode = correctionLines[lineIndex] || "";
         const fallbackCode = enteredCode || inferenceFallbackCorrectionLines[lineIndex] || "";
-        const inferred = CBFConverter.inferBeatCodeFromRenderedLine(currentLines[lineIndex], fallbackCode, settings.values);
+        const inferred = CBFConverter.recoverBeatCodeFromRenderedLine(currentLines[lineIndex], fallbackCode, settings.values);
         if (inferred && (enteredCode || inferred !== inferenceFallbackCorrectionLines[lineIndex])) {
           correctionLines[lineIndex] = inferred;
           lastAppliedCorrectionLines[lineIndex] = inferred;
           inferenceFallbackCorrectionLines[lineIndex] = inferred;
+        } else if (!inferred) {
+          const protectedCode = CBFConverter.protectUnsupportedCorrectionSlots(fallbackCode, currentLines[lineIndex]);
+          correctionLines[lineIndex] = protectedCode;
+          lastAppliedCorrectionLines[lineIndex] = protectedCode;
+          inferenceFallbackCorrectionLines[lineIndex] = protectedCode;
+          rowAdoptionModes[lineIndex] = "fixed";
         }
       });
       elements.correction.value = correctionLines.join("\n");
     }
     if (previousLines.length === currentLines.length) changedLineIndices.forEach((lineIndex) => manualOutputLines.add(lineIndex));
+
+    // A manual output line break can occasionally be combined with another
+    // edit, so the strict line-break redistributor above cannot prove a pure
+    // split. Never leave orphan correction rows in that case: preserve every
+    // line that can still be matched, infer only genuinely new rows, and drop
+    // only rows that no longer have a result-line counterpart.
+    const alignedCorrectionLines = elements.correction.value.split(/\r\n|\r|\n/);
+    if (alignedCorrectionLines.length !== currentLines.length) {
+      const lineMapping = CBFConverter.alignLineIndices(previousLines, currentLines);
+      const previousManualLines = new Set(manualOutputLines);
+      const previousFallbackLines = [...inferenceFallbackCorrectionLines];
+      const previousSlotCounts = [...correctionSlotCounts];
+      const currentOutputSlotCounts = currentLines.map((line) => CBFConverter.parseTokens(line)
+        .filter((token) => token.kind === "chord" || (token.kind === "text" && token.value === "[○]")).length);
+      const splitSync = CBFCorrectionInput.synchronizeLineBreakLayout(
+        previousLines.join("\n"),
+        currentLines.join("\n"),
+        alignedCorrectionLines,
+        previousSlotCounts,
+        currentOutputSlotCounts
+      )?.corrections;
+      const nextCorrections = [];
+      const nextFallbacks = [];
+      const nextSlots = [];
+      const nextManualLines = new Set();
+      currentLines.forEach((line, lineIndex) => {
+        const previousIndex = lineMapping[lineIndex];
+        const redistributed = splitSync?.preserved[lineIndex] ? splitSync.lines[lineIndex] : null;
+        const mapped = redistributed ?? (previousIndex >= 0 ? alignedCorrectionLines[previousIndex] || "" : "");
+        const fallback = previousIndex >= 0 ? previousFallbackLines[previousIndex] || mapped : mapped;
+        const inferred = (redistributed ?? mapped) || CBFConverter.recoverBeatCodeFromRenderedLine(line, fallback, settings.values) || "";
+        nextCorrections.push(inferred);
+        nextFallbacks.push(inferred || fallback);
+        nextSlots.push(redistributed !== null
+          ? CBFCorrectionInput.groups(redistributed).length
+          : previousIndex >= 0 ? previousSlotCounts[previousIndex] || 0 : CBFCorrectionInput.groups(inferred).length);
+        if (previousIndex < 0 || previousManualLines.has(previousIndex)) nextManualLines.add(lineIndex);
+      });
+      elements.correction.value = nextCorrections.join("\n");
+      inferenceFallbackCorrectionLines = nextFallbacks;
+      correctionSlotCounts = nextSlots;
+      lastAppliedCorrectionLines = [...nextCorrections];
+      manualOutputLines = nextManualLines;
+    }
     outputManuallyEdited = manualOutputLines.size > 0;
     localStorage.setItem(CORRECTION_STORAGE_KEY, elements.correction.value);
     elements.correctionCount.textContent = `${lineCount(elements.correction.value)}行`;
@@ -2415,14 +2719,25 @@
   elements.settingsToggle.addEventListener("click", () => setSettingsMode(settingsMode === "closed" ? "compact" : "closed"));
   elements.settingsExampleToggle.addEventListener("click", () => setSettingsMode(settingsMode === "expanded" ? "compact" : "expanded"));
   elements.measureCapacityWarningOpen.addEventListener("click", () => {
+    const detected = Number(elements.measureCapacityWarningOpen.dataset.detected);
+    const targetProfile = elements.measureCapacityWarningOpen.dataset.profile;
+    if (!Number.isInteger(detected) || detected < 2) return;
     elements.measureCapacityWarning.hidden = true;
     syncResultRowAlignment();
+    if (targetProfile === "sixEight" && CBFSettings.activeProfile() !== "sixEight") {
+      const values = CBFSettings.setActiveProfile("sixEight");
+      renderSettings(values);
+      updateSettingsProfileUI();
+      if (removalLinked) {
+        elements.removalTargets.value = String(values.hyphenUnit);
+        localStorage.setItem(REMOVAL_STORAGE_KEY, elements.removalTargets.value);
+      }
+    }
     setSettingsMode("compact");
     requestAnimationFrame(() => {
       const input = $("#setting-measureCapacity");
-      const detected = elements.measureCapacityWarningOpen.dataset.detected;
       if (!input || !detected) return;
-      input.value = detected;
+      input.value = String(detected);
       input.dispatchEvent(new Event("input", { bubbles: true }));
       input.focus();
     });
@@ -2492,6 +2807,8 @@
     localStorage.setItem(BOLD_CODE_STORAGE_KEY, "true");
     elements.addedBackground.checked = true;
     localStorage.setItem(ADDED_BACKGROUND_STORAGE_KEY, "true");
+    setDisplaySettingsOpen(false);
+    setSettingsMode("closed");
     positionSettingsPanel();
     notify("レイアウトと表示設定を初期化しました。");
   }
@@ -2627,6 +2944,34 @@
       }
     });
   });
+  document.querySelectorAll(".frame-resize-edge").forEach((edge) => {
+    let startY = 0;
+    let startHeight = 0;
+    const row = edge.dataset.row;
+    const verticalTarget = row === "top" ? elements.inputShell : elements.outputShell;
+    const endDrag = (event) => {
+      edge.classList.remove("dragging");
+      if (edge.hasPointerCapture(event.pointerId)) edge.releasePointerCapture(event.pointerId);
+    };
+    edge.addEventListener("pointerdown", (event) => {
+      event.preventDefault();
+      startY = event.clientY;
+      startHeight = verticalTarget.getBoundingClientRect().height;
+      edge.classList.add("dragging");
+      edge.setPointerCapture(event.pointerId);
+    });
+    edge.addEventListener("pointermove", (event) => {
+      if (!edge.hasPointerCapture(event.pointerId)) return;
+      setRowHeight(row, startHeight + event.clientY - startY);
+    });
+    edge.addEventListener("pointerup", endDrag);
+    edge.addEventListener("pointercancel", endDrag);
+    edge.addEventListener("keydown", (event) => {
+      if (!["ArrowUp", "ArrowDown"].includes(event.key)) return;
+      event.preventDefault();
+      setRowHeight(row, verticalTarget.getBoundingClientRect().height + (event.key === "ArrowUp" ? -10 : 10));
+    });
+  });
 
   const savedInput = localStorage.getItem(INPUT_STORAGE_KEY);
   let savedCorrection = localStorage.getItem(CORRECTION_STORAGE_KEY);
@@ -2709,7 +3054,7 @@
   showScorePreview();
   {
     const savedDisplayPanel = localStorage.getItem(DISPLAY_PANEL_STORAGE_KEY);
-    setDisplaySettingsOpen(savedDisplayPanel === null || savedDisplayPanel === "true", false);
+    setDisplaySettingsOpen(savedDisplayPanel === "true", false);
   }
   restoreLayout();
   renderSettings(loadedSettings);
@@ -2725,7 +3070,8 @@
     [elements.output, elements.outputLines],
     [elements.finalOutput, elements.finalOutputLines]
   ].forEach(([editor, gutter]) => {
-    ["click", "keyup", "select", "focus"].forEach((eventName) => editor.addEventListener(eventName, () => updateActivePosition(editor, gutter, true)));
+    const positionEvents = editor === elements.correction ? ["click", "keyup", "focus"] : ["click", "keyup", "select", "focus"];
+    positionEvents.forEach((eventName) => editor.addEventListener(eventName, () => updateActivePosition(editor, gutter, true, eventName)));
     editor.addEventListener("focus", () => editor.parentElement.classList.add("editing-active"));
     editor.addEventListener("blur", () => {
       editor.parentElement.classList.remove("editing-active");
@@ -2735,7 +3081,7 @@
       gutter.scrollTop = editor.scrollTop;
       if (editor === elements.correction && elements.correctionModes) elements.correctionModes.scrollTop = editor.scrollTop;
       syncHighlightScroll(editor);
-      if (syncingScroll) return;
+      if (syncingScroll || restoringPasteScroll) return;
       const correctionResultPair = [elements.correction, elements.output];
       const syncTargets = scrollSyncEnabled ? scrollEditors : correctionResultPair.includes(editor) ? correctionResultPair : [editor];
       if (syncTargets.length === 1) return;
@@ -2761,7 +3107,7 @@
     updateEditorHighlight(elements.committedOutput);
   });
   elements.finalPreview.addEventListener("scroll", () => {
-    if (syncingScroll || !scrollSyncEnabled || !elements.finalOutputShell.classList.contains("preview-mode")) return;
+    if (syncingScroll || restoringPasteScroll || !scrollSyncEnabled || !elements.finalOutputShell.classList.contains("preview-mode")) return;
     syncingScroll = true;
     scrollEditors.forEach((editor) => {
       editor.scrollTop = elements.finalPreview.scrollTop;

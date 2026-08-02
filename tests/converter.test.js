@@ -1,4 +1,5 @@
 "use strict";
+const assert = require("assert");
 global.window = global;
 require("../js/converter.js");
 
@@ -9,6 +10,10 @@ const settings = {
   shortFractionPrepose: 1,
   showContinuationChord: 0
 };
+
+assert.strictEqual(CBFConverter.isChordSymbol("E7(9,11)"), true, "comma-separated tensions must be recognized as one chord");
+assert.strictEqual(CBFConverter.isChordSymbol("C7(#9,b13)/E"), true, "comma-separated altered tensions and slash bass must be recognized as one chord");
+assert.strictEqual(CBFConverter.parseTokens("[E7(9,11)]")[0]?.kind, "chord", "a bracketed comma-tension chord must not become lyric text");
 
 const cases = [
   ["plain text", "plain text"],
@@ -92,6 +97,16 @@ const manualEightBeatSpacingExpected = "|[Bm]---- ----|[F#m/A]---- ----|[GM7]---
 if (manualEightBeatSpacing !== manualEightBeatSpacingExpected) {
   failures += 1;
   console.error(`FAIL eight-beat spacing must not precede a bar\nexpected: ${manualEightBeatSpacingExpected}\nactual: ${manualEightBeatSpacing}`);
+}
+const rhythmOnlyWithMeter = CBFConverter.convertChordText(
+  "(3/4)|[D]-- -- --|[E]-- -- --|[Fdim]-- -- --|[F#m]-- -- --|[D]-- -- --|[E]-- -- --|[A][○]　　　　　|",
+  settings,
+  []
+).output;
+const rhythmOnlyWithMeterExpected = "(3/4)[|][D]-- -- --[|][E]-- -- --[|][Fdim]-- -- --[|][F#m]-- -- --[|][D]-- -- --[|][E]-- -- --[|][A][○]　　　　　[|]";
+if (rhythmOnlyWithMeter !== rhythmOnlyWithMeterExpected) {
+  failures += 1;
+  console.error(`FAIL rhythm-only manual rows must not bracket hyphens\nexpected: ${rhythmOnlyWithMeterExpected}\nactual: ${rhythmOnlyWithMeter}`);
 }
 const trailingSeparatorBeforeBar = CBFConverter.renderCompletedOutput("[|][Bm][----] [----] [|]", [4], 4).output;
 const sixteenBeatSpacing = CBFConverter.renderCompletedOutput("[|][C][----------------][|]", [4], 4).output;
@@ -240,7 +255,7 @@ if (letterHValue.output !== "[|][C][----][----][|][----][----][|][----][----][|]
   console.error(`FAIL letter h value 24\nactual: ${letterHValue.output}\ncorrection: ${letterHValue.corrections}`);
 }
 const syncSource = "[GM7][GM7][Am7][D7][GM7][GM7][Am7][D7]";
-const syncCode = "4s44s44s44s4";
+const syncCode = "4*s44*s44*s44*s4";
 const eighthSyncSettings = { ...settings, hyphenUnit: 4, measureCapacity: 4, hyphenSpacing: 4 };
 const sixteenthSyncSettings = { ...settings, hyphenUnit: 4, measureCapacity: 8, hyphenSpacing: 4 };
 const eighthSync = CBFConverter.convertChordText(syncSource, eighthSyncSettings, [syncCode]);
@@ -263,11 +278,11 @@ if (normalizedEighthCompleted !== normalizedEighthExpected || normalizedSixteent
   failures += 1;
   console.error(`FAIL normalized syncopation alternatives\n8th expected: ${normalizedEighthExpected}\n8th actual: ${normalizedEighthCompleted}\n16th expected: ${normalizedSixteenthExpected}\n16th actual: ${normalizedSixteenthCompleted}`);
 }
-const allSyncCommand = CBFConverter.convertChordText("[GM7][GM7][Am7][D7]", eighthSyncSettings, ["s"]);
-const allSyncCompleted = CBFConverter.renderCompletedOutput(allSyncCommand.output, [], 4).output;
-if (allSyncCompleted !== "|[GM7]---=[GM7]=|----|[Am7]---=[D7]=|----|" || allSyncCommand.corrections !== "s") {
+const incompleteLeadingSync = CBFConverter.convertChordText("[GM7][GM7][Am7][D7]", eighthSyncSettings, ["s"]);
+const incompleteLeadingSyncCompleted = CBFConverter.renderCompletedOutput(incompleteLeadingSync.output, [], 4).output;
+if (incompleteLeadingSyncCompleted !== "|[GM7]----|[GM7]----|[Am7]----|[D7]----|" || !incompleteLeadingSync.correctionErrors.length) {
   failures += 1;
-  console.error(`FAIL standalone s command\nactual: ${allSyncCompleted}\ncorrection: ${allSyncCommand.corrections}`);
+  console.error(`FAIL incomplete leading s\nactual: ${incompleteLeadingSyncCompleted}\nerrors: ${incompleteLeadingSync.correctionErrors.length}`);
 }
 const noEditAutomatic = CBFConverter.convertChordText("[C][G]", settings, []);
 const noEditCommand = CBFConverter.convertChordText("[C][G]", settings, ["n"]);
@@ -282,9 +297,9 @@ if (whiteNoteSuffix.output !== "[|][C][○][----*][|]" || whiteNoteSuffix.correc
 }
 const insertedWhiteNote = CBFConverter.convertChordText("[G][G][G][D]", settings, ["444@"]);
 const insertedWhiteNoteDuration = CBFConverter.convertChordText("[G][G][G][D]", settings, ["444@4"]);
-if (insertedWhiteNote.output !== "[|][G][----][G][----][|][G][----][D][○][|]" || insertedWhiteNoteDuration.output !== "[|][G][----][G][----][|][G][----][D][○][----][|]") {
+if (insertedWhiteNote.output !== "[|][G][----][G][----][|][G][----][D][○][----][|]" || insertedWhiteNoteDuration.output !== "[|][G][----][G][----][|][G][----][D][○][----][|]") {
   failures += 1;
-  console.error(`FAIL inserted white-note duration\nwithout duration: ${insertedWhiteNote.output}\nwith duration: ${insertedWhiteNoteDuration.output}`);
+  console.error(`FAIL inserted white-note default duration\ndefault: ${insertedWhiteNote.output}\nexplicit: ${insertedWhiteNoteDuration.output}`);
 }
 const noBarBeforeFinalChord = CBFConverter.convertChordText("[C][D][(G)]", settings, ["44x4"]);
 const noLeadingBar = CBFConverter.convertChordText("[D][C][D]", settings, ["x444"]);
@@ -477,7 +492,7 @@ const inferredManualCodes = [
   ["[|][Am7]み)の気持[Bm7]ち知るま[C]で　[|]", "444", "44x4"],
   ["[C][>---]歌詞[|]", "4", "x^4"],
   ["[|][C][========]歌詞[|]", "4", "*8"],
-  ["[|][GM7][---=][GM7][=][----][|]", "44", "4s4"]
+  ["[|][GM7][---=][GM7][=][----][|]", "44", "4*s4"]
 ];
 inferredManualCodes.forEach(([line, fallback, expected]) => {
   const actual = CBFConverter.inferBeatCodeFromRenderedLine(line, fallback, settings);
@@ -486,6 +501,62 @@ inferredManualCodes.forEach(([line, fallback, expected]) => {
     console.error(`FAIL infer manual row correction\nline: ${line}\nexpected: ${expected}\nactual: ${actual}`);
   }
 });
+if (CBFConverter.inferBeatCodeFromRenderedLine("[|][D][-->->-]何かを[|]", "", settings) !== null) {
+  failures += 1;
+  console.error("FAIL an accent inside a duration must stay manual");
+}
+if (CBFConverter.recoverBeatCodeFromRenderedLine("[|][D][----]x[|]", "", settings) !== "4") {
+  failures += 1;
+  console.error("FAIL exact round-trip recovery must keep a reversible row correction");
+}
+if (CBFConverter.recoverBeatCodeFromRenderedLine("[|][D][-->->-]x[|]", "", settings) !== null) {
+  failures += 1;
+  console.error("FAIL strict recovery must reject a row that cannot be rendered back identically");
+}
+const white = String.fromCharCode(0x25CB);
+const mixedWhiteNotes = `[|][D][${white}]そん[|][E][${white}][----]な[----]歌が[|][C#m][${white}][----]歌いた[F#m][${white}][----]い[|]`;
+if (CBFConverter.inferBeatCodeFromRenderedLine(mixedWhiteNotes, "", settings) !== "@@8@4@4") {
+  failures += 1;
+  console.error("FAIL white-note recovery must keep the white-note and following duration as separate slots");
+}
+const terminalWhiteNote = CBFConverter.convertChordText(
+  `(3/4)|[D]-- -- --|[E]-- -- --|[Fdim]-- -- --|[F#m]-- -- --|[D]-- -- --|[E]-- -- --|[A][${white}]　　　　　|`,
+  { ...settings, hyphenUnit: 2, measureCapacity: 6, hyphenSpacing: 4 },
+  []
+);
+if (terminalWhiteNote.corrections !== "666666@") {
+  failures += 1;
+  console.error(`FAIL terminal white note without a duration must not add a row-correction slot\nactual: ${terminalWhiteNote.corrections}`);
+}
+const recoveredRowKeepsOutput = CBFConverter.convertChordText(
+  "[D]歌",
+  settings,
+  ["4"],
+  ["[|][D]歌[|]"],
+  [],
+  ["recovered"]
+);
+if (recoveredRowKeepsOutput.output !== "[|][D]歌[|]" || recoveredRowKeepsOutput.corrections !== "4" || recoveredRowKeepsOutput.correctionStates[0] !== "recovered") {
+  failures += 1;
+  console.error("FAIL recovered codes must be displayed without rewriting the direct result");
+}
+const unsupportedSourceStaysFixed = CBFConverter.convertChordText("[D][-->->-]x", settings, [], [], [], []);
+if (unsupportedSourceStaysFixed.output !== "[|][D][-->->-]x[|]" || unsupportedSourceStaysFixed.corrections !== "?" || unsupportedSourceStaysFixed.correctionStates[0] !== "fixed") {
+  failures += 1;
+  console.error("FAIL unsupported source rhythm must become a fixed row without a correction code");
+}
+const unsupportedDirectStaysFixed = CBFConverter.convertChordText(
+  "[D]x",
+  settings,
+  [""],
+  ["[|][D][-->->-]x[|]"],
+  [],
+  ["fixed"]
+);
+if (unsupportedDirectStaysFixed.output !== "[|][D][-->->-]x[|]" || unsupportedDirectStaysFixed.corrections !== "" || unsupportedDirectStaysFixed.correctionStates[0] !== "fixed") {
+  failures += 1;
+  console.error("FAIL unsupported direct output must become a fixed row without a correction code");
+}
 const lineMergedOutput = CBFConverter.mergeChangedLines("手動1\n手動2\n手動3", "自動1\n自動2\n自動3", [1]);
 if (lineMergedOutput !== "手動1\n自動2\n手動3") {
   failures += 1;
