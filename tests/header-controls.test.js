@@ -97,8 +97,9 @@ assert(html.includes('<div class="right-lower-stack">'));
 assert(css.includes(".right-lower-stack { grid-column: 2; grid-row: 3; align-self: start; display: grid; gap: 12px;"));
 assert(css.includes(".final-card, .committed-card { min-width: 0; margin-top: 0; }"));
 assert(css.includes(".status-support-panel { min-width: 0; margin: 0;"));
-assert(css.includes(".correction-card { grid-column: 1; grid-row: 2; margin-top: var(--result-controls-offset, 0px); }"));
-assert(css.includes(".output-card { grid-column: 2; grid-row: 2; }"));
+assert(css.includes(".correction-card { grid-column: 1; grid-row: 2; }"));
+assert(css.includes(".output-card .editor-shell { grid-template-rows: 1.45em minmax(0, 1fr); height: var(--result-editor-height); border-color: var(--result-line); }"));
+assert(css.includes(".output-card { grid-column: 2; grid-row: 2; margin-top: var(--result-controls-offset, 0px); }"));
 assert(!css.includes(".committed-card { grid-column: 2; grid-row: 4;"));
 assert(!app.includes("--settings-clearance"));
 

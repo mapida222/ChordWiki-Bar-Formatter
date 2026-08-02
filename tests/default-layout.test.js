@@ -22,12 +22,12 @@ assert(css.includes("--left-column-width: clamp(220px, 28%, 360px)"), "the left 
 assert(css.includes("grid-template-columns: var(--left-column-width) minmax(0, 1fr)"), "the right column must compress before the left control column does");
 assert(app.includes("Math.max(220, Math.min(width, Math.max(220, workspaceWidth - 10)))"), "manual column resizing must preserve the left-column baseline on a narrow screen");
 assert(!app.includes('const minimumOffset = settingsBottom + 16 - correctionCardTop;'), "row edit may remain beneath the settings panel");
-assert(app.includes('Math.max(0, outputTop - correctionTop)'), "row alignment must preserve the editor relationship without moving away from settings");
+assert(app.includes('Math.max(0, correctionTop - outputTop)'), "row alignment must preserve the editor relationship without moving away from settings");
 assert(css.includes("border: 2px solid color-mix(in srgb, var(--correction-line) 78%, var(--line))"), "the row-edit context frame must have a clear solid outline");
 assert(css.includes("border-radius: 8px"), "the row-edit context frame must have rounded corners");
-assert(css.includes(".settings-column-resize-edge { display: none; }"), "the redundant settings resize line must not cross the settings panel");
+assert(css.includes(".settings-column-resize-edge { top: 0; bottom: 0; }"), "the settings panel must expose a vertical resize edge");
 assert(css.includes(".settings-panel.settings-closed .settings-reset-button, .settings-panel.settings-closed .settings-footer-actions, .settings-panel.settings-closed .settings-example-toggle { display: none; }"), "a closed 03 panel must hide the usage-example control even before JavaScript initializes");
-assert(html.includes("style.css?v=20260802-43"));
-assert(html.includes("js/app.js?v=20260802-38"));
+assert(html.includes("style.css?v=20260803-49"));
+assert(html.includes("js/app.js?v=20260803-40"));
 
 console.log("PASS: LAYOUT-003 compact default layout and clear row-edit context frame");
