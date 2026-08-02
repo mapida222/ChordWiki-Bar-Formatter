@@ -115,7 +115,7 @@ main { padding: 12px 0 28px; }
 .setting-example span { display: block; width: max-content; margin-top: 2px; white-space: nowrap; }
 .setting-example .example-subhead { margin-top: 6px; color: var(--accent); font-family: var(--sans); font-weight: 800; }
 .text-button { padding: 1px 0; border: 0; border-bottom: 1px solid currentColor; color: var(--muted); background: transparent; cursor: pointer; font-size: .68rem; }
-.workspace { --top-editor-height: clamp(210px, 24vh, 230px); --result-editor-height: clamp(300px, 48vh, 680px); --final-editor-height: clamp(220px, 36vh, 520px); --committed-editor-height: clamp(220px, 36vh, 520px); --left-column-width: clamp(110px, 22%, 280px); position: relative; display: grid; grid-template-columns: var(--left-column-width) minmax(180px, 1fr); gap: 0 10px; align-items: start; }
+.workspace { --top-editor-height: clamp(210px, 24vh, 230px); --result-editor-height: clamp(300px, 48vh, 680px); --final-editor-height: clamp(220px, 36vh, 520px); --committed-editor-height: clamp(220px, 36vh, 520px); --left-column-width: clamp(110px, 28%, 360px); position: relative; display: grid; grid-template-columns: var(--left-column-width) minmax(180px, 1fr); gap: 0 10px; align-items: start; }
 .community-panel { width: 100%; min-width: 0; overflow: hidden; margin: 0; padding: 9px 10px 9px; border: 1px solid var(--correction-line); border-radius: 5px; background: var(--panel); }
 .community-panel .community-panel-heading { margin: -9px -10px 8px; }
 .community-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; gap: 6px; padding: 0; }
