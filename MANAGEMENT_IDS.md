@@ -28,12 +28,12 @@
 | `ROW-012` | 別行の行修正中も変換後の直接編集状態を保持 | 有効 | `js/app.js`、`tests/row-adoption-modes.test.js` |
 | `ROW-013` | 白玉の長さ入力と複合記号（`@8`・`8s`）の解除操作。数値を`@`へ置換した場合は初期設定の拍長を白玉へ適用 | 有効 | `js/app.js`、`js/converter.js`、`js/correction-input.js`、`tests/correction-input.test.js`、`tests/white-note-regression-matrix.test.js` |
 | `ROW-014` | 変換前・行修正・変換後の手動改行位置をコード境界で同期 | 有効 | `js/app.js`、`js/correction-input.js`、`tests/source-linebreak-correction.test.js` |
-| `ROW-015` | 凝縮型の特殊記号ボタンとキーボード共通入力、選択中スロットへの記号入力と記号入力後のカーソル維持 | 有効 | `index.html`、`style.css`、`js/app.js`、`tests/correction-key-routing.test.js`、`tests/correction-slot-mode.test.js` |
+| `ROW-015` | 凝縮型の特殊記号ボタン。`ROW-020`でボタン群を廃止し、選択中スロットへのキーボード入力は`ROW-034`へ移行 | 廃止 | `index.html`、`style.css`、`js/app.js`、`tests/header-controls.test.js` |
 | `ROW-016` | 選択行だけ展開する境界カーソル式の行修正テスト版 | 試験中 | `row-edit-test.html`、`style-row-edit-test.css`、`js/row-edit-test.js` |
 | `ROW-017` | 行修正を通常のテキストカーソルへ戻し、記号を入力位置どおりに保持するテスト版 | 試験中 | `row-edit-test.html`、`style-row-edit-test.css`、`js/row-edit-test.js` |
 | `ROW-018` | 変換後にコード・白玉がない行は、行修正も空欄として同期 | 有効 | `js/app.js`、`js/converter.js`、`tests/correction-error-review.test.js` |
 | `ROW-019` | 変換後の手動改行後も、行修正の行数を一致させ既存値を可能な限り保持 | 有効 | `js/app.js`、`tests/source-linebreak-correction.test.js` |
-| `ROW-020` | 変換後から全行修正を復元する異常時用ボタンと、記号ボタン群の置換 | 有効 | `index.html`、`style.css`、`js/app.js`、`tests/header-controls.test.js` |
+| `ROW-020` | 変換後から全行修正を復元する異常時用ボタンと、特殊記号ボタン群の廃止 | 有効 | `index.html`、`style.css`、`js/app.js`、`tests/header-controls.test.js` |
 | `ROW-021` | 復元時に途中アクセントなど非可逆なリズムを推測変換せず、手動結果を保持して空欄化 | 有効 | `js/converter.js`、`js/app.js`、`tests/converter.test.js` |
 | `ROW-022` | 変換後からの行修正復元は、再変換結果が元の行と完全一致する候補だけを採用 | 有効 | `js/converter.js`、`js/app.js`、`tests/converter.test.js` |
 | `ROW-023` | 復元候補を表示しつつ、ユーザーが行修正を変更するまで変換後の行を固定する復元状態 | 有効 | `js/converter.js`、`js/app.js`、`tests/converter.test.js` |
@@ -50,6 +50,7 @@
 | `ROW-034` | 数字入力を`beforeinput/input`へ一本化し、全角IME・テンキー・行またぎの遅延入力でも選択中スロットへ1回だけ入力 | 有効 | `js/app.js`、`js/correction-input.js`、`tests/correction-key-routing.test.js`、`tests/correction-input.test.js` |
 | `ROW-035` | 行修正の最終拍を入力したら、空白行を飛ばして次の入力対象行の先頭スロットへ移動 | 有効 | `js/app.js`、`js/correction-input.js`、`tests/correction-key-routing.test.js`、`tests/correction-input.test.js` |
 | `ROW-036` | 行修正値を貼り付けた際、選択中スロットの再計算をしても全入力欄のスクロール位置を維持 | 有効 | `js/app.js`、`tests/source-paste-scroll.test.js` |
+| `ROW-037` | 空白行を含む行修正へ連続した複数行を貼り付けても、空白行を区切りとして保持 | 有効 | `index.html`、`js/correction-input.js`、`tests/correction-paste.test.js` |
 | `CONVERT-001` | 歌詞行のハイフン省略モード | 有効 | `index.html`、`js/app.js`、`js/converter.js` |
 | `CONVERT-002` | 1小節3コード以上でタイミング用ハイフンを保持 | 有効 | `js/converter.js` |
 | `CONVERT-003` | コード・拍記号・小節線だけの行を歌詞と誤認しない | 有効 | `js/converter.js`、`tests/conversion-bug-regressions.test.js` |
@@ -87,7 +88,7 @@
 | `PUBLIC-003` | クレジット・意見要望・応援リンク | 有効 | `index.html`、`style.css`、`tests/public-links.test.js` |
 | `SAMPLE-001` | 入力サンプルの変換前・行修正・設定を固定 | 有効 | `js/app.js`、`docs/README_CAPTURE_SAMPLE.md`、`tests/readme-capture-sample.test.js` |
 | `HELP-001` | 丸い「？」による補足説明 | 有効 | `index.html`、`style.css`、`js/app.js`、`docs/TOOLTIP_HELP_DRAFT.md` |
-| `HELP-002` | ヘルプ画面の見出し・対象枠表記 | 有効 | `index.html`、`tests/help-layout.test.js` |
+| `HELP-002` | ヘルプ画面の見出し、対象枠表記、確定までの基本フロー、行の採用状態、行修正の更新・復元案内 | 有効 | `index.html`、`style.css`、`tests/help-layout.test.js` |
 | `HELP-003` | TOPの行修正ヘルプへ`?`の非対応位置保持を追記 | 有効 | `index.html`、`tests/header-controls.test.js` |
 
 ## カテゴリ

@@ -346,10 +346,20 @@
     const pasted = normalizedPaste.split("\n").map((line) => normalizeLine(line, 0));
     const rowLimit = Math.max(existing.length, Number(maximumRows) || 0);
     while (existing.length < rowLimit) existing.push("");
-    const appliedCount = Math.max(0, Math.min(pasted.length, rowLimit - startLine));
-    for (let index = 0; index < appliedCount; index += 1) existing[startLine + index] = pasted[index];
+    let appliedCount = 0;
+    let targetLine = startLine;
+    for (const pastedLine of pasted) {
+      // Empty correction rows mirror source rows that have no editable beat
+      // slots. Keep those structural separators when compact correction values
+      // are pasted without matching blank lines.
+      while (pastedLine && targetLine < rowLimit && existing[targetLine] === "") targetLine += 1;
+      if (targetLine >= rowLimit) break;
+      existing[targetLine] = pastedLine;
+      targetLine += 1;
+      appliedCount += 1;
+    }
     const value = existing.join("\n");
-    const nextLine = startLine + appliedCount;
+    const nextLine = targetLine;
     const caret = nextLine < existing.length
       ? existing.slice(0, nextLine).reduce((total, line) => total + line.length + 1, 0)
       : value.length;

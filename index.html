@@ -10,7 +10,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="ChordWikiのコード譜を小節単位に整形するブラウザアプリ">
   <title>ChordWiki Bar Formatter Web</title>
-  <link rel="stylesheet" href="style.css?v=20260802-14">
+  <link rel="stylesheet" href="style.css?v=20260802-16">
   <link rel="stylesheet" href="style-row-edit-test.css?v=20260801-3">
 </head>
 <body>
@@ -214,11 +214,11 @@
         <div id="status-detail" class="status-detail" role="status" aria-live="polite">入力内容はリアルタイムで右側へ反映されます。</div>
       </aside>
 
-      <section class="community-panel" aria-label="意見・要望と応援">
+      <section class="community-panel" aria-label="関連リンク">
         <header class="auxiliary-panel-heading community-panel-heading">
-          <h3>ご意見・応援 <span>/ LINKS</span></h3>
+          <h3>関連リンク <span>/ LINKS</span></h3>
         </header>
-        <nav class="community-actions" aria-label="意見・要望と応援のリンク">
+        <nav class="community-actions" aria-label="関連リンク">
           <a class="community-action community-feedback" href="https://docs.google.com/forms/d/e/1FAIpQLScYAHIEEOtuk8MoQR_1sNN7SVgCFFRtKCeUkm23sqTIGqg-cQ/viewform" target="_blank" rel="noopener noreferrer" aria-label="ご意見・ご要望（Googleフォーム）">
             <span class="community-feedback-label"><strong>ご意見・ご要望</strong><small>（Googleフォーム）</small></span><span class="community-feedback-icon" aria-hidden="true">✉</span>
           </a>
@@ -233,6 +233,9 @@
               </a>
             </div>
           </details>
+          <a class="community-action community-github" href="https://github.com/mapida222/ChordWiki-Bar-Formatter-Web" target="_blank" rel="noopener noreferrer" aria-label="GitHub（ソースコード・更新情報）">
+            <span class="community-github-label"><strong>GitHub</strong><small>ソースコード・更新情報</small></span><span class="community-github-icon" aria-hidden="true">↗</span>
+          </a>
         </nav>
         <footer class="site-credit">
           <div class="site-credit-main">
@@ -475,6 +478,7 @@
             <li><span>1</span><div><small>02 変換前 / SOURCE</small><strong>コード譜を貼る</strong></div></li>
             <li><span>2</span><div><small>03～05 修正 / EDIT</small><strong>自動変換結果を修正する</strong></div></li>
             <li><span>3</span><div><small>06 譜面 / PREVIEW</small><strong>プレビューする</strong></div></li>
+            <li><span>4</span><div><small>07 確定 / COMMIT</small><strong>確定してコピーする</strong></div></li>
           </ol>
         </section>
 
@@ -512,7 +516,20 @@
               </div>
             </article>
             <article class="help-task-card">
-              <header><span>3</span><div><h4>移調し確定する</h4><strong>対象枠：06 譜面プレビュー、07 確定譜面テキスト</strong></div></header>
+              <header><span>3</span><div><h4>行ごとの採用状態を切り替える</h4><strong>対象枠：04 行修正、05 変換後</strong></div></header>
+              <p>「採用中」列のボタンで、変換後へ反映する内容を行ごとに切り替えます。非対応の表記を検出した行は、内容を守るため自動的に「固定」になる場合があります。</p>
+              <ul class="help-state-list">
+                <li><strong>自動</strong><span>変換前から作った自動変換結果を使います。</span></li>
+                <li><strong>修正</strong><span>行修正または変換後で直接編集した内容を使います。</span></li>
+                <li><strong>固定</strong><span>現在の変換後を保持し、行修正による上書きを止めます。</span></li>
+              </ul>
+            </article>
+            <article class="help-task-card">
+              <header><span>4</span><div><h4>行修正のずれを直す</h4><strong>対象枠：04 行修正、05 変換後</strong></div></header>
+              <p>1行だけずれた場合は「この行を更新」を使います。全体の対応が崩れた場合は、異常時用の「変換後から行修正を復元」で全行を作り直します。復元中も変換後の表示内容は維持され、復元できない行は空欄になります。</p>
+            </article>
+            <article class="help-task-card">
+              <header><span>5</span><div><h4>移調し確定する</h4><strong>対象枠：06 譜面プレビュー、07 確定譜面テキスト</strong></div></header>
               <p>譜面プレビューで移調を確認し、「譜面プレビューを確定」で07へ保存します。</p>
               <div class="help-task-example-stack">
                 <div><code>[C]　[G]　[Am]</code><b aria-hidden="true">➜</b><code>＋2：[D]　[A]　[Bm]</code></div>
@@ -540,7 +557,7 @@
   <script src="js/numeric-entry.js?v=20260731-1" defer></script>
   <script src="js/converter.js?v=20260802-26" defer></script>
   <script src="js/input-brackets.js?v=20260718-5" defer></script>
-  <script src="js/correction-input.js?v=20260802-10" defer></script>
+  <script src="js/correction-input.js?v=20260802-11" defer></script>
   <script src="js/transposer.js?v=20260802-8" defer></script>
   <script src="js/chordwiki-preview.js?v=20260731-4" defer></script>
   <script src="js/history.js?v=20260725-7" defer></script>

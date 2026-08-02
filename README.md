@@ -106,7 +106,8 @@ Python版との共通回帰ケースは`tests/fixtures/v45-regressions.json`で�
 譜面プレビューの基準は[レイアウト設定書](LAYOUT_REFERENCE.md)と`PREVIEW-001`に記録しています。
 保存済みの状態は`layout-snapshots/2026-07-22-good/`にあります。
 
-## 公開前の残作業
+## 公開情報
 
 [公開チェックリスト](PUBLICATION_CHECKLIST.md)を参照してください。
-公開ライセンスと公開先は、公開前に決定する必要があります。
+公開先は[GitHub Pages](https://mapida222.github.io/ChordWiki-Bar-Formatter-Web/)です。
+このソフトウェアは[MIT License](LICENSE)で公開しています。
