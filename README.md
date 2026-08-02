@@ -65,6 +65,8 @@ ChordPro形式のコード譜へ、**小節線と音の長さを表す記号を�
 
 迷った場合は、画面右上の「ヘルプ・使い方」で具体例を確認できます。
 
+![現在のヘルプ画面](help-usage-screenshot.png)
+
 ## 主な機能
 
 - コード譜への小節線と長さ記号の追加
@@ -124,4 +126,5 @@ Python版との共通回帰ケースは`tests/fixtures/v45-regressions.json`で�
 
 [公開チェックリスト](PUBLICATION_CHECKLIST.md)を参照してください。
 公開先は[GitHub Pages](https://mapida222.github.io/ChordWiki-Bar-Formatter-Web/)です。
+更新履歴と配布情報は[Releases](https://github.com/mapida222/ChordWiki-Bar-Formatter-Web/releases)で公開します。
 このソフトウェアは[MIT License](LICENSE)で公開しています。
