@@ -44,7 +44,7 @@ assert(!css.includes("transform: translateY(-2px)"));
 assert(html.indexOf('class="status-support-panel"') < html.indexOf('class="community-panel"'));
 assert(html.indexOf('class="community-panel"') < html.indexOf('class="editor-card input-card"'));
 assert(readme.includes("[MIT License](LICENSE)"));
-assert(license.startsWith("MIT License\n"));
+assert(license.replace(/\r\n/g, "\n").startsWith("MIT License\n"));
 assert(license.includes("Copyright (c) 2026 mapida"));
 
 console.log("PASS: public feedback, support and credit links");
