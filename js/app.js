@@ -95,6 +95,7 @@
   let restoringPasteScroll = false;
   let scrollSyncEnabled = true;
   let settingsMode = "closed";
+  let settingsExamplesOpen = true;
   let convertedOutput = "";
   let outputManuallyEdited = false;
   let outputHighlightValue = "";
@@ -923,10 +924,7 @@
       elements.workspace.style.setProperty("--result-controls-offset", "0px");
       const correctionTop = elements.correctionShell.getBoundingClientRect().top;
       const outputTop = elements.outputShell.getBoundingClientRect().top;
-      const correctionCardTop = elements.correctionCard.getBoundingClientRect().top;
-      const settingsBottom = elements.settingsPanel.getBoundingClientRect().bottom;
-      const minimumOffset = settingsBottom + 16 - correctionCardTop;
-      elements.workspace.style.setProperty("--result-controls-offset", `${Math.max(outputTop - correctionTop, minimumOffset)}px`);
+      elements.workspace.style.setProperty("--result-controls-offset", `${Math.max(0, outputTop - correctionTop)}px`);
     });
   }
   function parseRemovalTargets(raw) {
@@ -2708,19 +2706,26 @@
     notify(`${label}の設定を初期値へ戻しました。`);
   });
   function setSettingsMode(mode) {
-    settingsMode = mode;
+    settingsMode = mode === "expanded" ? "compact" : mode;
     elements.settingsPanel.classList.toggle("settings-closed", mode === "closed");
-    elements.settingsPanel.classList.toggle("settings-compact", mode === "compact");
-    elements.settingsPanel.classList.toggle("settings-expanded", mode === "expanded");
+    elements.settingsPanel.classList.toggle("settings-compact", settingsMode === "compact");
+    elements.settingsPanel.classList.remove("settings-expanded");
     elements.settingsBody.hidden = mode === "closed";
-    elements.settingsToggle.setAttribute("aria-expanded", String(mode !== "closed"));
-    elements.settingsToggle.textContent = mode === "closed" ? "設定を開く▼" : "設定を閉じる▲";
-    elements.settingsExampleToggle.hidden = false;
-    elements.settingsExampleToggle.textContent = mode === "expanded" ? "使用例を閉じる◀" : "使用例を表示▶";
+    elements.settingsToggle.setAttribute("aria-expanded", String(settingsMode !== "closed"));
+    elements.settingsToggle.textContent = settingsMode === "closed" ? "設定を開く▼" : "設定を閉じる▲";
+    elements.settingsExampleToggle.hidden = settingsMode === "closed";
     positionSettingsPanel();
   }
+  function setSettingsExamplesOpen(open) {
+    settingsExamplesOpen = Boolean(open);
+    elements.settingsPanel.classList.toggle("settings-examples-closed", !settingsExamplesOpen);
+    elements.settingsExampleToggle.setAttribute("aria-expanded", String(settingsExamplesOpen));
+    elements.settingsExampleToggle.textContent = settingsExamplesOpen ? "使用例を閉じる▲" : "使用例を表示▼";
+    positionSettingsPanel();
+    syncResultRowAlignment();
+  }
   elements.settingsToggle.addEventListener("click", () => setSettingsMode(settingsMode === "closed" ? "compact" : "closed"));
-  elements.settingsExampleToggle.addEventListener("click", () => setSettingsMode(settingsMode === "expanded" ? "compact" : "expanded"));
+  elements.settingsExampleToggle.addEventListener("click", () => setSettingsExamplesOpen(!settingsExamplesOpen));
   elements.measureCapacityWarningOpen.addEventListener("click", () => {
     const detected = Number(elements.measureCapacityWarningOpen.dataset.detected);
     const targetProfile = elements.measureCapacityWarningOpen.dataset.profile;
@@ -2754,25 +2759,13 @@
     const workspaceRect = elements.workspace.getBoundingClientRect();
     const displayRect = elements.fontPanel.getBoundingClientRect();
     const correctionRect = elements.correctionCard.getBoundingClientRect();
-    const outputRect = elements.outputShell.closest(".editor-card").getBoundingClientRect();
-    const finalRect = elements.finalOutputShell.closest(".editor-card").getBoundingClientRect();
     const left = correctionRect.left - workspaceRect.left;
     const top = displayRect.bottom - workspaceRect.top + 2;
-    let width = correctionRect.width;
-    let height = "";
-    if (settingsMode === "expanded") {
-      const availableWidth = Math.max(outputRect.right, finalRect.right) - correctionRect.left;
-      const exampleWidths = [...elements.settingsGrid.querySelectorAll(".setting-example span")].map((span) => span.scrollWidth);
-      const widestExample = Math.max(0, ...exampleWidths);
-      const preferredWidth = correctionRect.width + widestExample + 18;
-      width = Math.min(availableWidth, Math.max(correctionRect.width + 240, preferredWidth));
-      height = `${Math.max(correctionRect.bottom, outputRect.bottom, finalRect.bottom) - workspaceRect.top - top}px`;
-    }
     Object.assign(elements.settingsPanel.style, {
       left: `${left}px`,
       top: `${top}px`,
-      width: `${width}px`,
-      height
+      width: `${correctionRect.width}px`,
+      height: ""
     });
   }
   function saveLayout() {
@@ -2812,6 +2805,7 @@
     localStorage.setItem(ADDED_BACKGROUND_STORAGE_KEY, "true");
     setDisplaySettingsOpen(false);
     setSettingsMode("closed");
+    setSettingsExamplesOpen(true);
     positionSettingsPanel();
     notify("レイアウトと表示設定を初期化しました。");
   }
@@ -2843,7 +2837,7 @@
   }
   function setLeftColumnWidth(width) {
     const workspaceWidth = elements.workspace.getBoundingClientRect().width;
-    const clamped = Math.max(110, Math.min(width, workspaceWidth - 190));
+    const clamped = Math.max(220, Math.min(width, Math.max(220, workspaceWidth - 10)));
     const current = Number.parseFloat(elements.workspace.style.getPropertyValue("--left-column-width"));
     if (!Number.isFinite(current) || Math.abs(current - clamped) > 1) elements.workspace.style.setProperty("--left-column-width", `${clamped}px`);
     document.querySelectorAll(".column-resize-edge").forEach((edge) => edge.setAttribute("aria-valuenow", String(Math.round(clamped))));

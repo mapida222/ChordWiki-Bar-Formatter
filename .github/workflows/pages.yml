@@ -33,6 +33,7 @@ jobs:
           mkdir site
           cp index.html chordwiki-preview.html style.css style-row-edit-test.css site/
           cp -R js site/js
+          cp -R logo site/logo
           touch site/.nojekyll
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v5

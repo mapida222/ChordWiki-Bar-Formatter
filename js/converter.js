@@ -475,7 +475,7 @@
     }
     return appendSuffix(serializeTokens([{ kind: "hyphen", value: marker }], settings));
   }
-  function visibleSyncopatedMarker(fineWidth, finePosition, settings) {
+  function visibleSyncopatedMarker(fineWidth, finePosition, settings, preposeShort = false) {
     let remaining = fineWidth;
     const chunks = [];
     if (finePosition % 2 && remaining > 0) {
@@ -487,7 +487,13 @@
     const spacing = Math.max(0, Number(settings.hyphenSpacing) || 0);
     if (hyphenCount > 0) {
       if (spacing > 0) {
-        for (let offset = 0; offset < hyphenCount; offset += spacing) chunks.push("-".repeat(Math.min(spacing, hyphenCount - offset)));
+        const shortWidth = hyphenCount % spacing;
+        if (preposeShort && shortWidth) {
+          chunks.push("-".repeat(shortWidth));
+          for (let offset = shortWidth; offset < hyphenCount; offset += spacing) chunks.push("-".repeat(Math.min(spacing, hyphenCount - offset)));
+        } else {
+          for (let offset = 0; offset < hyphenCount; offset += spacing) chunks.push("-".repeat(Math.min(spacing, hyphenCount - offset)));
+        }
       } else chunks.push("-".repeat(hyphenCount));
     }
     if (trailingHalf) {
@@ -670,12 +676,14 @@
         const available = capacity - position || capacity;
         const segmentWidth = Math.min(remaining, available);
         const boundaryFraction = position > 0 && position + segmentWidth === capacity;
-        const rendered = syncopated
-          ? visibleSyncopatedMarker(segmentWidth, position, settings)
-          : visibleBeatMarker({ ...unit, width: segmentWidth, suffixStar: unit.suffixStar && remaining === segmentWidth }, settings, boundaryFraction);
         const spacingGrid = settings.hyphenSpacing > 0 ? settings.hyphenSpacing * (syncopated ? 2 : 1) : 0;
         const shortWidth = spacingGrid > 0 ? segmentWidth % spacingGrid : 0;
         const preposeWidths = syncopated ? [1, 2, 3, 4] : [1, 2];
+        const preposeSyncShort = syncopated && Boolean(settings.shortFractionPrepose)
+          && boundaryFraction && preposeWidths.includes(shortWidth) && position % 2 === 0 && segmentWidth % 2 === 0;
+        const rendered = syncopated
+          ? visibleSyncopatedMarker(segmentWidth, position, settings, preposeSyncShort)
+          : visibleBeatMarker({ ...unit, width: segmentWidth, suffixStar: unit.suffixStar && remaining === segmentWidth }, settings, boundaryFraction);
         const firstMarkerEnd = rendered.indexOf("]") + 1;
         const hasMultipleMarkers = firstMarkerEnd > 0 && rendered.indexOf("[", firstMarkerEnd) >= 0;
         const candidateLyricSpan = followingLyric?.kind === "text" ? firstLyricSpan(followingLyric.value) : 0;
@@ -701,7 +709,7 @@
         if (position === capacity) {
           if (remaining > 0) {
             parts.push("[|]");
-            if (settings.showContinuationChord && continuationChord) parts.push(`[${continuationChord}]`);
+            if (settings.showContinuationChord && !syncopated && continuationChord) parts.push(`[${continuationChord}]`);
             position = 0;
           } else {
             pendingBar = true;
@@ -1076,12 +1084,15 @@
     function flushMeasure(bar = null) {
       const authoredChords = measure.filter((token) => token.kind === "chord");
       const hasRhythm = measure.some((token) => token.kind === "hyphen" && rhythmWidth(token) > 0);
-      if (!authoredChords.length && hasRhythm && continuationChord) {
+      const hasSyncopation = measure.some((token) => token.kind === "hyphen" && /[=≧]/u.test(token.value));
+      if (!authoredChords.length && hasRhythm && !hasSyncopation && continuationChord) {
         const rhythmIndex = measure.findIndex((token) => token.kind === "hyphen");
         measure.splice(rhythmIndex < 0 ? 0 : rhythmIndex, 0, { kind: "chord", value: continuationChord });
       }
       output.push(...measure);
-      if (authoredChords.length) {
+      if (hasSyncopation) {
+        continuationChord = "";
+      } else if (authoredChords.length) {
         const lastChord = authoredChords[authoredChords.length - 1].value;
         continuationChord = isNoChordSymbol(lastChord) ? "" : lastChord;
       }
@@ -1253,7 +1264,7 @@
     if (partialLines.length) {
       warnings.push(`部分対応：手動ハイフン表記を保持（${summarizeLineNumbers(partialLines)}行目／全${partialLines.length}行）`);
     }
-    if (!warnings.length) warnings.push("Python版の基本整形処理を適用しました。");
+    if (!warnings.length) warnings.push("自動整形しました。");
     const correctionLines = [];
     const automaticCorrectionLines = [];
     const appliedCorrectionLines = [];

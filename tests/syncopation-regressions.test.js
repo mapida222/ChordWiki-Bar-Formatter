@@ -48,6 +48,12 @@ assert.strictEqual(noEdit.output, automatic.output);
 assert.strictEqual(noEdit.corrections, "n");
 
 assert.strictEqual(
+  CBFConverter.convertChordText("[|][F]編集[G]お疲れ[|]", base, ["4s4"]).output,
+  "[|][F][---]編集[G][-]お[----]疲れ[|]",
+  "a full-hyphen syncopation preposes the short marker and its lyric before the remaining four-hyphen span"
+);
+
+assert.strictEqual(
   CBFConverter.inferBeatCodeFromRenderedLine("[|][GM7][---=][GM7][=][----][|]", "44", base),
   "4*s4"
 );
