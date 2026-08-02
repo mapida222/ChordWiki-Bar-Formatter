@@ -1,6 +1,6 @@
 {
   "name": "chordwiki-bar-formatter-web",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "private": true,
   "description": "ChordPro形式のコード譜へ小節線と長さ記号を追加するブラウザー内ツール",
   "scripts": {

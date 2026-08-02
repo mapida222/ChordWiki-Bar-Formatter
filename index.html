@@ -10,15 +10,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="ChordWikiのコード譜を小節単位に整形するブラウザアプリ">
   <title>ChordWiki Bar Formatter Web</title>
-  <link rel="stylesheet" href="style.css?v=20260802-17">
+  <link rel="stylesheet" href="style.css?v=20260802-43">
   <link rel="stylesheet" href="style-row-edit-test.css?v=20260801-3">
 </head>
 <body>
   <header class="app-header">
     <div>
-      <p class="eyebrow">LOCAL CHORD TOOL</p>
-      <h1>ChordWiki Bar Formatter</h1>
-      <p class="subtitle">コード譜を、読みやすい小節表記へ。</p>
+      <p class="eyebrow">ChordWiki Bar Formatter　～コード譜を、読みやすい小節表記へ。～</p>
+      <h1 class="app-logo"><a href="https://mapida222.github.io/ChordWiki-Bar-Formatter-Web/" aria-label="ChordWiki Bar Formatter トップページ"><img src="logo/logo_ChordWikiBarFormatter1.png" alt="ChordWiki Bar Formatter"></a></h1>
     </div>
     <div class="header-actions">
       <button id="history-save" class="help-open-button" type="button" title="05. 変換後の表示を保存">履歴に追加</button>
@@ -110,7 +109,7 @@
         <div id="settings-shell" class="settings-shell">
         <div class="settings-primary-actions">
           <button id="settings-toggle" class="text-button" type="button" aria-expanded="false" aria-controls="settings-body">設定を開く▼</button>
-          <button id="settings-example-toggle" class="text-button settings-example-toggle" type="button">使用例を表示▶</button>
+          <button id="settings-example-toggle" class="text-button settings-example-toggle" type="button" aria-expanded="true" hidden>使用例を閉じる▲</button>
         </div>
         <div id="settings-body" hidden>
           <div id="settings-profile-picker" class="settings-profile-picker" role="group" aria-label="拍子ごとの初期設定">
@@ -216,11 +215,16 @@
 
       <section class="community-panel" aria-label="関連リンク">
         <header class="auxiliary-panel-heading community-panel-heading">
-          <h3>関連リンク <span>/ LINKS</span></h3>
+          <h3>サイト情報・関連ツール <span>/ SITE &amp; TOOLS</span></h3>
         </header>
-        <nav class="community-actions" aria-label="関連リンク">
-          <a class="community-action community-feedback" href="https://docs.google.com/forms/d/e/1FAIpQLScYAHIEEOtuk8MoQR_1sNN7SVgCFFRtKCeUkm23sqTIGqg-cQ/viewform" target="_blank" rel="noopener noreferrer" aria-label="ご意見・ご要望（Googleフォーム）">
-            <span class="community-feedback-label"><strong>ご意見・ご要望</strong><small>（Googleフォーム）</small></span><span class="community-feedback-icon" aria-hidden="true">✉</span>
+        <small class="community-section-label">サイト情報</small>
+        <nav class="community-self-links" aria-label="このツールのリンク">
+          <a class="community-logo-link community-site-logo" href="https://mapida222.github.io/ChordWiki-Bar-Formatter-Web/" target="_blank" rel="noopener noreferrer" aria-label="ChordWiki Bar Formatter を開く"><img src="logo/logo_ChordWikiBarFormatter1.png" alt="ChordWiki Bar Formatter"></a>
+          <a class="community-logo-link community-github-logo" href="https://github.com/mapida222/ChordWiki-Bar-Formatter-Web" target="_blank" rel="noopener noreferrer" aria-label="GitHub リポジトリを開く"><img src="logo/logo_GitHub_Lockup_White.png" alt="GitHub"></a>
+        </nav>
+        <nav class="community-actions" aria-label="ご意見・応援">
+          <a class="community-action community-feedback" href="https://docs.google.com/forms/d/e/1FAIpQLScYAHIEEOtuk8MoQR_1sNN7SVgCFFRtKCeUkm23sqTIGqg-cQ/viewform" target="_blank" rel="noopener noreferrer" aria-label="報告・要望（Googleフォーム）">
+            <span class="community-feedback-label"><strong>報告・要望</strong></span>
           </a>
           <details class="support-menu">
             <summary><span>開発を応援する</span><span class="support-menu-caret" aria-hidden="true">▼</span></summary>
@@ -233,17 +237,18 @@
               </a>
             </div>
           </details>
-          <a class="community-action community-github" href="https://github.com/mapida222/ChordWiki-Bar-Formatter-Web" target="_blank" rel="noopener noreferrer" aria-label="GitHub（ソースコード・更新情報）">
-            <span class="community-github-label"><strong>GitHub</strong><small>ソースコード・更新情報</small></span><span class="community-github-icon" aria-hidden="true">↗</span>
-          </a>
         </nav>
         <footer class="site-credit">
           <div class="site-credit-main">
-            <strong>ChordWiki Bar Formatter</strong>
             <span>制作：<a href="https://x.com/mapida2_boso2" target="_blank" rel="noopener noreferrer">mapida</a>　© 2026 mapida</span>
           </div>
-          <p><a href="https://ja.chordwiki.org/" target="_blank" rel="noopener noreferrer">ChordWiki公式サイト</a>　非公式ツールです。</p>
         </footer>
+        <nav class="community-tools" aria-label="関連ツール">
+          <small>関連ツール</small>
+          <a href="https://ja.chordwiki.org/" target="_blank" rel="noopener noreferrer"><strong>ChordWiki</strong><span>（worris様）</span></a>
+          <a href="https://www.chordlistener.com/editor/" target="_blank" rel="noopener noreferrer"><strong>ChordWiki 用コード譜エディター</strong><span>（ぐらふぃーむ様）</span></a>
+          <a href="https://anipu.web.fc2.com/helper/lyricker.html" target="_blank" rel="noopener noreferrer"><strong>りりか</strong><span>（fluno様）</span></a>
+        </nav>
       </section>
       </div>
 
@@ -261,6 +266,7 @@
           <div id="input-lines" class="line-numbers" aria-hidden="true"></div>
           <div class="editor-text-layer"><pre id="input-highlight" class="editor-highlight" aria-hidden="true"></pre><textarea id="input-text" wrap="off" spellcheck="false" placeholder="{title:変換テスト用サンプル}&#10;{subtitle:これは実在する楽曲ではありません}&#10;{comment:ChordWiki Bar Formatterの機能確認用ダミー歌詞です}&#10;{c:BPM=100　　4/4拍子　-：8分音符　＝：16分音符　&gt;：8分音符アクセント　≧：16分音符アクセント　○：白玉}&#10;{key:C}&#10;[C]ChordPro形式の[G]テキストを貼ると　[Am]自動[G]で小節線[F]と長さ記号を追記します&#10;[E]原曲と異[Am]なる部分は　[F]行修正の[D/F#]数値を変えて&#10;[Gsus4]ハイフン数を[G]合わせます　[G#dim]&#10;&#10;[Am]＝(イコール)表示は*([G#aug]アスタリスク)で、[C/G]＞(アクセント)は[F#m7-5]^(キャレット)で&#10;[F]入力[G]できま[C]す&#10;[F]細かい部分は[G]手動修正が[E7]必[E7/G#]要[Am7]です🙏🏻&#10;[F]編集[G]お疲れ[Csus4]様で[C]す！（ありが[N.C.]とう！）"></textarea></div>
         </div>
+        <div class="column-resize-edge editor-column-resize-edge" role="separator" aria-label="変換前枠の左端を左右に調整" aria-orientation="vertical" tabindex="0"></div>
         <div class="frame-resize-edge" data-row="top" role="separator" aria-label="変換前枠の高さを調整" aria-orientation="horizontal" tabindex="0"></div>
         <div class="frame-resize-corner two-axis" data-row="top" data-column="inverse" role="separator" aria-label="変換前枠の幅と高さを調整" tabindex="0"></div>
       </article>
@@ -300,6 +306,7 @@
           <div id="output-lines" class="line-numbers" aria-hidden="true"></div>
           <div class="editor-text-layer"><pre id="output-highlight" class="editor-highlight" aria-hidden="true"></pre><textarea id="output-text" wrap="off" spellcheck="false" placeholder="{title:変換テスト用サンプル}&#10;{subtitle:これは実在する楽曲ではありません}&#10;{comment:ChordWiki Bar Formatterの機能確認用ダミー歌詞です}&#10;{c:BPM=100　　4/4拍子　-：8分音符　＝：16分音符　&gt;：8分音符アクセント　≧：16分音符アクセント　○：白玉}&#10;{key:C}&#10;[|][C]ChordPro形式の[|][G]テキストを貼ると　[|][Am]自動[G]で小節線[|][F]と長さ記号を追記します[|]&#10;[|][E][---]原曲と異[Am][-]な[----]る部分は　[|][F][---]行修正の[D/F#][-]数[----]値を変えて[|]&#10;[|][Gsus4]ハイフン数を[|][G][----]合わせます　[G#dim][----][|]&#10;&#10;[|][Am]＝(イコール)表示は*([G#aug]アスタリスク)で、[|][C/G]＞(アクセント)は[F#m7-5]^(キャレット)で[|]&#10;[|][F][----][--]入力[G][--]できま[|][C][----]す[----][|]&#10;[|][F][---=]細かい部分は[G][=]手[----]動修正が[|][E7][---]必[E7/G#][---]要[Am7][--]で[|][----][----]す🙏🏻[|]&#10;[|][F]編集[G]お疲れ[|][Csus4][----]様で[C][&gt;-]す！（ありが[N.C.][--]とう！）[|]"></textarea></div>
         </div>
+        <div class="column-resize-edge editor-column-resize-edge" role="separator" aria-label="変換後枠の左端を左右に調整" aria-orientation="vertical" tabindex="0"></div>
         <div class="frame-resize-edge" data-row="bottom" role="separator" aria-label="変換後枠の高さを調整" aria-orientation="horizontal" tabindex="0"></div>
         <div class="frame-resize-corner two-axis" data-row="bottom" data-column="inverse" role="separator" aria-label="変換後枠の幅と高さを調整" tabindex="0"></div>
       </article>
@@ -444,8 +451,15 @@
           <div class="help-intro-list">
             <section class="help-intro-card help-intro-primary" aria-labelledby="help-capabilities-title">
               <h4 id="help-capabilities-title">このサイトでは何ができますか？</h4>
-              <p><a href="https://ja.chordwiki.org/" target="_blank" rel="noopener noreferrer">ChordWiki</a>で使用されるChordPro形式のコード譜を貼り付けると、小節線と音の長さを表す記号を自動で加えます。</p>
-              <p>曲に合わせた修正、移調、譜面の確認、完成したテキストのコピーまでブラウザ上で行えます。</p>
+              <p><a href="https://ja.chordwiki.org/" target="_blank" rel="noopener noreferrer">ChordWiki</a>で使用されるChordPro形式のコード譜を整え、読みやすい小節表記へ仕上げるためのブラウザツールです。</p>
+              <p class="help-capabilities-list-label"><strong>機能一覧：</strong></p>
+              <ul>
+                <li><strong>自動整形：</strong>コード譜を貼り付け、小節線<code>[|]</code>と音の長さを表すハイフン<code>[----]</code>を自動で加える</li>
+                <li><strong>リズム記号の修正：</strong>行修正で、ハイフン、アクセント<code>[&gt;]</code>、白玉<code>[○]</code>などの位置を曲に合わせて調整する</li>
+                <li><strong>長さ・小節位置の調整：</strong>ハイフン数を変える（例：<code>4→2</code>、<code>[Am][----]→[Am][--]</code>）／小節線の位置を指定する</li>
+                <li><strong>シンコペーションの調整：</strong>行修正の<code>s</code>や<code>*s</code>で音の食い込みを表す（例：<code>4s4→[C][---=][G][=][----][|]</code>）</li>
+                <li><strong>仕上げ・出力：</strong>変換後を直接編集し、譜面プレビュー・移調で確認してから完成テキストをコピーする</li>
+              </ul>
             </section>
             <section class="help-intro-card" aria-labelledby="help-audience-title">
               <h4 id="help-audience-title">どんな人・どんな場面に向いていますか？</h4>
@@ -453,16 +467,16 @@
                 <li>ChordWikiへ投稿された譜面を整えたい</li>
                 <li>小節線の位置を編集したい</li>
                 <li>コードの音価を正しく記載したい</li>
+                <li>拍、音価、アクセントなどのリズム表記を確認しながら仕上げたい</li>
               </ul>
             </section>
             <section class="help-intro-card help-limitations" aria-labelledby="help-limitations-title">
-              <h4 id="help-limitations-title">このツールでできないこと</h4>
+              <h4 id="help-limitations-title">このツールが苦手なこと・別ツールがおすすめなこと</h4>
               <ul>
-                <li><strong>採譜支援：</strong>コード入力のサポートは行えません。レイアウトに特化したツールです。</li>
-                <li><strong>完全自動修正：</strong>曲に合わせた確認と手動修正が必要です。</li>
+                <li><strong>コード譜を最初から入力・作成すること：</strong>このツールは整形とリズム修正に特化しています。コード入力を省力化したい場合は、<a href="https://www.chordlistener.com/editor/" target="_blank" rel="noopener noreferrer">ChordWiki 用コード譜エディター</a>（作成：ぐらふぃーむ様）がおすすめです。</li>
+                <li><strong>曲どおりに完全自動で整えること：</strong>小節線、ハイフンの長さ、コードと歌詞の対応、タイミングやアクセントが曲に合うかを確認し、必要に応じて手動で修正してください。</li>
                 <li><strong>コードを文字間に入力する機能：</strong><a href="https://anipu.web.fc2.com/helper/lyricker.html" target="_blank" rel="noopener noreferrer">りりか</a>がおすすめです。</li>
-                <li><strong>複雑なリズム表記：</strong><code>[&gt;--&gt;]</code>など、対応していない表記があります。</li>
-                <li><strong>コードのない位置へハイフンを付ける機能：</strong>ハイフンはコード直後に付く表記を前提としているため、<code>[|][C][----]あいう[----]えお[|]</code>のような位置には追加できません。</li>
+                <li><strong>特殊・複雑なリズム表記：</strong><code>[&gt;--&gt;]</code>など、対応していない表記があります。</li>
               </ul>
             </section>
             <section class="help-intro-card" aria-labelledby="help-mobile-title">
@@ -555,14 +569,14 @@
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
   <script src="js/settings.js?v=20260802-9" defer></script>
   <script src="js/numeric-entry.js?v=20260731-1" defer></script>
-  <script src="js/converter.js?v=20260802-26" defer></script>
+  <script src="js/converter.js?v=20260802-29" defer></script>
   <script src="js/input-brackets.js?v=20260718-5" defer></script>
   <script src="js/correction-input.js?v=20260802-11" defer></script>
   <script src="js/transposer.js?v=20260802-8" defer></script>
   <script src="js/chordwiki-preview.js?v=20260731-4" defer></script>
   <script src="js/history.js?v=20260725-7" defer></script>
   <script src="js/test-data.js?v=20260724-5" defer></script>
-  <script src="js/app.js?v=20260802-36" defer></script>
+  <script src="js/app.js?v=20260802-38" defer></script>
   <script src="js/row-edit-test.js?v=20260801-8" defer></script>
 </body>
 </html>

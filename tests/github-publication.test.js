@@ -15,6 +15,7 @@ assert(pagesWorkflow.includes("actions/upload-pages-artifact@v5"));
 assert(pagesWorkflow.includes("actions/deploy-pages@v5"));
 assert(pagesWorkflow.includes("cp index.html chordwiki-preview.html style.css style-row-edit-test.css site/"));
 assert(pagesWorkflow.includes("cp -R js site/js"));
+assert(pagesWorkflow.includes("cp -R logo site/logo"));
 assert(!pagesWorkflow.includes("cp row-edit-test.html"));
 assert(readme.includes("![現在のヘルプ画面](help-usage-screenshot.png)"));
 assert(readme.includes("[Releases](https://github.com/mapida222/ChordWiki-Bar-Formatter-Web/releases)"));

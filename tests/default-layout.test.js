@@ -11,18 +11,23 @@ const html = fs.readFileSync(path.join(root, "index.html"), "utf8");
 
 assert(html.includes('id="display-settings-shell" class="display-settings-shell display-collapsed"'), "01 must render collapsed before JavaScript starts");
 assert(html.includes('id="settings-panel" class="settings-panel settings-closed"'), "03 must render collapsed by default");
+assert(html.includes('id="settings-example-toggle" class="text-button settings-example-toggle" type="button" aria-expanded="true" hidden'), "the usage-example toggle must be hidden before 03 is opened");
 assert(app.includes('setDisplaySettingsOpen(savedDisplayPanel === "true", false);'), "01 must stay collapsed when no preference has been saved");
 assert(app.includes('const LAYOUT_STORAGE_KEY = "chordWikiBarFormatter.editorLayout.v3";'), "the wider layout must not inherit incompatible saved dimensions");
 assert(app.includes('const DISPLAY_PANEL_STORAGE_KEY = "chordWikiBarFormatter.displayPanelOpen.v3";'), "01 must start collapsed once when adopting the new default layout");
 assert(app.includes('setDisplaySettingsOpen(false);') && app.includes('setSettingsMode("closed");'), "layout reset must restore both control panels to the collapsed state");
+assert(app.includes('setSettingsExamplesOpen(true);'), "layout reset must reopen compact usage examples");
 assert(css.includes("--top-editor-height: clamp(210px, 24vh, 230px)"), "the source editor must use the compact default height");
-assert(css.includes("--left-column-width: clamp(110px, 28%, 360px)"), "the left control and row-edit column must have enough width for labels and actions");
-assert(app.includes('const minimumOffset = settingsBottom + 16 - correctionCardTop;'), "row edit must keep clearance below the control panels");
-assert(app.includes('Math.max(outputTop - correctionTop, minimumOffset)'), "row alignment must stop before overlapping the control panels");
+assert(css.includes("--left-column-width: clamp(220px, 28%, 360px)"), "the left control and row-edit column must stay usable on a narrow screen");
+assert(css.includes("grid-template-columns: var(--left-column-width) minmax(0, 1fr)"), "the right column must compress before the left control column does");
+assert(app.includes("Math.max(220, Math.min(width, Math.max(220, workspaceWidth - 10)))"), "manual column resizing must preserve the left-column baseline on a narrow screen");
+assert(!app.includes('const minimumOffset = settingsBottom + 16 - correctionCardTop;'), "row edit may remain beneath the settings panel");
+assert(app.includes('Math.max(0, outputTop - correctionTop)'), "row alignment must preserve the editor relationship without moving away from settings");
 assert(css.includes("border: 2px solid color-mix(in srgb, var(--correction-line) 78%, var(--line))"), "the row-edit context frame must have a clear solid outline");
 assert(css.includes("border-radius: 8px"), "the row-edit context frame must have rounded corners");
 assert(css.includes(".settings-column-resize-edge { display: none; }"), "the redundant settings resize line must not cross the settings panel");
-assert(html.includes("style.css?v=20260802-17"));
-assert(html.includes("js/app.js?v=20260802-36"));
+assert(css.includes(".settings-panel.settings-closed .settings-reset-button, .settings-panel.settings-closed .settings-footer-actions, .settings-panel.settings-closed .settings-example-toggle { display: none; }"), "a closed 03 panel must hide the usage-example control even before JavaScript initializes");
+assert(html.includes("style.css?v=20260802-43"));
+assert(html.includes("js/app.js?v=20260802-38"));
 
 console.log("PASS: LAYOUT-003 compact default layout and clear row-edit context frame");

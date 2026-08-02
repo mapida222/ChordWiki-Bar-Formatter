@@ -50,5 +50,15 @@ const rowOff = convert("[C]lyric", false, ["h"]);
 const rowOn = convert("[C]lyric", true, ["h"]);
 assert.strictEqual(rowOff, "[|][C][----][----][|][----][----][|][----][----]lyric[|]", "row correction keeps blank continuation measures when disabled");
 assert.strictEqual(rowOn, "[|][C][----][----][|][C][----][----][|][C][----][----]lyric[|]", "row correction remains stronger while the display setting adds carried chords");
+assert.strictEqual(
+  convert("[C][G]", true, ["4s8"]),
+  "[|][C][---][G][-][----][|][----][|]",
+  "syncopated row corrections never add a carried chord across a bar"
+);
+assert.strictEqual(
+  convert("|[C]---=[G]= ----|---- ----|", true),
+  "[|][C][---=][G][=] [----][|][----] [----][|]",
+  "manual syncopation does not carry its prior chord into a chordless measure"
+);
 
 console.log("PASS: continuation setting respects direct edits, row corrections, manual rhythm, N.C. and double bars");
