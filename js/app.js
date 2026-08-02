@@ -127,7 +127,7 @@
   const CORRECTION_STORAGE_KEY = "chordWikiBarFormatter.correctionText.v1";
   const ROW_ADOPTION_MODES_STORAGE_KEY = "chordWikiBarFormatter.rowAdoptionModes.v1";
   const CORRECTION_SYNTAX_VERSION_KEY = "chordWikiBarFormatter.correctionSyntaxVersion";
-  const LAYOUT_STORAGE_KEY = "chordWikiBarFormatter.editorLayout.v2";
+  const LAYOUT_STORAGE_KEY = "chordWikiBarFormatter.editorLayout.v3";
   const DISPLAY_PANEL_STORAGE_KEY = "chordWikiBarFormatter.displayPanelOpen.v3";
   const THEME_STORAGE_KEY = "chordWikiBarFormatter.theme.v1";
   const PLAIN_EDIT_BARS_STORAGE_KEY = "chordWikiBarFormatter.plainEditBars.v1";
@@ -923,7 +923,10 @@
       elements.workspace.style.setProperty("--result-controls-offset", "0px");
       const correctionTop = elements.correctionShell.getBoundingClientRect().top;
       const outputTop = elements.outputShell.getBoundingClientRect().top;
-      elements.workspace.style.setProperty("--result-controls-offset", `${outputTop - correctionTop}px`);
+      const correctionCardTop = elements.correctionCard.getBoundingClientRect().top;
+      const settingsBottom = elements.settingsPanel.getBoundingClientRect().bottom;
+      const minimumOffset = settingsBottom + 16 - correctionCardTop;
+      elements.workspace.style.setProperty("--result-controls-offset", `${Math.max(outputTop - correctionTop, minimumOffset)}px`);
     });
   }
   function parseRemovalTargets(raw) {

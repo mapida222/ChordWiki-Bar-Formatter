@@ -23,6 +23,6 @@ assert(app.includes("let correctionSymbolOffset = -1;"));
 assert(app.includes("CBFCorrectionInput.boundarySymbolEdit"));
 assert(css.includes(".correction-card .editor-text-layer textarea { caret-color: transparent !important; }"));
 assert(html.includes('js/correction-input.js?v=20260802-11'));
-assert(html.includes('js/app.js?v=20260802-35'));
+assert(html.includes('js/app.js?v=20260802-36'));
 
 console.log("PASS: ROW-009 correction slot selection replaces without a visible text caret");

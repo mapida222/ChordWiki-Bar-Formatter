@@ -42,6 +42,6 @@ assert.ok(app.includes('correctionCaretMode = "boundary";'), "symbol insertion m
 assert.ok(app.includes('correctionCaretMode === "boundary"'), "position refresh must not force a boundary caret back onto the last beat");
 assert.ok(app.includes('document.querySelectorAll("[data-correction-symbol]")'), "keyboard routing stays available after compact symbol buttons are removed");
 assert.ok(html.includes('js/correction-input.js?v=20260802-11'), "the row-edit navigation helper must use the current correction-input cache version");
-assert.ok(html.includes('js/app.js?v=20260802-35'), "the row-edit hotfix must use the current app.js cache version");
+assert.ok(html.includes('js/app.js?v=20260802-36'), "the row-edit hotfix must use the current app.js cache version");
 
 console.log("PASS: row-edit keys use one input route and the browser loads the hotfix version");
