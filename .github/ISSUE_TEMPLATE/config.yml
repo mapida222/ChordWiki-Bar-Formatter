@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: ご意見・ご要望フォーム
+    url: https://docs.google.com/forms/d/e/1FAIpQLScYAHIEEOtuk8MoQR_1sNN7SVgCFFRtKCeUkm23sqTIGqg-cQ/viewform
+    about: GitHubアカウントを使わずに意見を送る場合はこちらを利用してください。

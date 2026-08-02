@@ -1,0 +1,47 @@
+name: 不具合報告
+description: 表示崩れや変換結果の問題を報告します。
+title: "[不具合] "
+labels: [bug]
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: 発生した問題
+      description: どの画面で何が起きたかを書いてください。
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: 再現手順
+      description: 問題が起きるまでの操作を順番に書いてください。
+      placeholder: |
+        1. 本番サイトを開く
+        2. 入力サンプルを押す
+        3. 04. 行修正を操作する
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: 期待する結果
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: 利用環境
+      description: OSとブラウザー名、可能ならバージョンを書いてください。
+      placeholder: Windows 11 / Google Chrome
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: スクリーンショット
+      description: 表示の問題は画像があると確認しやすくなります。
+  - type: checkboxes
+    id: privacy
+    attributes:
+      label: 公開内容の確認
+      options:
+        - label: 実在する楽曲の歌詞や公開できない情報を含めていません。
+          required: true
