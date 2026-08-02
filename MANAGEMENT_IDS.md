@@ -84,7 +84,7 @@
 | `HISTORY-003` | 使用履歴から保存時の作業状態を一括復元 | 有効 | `js/app.js`、`index.html`、`tests/history-restore.test.js` |
 | `TEST-001` | プロジェクト全体の回帰テスト | 有効 | `tests/*.test.js` |
 | `PROJECT-001` | チャット間で共有する管理ID台帳 | 有効 | `AGENTS.md`、`MANAGEMENT_IDS.md` |
-| `PUBLIC-001` | Web版の公開準備と公開前確認 | 進行中 | `README.md`、`PUBLICATION_CHECKLIST.md`、`.gitignore`、`package.json` |
+| `PUBLIC-001` | Web版の公開準備と公開前確認 | 進行中 | `README.md`、`PUBLICATION_CHECKLIST.md`、`help-usage-screenshot.png`、`.gitignore`、`package.json` |
 | `PUBLIC-002` | GitHubトップページの文章・画像改善 | 有効 | `README.md`、`docs/images/readme-*.png`、`docs/README_CAPTURE_SAMPLE.md` |
 | `PUBLIC-003` | クレジット・意見要望・応援リンク | 有効 | `index.html`、`style.css`、`tests/public-links.test.js` |
 | `SAMPLE-001` | 入力サンプルの変換前・行修正・設定を固定 | 有効 | `js/app.js`、`docs/README_CAPTURE_SAMPLE.md`、`tests/readme-capture-sample.test.js` |
