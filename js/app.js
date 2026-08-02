@@ -924,7 +924,8 @@
       elements.workspace.style.setProperty("--result-controls-offset", "0px");
       const correctionTop = elements.correctionShell.getBoundingClientRect().top;
       const outputTop = elements.outputShell.getBoundingClientRect().top;
-      elements.workspace.style.setProperty("--result-controls-offset", `${Math.max(0, outputTop - correctionTop)}px`);
+      elements.workspace.style.setProperty("--result-controls-offset", `${Math.max(0, correctionTop - outputTop)}px`);
+      positionFrameResizeEdges();
     });
   }
   function parseRemovalTargets(raw) {
@@ -2767,9 +2768,33 @@
       width: `${correctionRect.width}px`,
       height: ""
     });
+    positionFrameResizeEdges();
+  }
+  function positionFrameResizeEdges() {
+    document.querySelectorAll(".frame-resize-edge").forEach((edge) => {
+      const panelName = edge.dataset.panel || "";
+      const row = edge.dataset.row || "";
+      const container = panelName === "settings" ? elements.settingsPanel : edge.closest(".editor-card");
+      const target = panelName === "settings"
+        ? elements.settingsShell
+        : container?.classList.contains("correction-card")
+          ? elements.correctionShell
+          : row === "top"
+            ? elements.inputShell
+            : row === "final"
+              ? elements.finalOutputShell
+              : elements.outputShell;
+      if (!target || !container) return;
+      const targetRect = target.getBoundingClientRect();
+      const containerRect = container.getBoundingClientRect();
+      const edgeY = edge.dataset.edge === "top" ? targetRect.top : targetRect.bottom;
+      edge.style.top = `${Math.round(edgeY - containerRect.top - 4)}px`;
+      edge.style.bottom = "auto";
+    });
   }
   function saveLayout() {
     const displayHeight = Number.parseFloat(elements.displaySettingsShell.style.height);
+    const settingsHeight = Number.parseFloat(elements.settingsShell.style.height);
     const layout = {
       leftWidth: elements.correctionCard.getBoundingClientRect().width,
       topHeight: elements.inputShell.getBoundingClientRect().height,
@@ -2778,13 +2803,15 @@
       committedHeight: elements.committedOutputShell.classList.contains("committed-collapsed")
         ? Number.parseFloat(elements.workspace.style.getPropertyValue("--committed-editor-height")) || null
         : elements.committedOutputShell.getBoundingClientRect().height,
-      displayHeight: Number.isFinite(displayHeight) ? displayHeight : null
+      displayHeight: Number.isFinite(displayHeight) ? displayHeight : null,
+      settingsHeight: Number.isFinite(settingsHeight) ? settingsHeight : null
     };
     localStorage.setItem(LAYOUT_STORAGE_KEY, JSON.stringify(layout));
   }
   function resetLayout() {
     ["--left-column-width", "--top-editor-height", "--result-editor-height", "--final-editor-height", "--committed-editor-height"].forEach((property) => elements.workspace.style.removeProperty(property));
     elements.displaySettingsShell.style.removeProperty("height");
+    elements.settingsShell.style.removeProperty("height");
     elements.correctionGuide.style.removeProperty("height");
     localStorage.removeItem(LAYOUT_STORAGE_KEY);
     applyTheme("light");
@@ -2827,6 +2854,7 @@
       const layout = JSON.parse(localStorage.getItem(LAYOUT_STORAGE_KEY) || "null");
       if (!layout) return;
       if (Number.isFinite(layout.displayHeight)) elements.displaySettingsShell.style.height = `${layout.displayHeight}px`;
+      if (Number.isFinite(layout.settingsHeight)) elements.settingsShell.style.height = `${layout.settingsHeight}px`;
       elements.correctionGuide.style.removeProperty("height");
       if (Number.isFinite(layout.leftWidth)) setLeftColumnWidth(layout.leftWidth);
       if (Number.isFinite(layout.topHeight)) setRowHeight("top", layout.topHeight);
@@ -2855,7 +2883,8 @@
     });
     edge.addEventListener("pointermove", (event) => {
       if (!edge.hasPointerCapture(event.pointerId)) return;
-      setLeftColumnWidth(dragStartWidth + event.clientX - dragStartX);
+      const direction = edge.dataset.column === "inverse" ? -1 : 1;
+      setLeftColumnWidth(dragStartWidth + (event.clientX - dragStartX) * direction);
     });
     edge.addEventListener("pointerup", (event) => {
       edge.classList.remove("dragging");
@@ -2864,7 +2893,8 @@
     edge.addEventListener("keydown", (event) => {
       if (!["ArrowLeft", "ArrowRight"].includes(event.key)) return;
       event.preventDefault();
-      setLeftColumnWidth(elements.correctionCard.getBoundingClientRect().width + (event.key === "ArrowLeft" ? -10 : 10));
+      const direction = edge.dataset.column === "inverse" ? -1 : 1;
+      setLeftColumnWidth(elements.correctionCard.getBoundingClientRect().width + (event.key === "ArrowLeft" ? -10 : 10) * direction);
     });
   });
   function setRowHeight(row, height) {
@@ -2881,8 +2911,12 @@
     positionSettingsPanel();
   }
   function setAuxiliaryPanelHeight(panelName, height) {
-    const panel = panelName === "display" ? elements.displaySettingsShell : elements.correctionGuide;
-    const minimum = panelName === "display" ? 96 : 72;
+    const panel = panelName === "display"
+      ? elements.displaySettingsShell
+      : panelName === "settings"
+        ? elements.settingsShell
+        : elements.correctionGuide;
+    const minimum = panelName === "display" ? 96 : panelName === "settings" ? 44 : 72;
     panel.style.height = `${Math.max(minimum, Math.min(height, 1600))}px`;
     saveLayout();
     positionSettingsPanel();
@@ -2944,8 +2978,16 @@
   document.querySelectorAll(".frame-resize-edge").forEach((edge) => {
     let startY = 0;
     let startHeight = 0;
-    const row = edge.dataset.row;
-    const verticalTarget = row === "top" ? elements.inputShell : elements.outputShell;
+    const row = edge.dataset.row || "";
+    const panelName = edge.dataset.panel || "";
+    const verticalTarget = panelName === "settings"
+      ? elements.settingsShell
+      : row === "top"
+        ? elements.inputShell
+        : row === "final"
+          ? elements.finalOutputShell
+          : elements.outputShell;
+    const direction = edge.dataset.edge === "top" ? -1 : 1;
     const endDrag = (event) => {
       edge.classList.remove("dragging");
       if (edge.hasPointerCapture(event.pointerId)) edge.releasePointerCapture(event.pointerId);
@@ -2959,14 +3001,18 @@
     });
     edge.addEventListener("pointermove", (event) => {
       if (!edge.hasPointerCapture(event.pointerId)) return;
-      setRowHeight(row, startHeight + event.clientY - startY);
+      const height = startHeight + (event.clientY - startY) * direction;
+      if (panelName) setAuxiliaryPanelHeight(panelName, height);
+      else setRowHeight(row, height);
     });
     edge.addEventListener("pointerup", endDrag);
     edge.addEventListener("pointercancel", endDrag);
     edge.addEventListener("keydown", (event) => {
       if (!["ArrowUp", "ArrowDown"].includes(event.key)) return;
       event.preventDefault();
-      setRowHeight(row, verticalTarget.getBoundingClientRect().height + (event.key === "ArrowUp" ? -10 : 10));
+      const height = verticalTarget.getBoundingClientRect().height + (event.key === "ArrowUp" ? -10 : 10) * direction;
+      if (panelName) setAuxiliaryPanelHeight(panelName, height);
+      else setRowHeight(row, height);
     });
   });
 
