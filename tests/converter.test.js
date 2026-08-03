@@ -598,5 +598,11 @@ if (inferredParenthesizedFinal !== "4") {
   failures += 1;
   console.error(`FAIL parenthesized final correction must not add x\nactual: ${inferredParenthesizedFinal}`);
 }
+const partialAccentSource = "[E]もっともっ[C#m7]と--[N.C.]>-|";
+const partialAccentResult = CBFConverter.convertChordText(partialAccentSource, settings, []);
+if (partialAccentResult.output !== "[|][E][----]もっともっ[C#m7][--]と[N.C.][>-][|]" || CBFConverter.renderCompletedOutput(partialAccentResult.output, [4, 8], 4).output !== partialAccentResult.output) {
+  failures += 1;
+  console.error(`FAIL partial accent rhythm must retain the generated duration\nactual: ${partialAccentResult.output}`);
+}
 if (failures) process.exitCode = 1;
 else console.log(`PASS: ${cases.length} basic cases + realtime, corrections and completed-output removal`);

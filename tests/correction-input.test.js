@@ -168,6 +168,7 @@ assert.deepStrictEqual(CBFCorrectionInput.appendBeatSlot("n"), { text: "0", sele
 ["s4", "4s", "*4s4", "4s^4", "@s4", "0s4"].forEach((code) => {
   assert.strictEqual(CBFConverter.renderWithBeatCode("[C][G]", code, settings).ok, false, `${code} must fail safely`);
 });
+assert.strictEqual(CBFConverter.renderWithBeatCode("[C]", "@0", settings).body, "[|][C][○][|]", "@0 must create a measure boundary after a white note");
 assert.strictEqual(CBFCorrectionInput.migrateLegacyText("o\nw\nh\n4o4\n"), "h\ni\nn\n4h4\n", "legacy 24 and 32 values migrate while removed widths become no-edit rows");
 
 console.log(`PASS: ${beatCodes.length} length values, ${syntaxCases.length} row-edit forms and sync commands`);

@@ -1,9 +1,9 @@
-# ChordWiki Bar Formatter Web
+# ChordWiki Bar Formatter
 
 ChordPro形式のコード譜へ、**小節線と音の長さを表す記号を自動で追加する**ブラウザーツールです。
 コード譜を貼り付けると、小節の区切りを補い、行ごとの調整結果を譜面として確認できます。
 
-**Web版を使う：** [ChordWiki Bar Formatter Web](https://mapida222.github.io/ChordWiki-Bar-Formatter-Web/)
+**ツールを使う：** [ChordWiki Bar Formatter](https://mapida222.github.io/ChordWiki-Bar-Formatter/)
 
 - インストール不要
 - 入力内容を外部サーバーへ送信しない
@@ -125,6 +125,6 @@ Python版との共通回帰ケースは`tests/fixtures/v45-regressions.json`で�
 ## 公開情報
 
 [公開チェックリスト](PUBLICATION_CHECKLIST.md)を参照してください。
-公開先は[GitHub Pages](https://mapida222.github.io/ChordWiki-Bar-Formatter-Web/)です。
-更新履歴と配布情報は[Releases](https://github.com/mapida222/ChordWiki-Bar-Formatter-Web/releases)で公開します。
+公開先は[GitHub Pages](https://mapida222.github.io/ChordWiki-Bar-Formatter/)です。
+更新履歴と配布情報は[Releases](https://github.com/mapida222/ChordWiki-Bar-Formatter/releases)で公開します。
 このソフトウェアは[MIT License](LICENSE)で公開しています。

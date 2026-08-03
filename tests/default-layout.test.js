@@ -27,7 +27,7 @@ assert(css.includes("border: 2px solid color-mix(in srgb, var(--correction-line)
 assert(css.includes("border-radius: 8px"), "the row-edit context frame must have rounded corners");
 assert(css.includes(".settings-column-resize-edge { top: 0; bottom: 0; }"), "the settings panel must expose a vertical resize edge");
 assert(css.includes(".settings-panel.settings-closed .settings-reset-button, .settings-panel.settings-closed .settings-footer-actions, .settings-panel.settings-closed .settings-example-toggle { display: none; }"), "a closed 03 panel must hide the usage-example control even before JavaScript initializes");
-assert(html.includes("style.css?v=20260803-49"));
+assert(html.includes("style.css?v=20260803-61"));
 assert(html.includes("js/app.js?v=20260803-40"));
 
 console.log("PASS: LAYOUT-003 compact default layout and clear row-edit context frame");

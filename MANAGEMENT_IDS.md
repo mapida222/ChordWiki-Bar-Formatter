@@ -85,11 +85,13 @@
 | `HISTORY-003` | 使用履歴から保存時の作業状態を一括復元 | 有効 | `js/app.js`、`index.html`、`tests/history-restore.test.js` |
 | `TEST-001` | プロジェクト全体の回帰テスト | 有効 | `tests/*.test.js` |
 | `PROJECT-001` | チャット間で共有する管理ID台帳 | 有効 | `AGENTS.md`、`MANAGEMENT_IDS.md` |
-| `PUBLIC-001` | Web版の公開準備と公開前確認 | 有効 | `README.md`、`PUBLICATION_CHECKLIST.md`、`help-usage-screenshot.png`、`.gitignore`、`package.json` |
+| `PUBLIC-001` | 公開準備と公開前確認 | 有効 | `README.md`、`PUBLICATION_CHECKLIST.md`、`help-usage-screenshot.png`、`.gitignore`、`package.json` |
 | `PUBLIC-002` | GitHubトップページの文章・画像改善 | 有効 | `README.md`、`docs/images/readme-*.png`、`docs/README_CAPTURE_SAMPLE.md` |
 | `PUBLIC-003` | クレジット・意見要望・応援リンク | 有効 | `index.html`、`style.css`、`tests/public-links.test.js` |
 | `PUBLIC-004` | GitHub Actionsによる自動テストと公開ファイル限定のPages配信 | 有効 | `.github/workflows/test.yml`、`.github/workflows/pages.yml`、`tests/github-publication.test.js` |
 | `PUBLIC-005` | GitHubコミュニティ文書、セキュリティ設定、タグとReleaseの公開運用 | 有効 | `CONTRIBUTING.md`、`.github/ISSUE_TEMPLATE/`、`.github/pull_request_template.md` |
+| `PUBLIC-006` | Google Analyticsによる利用状況計測とプライバシー告知 | 有効 | `index.html`、`privacy.html`、`tests/public-links.test.js` |
+| `PUBLIC-007` | 製品名・リポジトリ名・公開URLから「Web」を削除 | 有効 | `index.html`、`privacy.html`、`README.md`、`PUBLICATION_CHECKLIST.md`、`package.json` |
 | `SAMPLE-001` | 入力サンプルの変換前・行修正・設定を固定 | 有効 | `js/app.js`、`docs/README_CAPTURE_SAMPLE.md`、`tests/readme-capture-sample.test.js` |
 | `HELP-001` | 丸い「？」による補足説明 | 有効 | `index.html`、`style.css`、`js/app.js`、`docs/TOOLTIP_HELP_DRAFT.md` |
 | `HELP-002` | ヘルプ画面の見出し、対象枠表記、確定までの基本フロー、行の採用状態、行修正の更新・復元案内 | 有効 | `index.html`、`style.css`、`tests/help-layout.test.js` |
