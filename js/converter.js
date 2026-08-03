@@ -1286,7 +1286,11 @@
         return;
       }
       const requestedMode = ["auto", "edit", "source", "none", "recovered", "fixed"].includes(rowModes[outputIndex]) ? rowModes[outputIndex] : "";
-      const automaticCode = encodeTerminalWhiteNote(expandedBeatCode(match[2], match[3]), match[3]);
+      let automaticCode = encodeTerminalWhiteNote(expandedBeatCode(match[2], match[3]), match[3]);
+      const completePartialAccentRhythm = partialOutputIndices.has(outputIndex) && shouldCompletePartialAccentRhythm(match[3]);
+      if (completePartialAccentRhythm) {
+        automaticCode = inferBeatCodeFromRenderedLine(match[3], automaticCode, settings) || automaticCode;
+      }
       const displayedEnteredCode = (rowCorrections[outputIndex] || "").trim();
       let manualBody = !["auto", "source"].includes(requestedMode) && typeof manualOutputLines[outputIndex] === "string"
         ? manualOutputLines[outputIndex]
@@ -1355,6 +1359,10 @@
       let appliedCode = enteredCode ? (previousCode || automaticCode) : automaticCode;
       let renderedBody = manualBody ?? compactSourceLines.get(outputIndex) ?? match[3];
       if (enteredCode.toLowerCase() === "n") appliedCode = "n";
+      else if (completePartialAccentRhythm && !sourceIsUnsupported && manualBody === null && !useSource && !enteredCode) {
+        const rendered = renderWithBeatCode(match[3], automaticCode, settings, lines[outputIndex] ?? match[3], automaticCode);
+        if (rendered.ok) renderedBody = rendered.body;
+      }
       else if (enteredCode) {
         const effectiveCode = enteredCode;
         // When this line was edited in the output, retain its lyrics/chords and
@@ -1643,6 +1651,30 @@
   function hasUnsupportedRowRhythm(line) {
     const tokens = parseTokens(String(line || ""));
     return tokens.some((token) => token.kind === "hyphen" && /-[>≧]/.test(token.value.replace(/[ \t　]/g, "")));
+  }
+
+  // A leading accent such as [N.C.]>- is supported by a row correction.  When
+  // another chord in that same manually written measure has no rhythm token,
+  // its omitted duration is unambiguous and can be restored automatically.
+  // Other partial manual-rhythm lines stay untouched.
+  function shouldCompletePartialAccentRhythm(line) {
+    const tokens = parseTokens(String(line || ""));
+    let hasLeadingAccent = false;
+    let hasRhythmlessChord = false;
+    let hasComplexRhythm = false;
+    tokens.forEach((token, tokenIndex) => {
+      if (token.kind !== "chord") return;
+      let next = tokenIndex + 1;
+      const rhythms = [];
+      while (next < tokens.length && !["chord", "bar"].includes(tokens[next].kind)) {
+        if (tokens[next].kind === "hyphen") rhythms.push(tokens[next].value.replace(/[ \t　]/g, ""));
+        next += 1;
+      }
+      if (!rhythms.length) hasRhythmlessChord = true;
+      if (rhythms.some((rhythm) => /^[>≧＝＞]/u.test(rhythm))) hasLeadingAccent = true;
+      if (rhythms.some((rhythm) => /[=≧＝]/u.test(rhythm))) hasComplexRhythm = true;
+    });
+    return hasLeadingAccent && hasRhythmlessChord && !hasComplexRhythm;
   }
 
   function protectUnsupportedCorrectionSlots(code, line) {

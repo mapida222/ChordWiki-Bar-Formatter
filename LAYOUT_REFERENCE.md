@@ -2,7 +2,7 @@
 
 更新日：2026年7月22日
 
-この文書は、ChordWiki Bar Formatter Webで調整済みのレイアウト値と、変更時に守る関係を記録する。
+この文書は、ChordWiki Bar Formatterで調整済みのレイアウト値と、変更時に守る関係を記録する。
 実装と記載が異なる場合は、`style.css`と`js/chordwiki-preview.js`の実装を優先する。
 
 現在の譜面プレビューレイアウトを「ベスト条件」とする。

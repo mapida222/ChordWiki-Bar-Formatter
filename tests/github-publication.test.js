@@ -18,6 +18,6 @@ assert(pagesWorkflow.includes("cp -R js site/js"));
 assert(pagesWorkflow.includes("cp -R logo site/logo"));
 assert(!pagesWorkflow.includes("cp row-edit-test.html"));
 assert(readme.includes("![現在のヘルプ画面](help-usage-screenshot.png)"));
-assert(readme.includes("[Releases](https://github.com/mapida222/ChordWiki-Bar-Formatter-Web/releases)"));
+assert(readme.includes("[Releases](https://github.com/mapida222/ChordWiki-Bar-Formatter/releases)"));
 
 console.log("PASS: GitHub CI, curated Pages deployment, README help image and Releases link");

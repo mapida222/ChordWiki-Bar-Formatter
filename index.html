@@ -5,27 +5,28 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://www.googletagmanager.com; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://www.google-analytics.com https://region1.google-analytics.com; object-src 'none'; base-uri 'none'; form-action 'none'">
   <meta name="referrer" content="no-referrer">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="ChordWikiのコード譜を小節単位に整形するブラウザアプリ">
-  <title>ChordWiki Bar Formatter Web</title>
-  <link rel="stylesheet" href="style.css?v=20260803-49">
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-5584BE36ZV"></script>
+  <script src="js/analytics.js"></script>
+  <title>ChordWiki Bar Formatter ～演奏しやすいリズム付きコード譜へ～</title>
+  <link rel="icon" type="image/png" href="logo/logo_透過.png">
+  <link rel="stylesheet" href="style.css?v=20260803-61">
   <link rel="stylesheet" href="style-row-edit-test.css?v=20260801-3">
 </head>
 <body>
   <header class="app-header">
     <div>
-      <p class="eyebrow">ChordWiki Bar Formatter　～コード譜を、読みやすい小節表記へ。～</p>
-      <h1 class="app-logo"><a href="https://mapida222.github.io/ChordWiki-Bar-Formatter-Web/" aria-label="ChordWiki Bar Formatter トップページ"><img src="logo/logo_ChordWikiBarFormatter1.png" alt="ChordWiki Bar Formatter"></a></h1>
+      <p class="eyebrow">ChordWiki Bar Formatter　～演奏しやすいリズム付きコード譜へ～</p>
+      <h1 class="app-logo"><a href="https://mapida222.github.io/ChordWiki-Bar-Formatter/" aria-label="ChordWiki Bar Formatter トップページ"><img src="logo/logo_ChordWikiBarFormatter1.png" alt="ChordWiki Bar Formatter"></a></h1>
     </div>
     <div class="header-actions">
       <button id="history-save" class="help-open-button" type="button" title="05. 変換後の表示を保存">履歴に追加</button>
       <button id="history-open" class="help-open-button" type="button">使用履歴</button>
       <button id="help-open" class="help-open-button" type="button">ヘルプ・使い方</button>
-      <div class="privacy-badge" title="入力内容を外部へ送信しません">
-        <span aria-hidden="true">●</span> ブラウザ内で処理
-      </div>
     </div>
   </header>
 
@@ -188,7 +189,7 @@
               </details>
               <details class="guide-item">
                 <summary><code class="guide-input">@</code><span>○：白玉</span><span class="guide-item-arrow" aria-hidden="true">▼</span></summary>
-                <div class="guide-item-detail"><p class="guide-detail-heading">文字列説明：</p><p><strong class="guide-detail-label">意味</strong><span class="guide-detail-value">対象コードへ白玉<code class="guide-output">[○]</code>を付けます。<code class="guide-input">@</code>の後に長さを続けて入力します。</span></p><p><strong class="guide-detail-label">入力→結果①</strong><span class="guide-detail-value"><code class="guide-input">@</code><span class="guide-arrow">→</span><code class="guide-output">[○]</code></span></p><p><strong class="guide-detail-label">入力→結果②</strong><span class="guide-detail-value"><code class="guide-input">@4</code><span class="guide-arrow">→</span><code class="guide-output">[○][----]</code></span></p><p><strong class="guide-detail-label">解除</strong><span class="guide-detail-value">選択中の文字をBackspaceかDeleteで削除します。値が不足した右端は自動値になります。</span></p></div>
+                <div class="guide-item-detail"><p class="guide-detail-heading">文字列説明：</p><p><strong class="guide-detail-label">意味</strong><span class="guide-detail-value">対象コードへ白玉<code class="guide-output">[○]</code>を付けます。白玉だけの<code class="guide-input">@</code>では次の位置までの長さが決められないため、後ろへ長さを続けて指定できます。</span></p><p><strong class="guide-detail-label">入力→結果①</strong><span class="guide-detail-value"><code class="guide-input">@</code><span class="guide-arrow">→</span><code class="guide-output">[○]</code></span></p><p><strong class="guide-detail-label">入力→結果②</strong><span class="guide-detail-value"><code class="guide-input">@0</code><span class="guide-arrow">→</span><code class="guide-output">[|][○]</code><span class="guide-arrow">（白玉だけで長さを決めないときは、小節線で区切る）</span></span></p><p><strong class="guide-detail-label">入力→結果③</strong><span class="guide-detail-value"><code class="guide-input">@4</code><span class="guide-arrow">→</span><code class="guide-output">[○][----]</code><span class="guide-arrow">（白玉の後を4個分進める）</span></span></p><p><strong class="guide-detail-label">解除</strong><span class="guide-detail-value">選択中の文字をBackspaceかDeleteで削除します。値が不足した右端は自動値になります。</span></p></div>
               </details>
               <details class="guide-item">
                 <summary><code class="guide-input">s</code><span>-：ハイフンシンコペーション</span><span class="guide-item-arrow" aria-hidden="true">▼</span></summary>
@@ -221,34 +222,8 @@
 
       <section class="community-panel" aria-label="関連リンク">
         <header class="auxiliary-panel-heading community-panel-heading">
-          <h3>サイト情報・関連ツール <span>/ SITE &amp; TOOLS</span></h3>
+          <h3>関連ツール <span>/ RELATED TOOLS</span></h3>
         </header>
-        <small class="community-section-label">サイト情報</small>
-        <nav class="community-self-links" aria-label="このツールのリンク">
-          <a class="community-logo-link community-site-logo" href="https://mapida222.github.io/ChordWiki-Bar-Formatter-Web/" target="_blank" rel="noopener noreferrer" aria-label="ChordWiki Bar Formatter を開く"><img src="logo/logo_ChordWikiBarFormatter1.png" alt="ChordWiki Bar Formatter"></a>
-          <a class="community-logo-link community-github-logo" href="https://github.com/mapida222/ChordWiki-Bar-Formatter-Web" target="_blank" rel="noopener noreferrer" aria-label="GitHub リポジトリを開く"><img src="logo/logo_GitHub_Lockup_White.png" alt="GitHub"></a>
-        </nav>
-        <nav class="community-actions" aria-label="ご意見・応援">
-          <a class="community-action community-feedback" href="https://docs.google.com/forms/d/e/1FAIpQLScYAHIEEOtuk8MoQR_1sNN7SVgCFFRtKCeUkm23sqTIGqg-cQ/viewform" target="_blank" rel="noopener noreferrer" aria-label="報告・要望（Googleフォーム）">
-            <span class="community-feedback-label"><strong>報告・要望</strong></span>
-          </a>
-          <details class="support-menu">
-            <summary><span>開発を応援する</span><span class="support-menu-caret" aria-hidden="true">▼</span></summary>
-            <div class="support-menu-links">
-              <a class="support-choice support-choice-booth" href="https://mapida222.booth.pm/items/8642112" target="_blank" rel="noopener noreferrer">
-                <strong>単発応援/BOOTH</strong>
-              </a>
-              <a class="support-choice support-choice-fanbox" href="https://mapida2.fanbox.cc/plans" target="_blank" rel="noopener noreferrer">
-                <strong>継続応援/FANBOX</strong>
-              </a>
-            </div>
-          </details>
-        </nav>
-        <footer class="site-credit">
-          <div class="site-credit-main">
-            <span>制作：<a href="https://x.com/mapida2_boso2" target="_blank" rel="noopener noreferrer">mapida</a>　© 2026 mapida</span>
-          </div>
-        </footer>
         <nav class="community-tools" aria-label="関連ツール">
           <small>関連ツール</small>
           <a href="https://ja.chordwiki.org/" target="_blank" rel="noopener noreferrer"><strong>ChordWiki</strong><span>（worris様）</span></a>
@@ -461,75 +436,59 @@
       </header>
       <div class="help-content">
         <section class="help-intro" aria-labelledby="help-intro-title">
-          <div class="help-section-heading"><div><small>はじめに / INTRODUCTION</small><h3 id="help-intro-title">はじめに</h3></div></div>
+          <div class="help-section-heading"><div><small>ABOUT</small><h3 id="help-intro-title">1. このツールについて</h3></div></div>
           <div class="help-intro-list">
             <section class="help-intro-card help-intro-primary" aria-labelledby="help-capabilities-title">
-              <h4 id="help-capabilities-title">このサイトでは何ができますか？</h4>
-              <p><a href="https://ja.chordwiki.org/" target="_blank" rel="noopener noreferrer">ChordWiki</a>で使用されるChordPro形式のコード譜を整え、読みやすい小節表記へ仕上げるためのブラウザツールです。</p>
-              <p class="help-capabilities-list-label"><strong>機能一覧：</strong></p>
-              <ul>
-                <li><strong>自動整形：</strong>コード譜を貼り付け、小節線<code>[|]</code>と音の長さを表すハイフン<code>[----]</code>を自動で加える</li>
-                <li><strong>リズム記号の修正：</strong>行修正で、ハイフン、アクセント<code>[&gt;]</code>、白玉<code>[○]</code>などの位置を曲に合わせて調整する</li>
-                <li><strong>長さ・小節位置の調整：</strong>ハイフン数を変える（例：<code>4→2</code>、<code>[Am][----]→[Am][--]</code>）／小節線の位置を指定する</li>
-                <li><strong>シンコペーションの調整：</strong>行修正の<code>s</code>や<code>*s</code>で音の食い込みを表す（例：<code>4s4→[C][---=][G][=][----][|]</code>）</li>
-                <li><strong>仕上げ・出力：</strong>変換後を直接編集し、譜面プレビュー・移調で確認してから完成テキストをコピーする</li>
-              </ul>
-            </section>
-            <section class="help-intro-card" aria-labelledby="help-audience-title">
-              <h4 id="help-audience-title">どんな人・どんな場面に向いていますか？</h4>
-              <ul>
-                <li>ChordWikiへ投稿された譜面を整えたい</li>
-                <li>小節線の位置を編集したい</li>
-                <li>コードの音価を正しく記載したい</li>
-                <li>拍、音価、アクセントなどのリズム表記を確認しながら仕上げたい</li>
-              </ul>
-            </section>
-            <section class="help-intro-card help-limitations" aria-labelledby="help-limitations-title">
-              <h4 id="help-limitations-title">このツールが苦手なこと・別ツールがおすすめなこと</h4>
-              <ul>
-                <li><strong>コード譜を最初から入力・作成すること：</strong>このツールは整形とリズム修正に特化しています。コード入力を省力化したい場合は、<a href="https://www.chordlistener.com/editor/" target="_blank" rel="noopener noreferrer">ChordWiki 用コード譜エディター</a>（作成：ぐらふぃーむ様）がおすすめです。</li>
-                <li><strong>曲どおりに完全自動で整えること：</strong>小節線、ハイフンの長さ、コードと歌詞の対応、タイミングやアクセントが曲に合うかを確認し、必要に応じて手動で修正してください。</li>
-                <li><strong>コードを文字間に入力する機能：</strong><a href="https://anipu.web.fc2.com/helper/lyricker.html" target="_blank" rel="noopener noreferrer">りりか</a>がおすすめです。</li>
-                <li><strong>特殊・複雑なリズム表記：</strong><code>[&gt;--&gt;]</code>など、対応していない表記があります。</li>
-              </ul>
-            </section>
-            <section class="help-intro-card" aria-labelledby="help-mobile-title">
-              <h4 id="help-mobile-title">スマホでも使えますか？</h4>
-              <p>スマホのブラウザでも使えますが、画面が広く操作しやすいPCでの利用をおすすめします。アプリのインストールは不要です。</p>
+              <h4 id="help-capabilities-title">演奏しやすい小節表記のコード譜制作を助けるツールです</h4>
+              <p><a href="https://ja.chordwiki.org/" target="_blank" rel="noopener noreferrer">ChordWiki</a>で使われるChordPro形式のコード譜に、小節線やリズム記号を追加し、演奏しやすく整えるブラウザツールです。</p>
+              <div class="help-example-source"><strong>変換前の原文：</strong><code>[C]あいう[Am]えお</code><span class="help-example-source-note">この入力が、下のように変わります。</span></div>
+              <div class="help-capability-rows" aria-label="このツールでできることと変換例">
+                <div class="help-capability-row"><strong>小節線とハイフンを自動追加</strong><div class="help-capability-example"><div class="help-rendered-pair"><span class="help-mini-score"><i>C　　 Am</i><span>あいう　えお</span></span><span class="help-preview-arrow">➜</span><span class="help-mini-score"><i>| C ----　Am ---- |</i><span>あいう<span class="help-preview-second-lyric">えお</span></span></span></div><div class="help-chordpro-pair"><code>[C]あいう[Am]えお</code><b>自動</b><code>[|][C][----]あいう[Am][----]えお[|]</code></div></div></div>
+                <div class="help-capability-row help-capability-length"><strong>コードの長さを簡単修正</strong><div class="help-length-examples"><div class="help-capability-example"><div class="help-rendered-pair"><span class="help-mini-score"><i>C ----　Am ----</i><span>あいう　　 えお</span></span><span class="help-preview-arrow">➜</span><span class="help-mini-score"><i>| C ----　--　Am -- |</i><span>あい　う<span class="help-preview-second-lyric">えお</span></span></span></div><span class="help-operation help-operation-only"><b>62</b></span><code class="help-result-chordpro">[|][C][----]あい[--]う[Am][--]えお[|]</code></div><div class="help-capability-example"><div class="help-rendered-pair"><span class="help-mini-score"><i>C ----　Am ----</i><span>あいう　　 えお</span></span><span class="help-preview-arrow">➜</span><span class="help-mini-score"><i>| C ====　Am ==== |</i><span>あいう<span class="help-preview-second-lyric">えお</span></span></span></div><span class="help-operation help-operation-only"><b>*</b><em>16分音符</em></span><code class="help-result-chordpro">[|][C][====]あいう[Am][====]えお[|]</code></div></div></div>
+                <div class="help-capability-row help-capability-rhythm"><strong>リズム記号を簡単追加</strong><div class="help-rhythm-examples">
+                  <div><div class="help-capability-example"><div class="help-rendered-pair"><span class="help-mini-score"><i>C　　 Am</i><span>あいう　えお</span></span><span class="help-preview-arrow">➜</span><span class="help-mini-score"><i>| C &gt;---　Am ---- |</i><span>あいう<span class="help-preview-second-lyric">えお</span></span></span></div><span class="help-operation help-operation-only"><b>^</b><em>アクセント</em></span><code class="help-result-chordpro">[|][C][&gt;---]あいう[Am][----]えお[|]</code></div></div>
+                  <div><div class="help-capability-example"><div class="help-rendered-pair"><span class="help-mini-score"><i>C　　 Am</i><span>あいう　えお</span></span><span class="help-preview-arrow">➜</span><span class="help-mini-score"><i>| C ○ ----　Am ---- |</i><span>あいう<span class="help-preview-second-lyric">えお</span></span></span></div><span class="help-operation help-operation-only"><b>@</b><em>白玉</em></span><code class="help-result-chordpro">[|][C][○][----]あいう[Am][----]えお[|]</code></div></div>
+                  <div><div class="help-capability-example"><div class="help-rendered-pair"><span class="help-mini-score"><i>C　　 Am</i><span>あいう　えお</span></span><span class="help-preview-arrow">➜</span><span class="help-mini-score"><i>| C ---　Am - ---- |</i><span>あいう<span class="help-preview-second-lyric">え　お</span></span></span></div><span class="help-operation help-operation-only"><b>s</b><em>シンコペーション(-)</em></span><code class="help-result-chordpro">[|][C][---]あいう[Am][-]え[----]お[|]</code></div></div>
+                  <div><div class="help-capability-example"><div class="help-rendered-pair"><span class="help-mini-score"><i>C　　 Am</i><span>あいう　えお</span></span><span class="help-preview-arrow">➜</span><span class="help-mini-score"><i>| C ---=　Am = ---- |</i><span>あいう<span class="help-preview-second-lyric">え　お</span></span></span></div><span class="help-operation help-operation-only"><b>*s</b><em>シンコペーション(=)</em></span><code class="help-result-chordpro">[|][C][---=]あいう[Am][=]え[----]お[|]</code></div></div>
+                </div></div>
+                <div class="help-capability-row"><strong>譜面を移調</strong><div class="help-capability-example"><div class="help-rendered-pair"><span class="help-mini-score"><i>C　　 Am</i><span>あいう　えお</span></span><span class="help-preview-arrow">➜</span><span class="help-mini-score"><i>D　　 Bm</i><span>あいう　えお</span></span></div><span class="help-operation help-operation-only"><b>+2</b></span><code class="help-result-chordpro">[D]あいう[Bm]えお</code></div></div>
+                <div class="help-capability-row help-capability-comment-row"><strong>リアルタイムプレビュー</strong><span class="help-capability-comment">編集した内容を「06. 譜面プレビュー」ですぐ確認できます。「別画面で開く」も使えます。</span></div>
+              </div>
             </section>
           </div>
         </section>
 
         <section class="help-flow" aria-labelledby="help-flow-title">
-          <div class="help-section-heading"><div><small>基本的な使い方 / BASIC FLOW</small><h3 id="help-flow-title">基本的な使い方</h3></div></div>
+          <div class="help-section-heading"><div><small>BASIC FLOW</small><h3 id="help-flow-title">2. 基本的な使い方</h3></div></div>
           <ol class="help-flow-grid">
-            <li><span>1</span><div><small>02 変換前 / SOURCE</small><strong>コード譜を貼る</strong></div></li>
-            <li><span>2</span><div><small>03～05 修正 / EDIT</small><strong>自動変換結果を修正する</strong></div></li>
-            <li><span>3</span><div><small>06 譜面 / PREVIEW</small><strong>プレビューする</strong></div></li>
-            <li><span>4</span><div><small>07 確定 / COMMIT</small><strong>確定してコピーする</strong></div></li>
+            <li><span>1</span><div><small>02. 変換前</small><strong>コード譜を<br>貼り付ける</strong><p>貼るだけで、<b>自動変換</b>が始まります。</p></div></li>
+            <li><span>2</span><div><small>03. 初期設定・使用例</small><strong>拍子と設定値を<br>確認する</strong><p>わからなければ、まずは<b>そのまま</b>でOKです。</p></div></li>
+            <li><span>3</span><div><small>04. 行修正／05. 変換後</small><strong>曲に合わせて<br>直す</strong><p>数字を変えると、音の<b>長さ</b>が変わります。</p></div></li>
+            <li><span>4</span><div><small>06. 譜面プレビュー</small><strong>見た目を<br>確認する</strong><p>必要なら、ここで<b>移調</b>もできます。</p></div></li>
+            <li><span>5</span><div><small>07. 確定譜面テキスト</small><strong>確定して<br>コピーする</strong><p>最後に確定。完成した譜面を<b>コピー</b>します。</p></div></li>
           </ol>
         </section>
 
         <section id="help-start" class="help-io" aria-labelledby="help-io-title">
           <div class="help-section-heading">
-            <div><small>変換例 / EXAMPLE</small><h3 id="help-io-title">変換例</h3></div>
+            <div><small>EXAMPLE</small><h3 id="help-io-title">3. 実際の変換例</h3></div>
           </div>
           <div class="help-io-flow">
-            <article class="help-io-panel help-io-input"><header class="help-io-panel-heading"><strong>1. コード譜を貼る</strong><small>対象枠：変換前</small></header><pre><span class="help-chord">[C]</span>あいうえ<span class="help-chord">[G]</span>お　かき<span class="help-chord">[Am]</span>く<span class="help-chord">[G]</span>け<span class="help-chord">[F]</span>こ&#10;<span class="help-chord">[E]</span>さしす<span class="help-chord">[Am]</span>せそ　たち<span class="help-chord">[F]</span>つて<span class="help-chord">[D/F#]</span>と&#10;なに<span class="help-chord">[Gsus4]</span>ぬねの　は<span class="help-chord">[G]</span>ひふ<span class="help-chord">[G#dim]</span>へほ</pre></article>
+            <article class="help-io-panel help-io-input"><header class="help-io-panel-heading"><strong>1. コード譜を貼る</strong><small>対象枠：02. 変換前</small></header><pre><span class="help-chord">[C]</span>あいうえ<span class="help-chord">[G]</span>お　かき<span class="help-chord">[Am]</span>く<span class="help-chord">[G]</span>け<span class="help-chord">[F]</span>こ&#10;<span class="help-chord">[E]</span>さしす<span class="help-chord">[Am]</span>せそ　たち<span class="help-chord">[F]</span>つて<span class="help-chord">[D/F#]</span>と&#10;なに<span class="help-chord">[Gsus4]</span>ぬねの　は<span class="help-chord">[G]</span>ひふ<span class="help-chord">[G#dim]</span>へほ</pre></article>
             <span class="help-fat-arrow help-flow-forward" aria-hidden="true">➜</span>
-            <article class="help-io-panel help-io-output"><header class="help-io-panel-heading"><strong>2. 小節線とハイフンが自動追加される</strong><small>対象枠：初期設定、変換後</small></header><div class="help-panel-note">「4/4拍子の基本設定」で自動変換された例</div><div class="help-conversion-table-wrap"><div class="help-conversion-table"><strong>コード直後につく<br>ハイフン数</strong><strong>変換結果</strong><code>44448</code><pre><mark class="help-auto-added">[|]</mark><span class="help-chord">[C]</span><mark class="help-auto-added">[----]</mark>あいうえ<span class="help-chord">[G]</span><mark class="help-auto-added">[----]</mark>お　かき<mark class="help-auto-added">[|]</mark><span class="help-chord">[Am]</span><mark class="help-auto-added">[----]</mark>く<span class="help-chord">[G]</span><mark class="help-auto-added">[----]</mark>け<mark class="help-auto-added">[|]</mark><span class="help-chord">[F]</span><mark class="help-auto-added">[----]</mark><mark class="help-auto-added">[----]</mark>こ<mark class="help-auto-added">[|]</mark></pre><code>4444</code><pre><mark class="help-auto-added">[|]</mark><span class="help-chord">[E]</span><mark class="help-auto-added">[----]</mark>さしす<span class="help-chord">[Am]</span><mark class="help-auto-added">[----]</mark>せそ　たち<mark class="help-auto-added">[|]</mark><span class="help-chord">[F]</span><mark class="help-auto-added">[----]</mark>つて<span class="help-chord">[D/F#]</span><mark class="help-auto-added">[----]</mark>と<mark class="help-auto-added">[|]</mark></pre><code>448</code><pre>なに<mark class="help-auto-added">[|]</mark><span class="help-chord">[Gsus4]</span><mark class="help-auto-added">[----]</mark>ぬねの　は<span class="help-chord">[G]</span><mark class="help-auto-added">[----]</mark>ひふ<mark class="help-auto-added">[|]</mark><span class="help-chord">[G#dim]</span><mark class="help-auto-added">[----]</mark><mark class="help-auto-added">[----]</mark>へほ<mark class="help-auto-added">[|]</mark></pre></div></div></article>
+            <article class="help-io-panel help-io-output"><header class="help-io-panel-heading"><strong>2. 小節線とハイフンが自動追加される</strong><small>対象枠：03. 初期設定・使用例、05. 変換後</small></header><div class="help-panel-note">「4/4拍子の基本設定」で自動変換された例</div><div class="help-conversion-table-wrap"><div class="help-conversion-table"><strong>コード直後につく<br>ハイフン数</strong><strong>変換結果</strong><code>44448</code><pre><mark class="help-auto-added">[|]</mark><span class="help-chord">[C]</span><mark class="help-auto-added">[----]</mark>あいうえ<span class="help-chord">[G]</span><mark class="help-auto-added">[----]</mark>お　かき<mark class="help-auto-added">[|]</mark><span class="help-chord">[Am]</span><mark class="help-auto-added">[----]</mark>く<span class="help-chord">[G]</span><mark class="help-auto-added">[----]</mark>け<mark class="help-auto-added">[|]</mark><span class="help-chord">[F]</span><mark class="help-auto-added">[----]</mark><mark class="help-auto-added">[----]</mark>こ<mark class="help-auto-added">[|]</mark></pre><code>4444</code><pre><mark class="help-auto-added">[|]</mark><span class="help-chord">[E]</span><mark class="help-auto-added">[----]</mark>さしす<span class="help-chord">[Am]</span><mark class="help-auto-added">[----]</mark>せそ　たち<mark class="help-auto-added">[|]</mark><span class="help-chord">[F]</span><mark class="help-auto-added">[----]</mark>つて<span class="help-chord">[D/F#]</span><mark class="help-auto-added">[----]</mark>と<mark class="help-auto-added">[|]</mark></pre><code>448</code><pre>なに<mark class="help-auto-added">[|]</mark><span class="help-chord">[Gsus4]</span><mark class="help-auto-added">[----]</mark>ぬねの　は<span class="help-chord">[G]</span><mark class="help-auto-added">[----]</mark>ひふ<mark class="help-auto-added">[|]</mark><span class="help-chord">[G#dim]</span><mark class="help-auto-added">[----]</mark><mark class="help-auto-added">[----]</mark>へほ<mark class="help-auto-added">[|]</mark></pre></div></div></article>
             <span class="help-fat-arrow help-flow-turn" aria-hidden="true">➜</span>
-            <article class="help-io-panel help-io-correction"><header class="help-io-panel-heading"><strong>3. 曲に合わせてハイフン数を修正</strong><small>対象枠：行修正</small></header><div class="help-panel-note help-omit-note">表示省略するハイフン長さ：4,8</div><div class="help-conversion-table-wrap"><div class="help-conversion-table help-manual-table"><strong>コード直後につく<br>ハイフン数</strong><strong>変換結果</strong><code>44<strong class="help-manual-changed-digit">224</strong></code><pre>[|]<span class="help-chord">[C]</span>あいうえ<span class="help-chord">[G]</span>お　かき[|]<span class="help-chord">[Am]</span><mark class="help-example-change">[--]</mark>く<span class="help-chord">[G]</span><mark class="help-example-change">[--]</mark>け<span class="help-chord">[F]</span><mark class="help-example-change">[----]</mark>こ[|]</pre><code>44<strong class="help-manual-changed-digit">35</strong></code><pre>[|]<span class="help-chord">[E]</span>さしす<span class="help-chord">[Am]</span>せそ　たち[|]<span class="help-chord">[F]</span><mark class="help-example-change">[---]</mark>つて<span class="help-chord">[D/F#]</span><mark class="help-example-change">[-]</mark>と<mark class="help-example-change">[----]</mark>[|]</pre><code><strong class="help-manual-changed-digit">8</strong>44</code><pre>なに[|]<span class="help-chord">[Gsus4]</span>ぬねの　は[|]<span class="help-chord">[G]</span>ひふ<span class="help-chord">[G#dim]</span>へほ[|]</pre></div></div></article>
+            <article class="help-io-panel help-io-correction"><header class="help-io-panel-heading"><strong>3. 曲に合わせてハイフン数を修正</strong><small>対象枠：04. 行修正</small></header><div class="help-conversion-table-wrap"><div class="help-conversion-table help-manual-table"><strong>コード直後につく<br>ハイフン数</strong><strong>変換結果 <span class="help-table-heading-note">見やすくするために省略するハイフン長さ：4,8</span></strong><code>44<strong class="help-manual-changed-digit">224</strong></code><pre>[|]<span class="help-chord">[C]</span>あいうえ<span class="help-chord">[G]</span>お　かき[|]<span class="help-chord">[Am]</span><mark class="help-example-change">[--]</mark>く<span class="help-chord">[G]</span><mark class="help-example-change">[--]</mark>け<span class="help-chord">[F]</span><mark class="help-example-change">[----]</mark>こ[|]</pre><code>44<strong class="help-manual-changed-digit">35</strong></code><pre>[|]<span class="help-chord">[E]</span>さしす<span class="help-chord">[Am]</span>せそ　たち[|]<span class="help-chord">[F]</span><mark class="help-example-change">[---]</mark>つて<span class="help-chord">[D/F#]</span><mark class="help-example-change">[-]</mark>と<mark class="help-example-change">[----]</mark>[|]</pre><code><strong class="help-manual-changed-digit">8</strong>44</code><pre>なに[|]<span class="help-chord">[Gsus4]</span>ぬねの　は[|]<span class="help-chord">[G]</span>ひふ<span class="help-chord">[G#dim]</span>へほ[|]</pre></div></div></article>
             <span class="help-fat-arrow help-flow-back" aria-hidden="true">➜</span>
-            <article class="help-io-panel help-io-preview"><header class="help-io-panel-heading"><strong>4. 修正後を確認</strong><small>対象枠：譜面プレビュー</small></header><div id="help-example-preview" class="help-example-preview chordwiki-preview" aria-label="修正後の譜面プレビュー"></div></article>
+            <article class="help-io-panel help-io-preview"><header class="help-io-panel-heading"><strong>4. 譜面プレビューで確認する</strong><small>対象枠：06. 譜面プレビュー</small></header><div id="help-example-preview" class="help-example-preview chordwiki-preview" aria-label="修正後の譜面プレビュー"></div></article>
           </div>
         </section>
 
-        <section id="help-trouble" class="help-trouble" aria-labelledby="help-trouble-title">
-          <div class="help-section-heading"><div><small>修正方法 / HOW TO ADJUST</small><h3 id="help-trouble-title">修正方法</h3></div></div>
+        <details id="help-trouble" class="help-trouble help-collapsible">
+          <summary><span class="help-collapsible-heading"><small>HOW TO ADJUST</small><strong id="help-trouble-title">4. 詳しい修正方法</strong></span><span class="help-collapsible-hint">基本操作に慣れたら見てみる</span></summary>
           <div class="help-task-grid">
             <article class="help-task-card">
-              <header><span>1</span><div><h4>初期設定でハイフン数を変える</h4><strong>対象枠：03 初期設定、05 変換後</strong></div></header>
+              <header><span>1</span><div><h4>初期設定でハイフン数を変える</h4><strong>対象枠：03. 初期設定・使用例、05. 変換後</strong></div></header>
               <p>曲の拍子に合わせて設定値を変えると、自動追加されるハイフン数が変わります。</p>
               <div class="help-task-example-stack">
                 <div><code>4/4拍子：合計8、コード直後4</code><b aria-hidden="true">➜</b><code>[|][C][----][G][----][|]</code></div>
@@ -537,53 +496,112 @@
               </div>
             </article>
             <article class="help-task-card">
-              <header><span>2</span><div><h4>数字でハイフン数を変える</h4><strong>対象枠：04 行修正、05 変換後</strong></div></header>
+              <header><span>2</span><div><h4>数字でハイフン数を変える</h4><strong>対象枠：04. 行修正、05. 変換後</strong></div></header>
               <p>コード順に数字を入力して、行ごとのハイフン数を修正します。</p>
               <div class="help-task-example-stack">
                 <div><code>[C][G][Am] ＋ 行修正 224</code><b aria-hidden="true">➜</b><code>[|][C][--][G][--][Am][----][|]</code></div>
               </div>
             </article>
             <article class="help-task-card">
-              <header><span>3</span><div><h4>行ごとの採用状態を切り替える</h4><strong>対象枠：04 行修正、05 変換後</strong></div></header>
-              <p>「採用中」列のボタンで、変換後へ反映する内容を行ごとに切り替えます。非対応の表記を検出した行は、内容を守るため自動的に「固定」になる場合があります。</p>
+              <header><span>3</span><div><h4>シンコペーションを設定する</h4><strong>対象枠：04. 行修正、05. 変換後</strong></div></header>
+              <p><strong>ハイフン食い</strong>は<code>s</code>、<strong>イコール食い</strong>は<code>*s</code>を、食い込む位置へ入力します。</p>
+              <div class="help-task-example-stack">
+                <div><code>ハイフン食い：4s4</code><b aria-hidden="true">➜</b><code>[C][---][G][-][----]</code></div>
+                <div><code>イコール食い：4*s4</code><b aria-hidden="true">➜</b><code>[C][---=][G][=][----]</code></div>
+              </div>
+            </article>
+            <article class="help-task-card">
+              <header><span>4</span><div><h4>自動／修正／固定を切り替える</h4><strong>対象枠：04. 行修正、05. 変換後</strong></div></header>
               <ul class="help-state-list">
-                <li><strong>自動</strong><span>変換前から作った自動変換結果を使います。</span></li>
-                <li><strong>修正</strong><span>行修正または変換後で直接編集した内容を使います。</span></li>
-                <li><strong>固定</strong><span>現在の変換後を保持し、行修正による上書きを止めます。</span></li>
+                <li class="help-state-auto"><strong>自動</strong><span><b>いつもの状態。</b><br>自動変換の結果を使います。</span></li>
+                <li class="help-state-edit"><strong>修正</strong><span><b>数字で直した行。</b><br>「04. 行修正」の内容を使います。</span></li>
+                <li class="help-state-lock"><strong>固定</strong><span><b>この行を守る。</b><br>「05. 変換後」を直接編集したときなどに切り替わり、自動で書き換えません。</span></li>
               </ul>
+              <p class="help-mini-note">※ 状態は内容を読み取って自動で切り替わります。表示がおかしいときは、ボタンを押して状態を切り替えてみてください。</p>
             </article>
             <article class="help-task-card">
-              <header><span>4</span><div><h4>行修正のずれを直す</h4><strong>対象枠：04 行修正、05 変換後</strong></div></header>
-              <p>1行だけずれた場合は「この行を更新」を使います。全体の対応が崩れた場合は、異常時用の「変換後から行修正を復元」で全行を作り直します。復元中も変換後の表示内容は維持され、復元できない行は空欄になります。</p>
+              <header><span>5</span><div><h4>行修正のずれを直す</h4><strong>対象枠：04. 行修正、05. 変換後</strong></div></header>
+              <p class="help-plain-lead"><strong>ずれた範囲</strong>を見て、使うボタンを選びます。</p>
+              <div class="help-recovery-guide">
+                <div class="help-recovery-one"><strong>1行だけ変</strong><span>その行をクリック</span><b>「この行を更新」</b><small>その1行だけ直します。</small></div>
+                <div class="help-recovery-all"><strong>たくさんの行が変</strong><span>全体を直したい</span><b>「変換後から行修正を復元」</b><small>全行の行修正を作り直します。</small></div>
+              </div>
             </article>
             <article class="help-task-card">
-              <header><span>5</span><div><h4>移調し確定する</h4><strong>対象枠：06 譜面プレビュー、07 確定譜面テキスト</strong></div></header>
+              <header><span>6</span><div><h4>移調して確定する</h4><strong>対象枠：06. 譜面プレビュー、07. 確定譜面テキスト</strong></div></header>
               <p>譜面プレビューで移調を確認し、「譜面プレビューを確定」で07へ保存します。</p>
               <div class="help-task-example-stack">
                 <div><code>[C]　[G]　[Am]</code><b aria-hidden="true">➜</b><code>＋2：[D]　[A]　[Bm]</code></div>
               </div>
             </article>
           </div>
-        </section>
+        </details>
 
-        <section class="help-shortcuts" aria-labelledby="help-shortcuts-title">
-          <div class="help-section-heading"><div><small>操作アイコン / ICONS</small><h3 id="help-shortcuts-title">アイコン説明</h3></div></div>
-          <div class="help-shortcut-grid">
-            <p><span class="help-icon-sample" aria-hidden="true"><span class="paste-icon"></span></span><span><strong>貼り付け</strong><small>クリップボードから入力</small></span></p>
-            <p><span class="help-icon-sample" aria-hidden="true"><span class="copy-icon"></span></span><span><strong>コピー</strong><small>表示中のテキストをコピー</small></span></p>
-            <p><kbd>▼ ▲</kbd><span><strong>値を変更</strong><small>前後の候補へ移動</small></span></p>
-            <p><span class="help-resize-symbol" aria-hidden="true">◢</span><span><strong>枠サイズ変更</strong><small>枠の右下をドラッグ</small></span></p>
+        <details class="help-limitations help-collapsible">
+          <summary><span class="help-collapsible-heading"><small>LIMITATIONS</small><strong>5. このツールが苦手なこと</strong></span><span class="help-collapsible-hint">気になったときに見てみる</span></summary>
+          <div class="help-limitations-body">
+            <p class="help-limitations-note">このツールは、コード譜へ<strong>小節線やリズム記号を追加して整えるツール</strong>です。次の機能はありません。</p>
+            <ul>
+              <li><strong>コードを入力する機能：</strong>コード入力を省力化したい場合は、<a href="https://www.chordlistener.com/editor/" target="_blank" rel="noopener noreferrer">ChordWiki 用コード譜エディター</a>（作成：ぐらふぃーむ様）がおすすめです。</li>
+              <li><strong>コードを歌詞の文字間へ入力する機能：</strong><a href="https://anipu.web.fc2.com/helper/lyricker.html" target="_blank" rel="noopener noreferrer">りりか</a>がおすすめです。</li>
+              <li><strong>一部の特殊・複雑なリズム表記：</strong><code>[&gt;--&gt;]</code>など、対応していない表記があります。</li>
+            </ul>
+            <p class="help-manual-required-note">※ 自動変換だけで完成するものではありません。実際の曲を確認し、最後は手動で修正してください。</p>
+          </div>
+        </details>
+
+        <section class="help-faq" aria-labelledby="help-faq-title">
+          <div class="help-section-heading"><div><small>FAQ</small><h3 id="help-faq-title">6. よくある質問</h3></div></div>
+          <div class="help-intro-list">
+            <section class="help-intro-card" aria-labelledby="help-mobile-title">
+              <h4 id="help-mobile-title">スマホでも使えますか？</h4>
+              <p>スマホでの利用は推奨していません。スマホでの動作確認は十分に行っておらず、細かい修正や複数の欄を見比べる操作にも向きません。PCでの利用を推奨します。アプリのインストールは不要です。</p>
+            </section>
+            <section class="help-intro-card" aria-labelledby="help-privacy-title">
+              <h4 id="help-privacy-title">入力したコード譜は送信されますか？</h4>
+              <p>いいえ。入力内容はブラウザ内で処理し、運営者のサーバーへ送信・保存しません。利用状況の計測にはGoogle Analyticsを使用します。詳しくは<a href="privacy.html" target="_blank" rel="noopener noreferrer">プライバシーポリシー</a>をご確認ください。</p>
+            </section>
+            <section class="help-intro-card" aria-labelledby="help-bug-title">
+              <h4 id="help-bug-title">挙動がおかしくなりました。</h4>
+              <p>不具合や意図しない動作があれば、<a href="https://docs.google.com/forms/d/e/1FAIpQLScYAHIEEOtuk8MoQR_1sNN7SVgCFFRtKCeUkm23sqTIGqg-cQ/viewform" target="_blank" rel="noopener noreferrer">報告・要望フォーム</a>からお知らせください。可能であれば、操作手順や入力例も添えてください。</p>
+            </section>
           </div>
         </section>
+
       </div>
       </div>
     </dialog>
   </main>
 
+  <footer class="site-footer" aria-label="サイト情報">
+    <div class="site-footer-inner">
+      <nav class="community-self-links site-footer-links" aria-label="このツールのリンク">
+        <a class="community-logo-link community-site-logo" href="https://mapida222.github.io/ChordWiki-Bar-Formatter/" target="_blank" rel="noopener noreferrer" aria-label="ChordWiki Bar Formatter を開く"><img src="logo/logo_ChordWikiBarFormatter1.png" alt="ChordWiki Bar Formatter"></a>
+        <a class="community-logo-link community-github-logo" href="https://github.com/mapida222/ChordWiki-Bar-Formatter" target="_blank" rel="noopener noreferrer" aria-label="GitHub リポジトリを開く"><img src="logo/logo_GitHub_Lockup_White.png" alt="GitHub"></a>
+      </nav>
+      <nav class="community-actions site-footer-actions" aria-label="報告・要望と開発支援">
+        <a class="community-action community-feedback" href="https://docs.google.com/forms/d/e/1FAIpQLScYAHIEEOtuk8MoQR_1sNN7SVgCFFRtKCeUkm23sqTIGqg-cQ/viewform" target="_blank" rel="noopener noreferrer" aria-label="報告・要望（Googleフォーム）"><span class="community-feedback-label"><strong>報告・要望</strong></span></a>
+        <details class="support-menu">
+          <summary><span>開発を応援する</span><span class="support-menu-caret" aria-hidden="true">▶</span></summary>
+          <div class="support-menu-links">
+            <a class="support-choice support-choice-booth" href="https://mapida222.booth.pm/items/8642112" target="_blank" rel="noopener noreferrer"><strong>単発応援/BOOTH</strong></a>
+            <a class="support-choice support-choice-fanbox" href="https://mapida2.fanbox.cc/plans" target="_blank" rel="noopener noreferrer"><strong>継続応援/FANBOX</strong></a>
+          </div>
+        </details>
+      </nav>
+      <div class="site-credit">
+        <div class="site-credit-main">
+          <span>制作：<a href="https://x.com/mapida2_boso2" target="_blank" rel="noopener noreferrer">mapida</a>　© 2026 mapida</span>
+          <a href="privacy.html">プライバシーポリシー</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
   <script src="js/settings.js?v=20260802-9" defer></script>
   <script src="js/numeric-entry.js?v=20260731-1" defer></script>
-  <script src="js/converter.js?v=20260802-29" defer></script>
+  <script src="js/converter.js?v=20260803-30" defer></script>
   <script src="js/input-brackets.js?v=20260718-5" defer></script>
   <script src="js/correction-input.js?v=20260802-11" defer></script>
   <script src="js/transposer.js?v=20260802-8" defer></script>
