@@ -1,0 +1,49 @@
+"use strict";
+
+const assert = require("assert");
+const fs = require("fs");
+const path = require("path");
+
+const root = path.resolve(__dirname, "..");
+const css = fs.readFileSync(path.join(root, "style.css"), "utf8");
+const app = fs.readFileSync(path.join(root, "js", "app.js"), "utf8");
+const html = fs.readFileSync(path.join(root, "index.html"), "utf8");
+
+assert(css.includes("@media (max-width: 699px)"), "narrow screens must use the linked-editor layout");
+assert(css.includes(".settings-panel { position: static; z-index: auto; grid-column: 1; grid-row: 3;"), "settings must become an ordinary mobile row");
+assert(css.includes(".correction-card { grid-column: 1; grid-row: 4; }"), "row editing must follow source and settings on mobile");
+assert(html.includes("class=\"correction-symbol-toolbar\""), "mobile row editing needs a one-row symbol toolbar");
+assert(html.includes("class=\"output-symbol-toolbar\""), "mobile result editing needs a one-row input toolbar");
+assert(html.includes("data-correction-move=\"ArrowLeft\""), "row editing toolbar must include cursor movement");
+assert(html.includes("data-correction-backspace"), "row editing toolbar must include backspace");
+assert(html.includes("data-output-insert=\"○\""), "result toolbar must include the circle symbol");
+assert(html.includes("data-output-insert=\" \""), "result toolbar must include a half-width space button");
+assert(html.includes("data-output-backspace"), "result toolbar must include backspace");
+assert(css.includes(".correction-symbol-toolbar { grid-column: 1; grid-row: 5; }"), "symbol toolbar must sit above the result on mobile");
+assert(css.includes(".output-card { grid-column: 1; grid-row: 6; margin-top: 0; }"), "result editing must sit below the symbol toolbar on mobile");
+assert(css.includes(".output-symbol-toolbar { grid-column: 1; grid-row: 7;"), "result toolbar must sit below the result on mobile");
+assert(css.includes(".right-lower-stack { grid-column: 1; grid-row: 8; margin-top: 0; }"), "preview and committed score must directly follow the result toolbar on mobile");
+assert(css.includes(".left-lower-stack { grid-column: 1; grid-row: 9; margin-top: 0; }"), "support and related tools must follow the committed score on mobile");
+assert(app.includes("moveOutputCursor"), "result toolbar must move the output caret");
+assert(app.includes("[data-correction-move]"), "row editing toolbar must move the correction cursor");
+assert(css.includes("--result-editor-height: clamp(108px, 19vh, 148px)"), "mobile linked editors must remain compact enough to view together");
+assert(html.includes("id=\"correction-support-toggle\""), "row editing support must be toggled from its heading");
+assert(html.includes("id=\"output-settings-toggle\""), "result settings must be toggled from its heading");
+assert(html.includes("id=\"output-settings-mobile\""), "result settings must have a collapsible container");
+assert(html.includes("id=\"preview-settings-toggle\""), "preview settings must be toggled from its heading");
+assert(html.includes("id=\"preview-settings-mobile\""), "preview settings must have a collapsible container");
+assert(html.includes("class=\"committed-actions\""), "committed score controls must use their own row");
+assert(css.includes(".correction-card.mobile-support-collapsed .correction-context-bar"), "row editing support must collapse on mobile");
+assert(css.includes(".correction-card > .frame-resize-corner, .output-card > .frame-resize-corner { display: block;"), "mobile row-edit and result cards must keep an easy-to-grab resize corner");
+assert(css.includes("@media (max-width: 380px)"), "very narrow phones must stack result-setting fields cleanly");
+assert(css.includes("#input-text, #output-text, #final-output-text, #committed-output-text, #final-score-preview { overflow-x: scroll; scrollbar-gutter: stable; }"), "all long-text panes must keep their native horizontal scrollbar visible");
+assert(css.includes("::-webkit-scrollbar:horizontal"), "native horizontal scrollbars must be comfortably thick");
+assert(app.includes("closeCorrectionGuideOnNarrowLayout"), "the row-edit symbol guide must close on narrow screens");
+assert(app.includes("applyMobileSectionCollapse"), "mobile settings and support must start collapsed");
+assert(app.includes("setMobilePreviewSettingsOpen"), "preview settings must follow the mobile collapse state");
+assert(app.includes("const allowColumnResize = !window.matchMedia(\"(max-width: 699px)\").matches;"), "mobile resize corners must not change the single-column layout width");
+assert(app.includes("function keepMobileLinkedLineInView(lineIndex)"), "active mobile rows must have a linked viewport follower");
+assert(app.includes("mobileLinkedScrollPaused = true"), "manual scrolling must temporarily pause automatic following");
+assert(app.includes("if (lineChanged) mobileLinkedScrollPaused = false"), "moving to a new line must resume following");
+
+console.log("PASS: narrow screens stack linked editors and preserve manual scrolling");

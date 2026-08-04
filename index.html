@@ -104,8 +104,8 @@
         <div class="editor-heading">
           <div class="settings-heading-copy">
             <h2 id="settings-title" class="compact-editor-title">03. 初期設定・使用例 <span>/ SETTINGS</span></h2>
-            <span class="context-help"><button class="context-help-button" type="button" aria-label="初期設定の説明" aria-expanded="false" aria-controls="help-tip-settings">?</button><span id="help-tip-settings" class="context-help-popover" role="tooltip" hidden><strong class="context-help-title">03. 初期設定・使用例</strong>曲の拍子に合わせて、自動で補うハイフン数と1小節分の長さを設定します。</span></span>
           </div>
+          <span class="context-help"><button class="context-help-button" type="button" aria-label="初期設定の説明" aria-expanded="false" aria-controls="help-tip-settings">?</button><span id="help-tip-settings" class="context-help-popover" role="tooltip" hidden><strong class="context-help-title">03. 初期設定・使用例</strong>曲の拍子に合わせて、自動で補うハイフン数と1小節分の長さを設定します。</span></span>
         </div>
         <div id="settings-shell" class="settings-shell">
         <div class="settings-primary-actions">
@@ -139,7 +139,10 @@
       <article class="editor-card correction-card">
         <div class="editor-heading">
           <div class="heading-with-help"><h2 class="compact-editor-title"><label for="correction-text">04. 行修正 <span>/ ROW EDIT</span></label></h2><span class="context-help"><button class="context-help-button" type="button" aria-label="行修正の説明" aria-expanded="false" aria-controls="help-tip-correction">?</button><span id="help-tip-correction" class="context-help-popover" role="tooltip" hidden><strong class="context-help-title">04. 行修正</strong>1行のコード順に対応する数字や記号を上書きして、音の長さや小節位置を調整します。<br>入力例と記号の意味は、下の「行修正で使える記号」で確認できます。<br>「?」は自動変換できなかった位置です。その部分の変換後表示を保持します。</span></span></div>
-          <span id="correction-count" class="counter">0行</span>
+          <div class="editor-tools">
+            <button id="correction-support-toggle" class="mobile-heading-toggle" type="button" aria-expanded="true">編集サポート▲</button>
+            <span id="correction-count" class="counter">0行</span>
+          </div>
         </div>
         <div class="correction-context-bar">
           <span class="correction-position-with-help"><span id="correction-position" class="correction-position" aria-live="polite">行修正をクリックすると現在位置を表示します</span><button id="correction-rebuild-all" class="correction-rebuild-button" type="button" title="変換後の全行から行修正を作り直す">↻ 変換後から行修正を復元</button><span class="context-help"><button class="context-help-button" type="button" aria-label="行修正を復元の説明" aria-expanded="false" aria-controls="help-tip-correction-rebuild">?</button><span id="help-tip-correction-rebuild" class="context-help-popover" role="tooltip" hidden><strong class="context-help-title">04. 行修正：変換後から復元</strong>異常時用の復旧機能です。変換後の全行から行修正値を推論し直します。<br>現在の行修正値は置き換わりますが、変換後の表示内容は維持されます。コード・白玉がない行は空欄になります。</span></span></span>
@@ -254,14 +257,27 @@
         <div class="frame-resize-corner two-axis" data-row="top" data-column="inverse" role="separator" aria-label="変換前枠の幅と高さを調整" tabindex="0"></div>
       </article>
 
+      <div class="correction-symbol-toolbar" role="group" aria-label="行修正の記号入力補助">
+        <span>入力</span>
+        <button type="button" data-correction-symbol="*" title="イコールの半分音価">*</button>
+        <button type="button" data-correction-symbol="^" title="アクセント">^</button>
+        <button type="button" data-correction-symbol="@" title="白玉">@</button>
+        <button type="button" data-correction-symbol="s" title="シンコペーション">s</button>
+        <button type="button" data-correction-symbol="|" title="小節頭">|</button>
+        <button type="button" data-correction-symbol="x" title="小節線を消去">x</button>
+        <button type="button" data-correction-backspace title="1文字削除">BS</button>
+        <button type="button" data-correction-move="ArrowLeft" title="カーソルを左へ">←</button>
+        <button type="button" data-correction-move="ArrowRight" title="カーソルを右へ">→</button>
+        <button type="button" data-correction-move="ArrowDown" title="カーソルを下へ">↓</button>
+        <button type="button" data-correction-move="ArrowUp" title="カーソルを上へ">↑</button>
+      </div>
+
       <article class="editor-card output-card">
         <div class="editor-heading">
           <h2 class="compact-editor-title"><label for="output-text">05. 変換後 <span>/ RESULT</span></label></h2>
           <div class="editor-tools">
-            <span class="diff-legend" hidden title="変換時に自動追加された小節線・拍記号"><i aria-hidden="true"></i>自動追加</span>
-            <label class="output-diff-setting"><input id="added-background" type="checkbox" checked> <span>差分背景</span></label>
-            <label class="output-bar-setting"><input id="plain-edit-bars" type="checkbox"> <span>小節線[|]にカッコをつけない</span></label>
             <span id="output-count" class="counter">0文字 / 0行</span>
+            <button id="output-settings-toggle" class="mobile-heading-toggle" type="button" aria-expanded="true">表示設定▲</button>
             <button id="copy-output" class="icon-button" type="button" aria-label="変換結果をコピー" title="変換結果をコピー"><span class="copy-icon" aria-hidden="true"></span></button>
           </div>
         </div>
@@ -272,7 +288,12 @@
             <button id="measure-capacity-warning-dismiss" type="button">変更しない</button>
           </div>
         </div>
-        <div class="removal-controls">
+        <details id="output-settings-mobile" class="output-settings-mobile" open>
+          <summary>表示設定</summary>
+          <span class="diff-legend" hidden title="変換時に自動追加された小節線・拍記号"><i aria-hidden="true"></i>自動追加</span>
+          <label class="output-diff-setting"><input id="added-background" type="checkbox" checked> <span>差分背景</span></label>
+          <label class="output-bar-setting"><input id="plain-edit-bars" type="checkbox"> <span>小節線[|]にカッコをつけない</span></label>
+          <div class="removal-controls">
           <span class="removal-label-with-help"><label for="lyric-hyphen-mode">歌詞行のハイフン</label><span class="context-help"><button class="context-help-button" type="button" aria-label="歌詞行のハイフン省略の説明" aria-expanded="false" aria-controls="help-tip-lyric-hyphens">?</button><span id="help-tip-lyric-hyphens" class="context-help-popover" role="tooltip" hidden><strong class="context-help-title">05. 変換後：歌詞行のハイフン</strong>歌詞行に付いたハイフンの表示方法を選びます。<br>「省略しない」：すべてのハイフンを表示します。<br>「指定数だけ省略」：入力した長さだけ省略します。複数指定はカンマ区切りで入力します（例：4,8）。<br>「できるだけ省略」：コードチェンジの位置が必要な箇所を残して省略します。<br>「すべて省略」：タイミング情報も含めて省略します。</span></span></span>
           <select id="lyric-hyphen-mode" aria-describedby="removal-summary">
             <option value="show">省略しない</option>
@@ -282,7 +303,8 @@
           </select>
           <input id="hyphen-removal-targets" type="text" value="4" inputmode="numeric" autocomplete="off" aria-label="省略するハイフン数（複数指定はカンマ区切り）" aria-describedby="removal-summary">
           <label class="removal-linked-setting" title="初期設定の「コード直後のハイフン数」を省略対象に使います"><input id="hyphen-removal-linked" type="checkbox" checked> <span>初期設定値を使う</span></label>
-        </div>
+          </div>
+        </details>
         <div id="output-shell" class="editor-shell">
           <div class="output-column-headings" aria-hidden="true"><span>No.</span><span>変換後テキスト</span></div>
           <span id="removal-summary" role="status" aria-live="polite"></span>
@@ -296,22 +318,43 @@
         <div class="frame-resize-corner two-axis" data-row="bottom" data-column="inverse" role="separator" aria-label="変換後枠の幅と高さを調整" tabindex="0"></div>
       </article>
 
+      <div class="output-symbol-toolbar" role="group" aria-label="変換後の入力補助">
+        <span>入力</span>
+        <button type="button" data-output-insert="[" title="[を入力">[</button>
+        <button type="button" data-output-insert="]" title="]を入力">]</button>
+        <button type="button" data-output-insert="|" title="|を入力">|</button>
+        <button type="button" data-output-insert="-" title="-を入力">-</button>
+        <button type="button" data-output-insert=" " title="半角空白を入力">SP</button>
+        <button type="button" data-output-insert="=" title="=を入力">=</button>
+        <button type="button" data-output-insert=">" title="&gt;を入力">&gt;</button>
+        <button type="button" data-output-backspace title="1文字削除">BS</button>
+        <button type="button" data-output-move="left" title="カーソルを左へ">←</button>
+        <button type="button" data-output-move="right" title="カーソルを右へ">→</button>
+        <button type="button" data-output-move="down" title="カーソルを下へ">↓</button>
+        <button type="button" data-output-move="up" title="カーソルを上へ">↑</button>
+        <button type="button" data-output-insert="○" title="○を入力">○</button>
+      </div>
+
       <div class="right-lower-stack">
       <article class="editor-card final-card">
         <div class="editor-heading">
           <div class="heading-with-help"><h2 class="compact-editor-title">06. 譜面プレビュー <span>/ SCORE</span></h2><span class="context-help"><button class="context-help-button" type="button" aria-label="譜面プレビューの説明" aria-expanded="false" aria-controls="help-tip-preview">?</button><span id="help-tip-preview" class="context-help-popover" role="tooltip" hidden><strong class="context-help-title">06. 譜面プレビュー</strong>変換結果を譜面に近い形で確認します。<br>移調、音名表記、小節線の表示を変更しても、変換前の原文は書き換わりません。</span></span></div>
           <div class="editor-tools preview-heading-tools">
             <span id="final-output-count" class="counter">0文字 / 0行</span>
+            <button id="preview-settings-toggle" class="mobile-heading-toggle" type="button" aria-expanded="true">表示設定▲</button>
             <button id="copy-final-output" class="icon-button" type="button" aria-label="譜面用テキストをコピー" title="譜面用テキストをコピー"><span class="copy-icon" aria-hidden="true"></span></button>
           </div>
         </div>
-        <div class="preview-controls" aria-label="譜面プレビュー設定">
+        <details id="preview-settings-mobile" class="preview-settings-mobile" open>
+          <summary>表示設定</summary>
+          <div class="preview-controls" aria-label="譜面プレビュー設定">
           <label class="preview-control" for="preview-transpose-main"><span>移調</span><span class="preview-transpose-stepper"><select id="preview-transpose-main" aria-label="譜面プレビューの移調"></select><button id="preview-transpose-main-down" type="button" aria-label="移調を半音下げる">▼</button><button id="preview-transpose-main-up" type="button" aria-label="移調を半音上げる">▲</button></span></label>
           <label class="preview-control" for="preview-spelling-main"><span>音名</span><select id="preview-spelling-main" aria-label="シャープ・フラット表記"><option value="preserve">元表記</option><option value="sharp">♯表記</option><option value="flat">♭表記</option></select></label>
           <button id="preview-key-settings" class="score-window-button" type="button">キー詳細設定…</button>
           <label class="final-bar-setting"><input id="final-bars-through" type="checkbox"> <span>小節線を貫通させる</span></label>
           <a id="open-score-window" class="score-window-button" href="chordwiki-preview.html" target="_blank" rel="opener" title="譜面プレビューを別画面で開く">別画面で開く</a>
-        </div>
+          </div>
+        </details>
         <div id="final-output-shell" class="editor-shell">
           <div id="final-output-lines" class="line-numbers" aria-hidden="true"></div>
           <div class="editor-text-layer"><pre id="final-output-highlight" class="editor-highlight" aria-hidden="true"></pre><textarea id="final-output-text" wrap="off" readonly spellcheck="false" placeholder="削除対象を反映した最終結果がここに表示されます。"></textarea></div>
@@ -327,12 +370,12 @@
       <article class="editor-card committed-card">
         <div class="editor-heading">
           <h2 class="compact-editor-title">07. 確定譜面テキスト <span>/ COMMITTED SCORE TEXT</span></h2>
-          <div class="editor-tools">
-            <button id="commit-preview-to-output" class="score-window-button" type="button">譜面プレビューを確定</button>
-            <span id="committed-output-count" class="counter">0文字 / 0行</span>
-            <button id="copy-committed-output" class="icon-button" type="button" aria-label="確定譜面をコピー" title="確定譜面をコピー"><span class="copy-icon" aria-hidden="true"></span></button>
-            <button id="committed-output-toggle" class="score-window-button" type="button" aria-expanded="false">開く▼</button>
-          </div>
+        </div>
+        <div class="committed-actions">
+          <button id="commit-preview-to-output" class="score-window-button" type="button">譜面プレビューを確定</button>
+          <span id="committed-output-count" class="counter">0文字 / 0行</span>
+          <button id="copy-committed-output" class="icon-button" type="button" aria-label="確定譜面をコピー" title="確定譜面をコピー"><span class="copy-icon" aria-hidden="true"></span></button>
+          <button id="committed-output-toggle" class="score-window-button" type="button" aria-expanded="false">開く▼</button>
         </div>
         <div id="committed-output-shell" class="editor-shell committed-collapsed">
           <div id="committed-output-lines" class="line-numbers" aria-hidden="true"></div>
