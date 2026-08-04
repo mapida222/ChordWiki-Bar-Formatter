@@ -3,7 +3,7 @@
   const $ = (selector) => document.querySelector(selector);
   const elements = {
     settingsGrid: $("#settings-grid"), settingsProfilePicker: $("#settings-profile-picker"), settingsRecommendationValues: $("#settings-recommendation-values"), customProfileNameField: $("#custom-profile-name-field"), customProfileName: $("#custom-profile-name"), settingsPanel: $("#settings-panel"), settingsShell: $("#settings-shell"), settingsBody: $("#settings-body"), settingsToggle: $("#settings-toggle"), settingsExampleToggle: $("#settings-example-toggle"), theme: $("#setting-theme"), fontSelect: $("#setting-editor-font"), fontSizeValue: $("#font-size-value"), scrollSync: $("#scroll-sync"), textColoring: $("#text-coloring"), boldCode: $("#bold-code"), addedBackground: $("#added-background"), plainEditBars: $("#plain-edit-bars"), finalBarsThrough: $("#final-bars-through"), previewTransposeMain: $("#preview-transpose-main"), previewTransposeMainDown: $("#preview-transpose-main-down"), previewTransposeMainUp: $("#preview-transpose-main-up"), previewSpellingMain: $("#preview-spelling-main"), previewTranspose: $("#preview-transpose"), previewTransposeDown: $("#preview-transpose-down"), previewTransposeUp: $("#preview-transpose-up"), previewSpelling: $("#preview-spelling"), previewDoubleSharp: $("#preview-double-sharp"), previewTheoretical: $("#preview-theoretical"), openScoreWindow: $("#open-score-window"),
-    correctionCard: $(".correction-card"), correctionHeading: $(".correction-card .editor-heading"), correctionContext: $(".correction-context-bar"), outputHeading: $(".output-card .editor-heading"), removalControls: $(".removal-controls"), correction: $("#correction-text"), input: $("#input-text"), output: $("#output-text"), finalOutput: $("#final-output-text"), finalPreview: $("#final-score-preview"), committedOutput: $("#committed-output-text"),
+    correctionCard: $(".correction-card"), correctionHeading: $(".correction-card .editor-heading"), correctionContext: $(".correction-context-bar"), correctionSupportToggle: $("#correction-support-toggle"), outputHeading: $(".output-card .editor-heading"), outputSettingsToggle: $("#output-settings-toggle"), outputSettingsMobile: $("#output-settings-mobile"), previewSettingsToggle: $("#preview-settings-toggle"), previewSettingsMobile: $("#preview-settings-mobile"), removalControls: $(".removal-controls"), correction: $("#correction-text"), input: $("#input-text"), output: $("#output-text"), finalOutput: $("#final-output-text"), finalPreview: $("#final-score-preview"), committedOutput: $("#committed-output-text"),
     workspace: $(".workspace"), fontPanel: $(".font-panel"), displaySettingsShell: $("#display-settings-shell"), displaySettingsToggle: $("#display-settings-toggle"), correctionGuide: $(".correction-input-guide"), guideToggleAll: $("#guide-toggle-all"), correctionShell: $("#correction-shell"), inputShell: $("#input-shell"), outputShell: $("#output-shell"), finalOutputShell: $("#final-output-shell"),
     correctionLines: $("#correction-lines"), correctionModes: $("#correction-modes"), inputLines: $("#input-lines"), outputLines: $("#output-lines"), finalOutputLines: $("#final-output-lines"), committedOutputLines: $("#committed-output-lines"),
     correctionHighlight: $("#correction-highlight"), inputHighlight: $("#input-highlight"), outputHighlight: $("#output-highlight"), finalOutputHighlight: $("#final-output-highlight"), committedOutputHighlight: $("#committed-output-highlight"),
@@ -94,6 +94,9 @@
   let pendingCompositionCommitAt = 0;
   let restoringPasteScroll = false;
   let scrollSyncEnabled = true;
+  let mobileLinkedScrollPaused = false;
+  let mobileProgrammaticScroll = false;
+  let mobileLastLinkedLine = -1;
   let settingsMode = "closed";
   let settingsExamplesOpen = true;
   let convertedOutput = "";
@@ -462,6 +465,7 @@
     return offset;
   }
   function keepCorrectionLineInView(lineIndex) {
+    if (window.matchMedia("(max-width: 699px)").matches) return;
     // A correction paste may update the active slot as part of its input event.
     // Keep that bookkeeping, but do not let it move the viewport captured at
     // the start of the paste.
@@ -479,6 +483,27 @@
       2
     );
     if (nextScrollTop !== elements.correction.scrollTop) elements.correction.scrollTop = nextScrollTop;
+  }
+  function keepMobileLinkedLineInView(lineIndex) {
+    if (!window.matchMedia("(max-width: 699px)").matches || restoringPasteScroll || lineIndex < 0) return;
+    const lineChanged = lineIndex !== mobileLastLinkedLine;
+    mobileLastLinkedLine = lineIndex;
+    if (lineChanged) mobileLinkedScrollPaused = false;
+    if (mobileLinkedScrollPaused) return;
+    const centerLine = (textarea) => {
+      const computed = getComputedStyle(textarea);
+      const lineHeight = Number.parseFloat(computed.lineHeight) || 23;
+      const paddingTop = Number.parseFloat(computed.paddingTop) || 0;
+      const lineTop = paddingTop + lineIndex * lineHeight;
+      const safeTop = textarea.scrollTop + lineHeight;
+      const safeBottom = textarea.scrollTop + textarea.clientHeight - lineHeight * 2;
+      if (lineTop >= safeTop && lineTop <= safeBottom) return;
+      textarea.scrollTop = Math.max(0, lineTop - (textarea.clientHeight - lineHeight) / 2);
+    };
+    mobileProgrammaticScroll = true;
+    centerLine(elements.correction);
+    centerLine(elements.output);
+    requestAnimationFrame(() => { mobileProgrammaticScroll = false; });
   }
   function selectCorrectionSlot(lineIndex, slotIndex) {
     const lines = elements.correction.value.split(/\r\n|\r|\n/);
@@ -604,6 +629,7 @@
     }
     if (activate && textarea === elements.correction) keepCorrectionLineInView(linkedLineIndex);
     applyLinkedPosition();
+    if (activate) keepMobileLinkedLineInView(linkedLineIndex);
   }
   function updateEditorHighlight(
     textarea,
@@ -2100,6 +2126,75 @@
       elements.correction.focus({ preventScroll: true });
     });
   });
+  document.querySelectorAll("[data-correction-move]").forEach((button) => {
+    button.addEventListener("pointerdown", (event) => event.preventDefault());
+    button.addEventListener("click", () => {
+      moveCorrectionSlot(button.dataset.correctionMove || "");
+      elements.correction.focus({ preventScroll: true });
+    });
+  });
+  document.querySelectorAll("[data-correction-backspace]").forEach((button) => {
+    button.addEventListener("pointerdown", (event) => event.preventDefault());
+    button.addEventListener("click", () => {
+      const start = elements.correction.selectionStart;
+      const end = elements.correction.selectionEnd;
+      if (start !== end) replaceCorrectionText(start, end, "", start);
+      else if (start > 0 && !/[\r\n]/.test(elements.correction.value[start - 1])) replaceCorrectionText(start - 1, start, "", start - 1);
+      elements.correction.focus({ preventScroll: true });
+    });
+  });
+  const outputAssistButtons = [...document.querySelectorAll("[data-output-insert], [data-output-move], [data-output-backspace]")];
+  const moveOutputCursor = (direction) => {
+    const value = elements.output.value;
+    const position = elements.output.selectionEnd;
+    const lineStart = Math.max(value.lastIndexOf("\n", position - 1), value.lastIndexOf("\r", position - 1)) + 1;
+    const nextLineBreak = value.slice(position).search(/\r\n|\r|\n/);
+    const lineEnd = nextLineBreak < 0 ? value.length : position + nextLineBreak;
+    let nextPosition = position;
+    if (direction === "left") nextPosition = Math.max(0, position - 1);
+    if (direction === "right") nextPosition = Math.min(value.length, position + 1);
+    if (direction === "up" || direction === "down") {
+      const column = position - lineStart;
+      if (direction === "up" && lineStart > 0) {
+        const previousEnd = lineStart - 1;
+        const previousStart = Math.max(value.lastIndexOf("\n", previousEnd - 1), value.lastIndexOf("\r", previousEnd - 1)) + 1;
+        nextPosition = Math.min(previousStart + column, previousEnd);
+      }
+      if (direction === "down" && lineEnd < value.length) {
+        const nextStart = lineEnd + (value[lineEnd] === "\r" && value[lineEnd + 1] === "\n" ? 2 : 1);
+        const afterNextBreak = value.slice(nextStart).search(/\r\n|\r|\n/);
+        const nextEnd = afterNextBreak < 0 ? value.length : nextStart + afterNextBreak;
+        nextPosition = Math.min(nextStart + column, nextEnd);
+      }
+    }
+    elements.output.setSelectionRange(nextPosition, nextPosition);
+    elements.output.focus({ preventScroll: true });
+  };
+  outputAssistButtons.forEach((button) => {
+    button.addEventListener("pointerdown", (event) => event.preventDefault());
+    button.addEventListener("click", () => {
+      if (button.hasAttribute("data-output-backspace")) {
+        const start = elements.output.selectionStart;
+        const end = elements.output.selectionEnd;
+        if (start !== end) elements.output.setRangeText("", start, end, "end");
+        else if (start > 0) elements.output.setRangeText("", start - 1, start, "end");
+        elements.output.dispatchEvent(new Event("input", { bubbles: true }));
+        elements.output.focus({ preventScroll: true });
+        return;
+      }
+      const inserted = button.dataset.outputInsert;
+      if (inserted) {
+        const start = elements.output.selectionStart;
+        const end = elements.output.selectionEnd;
+        elements.output.setRangeText(inserted, start, end, "end");
+        elements.output.setSelectionRange(start + inserted.length, start + inserted.length);
+        elements.output.dispatchEvent(new Event("input", { bubbles: true }));
+        elements.output.focus({ preventScroll: true });
+        return;
+      }
+      moveOutputCursor(button.dataset.outputMove || "");
+    });
+  });
   elements.correction.addEventListener("beforeinput", (event) => {
     if (!["insertText", "insertCompositionText"].includes(event.inputType)) return;
     const normalizedCharacters = CBFCorrectionInput.normalizeBeatInputSequence(event.data);
@@ -2757,6 +2852,10 @@
     syncResultRowAlignment();
   });
   function positionSettingsPanel() {
+    if (window.matchMedia("(max-width: 699px)").matches) {
+      Object.assign(elements.settingsPanel.style, { left: "", top: "", width: "", height: "" });
+      return;
+    }
     const workspaceRect = elements.workspace.getBoundingClientRect();
     const displayRect = elements.fontPanel.getBoundingClientRect();
     const correctionRect = elements.correctionCard.getBoundingClientRect();
@@ -2951,8 +3050,9 @@
     handle.addEventListener("pointermove", (event) => {
       if (!handle.hasPointerCapture(event.pointerId)) return;
       const horizontalDelta = event.clientX - startX;
-      if (columnMode === "direct") setLeftColumnWidth(startWidth + horizontalDelta);
-      if (columnMode === "inverse") setLeftColumnWidth(startWidth - horizontalDelta);
+      const allowColumnResize = !window.matchMedia("(max-width: 699px)").matches;
+      if (allowColumnResize && columnMode === "direct") setLeftColumnWidth(startWidth + horizontalDelta);
+      if (allowColumnResize && columnMode === "inverse") setLeftColumnWidth(startWidth - horizontalDelta);
       if (panelName) setAuxiliaryPanelHeight(panelName, startHeight + event.clientY - startY);
       else setRowHeight(row, startHeight + event.clientY - startY);
     });
@@ -2963,7 +3063,7 @@
     handle.addEventListener("keydown", (event) => {
       if (!["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(event.key)) return;
       event.preventDefault();
-      if (["ArrowLeft", "ArrowRight"].includes(event.key) && columnMode !== "none") {
+      if (["ArrowLeft", "ArrowRight"].includes(event.key) && columnMode !== "none" && !window.matchMedia("(max-width: 699px)").matches) {
         let delta = event.key === "ArrowLeft" ? -10 : 10;
         if (columnMode === "inverse") delta *= -1;
         setLeftColumnWidth(elements.correctionCard.getBoundingClientRect().width + delta);
@@ -3124,6 +3224,7 @@
       gutter.scrollTop = editor.scrollTop;
       if (editor === elements.correction && elements.correctionModes) elements.correctionModes.scrollTop = editor.scrollTop;
       syncHighlightScroll(editor);
+      if ([elements.correction, elements.output].includes(editor) && !mobileProgrammaticScroll && !syncingScroll && !restoringPasteScroll && window.matchMedia("(max-width: 699px)").matches) mobileLinkedScrollPaused = true;
       if (syncingScroll || restoringPasteScroll) return;
       const correctionResultPair = [elements.correction, elements.output];
       const syncTargets = scrollSyncEnabled ? scrollEditors : correctionResultPair.includes(editor) ? correctionResultPair : [editor];
@@ -3163,6 +3264,51 @@
   });
   updateLineNumbers(elements.correction, elements.correctionLines);
   updateCorrectionModes();
+  const narrowLayout = window.matchMedia("(max-width: 699px)");
+  const closeCorrectionGuideOnNarrowLayout = () => {
+    if (!narrowLayout.matches) return;
+    correctionGuideItems.forEach((item) => { item.open = false; });
+    updateGuideToggleAll();
+  };
+  const setMobileCorrectionSupportOpen = (open) => {
+    elements.correctionCard.classList.toggle("mobile-support-collapsed", !open);
+    elements.correctionSupportToggle.setAttribute("aria-expanded", String(open));
+    elements.correctionSupportToggle.textContent = open ? "編集サポート▲" : "編集サポート▼";
+  };
+  const setMobileOutputSettingsOpen = (open) => {
+    elements.outputSettingsMobile.open = open;
+    elements.outputSettingsToggle.setAttribute("aria-expanded", String(open));
+    elements.outputSettingsToggle.textContent = open ? "表示設定▲" : "表示設定▼";
+  };
+  const setMobilePreviewSettingsOpen = (open) => {
+    elements.previewSettingsMobile.open = open;
+    elements.previewSettingsToggle.setAttribute("aria-expanded", String(open));
+    elements.previewSettingsToggle.textContent = open ? "表示設定▲" : "表示設定▼";
+  };
+  const applyMobileSectionCollapse = () => {
+    if (narrowLayout.matches) {
+      setMobileCorrectionSupportOpen(false);
+      setMobileOutputSettingsOpen(false);
+      setMobilePreviewSettingsOpen(false);
+    } else {
+      setMobileCorrectionSupportOpen(true);
+      setMobileOutputSettingsOpen(true);
+      setMobilePreviewSettingsOpen(true);
+    }
+  };
+  elements.correctionSupportToggle.addEventListener("click", () => {
+    setMobileCorrectionSupportOpen(elements.correctionCard.classList.contains("mobile-support-collapsed"));
+  });
+  elements.outputSettingsToggle.addEventListener("click", () => {
+    setMobileOutputSettingsOpen(!elements.outputSettingsMobile.open);
+  });
+  elements.previewSettingsToggle.addEventListener("click", () => {
+    setMobilePreviewSettingsOpen(!elements.previewSettingsMobile.open);
+  });
+  narrowLayout.addEventListener("change", closeCorrectionGuideOnNarrowLayout);
+  narrowLayout.addEventListener("change", applyMobileSectionCollapse);
+  closeCorrectionGuideOnNarrowLayout();
+  applyMobileSectionCollapse();
   updateLineNumbers(elements.input, elements.inputLines);
   updateLineNumbers(elements.output, elements.outputLines);
   updateLineNumbers(elements.finalOutput, elements.finalOutputLines);

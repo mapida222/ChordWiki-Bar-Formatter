@@ -27,7 +27,7 @@ assert(html.includes("異常時用の復旧機能です。変換後の全行か�
 assert(html.includes('class="correction-position-with-help"'));
 assert(css.includes(".correction-position-with-help { display: grid;"));
 assert(css.includes(".correction-position-with-help > .context-help { position: absolute; top: 4px; right: 4px; }"));
-assert.strictEqual((html.match(/data-correction-symbol=/g) || []).length, 0);
+assert.strictEqual((html.match(/data-correction-symbol=/g) || []).length, 6);
 assert(css.includes(".correction-rebuild-button {"));
 assert(!css.includes(".correction-refresh-help { position: absolute;"));
 assert(app.includes('correctionRefreshLine: $("#correction-refresh-line")'));
