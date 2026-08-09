@@ -10,6 +10,8 @@ const app = fs.readFileSync(path.join(root, "js", "app.js"), "utf8");
 const html = fs.readFileSync(path.join(root, "index.html"), "utf8");
 
 assert(css.includes("@media (max-width: 699px)"), "narrow screens must use the linked-editor layout");
+assert(css.includes(".score-window-toolbar { grid-template-columns: minmax(0, 1fr);"), "the realtime editor toolbar must place controls below the title on mobile");
+assert(css.includes(".score-window-heading h1 { overflow: hidden; font-size: clamp(.82rem, 4vw, .96rem); text-overflow: ellipsis; white-space: nowrap; }"), "the realtime editor title must stay horizontal on mobile");
 assert(css.includes(".settings-panel { position: relative; z-index: 30; grid-column: 1; grid-row: 1; width: 100%; height: 72px;"), "settings must stay compact and may overlay row editing when expanded");
 assert(css.includes(".correction-card { grid-column: 1; grid-row: 3; transform: none; }"), "row editing must follow source and settings without desktop alignment movement on mobile");
 assert(html.includes("class=\"correction-symbol-toolbar\""), "mobile row editing needs a one-row symbol toolbar");

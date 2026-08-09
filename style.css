@@ -1056,10 +1056,11 @@ textarea::placeholder { color: var(--muted); opacity: .7; }
   .preview-control { font-size: .68rem; }
   .preview-controls { justify-content: flex-start; }
   .score-window-page { overflow: auto; }
-  .score-window-toolbar { position: sticky; top: 0; align-items: center; padding: 7px 9px; }
+  .score-window-toolbar { grid-template-columns: minmax(0, 1fr); position: sticky; top: 0; align-items: center; padding: 7px 9px; }
   .score-window-heading { min-width: 0; gap: 6px; }
   .score-window-brand-logo { flex-basis: 126px; min-width: 90px; }
-  .score-window-heading-copy { min-width: 0; }
+  .score-window-heading-copy { flex: 1 1 auto; min-width: 0; }
+  .score-window-heading h1 { overflow: hidden; font-size: clamp(.82rem, 4vw, .96rem); text-overflow: ellipsis; white-space: nowrap; }
   .score-window-status { display: none; }
   .score-window-controls { justify-content: flex-start; }
   .score-window-main { min-height: calc(100vh - 118px); }
