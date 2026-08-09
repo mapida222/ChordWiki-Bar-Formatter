@@ -264,7 +264,7 @@ main { padding: 12px 0 28px; }
 .support-jump-button { flex: 0 0 auto; min-height: 25px; padding: 3px 7px; border: 1px solid var(--correction-line); border-radius: 3px; color: var(--text); background: color-mix(in srgb, var(--panel) 86%, var(--correction-line)); cursor: pointer; font: 800 .68rem/1 var(--sans); }
 .support-jump-button:hover { background: color-mix(in srgb, var(--panel) 72%, var(--correction-line)); }
 .input-card { grid-column: 2; grid-row: 1; align-self: end; }
-.output-card { grid-column: 2; grid-row: 2; }
+.output-card { container-type: inline-size; grid-column: 2; grid-row: 2; }
 .right-lower-stack { grid-column: 2; grid-row: 3; align-self: start; display: grid; gap: 12px; min-width: 0; margin-top: 12px; }
 .final-card, .committed-card { min-width: 0; margin-top: 0; }
 .input-card::after, .output-card::after, .correction-card::after { position: absolute; z-index: 2; pointer-events: none; font: 700 12px/1 var(--sans); }
@@ -326,9 +326,16 @@ main { padding: 12px 0 28px; }
 .removal-controls { display: grid; grid-template-columns: max-content minmax(155px, 210px) minmax(64px, 88px) max-content; align-items: center; gap: 4px 6px; margin: 0; color: var(--muted); font-size: .68rem; }
 .output-settings-mobile { display: block; min-height: 32px; margin: 0 0 4px; padding: 2px 5px; border: 1px solid color-mix(in srgb, var(--result-line) 42%, var(--line)); border-radius: 4px; background: color-mix(in srgb, var(--panel) 96%, var(--result-line)); }
 .output-settings-mobile > summary { display: none; }
-.output-settings-mobile:not([open]) > .output-settings-row { display: none; }
+.output-settings-mobile:not([open]) { display: none; }
 .output-settings-row { display: grid; grid-template-columns: max-content minmax(0, 1fr); align-items: center; gap: 4px 10px; }
 .output-quick-settings { display: flex; align-items: center; gap: 8px; min-width: 0; }
+@container (max-width: 720px) {
+  .output-settings-row { grid-template-columns: minmax(0, 1fr); }
+}
+@container (max-width: 480px) {
+  .output-quick-settings { flex-wrap: wrap; }
+  .removal-controls { grid-template-columns: minmax(0, 1fr) minmax(110px, 1fr); }
+}
 .preview-settings-mobile { display: contents; }
 .preview-settings-mobile > summary { display: none; }
 .mobile-heading-toggle { display: inline-flex; align-items: center; min-height: 28px; padding: 3px 6px; border: 1px solid var(--line); border-radius: 3px; color: var(--muted); background: var(--panel); font: 800 .66rem/1 var(--sans); white-space: nowrap; cursor: pointer; }

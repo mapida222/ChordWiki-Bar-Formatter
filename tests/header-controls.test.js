@@ -107,7 +107,9 @@ assert(html.includes('<p class="output-edit-guidance">改行やふりがな、�
 assert(css.includes(".output-edit-guidance { margin: 0 2px 4px;"));
 assert(html.includes('class="output-quick-settings"'));
 assert(css.includes(".output-settings-row { display: grid; grid-template-columns: max-content minmax(0, 1fr);"));
-assert(css.includes(".output-settings-mobile:not([open]) > .output-settings-row { display: none; }"), "closed result settings must hide author-styled grid content");
+assert(css.includes(".output-settings-mobile:not([open]) { display: none; }"), "closed result settings must hide the complete settings frame");
+assert(css.includes("@container (max-width: 720px)"), "result settings must respond to the resized result frame width");
+assert(css.includes(".output-settings-row { grid-template-columns: minmax(0, 1fr); }"), "narrow result settings must stack without horizontal overflow");
 assert(css.includes(".auxiliary-panel-heading { margin: -9px -12px 9px -10px;"));
 assert(html.includes('<div class="output-column-headings" aria-hidden="true"><span>No.</span><span>変換後テキスト</span></div>'));
 assert(css.includes(".output-column-headings { grid-column: 1 / -1; grid-row: 1; display: grid; grid-template-columns: subgrid;"));
@@ -120,7 +122,7 @@ assert(css.includes(".final-card, .committed-card { min-width: 0; margin-top: 0;
 assert(css.includes(".status-support-panel { min-width: 0; margin: 0;"));
 assert(css.includes(".correction-card { grid-column: 1; grid-row: 2; }"));
 assert(css.includes(".output-card .editor-shell { grid-template-rows: 1.45em minmax(0, 1fr); height: var(--result-editor-height); border-color: var(--result-line); }"));
-assert(css.includes(".output-card { grid-column: 2; grid-row: 2; }"));
+assert(css.includes(".output-card { container-type: inline-size; grid-column: 2; grid-row: 2; }"));
 assert(!css.includes(".committed-card { grid-column: 2; grid-row: 4;"));
 assert(!app.includes("--settings-clearance"));
 

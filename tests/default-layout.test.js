@@ -28,7 +28,7 @@ assert(css.includes("border: 2px solid color-mix(in srgb, var(--correction-line)
 assert(css.includes("border-radius: 8px"), "the row-edit context frame must have rounded corners");
 assert(css.includes(".settings-column-resize-edge { top: 0; bottom: 0; }"), "the settings panel must expose a vertical resize edge");
 assert(css.includes(".settings-panel.settings-closed .settings-reset-button, .settings-panel.settings-closed .settings-footer-actions, .settings-panel.settings-closed .settings-example-toggle { display: none; }"), "a closed 03 panel must hide the usage-example control even before JavaScript initializes");
-assert(html.includes("style.css?v=20260810-96"));
+assert(html.includes("style.css?v=20260810-97"));
 assert(html.includes('type="module" src="/js/entries/main.js"'));
 assert(entry.includes('await import("../app.js")'));
 
