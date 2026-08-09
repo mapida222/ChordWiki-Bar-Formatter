@@ -38,7 +38,8 @@ assert(html.includes("id=\"preview-settings-toggle\""), "preview settings must b
 assert(html.includes("id=\"preview-settings-mobile\""), "preview settings must have a collapsible container");
 assert(html.includes("class=\"committed-actions\""), "committed score controls must use their own row");
 assert(!app.includes("setMobileCorrectionSupportOpen"), "row-edit actions must remain available without mobile collapse state");
-assert(css.includes(".settings-panel > .frame-resize-corner, .correction-card > .frame-resize-corner, .output-card > .frame-resize-corner, .final-card > .frame-resize-corner { display: block;"), "mobile settings, row-edit, result and preview frames must keep an easy-to-grab resize corner");
+assert(css.includes(".input-card > .frame-resize-corner, .correction-card > .frame-resize-corner, .output-card > .frame-resize-corner, .final-card > .frame-resize-corner { display: block;"), "mobile source, row-edit, result and preview frames must keep an easy-to-grab resize corner");
+assert(!css.includes(".settings-panel > .frame-resize-corner, .correction-card > .frame-resize-corner"), "mobile settings must not expose a resize corner");
 assert(css.includes("@media (max-width: 380px)"), "very narrow phones must stack result-setting fields cleanly");
 assert(css.includes("#input-text, #output-text, #final-output-text, #committed-output-text, #final-score-preview { overflow-x: scroll; scrollbar-gutter: stable; }"), "all long-text panes must keep their native horizontal scrollbar visible");
 assert(css.includes("::-webkit-scrollbar:horizontal"), "native horizontal scrollbars must be comfortably thick");
