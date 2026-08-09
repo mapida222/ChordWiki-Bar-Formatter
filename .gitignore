@@ -13,5 +13,8 @@ dist/
 coverage/
 *.log
 
+# Old CGI reference files are not part of the public site.
+cgi/
+
 # Alternate local screenshot; the PNG version is used by README.md.
 help-usage-screenshot.jpg
