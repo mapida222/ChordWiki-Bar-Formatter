@@ -9,10 +9,12 @@ const windowScript = fs.readFileSync(path.join(root, "js", "committed-preview-wi
 const html = fs.readFileSync(path.join(root, "committed-preview.html"), "utf8");
 const css = fs.readFileSync(path.join(root, "style.css"), "utf8");
 const preview = require(path.join(root, "js", "chordwiki-preview.js"));
+const entry = fs.readFileSync(path.join(root, "js", "entries", "committed-preview.js"), "utf8");
 
 assert(windowScript.includes('if (!text.value) { try { text.value = localStorage.getItem(TEXT_KEY) || ""; } catch (_error) {} }\n  // A saved draft'));
 assert(windowScript.includes("// numbers, syntax layer, or score preview. Always perform an initial render.\n  render();"));
-assert(html.includes("js/committed-preview-window.js?v=20260805-23"));
+assert(html.includes('type="module" src="/js/entries/committed-preview.js"'));
+assert(entry.includes('await import("../committed-preview-window.js")'));
 assert(html.includes('id="committed-layout-toggle"'));
 assert(html.includes('committed-window-layout committed-window-stacked'));
 assert(html.includes('href="index.html" aria-label="ChordWiki Bar Formatter トップページへ"'));
@@ -42,7 +44,7 @@ assert(css.includes(".committed-window-editor.active-line-visible"));
 assert(css.includes('.committed-window-preview > [data-source-line].compare-active'));
 
 const rendered = preview.render("[|][C][----]テスト[|]");
-assert(rendered.includes('class="cw-score-line cw-score-line-has-lyrics"'));
+assert(rendered.includes('class="line cw-score-line cw-score-line-has-lyrics"'));
 assert(rendered.includes('class="cw-code-token"'));
 assert(rendered.includes("テスト"));
 

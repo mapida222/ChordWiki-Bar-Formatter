@@ -1,0 +1,18 @@
+import * as chordWikiParser from "@chordwiki/chordpro-parser";
+import "../analytics.js";
+import "../settings.js";
+import "../numeric-entry.js";
+import "../converter.js";
+import "../input-brackets.js";
+import "../correction-input.js";
+import "../transposer.js";
+import "../history.js";
+import "../test-data.js";
+import "../parser/formatter-notation.js";
+import "../parser/chordwiki-adapter.js";
+import "../renderer/old-chordwiki-renderer.js";
+import "../chordwiki-preview.js";
+
+globalThis.ChordWikiPreview.configureParser(chordWikiParser);
+await import("../app.js");
+await import("../row-edit-test.js");

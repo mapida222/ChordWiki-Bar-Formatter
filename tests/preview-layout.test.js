@@ -7,7 +7,7 @@ const preview = require("../js/chordwiki-preview.js");
 
 const html = preview.render("|[F#]----|[G#m]----|[E#m-5][(Fm-5)]----|");
 
-assert(html.startsWith('<div class="cw-score-line"><span class="cw-segment cw-segment-has-trailing-bar"><span class="cw-body"><span class="cw-body-bar-token cw-bar-token-line-start"'));
+assert(html.startsWith('<p class="line cw-score-line"><span class="cw-segment cw-segment-has-trailing-bar"><span class="cw-body"><span class="cw-body-bar-token cw-bar-token-line-start"'));
 assert(html.includes('<span class="cw-body">----<span class="cw-body-bar-token" data-token-type="bar">|</span></span>'));
 assert(!html.includes("cw-leading-bar-token"));
 assert(!html.includes("cw-body-bar-trailing"));
@@ -28,6 +28,7 @@ assert(barBetweenRhythm.includes('<span class="cw-body">-<span class="cw-body-ba
 
 const css = fs.readFileSync(path.join(__dirname, "..", "style.css"), "utf8");
 const page = fs.readFileSync(path.join(__dirname, "..", "index.html"), "utf8");
+const entry = fs.readFileSync(path.join(__dirname, "..", "js", "entries", "main.js"), "utf8");
 assert(css.includes(".cw-score-line { display: block; width: max-content; min-width: 100%; margin: 1em 0;"));
 assert(css.includes("top: -1.1em"));
 assert(css.includes("font-family: sans-serif"));
@@ -45,7 +46,8 @@ assert(css.includes(".cw-score-line-has-lyrics .cw-body-bar-token { top: 0; }"))
 assert(css.includes(".cw-score-line-has-lyrics .cw-body-bar-token-before-text { margin-right: .4em; }"));
 assert(css.includes(".bars-through .cw-boundary { color: transparent; }"));
 assert(css.includes(".cw-bar-between-hyphens { margin-right: .6em; }"));
-assert(page.includes("js/chordwiki-preview.js?v=20260731-5"));
+assert(page.includes('type="module" src="/js/entries/main.js"'));
+assert(entry.includes('import "../chordwiki-preview.js"'));
 assert(css.includes(".cw-boundary-upper { top: -1.1em;"));
 assert(css.includes(".cw-boundary-leading { margin-right: .28em; }"));
 assert(css.includes(".cw-boundary-leading.cw-boundary-before-chord { margin-right: .08em; }"));

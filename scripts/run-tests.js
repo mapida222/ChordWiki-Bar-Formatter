@@ -7,7 +7,7 @@ const { spawnSync } = require("child_process");
 const root = path.resolve(__dirname, "..");
 const testsDirectory = path.join(root, "tests");
 const tests = fs.readdirSync(testsDirectory)
-  .filter((name) => name.endsWith(".test.js"))
+  .filter((name) => /\.test\.(?:js|mjs)$/.test(name))
   .sort();
 
 let failures = 0;
@@ -21,7 +21,12 @@ for (const test of tests) {
   if (result.status !== 0) failures += 1;
 }
 
-for (const file of ["js/analytics.js", "js/app.js", "js/converter.js", "js/numeric-entry.js", "js/row-edit-test.js"]) {
+for (const file of [
+  "js/analytics.js", "js/app.js", "js/converter.js", "js/numeric-entry.js", "js/row-edit-test.js",
+  "js/parser/formatter-notation.js", "js/parser/chordwiki-adapter.js",
+  "js/renderer/old-chordwiki-renderer.js", "js/chordwiki-preview.js",
+  "js/entries/main.js", "js/entries/preview-window.js", "js/entries/committed-preview.js"
+]) {
   const result = spawnSync(process.execPath, ["--check", path.join(root, file)], {
     cwd: root,
     encoding: "utf8"

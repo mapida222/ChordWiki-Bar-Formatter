@@ -85,6 +85,7 @@ const root = path.join(__dirname, "..");
 const html = fs.readFileSync(path.join(root, "index.html"), "utf8");
 const css = fs.readFileSync(path.join(root, "style.css"), "utf8");
 const app = fs.readFileSync(path.join(root, "js", "app.js"), "utf8");
+const entry = fs.readFileSync(path.join(root, "js", "entries", "main.js"), "utf8");
 assert(html.includes('id="history-export-test"'));
 assert(!html.includes('id="history-copy-test-input"'));
 assert(!html.includes('id="test-output-lock"'));
@@ -95,8 +96,8 @@ assert(html.includes('data-history-preview-mode="score"'));
 assert(html.includes('id="history-import-test"'));
 assert(html.includes('id="history-import-file"'));
 assert(
-  html.indexOf("js/history.js") < html.indexOf("js/test-data.js")
-  && html.indexOf("js/test-data.js") < html.indexOf("js/app.js"),
+  entry.indexOf('import "../history.js"') < entry.indexOf('import "../test-data.js"')
+  && entry.indexOf('import "../test-data.js"') < entry.indexOf('await import("../app.js")'),
   "test data module must load after history and before app"
 );
 assert(css.includes(".history-footer { display: flex; flex-wrap: wrap;"));

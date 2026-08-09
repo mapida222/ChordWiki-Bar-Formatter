@@ -9,9 +9,9 @@ desktop.ini
 
 # Local tooling
 node_modules/
+dist/
 coverage/
 *.log
 
 # Alternate local screenshot; the PNG version is used by README.md.
 help-usage-screenshot.jpg
-

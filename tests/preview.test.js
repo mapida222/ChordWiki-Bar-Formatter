@@ -49,7 +49,7 @@ assert.strictEqual((rhythmSpacingRegression.match(/cw-segment-rhythm-spacing/g) 
 assert(rhythmSpacingRegression.includes('<span class="cw-rhythm-token" data-token-type="rhythm">≧≧≧=</span>'));
 
 const plainBars = preview.render("|[C]歌詞|");
-assert(plainBars.startsWith('<div class="cw-score-line cw-score-line-has-lyrics">'));
+assert(plainBars.startsWith('<p class="line cw-score-line cw-score-line-has-lyrics">'));
 assert.strictEqual((plainBars.match(/cw-boundary-leading/g) || []).length, 0);
 assert.strictEqual((plainBars.match(/cw-boundary-trailing/g) || []).length, 0);
 assert.strictEqual((plainBars.match(/cw-body-bar-token/g) || []).length, 2);
@@ -85,7 +85,7 @@ assert.strictEqual((bracketedBars.match(/cw-boundary-upper/g) || []).length, 2);
 assert.strictEqual((bracketedBars.match(/cw-body-bar-token/g) || []).length, 0);
 
 const requestedLyricLayout = preview.render("[|][CM7]あそ[CmM7]この[|][Bm7]森[Em7]の　[|][Am7]満[G/B]開[|][CM7]の下(し[D7]た)[|][D7sus4][----][----]は[|]");
-assert(requestedLyricLayout.startsWith('<div class="cw-score-line cw-score-line-has-lyrics">'));
+assert(requestedLyricLayout.startsWith('<p class="line cw-score-line cw-score-line-has-lyrics">'));
 assert.strictEqual((requestedLyricLayout.match(/cw-boundary-upper/g) || []).length, 6);
 assert.strictEqual((requestedLyricLayout.match(/cw-body-bar-token/g) || []).length, 0);
 
@@ -94,11 +94,11 @@ assert.strictEqual((wideChordBars.match(/cw-segment-has-trailing-bar/g) || []).l
 assert(wideChordBars.includes('<span class="cw-body">要<span class="cw-body-bar-token" data-token-type="bar">|</span></span>'));
 
 const chordOnlySpacing = preview.render("|[GM7]----|[GM7]----|[Am7]----|[D7]----|");
-assert(chordOnlySpacing.startsWith('<div class="cw-score-line">'));
+assert(chordOnlySpacing.startsWith('<p class="line cw-score-line">'));
 assert.strictEqual((chordOnlySpacing.match(/class="cw-segment /g) || []).length, 5);
 assert.strictEqual((chordOnlySpacing.match(/cw-segment-has-upper/g) || []).length, 4);
 assert.strictEqual((chordOnlySpacing.match(/cw-boundary-leading/g) || []).length, 0);
-assert(chordOnlySpacing.startsWith('<div class="cw-score-line"><span class="cw-segment cw-segment-has-trailing-bar"'));
+assert(chordOnlySpacing.startsWith('<p class="line cw-score-line"><span class="cw-segment cw-segment-has-trailing-bar"'));
 
 const scaleLayoutSource = [
   "{c:＜メジャースケール＞　三和音}",
@@ -131,7 +131,7 @@ const scaleLayoutSource = [
   "|[GbM7]----|[Abm7]----|[Bbm7]----|[CbM7][(BM7)]----|[Db7]----|[Ebm7]----|[Fm7-5]----|"
 ].join("\n");
 const scaleLayout = preview.render(scaleLayoutSource);
-assert.strictEqual((scaleLayout.match(/class="cw-score-line"/g) || []).length, 26);
+assert.strictEqual((scaleLayout.match(/class="line cw-score-line"/g) || []).length, 26);
 assert.strictEqual((scaleLayout.match(/class="cw-segment /g) || []).length, 208);
 assert.strictEqual((scaleLayout.match(/cw-segment-has-upper/g) || []).length, 182);
 assert.strictEqual((scaleLayout.match(/cw-boundary-leading/g) || []).length, 0);

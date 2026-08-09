@@ -11,9 +11,8 @@
   <meta name="description" content="ChordWikiのコード譜を小節単位に整形するブラウザアプリ">
   <!-- Google tag (gtag.js) -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-5584BE36ZV"></script>
-  <script src="js/analytics.js"></script>
   <title>ChordWiki Bar Formatter ～演奏しやすいリズム付きコード譜へ～</title>
-  <link rel="icon" type="image/png" href="logo/logo_透過.png">
+  <link rel="icon" type="image/png" href="logo/logo_touka_favicon.png">
   <link rel="stylesheet" href="style.css?v=20260805-94">
   <link rel="stylesheet" href="style-row-edit-test.css?v=20260801-3">
 </head>
@@ -21,7 +20,7 @@
   <header class="app-header">
     <div>
       <p class="eyebrow">ChordWiki Bar Formatter　～演奏しやすいリズム付きコード譜へ～</p>
-      <h1 class="app-logo"><a href="https://mapida222.github.io/ChordWiki-Bar-Formatter/" aria-label="ChordWiki Bar Formatter トップページ"><img src="logo/logo_ChordWikiBarFormatter1.png" alt="ChordWiki Bar Formatter"></a></h1>
+      <h1 class="app-logo"><a href="https://mapida222.github.io/ChordWiki-Bar-Formatter/" aria-label="ChordWiki Bar Formatter トップページ"><img src="logo/logo_touka_ChordWikiBarFormatter1.png" alt="ChordWiki Bar Formatter"></a></h1>
     </div>
     <div class="header-actions">
       <button id="display-settings-toggle" class="help-open-button display-settings-trigger" type="button" aria-expanded="false" aria-controls="display-settings-shell">表示設定▼</button>
@@ -628,7 +627,7 @@
   <footer class="site-footer" aria-label="サイト情報">
     <div class="site-footer-inner">
       <nav class="community-self-links site-footer-links" aria-label="このツールのリンク">
-        <a class="community-logo-link community-site-logo" href="https://mapida222.github.io/ChordWiki-Bar-Formatter/" target="_blank" rel="noopener noreferrer" aria-label="ChordWiki Bar Formatter を開く"><img src="logo/logo_ChordWikiBarFormatter1.png" alt="ChordWiki Bar Formatter"></a>
+        <a class="community-logo-link community-site-logo" href="https://mapida222.github.io/ChordWiki-Bar-Formatter/" target="_blank" rel="noopener noreferrer" aria-label="ChordWiki Bar Formatter を開く"><img src="logo/logo_touka_ChordWikiBarFormatter1.png" alt="ChordWiki Bar Formatter"></a>
         <a class="community-logo-link community-github-logo" href="https://github.com/mapida222/ChordWiki-Bar-Formatter" target="_blank" rel="noopener noreferrer" aria-label="GitHub リポジトリを開く"><img src="logo/logo_GitHub_Lockup_White.png" alt="GitHub"></a>
       </nav>
       <nav class="community-actions site-footer-actions" aria-label="報告・要望と開発支援">
@@ -651,16 +650,6 @@
   </footer>
 
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
-  <script src="js/settings.js?v=20260802-9" defer></script>
-  <script src="js/numeric-entry.js?v=20260731-1" defer></script>
-  <script src="js/converter.js?v=20260803-30" defer></script>
-  <script src="js/input-brackets.js?v=20260718-5" defer></script>
-  <script src="js/correction-input.js?v=20260802-11" defer></script>
-  <script src="js/transposer.js?v=20260802-8" defer></script>
-  <script src="js/chordwiki-preview.js?v=20260731-5" defer></script>
-  <script src="js/history.js?v=20260725-7" defer></script>
-  <script src="js/test-data.js?v=20260724-5" defer></script>
-  <script src="js/app.js?v=20260805-55" defer></script>
-  <script src="js/row-edit-test.js?v=20260801-8" defer></script>
+  <script type="module" src="/js/entries/main.js"></script>
 </body>
 </html>

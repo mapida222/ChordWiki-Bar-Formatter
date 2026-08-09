@@ -8,6 +8,7 @@ const root = path.join(__dirname, "..");
 const app = fs.readFileSync(path.join(root, "js", "app.js"), "utf8");
 const css = fs.readFileSync(path.join(root, "style.css"), "utf8");
 const html = fs.readFileSync(path.join(root, "index.html"), "utf8");
+const entry = fs.readFileSync(path.join(root, "js", "entries", "main.js"), "utf8");
 
 assert(html.includes('id="display-settings-shell" class="display-settings-shell display-collapsed"'), "01 must render collapsed before JavaScript starts");
 assert(html.includes('id="settings-panel" class="settings-panel settings-closed"'), "03 must render collapsed by default");
@@ -28,6 +29,7 @@ assert(css.includes("border-radius: 8px"), "the row-edit context frame must have
 assert(css.includes(".settings-column-resize-edge { top: 0; bottom: 0; }"), "the settings panel must expose a vertical resize edge");
 assert(css.includes(".settings-panel.settings-closed .settings-reset-button, .settings-panel.settings-closed .settings-footer-actions, .settings-panel.settings-closed .settings-example-toggle { display: none; }"), "a closed 03 panel must hide the usage-example control even before JavaScript initializes");
 assert(html.includes("style.css?v=20260805-94"));
-assert(html.includes("js/app.js?v=20260805-55"));
+assert(html.includes('type="module" src="/js/entries/main.js"'));
+assert(entry.includes('await import("../app.js")'));
 
 console.log("PASS: LAYOUT-003 compact default layout and clear row-edit context frame");
