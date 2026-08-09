@@ -34,13 +34,19 @@
     return Boolean(value) && /^[\s\-=>≧○*]+$/u.test(value);
   }
 
+  function upperValue(token) {
+    return typeof token === "object" && token ? token.value : token;
+  }
+
   function decoratedUpper(tokens) {
     return tokens.map((token) => {
-      if (token === "|") return `<span class="cw-bar-token" data-token-type="bar">${decoratedText(token)}</span>`;
-      const rhythm = isRhythmToken(token);
-      const className = rhythm ? "cw-rhythm-token" : "cw-code-token";
+      const value = upperValue(token);
+      const level = typeof token === "object" && token ? token.level || 1 : 1;
+      if (value === "|") return `<span class="cw-bar-token${level > 1 ? " cw-upper-token-level-2" : ""}" data-token-type="bar">${decoratedText(value)}</span>`;
+      const rhythm = isRhythmToken(value);
+      const className = `${rhythm ? "cw-rhythm-token" : "cw-code-token"}${level > 1 ? " cw-upper-token-level-2" : ""}`;
       const tokenType = rhythm ? "rhythm" : "chord";
-      return `<span class="${className}" data-token-type="${tokenType}">${decoratedText(token)}</span>`;
+      return `<span class="${className}" data-token-type="${tokenType}">${decoratedText(value)}</span>`;
     }).join(" ");
   }
 
@@ -64,18 +70,18 @@
     const hasTrailingBar = part.body.endsWith("|");
     const body = part.body;
     const hasTrailingUpperBar = Boolean(part.trailingUpperBar);
-    const hasLeadingBar = part.upper[0] === "|";
+    const hasLeadingBar = upperValue(part.upper[0]) === "|";
     const upper = hasLeadingBar ? part.upper.slice(1) : part.upper;
     const classes = ["cw-segment"];
     if (hasLeadingBar) classes.push("cw-segment-has-leading-bar");
     if (hasTrailingBar) classes.push("cw-segment-has-trailing-bar");
     if (hasTrailingUpperBar) classes.push("cw-segment-has-trailing-upper-bar");
     if (upper.length) classes.push("cw-segment-has-upper");
-    const beginsWithRhythm = Boolean(upper.length && isRhythmToken(upper[0]));
+    const beginsWithRhythm = Boolean(upper.length && isRhythmToken(upperValue(upper[0])));
     const nextPart = parts[index + 1];
-    const nextUpper = nextPart?.upper?.[0] === "|" ? nextPart.upper.slice(1) : nextPart?.upper || [];
-    const nextBeginsWithRhythm = Boolean(nextUpper.length && isRhythmToken(nextUpper[0]));
-    const leadingBar = hasLeadingBar ? renderBoundary("leading", "upper", index === 0, upper.some((token) => !isRhythmToken(token)), beginsWithRhythm) : "";
+    const nextUpper = upperValue(nextPart?.upper?.[0]) === "|" ? nextPart.upper.slice(1) : nextPart?.upper || [];
+    const nextBeginsWithRhythm = Boolean(nextUpper.length && isRhythmToken(upperValue(nextUpper[0])));
+    const leadingBar = hasLeadingBar ? renderBoundary("leading", "upper", index === 0, upper.some((token) => !isRhythmToken(upperValue(token))), beginsWithRhythm) : "";
     const trailingUpperBar = hasTrailingUpperBar ? renderBoundary("trailing", "upper", false, false, nextBeginsWithRhythm) : "";
     const chord = upper.length ? `<span class="cw-chord">${decoratedUpper(upper)}</span>` : "";
     const bodySpan = body ? `<span class="cw-body">${decoratedBody(body, index === 0, hasLeadingBar)}</span>` : "";
@@ -83,7 +89,7 @@
   }
 
   function renderScoreSource(line) {
-    const tokenPattern = /\[([^\[\]\r\n]*)\]/g;
+    const tokenPattern = /\[\[([^\[\]\r\n]*)\]\]|\[([^\[\]\r\n]*)\]/g;
     const parts = [];
     let cursor = 0;
     let upperTokens = [];
@@ -94,7 +100,8 @@
     }
     while ((match = tokenPattern.exec(line))) {
       const before = line.slice(cursor, match.index);
-      const token = match[1];
+      const doubleUpper = match[1] !== undefined;
+      const token = doubleUpper ? match[1] : match[2];
       if (token === "|") {
         if (before || upperTokens.length) {
           append(before, upperTokens, { trailingUpperBar: true });
@@ -109,7 +116,7 @@
         append(before, upperTokens);
         upperTokens = [];
       }
-      upperTokens.push(token);
+      upperTokens.push(doubleUpper ? { value: token, level: 2 } : token);
       cursor = match.index + match[0].length;
     }
     const remainder = line.slice(cursor);

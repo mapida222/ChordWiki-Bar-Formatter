@@ -28,4 +28,8 @@ assert(!html.includes("<img"));
 assert(html.includes("&lt;img"));
 assert(!html.includes('href="javascript:'));
 
+const oldDoubleUpper = preview.parse("[[C]]上付き");
+assert.equal(oldDoubleUpper.lines[0].kind, "score", "official-parser text fallback must preserve old ChordWiki double-bracket notation");
+assert(preview.render("[[C]]上付き").includes("cw-upper-token-level-2"));
+
 console.log("PASS: PREVIEW-004 official parser adapter and safe old renderer");

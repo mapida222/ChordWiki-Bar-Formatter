@@ -31,6 +31,13 @@ assert(html.includes('id="committed-line-height"'));
 assert(html.includes('id="committed-transpose"'));
 assert(html.includes('id="committed-transpose-down"'));
 assert(html.includes('id="committed-transpose-up"'));
+assert(
+  html.indexOf('id="committed-transpose"') < html.indexOf('id="committed-transpose-down"')
+    && html.indexOf('id="committed-transpose-down"') < html.indexOf('id="committed-transpose-up"'),
+  "realtime transpose controls must be ordered as no-transpose select, minus, plus"
+);
+assert(css.includes("grid-template-columns: minmax(88px, 118px) 28px 28px;"));
+assert(css.includes(".cw-upper-token-level-2 { position: relative; top: -1.1em; }"));
 assert(entry.includes('import "../transposer.js"'));
 assert(windowScript.includes('window.ChordWikiTranspose.transposeText(text.value, transpose.value, "preserve")'));
 assert(windowScript.includes('const startedOnBackground = event.target === preview || (sourceLine && event.target === sourceLine);'));
@@ -62,5 +69,6 @@ const rendered = preview.render("[|][C][----]テスト[|]");
 assert(rendered.includes('class="line cw-score-line cw-score-line-has-lyrics"'));
 assert(rendered.includes('class="cw-code-token"'));
 assert(rendered.includes("テスト"));
+assert(preview.render("[[C]]上付き").includes("cw-upper-token-level-2"), "realtime preview must share old ChordWiki double-upper rendering");
 
 console.log("PASS: saved realtime drafts always render line numbers, color text, and score preview");

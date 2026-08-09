@@ -84,6 +84,11 @@ const bracketedBars = preview.render("[|][C][----]歌詞[|]");
 assert.strictEqual((bracketedBars.match(/cw-boundary-upper/g) || []).length, 2);
 assert.strictEqual((bracketedBars.match(/cw-body-bar-token/g) || []).length, 0);
 
+const doubleUpperChord = preview.render("[[C]]上付き");
+assert(doubleUpperChord.includes('class="cw-code-token cw-upper-token-level-2"'), "old ChordWiki double brackets must raise the chord one additional level");
+assert(doubleUpperChord.includes('<span class="cw-body">上付き</span>'));
+assert(!doubleUpperChord.includes('<span class="cw-body">['), "double-bracket control characters must not leak into lyrics");
+
 const requestedLyricLayout = preview.render("[|][CM7]あそ[CmM7]この[|][Bm7]森[Em7]の　[|][Am7]満[G/B]開[|][CM7]の下(し[D7]た)[|][D7sus4][----][----]は[|]");
 assert(requestedLyricLayout.startsWith('<p class="line cw-score-line cw-score-line-has-lyrics">'));
 assert.strictEqual((requestedLyricLayout.match(/cw-boundary-upper/g) || []).length, 6);

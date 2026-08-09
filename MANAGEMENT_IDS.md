@@ -84,6 +84,7 @@
 | `LAYOUT-009` | スマホでは行修正と変換後を縦2段にし、編集行が見えなくなった時だけ連動追従。各セクションの補助・表示設定は見出し右の開閉操作へ集約し、本文枠の標準横スクロールバーは常時表示する。タブレットはPCレイアウトを維持 | 有効 | `index.html`、`style.css`、`js/app.js` |
 | `LAYOUT-010` | 変換後・譜面プレビューの表示設定を全画面幅で見出し右から開閉し、初期状態は開く | 有効 | `index.html`、`style.css`、`js/app.js`、`tests/header-controls.test.js`、`tests/mobile-linked-editors.test.js` |
 | `LAYOUT-011` | 右上の表示設定を操作群の右端で強調し、外側クリックとEscで閉じる | 有効 | `index.html`、`style.css`、`js/app.js`、`tests/header-controls.test.js` |
+| `LAYOUT-012` | 変換後の表示設定を閉じた際に内容を確実に非表示にし、右上の表示設定文字を隣接ボタンと同じサイズへ統一 | 有効 | `style.css`、`js/app.js`、`tests/header-controls.test.js` |
 | `PREVIEW-001` | 譜面プレビューのベスト条件 | 基準 | `LAYOUT_REFERENCE.md`、`layout-snapshots/2026-07-22-good/`、Gitタグ `preview-layout-best-2026-07-22` |
 | `PREVIEW-002` | 拍記号に挟まれた縦小節線が直後の拍記号と重ならないよう補正 | 有効 | `js/chordwiki-preview.js`、`style.css`、`tests/preview-layout.test.js` |
 | `PREVIEW-003` | 譜面プレビューの移調では`{key:...}`だけを移調し、`{ci:...}`・`{title:...}`・`{subtitle:...}`などコメント系ディレクティブ内部のコード風文字列は保持 | 有効 | `js/transposer.js`、`tests/transposer.test.js` |
@@ -100,6 +101,7 @@
 | `PREVIEW-005` | リアルタイム編集の保存済み下書きが異なる場合に、上書き・前回内容を保持・キャンセルを選択 | 有効 | `js/app.js`、`js/committed-preview-window.js`、`tests/committed-preview-window.test.js` |
 | `PREVIEW-006` | リアルタイム編集のプレビュー背景ドラッグで縦横スクロール | 有効 | `js/committed-preview-window.js`、`style.css`、`tests/committed-preview-window.test.js` |
 | `PREVIEW-007` | リアルタイム編集へ既存Transposerを使った表示専用±12移調を追加 | 有効 | `committed-preview.html`、`js/entries/committed-preview.js`、`js/committed-preview-window.js`、`tests/committed-preview-window.test.js` |
+| `PREVIEW-008` | 旧ChordWikiの二重角括弧を通常・別画面・リアルタイムプレビューで二段上付き表示し、リアルタイム移調を「移調なし／−／＋」順へ統一 | 有効 | `js/chordwiki-preview.js`、`js/renderer/old-chordwiki-renderer.js`、`committed-preview.html`、`style.css`、`tests/preview.test.js`、`tests/official-parser-integration.test.mjs`、`tests/committed-preview-window.test.js` |
 | `PUBLIC-001` | 公開準備と公開前確認 | 有効 | `README.md`、`PUBLICATION_CHECKLIST.md`、`help-usage-screenshot.png`、`.gitignore`、`package.json` |
 | `PUBLIC-002` | GitHubトップページの文章・画像改善 | 有効 | `README.md`、`docs/images/readme-*.png`、`docs/README_CAPTURE_SAMPLE.md` |
 | `PUBLIC-003` | クレジット・意見要望・応援リンク | 有効 | `index.html`、`style.css`、`tests/public-links.test.js` |

@@ -52,7 +52,13 @@
   function parse(text) {
     if (!officialAdapter) return legacyModel(text);
     try {
-      return officialAdapter.parse(text);
+      const sourceLines = String(text || "").replace(/\r\n?/g, "\n").split("\n");
+      const model = officialAdapter.parse(text);
+      model.lines = model.lines.map((line, index) => {
+        const legacy = legacyLine(sourceLines[index] || "");
+        return line.kind === "text" && legacy.kind === "score" ? legacy : line;
+      });
+      return model;
     } catch (_error) {
       return legacyModel(text);
     }

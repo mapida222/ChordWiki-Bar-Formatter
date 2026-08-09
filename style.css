@@ -176,7 +176,7 @@ main { padding: 12px 0 28px; }
 @media (max-width: 1050px) { .site-footer .site-credit-main { flex-wrap: wrap; gap: 1px 8px; white-space: normal; } }
 .settings-panel-heading { position: relative; }
 .settings-heading-actions { display: flex; flex: 0 0 auto; align-items: center; gap: 6px; }
-.display-settings-trigger { min-height: 34px; padding: 7px 12px; border: 1px solid var(--display-line); border-radius: 4px; color: var(--text); background: color-mix(in srgb, var(--panel) 92%, var(--display-line)); cursor: pointer; font-size: .76rem; font-weight: 800; white-space: nowrap; }
+.display-settings-trigger { min-height: 34px; padding: 7px 12px; border: 1px solid var(--display-line); border-radius: 4px; color: var(--text); background: color-mix(in srgb, var(--panel) 92%, var(--display-line)); cursor: pointer; font-size: inherit; font-weight: 800; white-space: nowrap; }
 .display-settings-trigger:hover, .display-settings-trigger[aria-expanded="true"] { border-color: var(--display-line); background: color-mix(in srgb, var(--panel) 86%, var(--display-line)); }
 .font-panel { position: absolute; z-index: 60; top: calc(100% + 7px); right: 0; width: min(310px, calc(100vw - 28px)); min-width: 0; margin: 0; }
 .display-settings-shell { position: relative; display: grid; gap: 7px; min-width: 0; min-height: 0; padding: 10px; overflow: visible; border: 1px solid var(--line-strong); border-left: 4px solid var(--display-line); border-radius: 5px; background: var(--panel); box-shadow: 0 9px 24px rgb(0 0 0 / .22); font-family: var(--editor-font); font-size: var(--editor-font-size); line-height: 1.5; }
@@ -326,6 +326,7 @@ main { padding: 12px 0 28px; }
 .removal-controls { display: grid; grid-template-columns: max-content minmax(155px, 210px) minmax(64px, 88px) max-content; align-items: center; gap: 4px 6px; margin: 0; color: var(--muted); font-size: .68rem; }
 .output-settings-mobile { display: block; min-height: 32px; margin: 0 0 4px; padding: 2px 5px; border: 1px solid color-mix(in srgb, var(--result-line) 42%, var(--line)); border-radius: 4px; background: color-mix(in srgb, var(--panel) 96%, var(--result-line)); }
 .output-settings-mobile > summary { display: none; }
+.output-settings-mobile:not([open]) > .output-settings-row { display: none; }
 .output-settings-row { display: grid; grid-template-columns: max-content minmax(0, 1fr); align-items: center; gap: 4px 10px; }
 .output-quick-settings { display: flex; align-items: center; gap: 8px; min-width: 0; }
 .preview-settings-mobile { display: contents; }
@@ -403,6 +404,7 @@ main { padding: 12px 0 28px; }
 .cw-segment { position: static; display: inline; }
 .cw-chord { position: relative; top: -1.1em; color: var(--syntax-chord); font-family: sans-serif; font-size: 100%; line-height: inherit; white-space: nowrap; }
 .cw-code-token, .cw-rhythm-token { position: static; display: inline; }
+.cw-upper-token-level-2 { position: relative; top: -1.1em; }
 .cw-rhythm-token { font-weight: 400; letter-spacing: 0; }
 .cw-segment-has-trailing-upper-bar .cw-chord > .cw-rhythm-token:last-child { margin-right: .3em; }
 .cw-bar-token { position: relative; left: .4em; display: inline-block; }
@@ -509,8 +511,7 @@ textarea::placeholder { color: var(--muted); opacity: .7; }
 .score-window-heading h1 { margin: 0; font-size: clamp(.96rem, 1.5vw, 1.18rem); letter-spacing: -.02em; }
 .score-window-status { margin: 4px 0 0; color: var(--muted); font-size: .67rem; }
 .score-window-controls { display: flex; align-items: center; justify-content: flex-end; gap: 6px; }
-.committed-transpose-control { display: grid; grid-template-columns: max-content 28px minmax(88px, 118px) 28px; align-items: center; overflow: hidden; min-height: 32px; border: 1px solid var(--line); border-radius: 4px; background: var(--panel); font-size: .7rem; font-weight: 800; }
-.committed-transpose-control > span { padding: 0 7px; }
+.committed-transpose-control { display: grid; grid-template-columns: minmax(88px, 118px) 28px 28px; align-items: center; overflow: hidden; min-height: 32px; border: 1px solid var(--line); border-radius: 4px; background: var(--panel); font-size: .7rem; font-weight: 800; }
 .committed-transpose-control select, .committed-transpose-control button { height: 30px; border: 0; border-left: 1px solid var(--line); color: var(--text); background: var(--panel); }
 .committed-transpose-control button { cursor: pointer; font-size: .9rem; }
 .committed-transpose-control button:disabled { color: var(--muted); cursor: default; opacity: .5; }
