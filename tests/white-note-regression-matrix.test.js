@@ -21,7 +21,7 @@ const matrix = [
   ["middle of four", "[C]a[D]b[E]c[F]d", "44@44", 1],
   ["last of four", "[C]a[D]b[E]c[F]d", "444@4", 1],
   ["slash and no-chord", "[C/E]a[N.C.]b", "4@4", 1],
-  ["long duration", "[C]long", "@h", 1],
+  ["long duration", "[C]long", "@h", 3],
   ["authored white note", "[C][○]", "@4", 1],
   ["consecutive white notes", "[C]a[G]b", "@4@4", 2],
   ["explicit measure head", "[C]a[G]b", "@4|4", 1]
@@ -71,7 +71,8 @@ sampleSlots.forEach((slot, index) => {
   const edited = replaceWithWhiteNote(sampleCorrection, selection.start, selection.end, slot[0]);
   const result = CBFConverter.convertChordText(sampleSource, settings, [edited]);
   assert.deepStrictEqual(result.correctionErrors, [], `sample slot ${index + 1}: ${edited}`);
-  assert.strictEqual((result.output.match(/\[○\]/g) || []).length, 1, `sample slot ${index + 1}: white note`);
+  const expectedWhiteNotes = index === sampleSlots.length - 1 ? 2 : 1;
+  assert.strictEqual((result.output.match(/\[○\]/g) || []).length, expectedWhiteNotes, `sample slot ${index + 1}: white note`);
 });
 
 console.log(`PASS: ${matrix.length} white-note conversions, ${sampleSlots.length} sample positions, 6 modifier replacements, IME, deletion and multiple rows`);

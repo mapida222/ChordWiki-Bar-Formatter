@@ -3,14 +3,15 @@
   const $ = (selector) => document.querySelector(selector);
   const elements = {
     settingsGrid: $("#settings-grid"), settingsProfilePicker: $("#settings-profile-picker"), settingsRecommendationValues: $("#settings-recommendation-values"), customProfileNameField: $("#custom-profile-name-field"), customProfileName: $("#custom-profile-name"), settingsPanel: $("#settings-panel"), settingsShell: $("#settings-shell"), settingsBody: $("#settings-body"), settingsToggle: $("#settings-toggle"), settingsExampleToggle: $("#settings-example-toggle"), theme: $("#setting-theme"), fontSelect: $("#setting-editor-font"), fontSizeValue: $("#font-size-value"), scrollSync: $("#scroll-sync"), textColoring: $("#text-coloring"), boldCode: $("#bold-code"), addedBackground: $("#added-background"), plainEditBars: $("#plain-edit-bars"), finalBarsThrough: $("#final-bars-through"), previewTransposeMain: $("#preview-transpose-main"), previewTransposeMainDown: $("#preview-transpose-main-down"), previewTransposeMainUp: $("#preview-transpose-main-up"), previewSpellingMain: $("#preview-spelling-main"), previewTranspose: $("#preview-transpose"), previewTransposeDown: $("#preview-transpose-down"), previewTransposeUp: $("#preview-transpose-up"), previewSpelling: $("#preview-spelling"), previewDoubleSharp: $("#preview-double-sharp"), previewTheoretical: $("#preview-theoretical"), openScoreWindow: $("#open-score-window"),
-    correctionCard: $(".correction-card"), correctionHeading: $(".correction-card .editor-heading"), correctionContext: $(".correction-context-bar"), correctionSupportToggle: $("#correction-support-toggle"), outputHeading: $(".output-card .editor-heading"), outputSettingsToggle: $("#output-settings-toggle"), outputSettingsMobile: $("#output-settings-mobile"), previewSettingsToggle: $("#preview-settings-toggle"), previewSettingsMobile: $("#preview-settings-mobile"), removalControls: $(".removal-controls"), correction: $("#correction-text"), input: $("#input-text"), output: $("#output-text"), finalOutput: $("#final-output-text"), finalPreview: $("#final-score-preview"), committedOutput: $("#committed-output-text"),
+    correctionCard: $(".correction-card"), correctionHeading: $(".correction-card .editor-heading"), correctionContext: $(".correction-context-bar"), outputHeading: $(".output-card .editor-heading"), outputSettingsToggle: $("#output-settings-toggle"), outputSettingsMobile: $("#output-settings-mobile"), previewSettingsToggle: $("#preview-settings-toggle"), previewSettingsMobile: $("#preview-settings-mobile"), removalControls: $(".removal-controls"), correction: $("#correction-text"), input: $("#input-text"), output: $("#output-text"), finalOutput: $("#final-output-text"), finalPreview: $("#final-score-preview"), committedOutput: $("#committed-output-text"),
     workspace: $(".workspace"), fontPanel: $(".font-panel"), displaySettingsShell: $("#display-settings-shell"), displaySettingsToggle: $("#display-settings-toggle"), correctionGuide: $(".correction-input-guide"), guideToggleAll: $("#guide-toggle-all"), correctionShell: $("#correction-shell"), inputShell: $("#input-shell"), outputShell: $("#output-shell"), finalOutputShell: $("#final-output-shell"),
     correctionLines: $("#correction-lines"), correctionModes: $("#correction-modes"), inputLines: $("#input-lines"), outputLines: $("#output-lines"), finalOutputLines: $("#final-output-lines"), committedOutputLines: $("#committed-output-lines"),
     correctionHighlight: $("#correction-highlight"), inputHighlight: $("#input-highlight"), outputHighlight: $("#output-highlight"), finalOutputHighlight: $("#final-output-highlight"), committedOutputHighlight: $("#committed-output-highlight"),
-    correctionCount: $("#correction-count"), correctionPosition: $("#correction-position"), correctionUndo: $("#correction-undo"), correctionRedo: $("#correction-redo"), correctionRefreshLine: $("#correction-refresh-line"), correctionRebuildAll: $("#correction-rebuild-all"), inputCount: $("#input-count"), outputCount: $("#output-count"), finalOutputCount: $("#final-output-count"), committedOutputCount: $("#committed-output-count"), committedOutputShell: $("#committed-output-shell"), committedOutputToggle: $("#committed-output-toggle"),
+    correctionCount: $("#correction-count"), correctionPosition: $("#correction-position"), correctionUndo: $("#correction-undo"), correctionRedo: $("#correction-redo"), correctionRefreshLine: $("#correction-refresh-line"), correctionRebuildAll: $("#correction-rebuild-all"), inputCount: $("#input-count"), outputCount: $("#output-count"), finalOutputCount: $("#final-output-count"), committedOutputCount: $("#committed-output-count"), committedOutputShell: $("#committed-output-shell"), committedOutputToggle: $("#committed-output-toggle"), openCommittedPreview: $("#open-committed-preview"), openRealtimeEditor: $("#open-realtime-editor"),
     removalTargets: $("#hyphen-removal-targets"), removalLinked: $("#hyphen-removal-linked"), lyricHyphenMode: $("#lyric-hyphen-mode"), removalSummary: $("#removal-summary"), measureCapacityWarning: $("#measure-capacity-warning"), measureCapacityWarningText: $("#measure-capacity-warning-text"), measureCapacityWarningOpen: $("#measure-capacity-warning-open"), measureCapacityWarningDismiss: $("#measure-capacity-warning-dismiss"),
     statusDetail: $("#status-detail"), toast: $("#toast"), helpDialog: $("#help-dialog"), helpExamplePreview: $("#help-example-preview"), historyDialog: $("#history-dialog"), historyList: $("#history-list"), historyPreviewPanel: $("#history-preview-panel"), historyPreviewTabs: $("#history-preview-tabs"), historyTextPreview: $("#history-text-preview"), historyPreview: $("#history-score-preview"), historyPreviewTitle: $("#history-preview-title"), historyPreviewDate: $("#history-preview-date"), historyRestore: $("#history-restore"), historyExportTest: $("#history-export-test"), historyImportTest: $("#history-import-test"), historyImportFile: $("#history-import-file"), historyDeleteAll: $("#history-delete-all"), keySettingsDialog: $("#key-settings-dialog"), keySettingsList: $("#key-settings-list"), keySettingsPreview: $("#key-settings-score-preview")
   };
+  elements.displaySettingsToggle.insertAdjacentElement("afterend", elements.fontPanel);
   const correctionGuideItems = [...document.querySelectorAll(".guide-item")];
   const contextHelpButtons = [...document.querySelectorAll(".context-help-button")];
   let contextHelpHoverTimer;
@@ -51,9 +52,14 @@
   });
   document.addEventListener("click", (event) => {
     if (!event.target.closest(".context-help")) closeContextHelp();
+    if (!elements.displaySettingsShell.classList.contains("display-collapsed")
+        && !event.target.closest(".font-panel") && !event.target.closest("#display-settings-toggle")) setDisplaySettingsOpen(false);
   });
   document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape") closeContextHelp();
+    if (event.key === "Escape") {
+      closeContextHelp();
+      if (!elements.displaySettingsShell.classList.contains("display-collapsed")) setDisplaySettingsOpen(false);
+    }
   });
   function updateGuideToggleAll() {
     if (!elements.guideToggleAll) return;
@@ -104,6 +110,10 @@
   let outputHighlightValue = "";
   let outputAddedOffsets = new Set();
   let manualOutputLines = new Set();
+  let sourceLineIds = [];
+  let outputOverrides = {};
+  let lastGeneratedOutput = "";
+  let sourceLineIdSequence = 0;
   let lastAppliedCorrectionLines = [];
   let inferenceFallbackCorrectionLines = [];
   let correctionDisplayStates = [];
@@ -130,9 +140,11 @@
   const INPUT_STORAGE_KEY = "chordWikiBarFormatter.inputText.v1";
   const CORRECTION_STORAGE_KEY = "chordWikiBarFormatter.correctionText.v1";
   const ROW_ADOPTION_MODES_STORAGE_KEY = "chordWikiBarFormatter.rowAdoptionModes.v1";
+  const SOURCE_LINE_IDS_STORAGE_KEY = "chordWikiBarFormatter.sourceLineIds.v1";
+  const OUTPUT_OVERRIDES_STORAGE_KEY = "chordWikiBarFormatter.outputOverrides.v1";
   const CORRECTION_SYNTAX_VERSION_KEY = "chordWikiBarFormatter.correctionSyntaxVersion";
   const LAYOUT_STORAGE_KEY = "chordWikiBarFormatter.editorLayout.v3";
-  const DISPLAY_PANEL_STORAGE_KEY = "chordWikiBarFormatter.displayPanelOpen.v3";
+  const DISPLAY_PANEL_STORAGE_KEY = "chordWikiBarFormatter.displayPanelOpen.v4";
   const THEME_STORAGE_KEY = "chordWikiBarFormatter.theme.v1";
   const PLAIN_EDIT_BARS_STORAGE_KEY = "chordWikiBarFormatter.plainEditBars.v1";
   const FINAL_BARS_THROUGH_STORAGE_KEY = "chordWikiBarFormatter.finalBarsThrough.v1";
@@ -142,6 +154,7 @@
   const PREVIEW_DOUBLE_SHARP_STORAGE_KEY = "chordWikiBarFormatter.previewDoubleSharp.v1";
   const PREVIEW_KEY_SECTIONS_STORAGE_KEY = "chordWikiBarFormatter.previewKeySections.v1";
   const COMMITTED_OUTPUT_STORAGE_KEY = "chordWikiBarFormatter.committedOutput.v1";
+  const COMMITTED_DRAFT_STORAGE_KEY = "chordWikiBarFormatter.committedWindowDraft.v1";
   const SCORE_WINDOW_STATE_KEY = "chordWikiBarFormatter.scoreWindow.v1";
   const SCORE_WINDOW_CHANNEL = "chordWikiBarFormatter.scoreWindow.channel.v1";
   const REMOVAL_LINKED_STORAGE_KEY = "chordWikiBarFormatter.hyphenRemovalLinked.v1";
@@ -652,6 +665,32 @@
     applyLinkedPosition();
   }
   const ROW_MODE_LABELS = { auto: "自動", edit: "修正", source: "固定", recovered: "固定", fixed: "固定" };
+  function createSourceLineId() {
+    if (globalThis.crypto?.randomUUID) return `source-${globalThis.crypto.randomUUID()}`;
+    sourceLineIdSequence += 1;
+    return `source-${Date.now().toString(36)}-${sourceLineIdSequence.toString(36)}`;
+  }
+  function normalizeSourceLineIds() {
+    sourceLineIds = CBFOutputOverrides.normalizeIds(
+      elements.input.value.split(/\r\n|\r|\n/).length,
+      sourceLineIds,
+      createSourceLineId
+    );
+  }
+  function persistOutputLayer() {
+    localStorage.setItem(SOURCE_LINE_IDS_STORAGE_KEY, JSON.stringify(sourceLineIds));
+    localStorage.setItem(OUTPUT_OVERRIDES_STORAGE_KEY, JSON.stringify(outputOverrides));
+  }
+  function syncManualOutputLinesFromOverrides() {
+    manualOutputLines = CBFOutputOverrides.overriddenIndices(sourceLineIds, outputOverrides);
+    outputManuallyEdited = manualOutputLines.size > 0;
+  }
+  function removeOutputOverride(index) {
+    const id = sourceLineIds[index];
+    if (id && outputOverrides[id]) delete outputOverrides[id];
+    syncManualOutputLinesFromOverrides();
+    persistOutputLayer();
+  }
   function persistRowAdoptionModes() {
     while (rowAdoptionModes.length && !rowAdoptionModes[rowAdoptionModes.length - 1]) rowAdoptionModes.pop();
     localStorage.setItem(ROW_ADOPTION_MODES_STORAGE_KEY, JSON.stringify(rowAdoptionModes));
@@ -679,7 +718,7 @@
   function setRowAdoptionMode(index, mode) {
     if (!(correctionSlotCounts[index] > 0) || !ROW_MODE_LABELS[mode]) return;
     rowAdoptionModes[index] = mode;
-    if (mode !== "edit") manualOutputLines.delete(index);
+    if (mode !== "edit") removeOutputOverride(index);
     persistRowAdoptionModes();
     updateCorrectionModes();
     convert({ changedLineIndices: new Set([index]) });
@@ -947,10 +986,14 @@
   function syncResultRowAlignment() {
     cancelAnimationFrame(resultAlignmentFrame);
     resultAlignmentFrame = requestAnimationFrame(() => {
-      elements.workspace.style.setProperty("--result-controls-offset", "0px");
+      elements.workspace.style.setProperty("--correction-controls-offset", "0px");
+      if (window.matchMedia("(max-width: 699px)").matches) {
+        positionFrameResizeEdges();
+        return;
+      }
       const correctionTop = elements.correctionShell.getBoundingClientRect().top;
       const outputTop = elements.outputShell.getBoundingClientRect().top;
-      elements.workspace.style.setProperty("--result-controls-offset", `${Math.max(0, correctionTop - outputTop)}px`);
+      elements.workspace.style.setProperty("--correction-controls-offset", `${outputTop - correctionTop}px`);
       positionFrameResizeEdges();
     });
   }
@@ -980,6 +1023,7 @@
     return {
       source,
       text: elements.finalOutput.value,
+      committedText: elements.committedOutput.value,
       transpose: Number.parseInt(elements.previewTranspose.value, 10) || 0,
       spelling: elements.previewSpelling.value,
       theoretical: elements.previewTheoretical.checked,
@@ -990,6 +1034,9 @@
       editorFont: elements.fontSelect.value,
       editorFontStack: getComputedStyle(document.documentElement).getPropertyValue("--editor-font").trim(),
       editorFontSize: elements.fontSizeValue.value,
+      scrollSync: scrollSyncEnabled,
+      textColoring: elements.textColoring.checked,
+      boldCode: elements.boldCode.checked,
       updatedAt: scoreWindowRevision
     };
   }
@@ -1062,9 +1109,13 @@
     const result = CBFConverter.renderCompletedOutput(convertedOutput, targets, hyphenSpacing, visibilityMode, keepSingleCharacterHyphens);
     const renderedOutput = renderBars(result.output, elements.plainEditBars.checked);
     const nextOutput = CBFConverter.restoreSourceAdoptedLines(renderedOutput, elements.input.value, rowAdoptionModes);
+    lastGeneratedOutput = nextOutput;
+    const layeredOutput = CBFOutputOverrides.apply(nextOutput, sourceLineIds, outputOverrides);
     if (changedLineIndices?.size) {
       const previousValue = elements.output.value;
-      const mergedValue = CBFConverter.mergeChangedLines(previousValue, nextOutput, changedLineIndices);
+      const mergedValue = outputManuallyEdited
+        ? layeredOutput
+        : CBFConverter.mergeChangedLines(previousValue, layeredOutput, changedLineIndices);
       elements.output.value = mergedValue;
       elements.finalOutput.value = mergedValue;
       // A row correction and a direct output edit can coexist on the same line.
@@ -1072,8 +1123,8 @@
       outputManuallyEdited = manualOutputLines.size > 0;
       updateMergedOutputAddedOffsets(previousValue, mergedValue, changedLineIndices);
     } else {
-      elements.output.value = nextOutput;
-      elements.finalOutput.value = nextOutput;
+      elements.output.value = layeredOutput;
+      elements.finalOutput.value = layeredOutput;
       resetOutputAddedOffsets();
     }
     renderFinalPreview();
@@ -1100,6 +1151,8 @@
       inputText: elements.input.value,
       correctionText: elements.correction.value,
       rowAdoptionModes: [...rowAdoptionModes],
+      sourceLineIds: [...sourceLineIds],
+      outputOverrides: CBFOutputOverrides.sanitize(outputOverrides),
       committedOutputText: elements.committedOutput.value,
       settings: {
         settingsProfile: CBFSettings.activeProfile(),
@@ -1206,6 +1259,14 @@
       : CBFSettings.activeProfile();
     elements.input.value = String(snapshot.inputText || "");
     elements.correction.value = String(snapshot.correctionText || "");
+    sourceLineIds = CBFOutputOverrides.normalizeIds(
+      elements.input.value.split(/\r\n|\r|\n/).length,
+      Array.isArray(snapshot.sourceLineIds) ? snapshot.sourceLineIds : [],
+      createSourceLineId
+    );
+    outputOverrides = CBFOutputOverrides.sanitize(snapshot.outputOverrides);
+    syncManualOutputLinesFromOverrides();
+    persistOutputLayer();
     rowAdoptionModes = Array.isArray(snapshot.rowAdoptionModes) ? snapshot.rowAdoptionModes.map((mode) => ROW_MODE_LABELS[mode] ? mode : "") : [];
     persistRowAdoptionModes();
     resetCorrectionHistory();
@@ -1359,6 +1420,16 @@
         const generatedIndex = lineMapping[index];
         if (generatedIndex < 0 || line !== generatedLines[generatedIndex]) manualOutputLines.add(index);
       });
+      if (!entry.outputOverrides) {
+        outputOverrides = CBFOutputOverrides.capture(
+          lastGeneratedOutput,
+          restoredText,
+          sourceLineIds,
+          CBFConverter.alignLineIndices
+        );
+        syncManualOutputLinesFromOverrides();
+        persistOutputLayer();
+      }
       elements.output.value = restoredText;
       elements.finalOutput.value = restoredText;
       outputManuallyEdited = manualOutputLines.size > 0;
@@ -1530,6 +1601,10 @@
       resetCorrectionHistory();
       outputManuallyEdited = false;
       manualOutputLines.clear();
+      sourceLineIds = [];
+      outputOverrides = {};
+      lastGeneratedOutput = "";
+      persistOutputLayer();
       rowAdoptionModes = [];
       persistRowAdoptionModes();
       lastConvertedInputLines = [""];
@@ -1554,21 +1629,13 @@
         if (line === (inferenceFallbackCorrectionLines[index] || "")) return "";
         return line;
       });
-    const currentOutputLines = elements.output.value.split(/\r\n|\r|\n/);
-    const manualSources = refreshCorrections
-      ? []
-      : currentOutputLines.map((line, index) => manualOutputLines.has(index) && !sourceChanged.has(index) ? line : undefined);
+    const manualSources = [];
     const previousCorrections = [...lastAppliedCorrectionLines];
     const result = CBFConverter.convertChordText(elements.input.value, settings.values, rowCorrections, manualSources, previousCorrections, rowAdoptionModes);
     convertedOutput = result.output;
     correctionDisplayStates = result.correctionStates || [];
     inferenceFallbackCorrectionLines = String(result.automaticCorrections || result.corrections).split(/\r\n|\r|\n/);
-    if (!preserveUserEdits && !changedLineIndices?.size) {
-      outputManuallyEdited = false;
-      manualOutputLines.clear();
-    }
-    sourceChanged.forEach((lineIndex) => manualOutputLines.delete(lineIndex));
-    outputManuallyEdited = manualOutputLines.size > 0;
+    syncManualOutputLinesFromOverrides();
     if (refreshCorrections || sourceChanged.size) {
       elements.correction.value = result.corrections;
       if (refreshCorrections) resetCorrectionHistory();
@@ -1688,16 +1755,19 @@
   elements.scrollSync.addEventListener("change", () => {
     scrollSyncEnabled = elements.scrollSync.checked;
     localStorage.setItem(SCROLL_SYNC_STORAGE_KEY, String(scrollSyncEnabled));
+    publishScoreWindow();
     markActivity();
   });
   elements.textColoring.addEventListener("change", () => {
     document.documentElement.classList.toggle("colorized-editors", elements.textColoring.checked);
     localStorage.setItem(TEXT_COLORING_STORAGE_KEY, String(elements.textColoring.checked));
+    publishScoreWindow();
     markActivity();
   });
   elements.boldCode.addEventListener("change", () => {
     document.documentElement.classList.toggle("bold-chords", elements.boldCode.checked);
     localStorage.setItem(BOLD_CODE_STORAGE_KEY, String(elements.boldCode.checked));
+    publishScoreWindow();
     markActivity();
   });
   elements.addedBackground.addEventListener("change", () => {
@@ -1745,6 +1815,15 @@
   if (scorePreviewChannel) {
     scorePreviewChannel.addEventListener("message", (event) => {
       if (event.data?.type === "score-controls") applyScoreWindowControls(event.data.payload);
+      if (event.data?.type === "committed-text") {
+        const text = String(event.data.text || "");
+        if (text === elements.committedOutput.value) return;
+        elements.committedOutput.value = text;
+        localStorage.setItem(COMMITTED_OUTPUT_STORAGE_KEY, text);
+        updateCount(elements.committedOutput, elements.committedOutputCount);
+        updateLineNumbers(elements.committedOutput, elements.committedOutputLines);
+        publishScoreWindow();
+      }
     });
   }
   window.addEventListener("storage", (event) => {
@@ -1759,11 +1838,22 @@
       applyScoreWindowControls(event.data.payload);
       return;
     }
+    if (event.data.type === "committed-text") {
+      const text = String(event.data.text || "");
+      if (text !== elements.committedOutput.value) {
+        elements.committedOutput.value = text;
+        localStorage.setItem(COMMITTED_OUTPUT_STORAGE_KEY, text);
+        updateCount(elements.committedOutput, elements.committedOutputCount);
+        updateLineNumbers(elements.committedOutput, elements.committedOutputLines);
+        publishScoreWindow();
+      }
+      return;
+    }
     if (event.data.type !== "score-request" || !event.source) return;
     const targetOrigin = event.origin === "null" ? "*" : event.origin;
     event.source.postMessage({ type: "score-state", payload: scoreWindowPayload() }, targetOrigin);
   });
-  elements.openScoreWindow.addEventListener("click", () => {
+  elements.openScoreWindow?.addEventListener("click", () => {
     publishScoreWindow();
   });
   window.addEventListener("focus", publishScoreWindow);
@@ -2144,6 +2234,22 @@
     });
   });
   const outputAssistButtons = [...document.querySelectorAll("[data-output-insert], [data-output-move], [data-output-backspace]")];
+  const revealEditorAhead = (editor, direction) => {
+    const caret = editor.selectionEnd;
+    const lineStart = Math.max(editor.value.lastIndexOf("\n", caret - 1), editor.value.lastIndexOf("\r", caret - 1)) + 1;
+    const linePrefix = editor.value.slice(lineStart, caret);
+    const style = window.getComputedStyle(editor);
+    const canvas = document.createElement("canvas");
+    const context = canvas.getContext("2d");
+    if (!context) return;
+    context.font = `${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
+    const letterSpacing = Number.parseFloat(style.letterSpacing) || 0;
+    const caretX = (Number.parseFloat(style.paddingLeft) || 0) + context.measureText(linePrefix).width + linePrefix.length * letterSpacing;
+    const maxScrollLeft = Math.max(0, editor.scrollWidth - editor.clientWidth);
+    const caretViewportRatio = direction === "left" ? 0.58 : 0.42;
+    const preferredScrollLeft = Math.max(0, Math.min(maxScrollLeft, caretX - editor.clientWidth * caretViewportRatio));
+    if ((direction === "left" && preferredScrollLeft < editor.scrollLeft) || (direction === "right" && preferredScrollLeft > editor.scrollLeft)) editor.scrollLeft = preferredScrollLeft;
+  };
   const moveOutputCursor = (direction) => {
     const value = elements.output.value;
     const position = elements.output.selectionEnd;
@@ -2169,7 +2275,30 @@
     }
     elements.output.setSelectionRange(nextPosition, nextPosition);
     elements.output.focus({ preventScroll: true });
+    if (["left", "right"].includes(direction)) requestAnimationFrame(() => revealEditorAhead(elements.output, direction));
   };
+  elements.output.addEventListener("keydown", (event) => {
+    if (!["ArrowLeft", "ArrowRight"].includes(event.key) || event.altKey || event.ctrlKey || event.metaKey) return;
+    requestAnimationFrame(() => revealEditorAhead(elements.output, event.key === "ArrowLeft" ? "left" : "right"));
+  });
+  elements.input.addEventListener("keydown", (event) => {
+    if (!["ArrowLeft", "ArrowRight"].includes(event.key) || event.altKey || event.ctrlKey || event.metaKey) return;
+    requestAnimationFrame(() => revealEditorAhead(elements.input, event.key === "ArrowLeft" ? "left" : "right"));
+  });
+  const preserveEditorHorizontalScroll = (editor) => {
+    const scrollLeft = editor.scrollLeft;
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      if (editor.scrollLeft === scrollLeft) return;
+      editor.scrollLeft = scrollLeft;
+      syncHighlightScroll(editor);
+    }));
+  };
+  [elements.input, elements.output].forEach((editor) => {
+    editor.addEventListener("keydown", (event) => {
+      if (!["ArrowUp", "ArrowDown"].includes(event.key) || event.altKey || event.ctrlKey || event.metaKey) return;
+      preserveEditorHorizontalScroll(editor);
+    });
+  });
   outputAssistButtons.forEach((button) => {
     button.addEventListener("pointerdown", (event) => event.preventDefault());
     button.addEventListener("click", () => {
@@ -2320,7 +2449,7 @@
       moveCorrectionSlot("ArrowDown");
       return;
     }
-    if (/^[x\^*s|\/]$/i.test(event.key)) {
+    if (/^[x\^*s|\\\/]$/i.test(event.key)) {
       const lineStart = Math.max(value.lastIndexOf("\n", start - 1), value.lastIndexOf("\r", start - 1)) + 1;
       const nextLf = value.indexOf("\n", start);
       const nextCr = value.indexOf("\r", start);
@@ -2463,6 +2592,9 @@
     if (currentLines.length !== lastConvertedInputLines.length) {
       const previousLines = [...lastConvertedInputLines];
       const mapping = CBFConverter.alignMusicLineIndices(previousLines, currentLines);
+      sourceLineIds = CBFOutputOverrides.remapIds(mapping, sourceLineIds, createSourceLineId);
+      syncManualOutputLinesFromOverrides();
+      persistOutputLayer();
       const chordCounts = (lines) => lines.map((line) => CBFConverter.parseTokens(line).filter((token) => token.kind === "chord").length);
       const previousChordCounts = chordCounts(previousLines);
       const currentChordCounts = chordCounts(currentLines);
@@ -2544,6 +2676,9 @@
       scheduleConversion(false, null, changedLines);
     }
     else {
+      normalizeSourceLineIds();
+      syncManualOutputLinesFromOverrides();
+      persistOutputLayer();
       const changedLines = new Set();
       currentLines.forEach((line, index) => { if (line !== (lastConvertedInputLines[index] || "")) changedLines.add(index); });
       changedLines.forEach((index) => {
@@ -2718,6 +2853,15 @@
     updateLineNumbers(elements.output, elements.outputLines);
     updateCount(elements.finalOutput, elements.finalOutputCount);
     updateLineNumbers(elements.finalOutput, elements.finalOutputLines);
+    outputOverrides = CBFOutputOverrides.capture(
+      lastGeneratedOutput,
+      elements.output.value,
+      sourceLineIds,
+      CBFConverter.alignLineIndices
+    );
+    syncManualOutputLinesFromOverrides();
+    persistOutputLayer();
+    updateCorrectionModes();
     markActivity();
   });
   elements.removalTargets.addEventListener("input", () => {
@@ -2761,20 +2905,47 @@
   $("#commit-preview-to-output").addEventListener("click", () => {
     if (!elements.finalOutput.value) return notify("確定する譜面がありません。", true);
     const next = transposedPreviewText();
-    if (elements.committedOutput.value && elements.committedOutput.value !== next && !window.confirm("07. 確定譜面テキストを現在のプレビューで上書きします。よろしいですか？")) return;
+    if (elements.committedOutput.value && elements.committedOutput.value !== next && !window.confirm("確定譜面テキストを現在のプレビューで上書きします。よろしいですか？")) return;
     elements.committedOutput.value = next;
     localStorage.setItem(COMMITTED_OUTPUT_STORAGE_KEY, next);
     updateCount(elements.committedOutput, elements.committedOutputCount);
     updateLineNumbers(elements.committedOutput, elements.committedOutputLines);
+    publishScoreWindow();
     setCommittedOutputOpen(true);
     markActivity();
-    notify("譜面プレビューを07. 確定譜面テキストへ保存しました。");
+    notify("譜面プレビューを確定譜面テキストへ保存しました。");
   });
   elements.committedOutputToggle.addEventListener("click", () => setCommittedOutputOpen(elements.committedOutputShell.classList.contains("committed-collapsed")));
+  elements.openCommittedPreview.addEventListener("click", () => publishScoreWindow());
+  elements.openRealtimeEditor.addEventListener("click", (event) => {
+    // 05 is the editable source. 06 only renders that text as a score, so
+    // opening the realtime editor must carry the exact 05 text across.
+    const currentText = elements.output.value;
+    let savedDraft = null;
+    try { savedDraft = JSON.parse(localStorage.getItem(COMMITTED_DRAFT_STORAGE_KEY) || "null"); } catch (_error) { savedDraft = null; }
+    const hasDifferentDraft = Boolean(savedDraft?.text) && savedDraft.text !== currentText;
+    if (hasDifferentDraft && !window.confirm("リアルタイム編集ページには前回の編集内容があります。\n現在の変換結果で上書きして開きますか？\n\n［OK］上書きして開く\n［キャンセル］次の選択へ")) {
+      if (!window.confirm("前回の内容を残して開きますか？\n\n［OK］前回の内容を残して開く\n［キャンセル］開くのをやめる")) {
+        event.preventDefault();
+        return;
+      }
+      elements.openRealtimeEditor.href = "committed-preview.html?draft=keep";
+      setTimeout(() => { elements.openRealtimeEditor.href = "committed-preview.html"; }, 0);
+      return;
+    }
+    elements.openRealtimeEditor.href = "committed-preview.html";
+    elements.committedOutput.value = currentText;
+    localStorage.setItem(COMMITTED_OUTPUT_STORAGE_KEY, elements.committedOutput.value);
+    localStorage.setItem(COMMITTED_DRAFT_STORAGE_KEY, JSON.stringify({ text: elements.committedOutput.value, updatedAt: Date.now() }));
+    updateCount(elements.committedOutput, elements.committedOutputCount);
+    updateLineNumbers(elements.committedOutput, elements.committedOutputLines);
+    publishScoreWindow();
+  });
   elements.committedOutput.addEventListener("input", () => {
     localStorage.setItem(COMMITTED_OUTPUT_STORAGE_KEY, elements.committedOutput.value);
     updateCount(elements.committedOutput, elements.committedOutputCount);
     updateLineNumbers(elements.committedOutput, elements.committedOutputLines);
+    publishScoreWindow();
     markActivity();
   });
   elements.committedOutput.addEventListener("scroll", () => {
@@ -2852,21 +3023,7 @@
     syncResultRowAlignment();
   });
   function positionSettingsPanel() {
-    if (window.matchMedia("(max-width: 699px)").matches) {
-      Object.assign(elements.settingsPanel.style, { left: "", top: "", width: "", height: "" });
-      return;
-    }
-    const workspaceRect = elements.workspace.getBoundingClientRect();
-    const displayRect = elements.fontPanel.getBoundingClientRect();
-    const correctionRect = elements.correctionCard.getBoundingClientRect();
-    const left = correctionRect.left - workspaceRect.left;
-    const top = displayRect.bottom - workspaceRect.top + 2;
-    Object.assign(elements.settingsPanel.style, {
-      left: `${left}px`,
-      top: `${top}px`,
-      width: `${correctionRect.width}px`,
-      height: ""
-    });
+    Object.assign(elements.settingsPanel.style, { left: "", top: "", width: "", height: "" });
     positionFrameResizeEdges();
   }
   function positionFrameResizeEdges() {
@@ -2942,7 +3099,7 @@
   function setDisplaySettingsOpen(open, save = true) {
     elements.displaySettingsShell.hidden = false;
     elements.displaySettingsShell.classList.toggle("display-collapsed", !open);
-    elements.displaySettingsToggle.textContent = open ? "設定を閉じる▲" : "設定を開く▼";
+    elements.displaySettingsToggle.textContent = open ? "表示設定▲" : "表示設定▼";
     elements.displaySettingsToggle.setAttribute("aria-expanded", String(open));
     if (save) localStorage.setItem(DISPLAY_PANEL_STORAGE_KEY, String(open));
     requestAnimationFrame(positionSettingsPanel);
@@ -2952,7 +3109,7 @@
     try {
       const layout = JSON.parse(localStorage.getItem(LAYOUT_STORAGE_KEY) || "null");
       if (!layout) return;
-      if (Number.isFinite(layout.displayHeight)) elements.displaySettingsShell.style.height = `${layout.displayHeight}px`;
+      elements.displaySettingsShell.style.removeProperty("height");
       if (Number.isFinite(layout.settingsHeight)) elements.settingsShell.style.height = `${layout.settingsHeight}px`;
       elements.correctionGuide.style.removeProperty("height");
       if (Number.isFinite(layout.leftWidth)) setLeftColumnWidth(layout.leftWidth);
@@ -3119,6 +3276,13 @@
   const savedInput = localStorage.getItem(INPUT_STORAGE_KEY);
   let savedCorrection = localStorage.getItem(CORRECTION_STORAGE_KEY);
   try {
+    const savedIds = JSON.parse(localStorage.getItem(SOURCE_LINE_IDS_STORAGE_KEY) || "[]");
+    sourceLineIds = Array.isArray(savedIds) ? savedIds : [];
+  } catch (_error) { sourceLineIds = []; }
+  try {
+    outputOverrides = CBFOutputOverrides.sanitize(JSON.parse(localStorage.getItem(OUTPUT_OVERRIDES_STORAGE_KEY) || "{}"));
+  } catch (_error) { outputOverrides = {}; }
+  try {
     const savedRowModes = JSON.parse(localStorage.getItem(ROW_ADOPTION_MODES_STORAGE_KEY) || "[]");
     rowAdoptionModes = Array.isArray(savedRowModes) ? savedRowModes.map((mode) => ROW_MODE_LABELS[mode] ? mode : "") : [];
   } catch (_error) { rowAdoptionModes = []; }
@@ -3149,6 +3313,9 @@
   }
   const migratedInput = savedInput === null ? INITIAL_INPUT : savedInput.replace("{comment Bar Formatterの機能確認用ダミー歌詞です}", "{comment:ChordWiki Bar Formatterの機能確認用ダミー歌詞です}");
   elements.input.value = migratedInput;
+  normalizeSourceLineIds();
+  syncManualOutputLinesFromOverrides();
+  persistOutputLayer();
   lastConvertedInputLines = elements.input.value.split(/\r\n|\r|\n/);
   elements.committedOutput.value = localStorage.getItem(COMMITTED_OUTPUT_STORAGE_KEY) || "";
   setCommittedOutputOpen(false);
@@ -3270,11 +3437,6 @@
     correctionGuideItems.forEach((item) => { item.open = false; });
     updateGuideToggleAll();
   };
-  const setMobileCorrectionSupportOpen = (open) => {
-    elements.correctionCard.classList.toggle("mobile-support-collapsed", !open);
-    elements.correctionSupportToggle.setAttribute("aria-expanded", String(open));
-    elements.correctionSupportToggle.textContent = open ? "編集サポート▲" : "編集サポート▼";
-  };
   const setMobileOutputSettingsOpen = (open) => {
     elements.outputSettingsMobile.open = open;
     elements.outputSettingsToggle.setAttribute("aria-expanded", String(open));
@@ -3287,18 +3449,13 @@
   };
   const applyMobileSectionCollapse = () => {
     if (narrowLayout.matches) {
-      setMobileCorrectionSupportOpen(false);
-      setMobileOutputSettingsOpen(false);
-      setMobilePreviewSettingsOpen(false);
+      setMobileOutputSettingsOpen(true);
+      setMobilePreviewSettingsOpen(true);
     } else {
-      setMobileCorrectionSupportOpen(true);
       setMobileOutputSettingsOpen(true);
       setMobilePreviewSettingsOpen(true);
     }
   };
-  elements.correctionSupportToggle.addEventListener("click", () => {
-    setMobileCorrectionSupportOpen(elements.correctionCard.classList.contains("mobile-support-collapsed"));
-  });
   elements.outputSettingsToggle.addEventListener("click", () => {
     setMobileOutputSettingsOpen(!elements.outputSettingsMobile.open);
   });

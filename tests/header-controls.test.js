@@ -22,11 +22,12 @@ assert(html.includes("↻ この行を更新"));
 assert(html.includes('<button id="correction-rebuild-all" class="correction-rebuild-button" type="button"'));
 assert(html.includes("↻ 変換後から行修正を復元"));
 assert(html.includes("「?」は自動変換できなかった位置です。その部分の変換後表示を保持します。"));
-assert(html.includes('aria-label="行修正を復元の説明"'));
-assert(html.includes("異常時用の復旧機能です。変換後の全行から行修正値を推論し直します。"));
-assert(html.includes('class="correction-position-with-help"'));
-assert(css.includes(".correction-position-with-help { display: grid;"));
-assert(css.includes(".correction-position-with-help > .context-help { position: absolute; top: 4px; right: 4px; }"));
+assert(html.includes('aria-label="この行を更新と行修正を復元の説明"'));
+assert(html.includes("<b>変換後から行修正を復元</b>：変換後の全行から行修正値を推論し直します。"));
+assert(html.includes('id="correction-position" class="correction-position" aria-live="polite" hidden'));
+assert.strictEqual((html.match(/class="correction-action-divider"/g) || []).length, 0, "the restored support frame must use button spacing instead of pipe separators");
+assert(!html.includes('id="correction-support-toggle"'), "row-edit support must stay visible without a redundant collapse button");
+assert(css.includes(".correction-position[hidden] { display: none !important; }"));
 assert.strictEqual((html.match(/data-correction-symbol=/g) || []).length, 6);
 assert(css.includes(".correction-rebuild-button {"));
 assert(!css.includes(".correction-refresh-help { position: absolute;"));
@@ -35,7 +36,16 @@ assert(app.includes('correctionRebuildAll: $("#correction-rebuild-all")'));
 assert(app.includes("function rebuildCorrectionsFromOutput()"));
 assert(app.includes('elements.correctionRefreshLine.addEventListener("click"'));
 assert(app.includes("keepOutputAndRefreshCorrection(lineIndex)"));
-assert(css.includes("grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.35fr);"));
+assert(css.includes(".correction-context-bar { position: relative; margin-bottom: 4px;"));
+assert(css.includes(".correction-history-actions { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));"));
+assert(css.includes(".correction-history-actions .correction-rebuild-button { grid-column: 1 / 3; }"));
+assert(css.includes("border: 1px solid var(--line); border-radius: 4px;"), "row-edit actions must remain bordered buttons");
+assert(html.includes('aria-label="この行を更新と行修正を復元の説明"'));
+assert(html.includes('<strong class="context-help-title">03. 行修正の操作</strong>'));
+assert(html.includes('<b>この行を更新</b>') && html.includes('<b>変換後から行修正を復元</b>'));
+assert(css.includes(".correction-card { z-index: 10; grid-column: 1; grid-row: 2; transform: translateY(var(--correction-controls-offset, 0px)); }"), "row-edit help must be above the result column");
+assert(css.includes(".correction-history-actions > .context-help { display: grid; place-items: center; align-self: center; justify-self: center; }"));
+assert(css.includes(".correction-history-actions .context-help-button { flex: 0 0 18px; width: 18px; height: 18px; min-height: 18px; padding: 0; border-radius: 50%; place-items: center; }"), "row-edit help must remain a centered circular question button");
 assert(html.includes('class="column-resize-edge guide-column-resize-edge"'));
 assert(!html.includes('data-panel="guide"'));
 assert(css.includes(".correction-input-guide { position: relative; min-width: 0; min-height: 72px; height: auto;"));
@@ -67,11 +77,11 @@ assert(showOption >= 0 && showOption < targetOption && targetOption < minimizeOp
 assert.strictEqual((html.match(/class="context-help-button"/g) || []).length, 5);
 assert.strictEqual((html.match(/class="context-help-title"/g) || []).length, 5);
 [
-  "03. 初期設定・使用例",
-  "04. 行修正",
-  "04. 行修正：変換後から復元",
-  "05. 変換後：歌詞行のハイフン",
-  "06. 譜面プレビュー"
+  "02. 初期設定",
+  "03. 行修正",
+  "03. 行修正の操作",
+  "04. 変換後：歌詞行のハイフン",
+  "05. 譜面プレビュー"
 ].forEach((title) => assert(html.includes(`class="context-help-title">${title}</strong>`), `${title} help title`));
 assert(css.includes(".context-help-title { display: block;"));
 assert(html.includes("表示方法を選びます。<br>「省略しない」：すべてのハイフンを表示します。"));
@@ -86,7 +96,30 @@ assert(app.includes("updateLyricHyphenControls"));
 assert(!html.includes('id="hide-lyric-hyphens"'));
 assert(css.includes("gap: 0 10px; align-items: start;"));
 assert(css.includes(".input-card { grid-column: 2; grid-row: 1; align-self: end; }"));
-assert(css.includes(".font-panel { grid-column: 1; grid-row: 1; align-self: start; min-width: 0; margin-bottom: 122px; }"));
+assert(html.includes('<h2 id="settings-title" class="compact-editor-title">02. 初期設定'));
+assert(html.includes('<label for="input-text">01. 変換前'));
+assert(html.includes('id="display-settings-toggle" class="help-open-button display-settings-trigger"'));
+assert(html.includes('aria-controls="display-settings-shell">表示設定▼</button>'));
+assert(html.indexOf('id="display-settings-toggle"') > html.indexOf('id="help-open"'));
+assert(app.includes('elements.displaySettingsToggle.insertAdjacentElement("afterend", elements.fontPanel);'));
+assert(app.includes('!event.target.closest(".font-panel") && !event.target.closest("#display-settings-toggle")'));
+assert(app.includes('if (!elements.displaySettingsShell.classList.contains("display-collapsed")) setDisplaySettingsOpen(false);'));
+assert(html.indexOf('id="reset-layout"') > html.indexOf('id="display-settings-body"'));
+assert(css.includes(".settings-panel { position: relative; z-index: 30; grid-column: 1; grid-row: 1;"));
+assert(css.includes(".font-panel { position: absolute; z-index: 60; top: calc(100% + 7px); right: 0;"));
+assert(css.includes(".display-settings-shell.display-collapsed { display: none; }"));
+assert(css.includes(".display-settings-trigger { min-height: 34px;") && css.includes("font-size: inherit;"), "top-right display settings text must match its sibling header buttons");
+assert(css.includes(".settings-panel { position: relative; z-index: 30; grid-column: 1; grid-row: 1; align-self: start; overflow: visible; min-width: 0; height: 78px;"));
+assert(html.includes('id="output-settings-toggle" class="mobile-heading-toggle" type="button" aria-expanded="true"'));
+assert(css.includes(".mobile-heading-toggle { display: inline-flex;"));
+assert(html.includes('class="output-settings-row"'));
+assert(html.includes('<p class="output-edit-guidance">改行やふりがな、コードは、変換前での編集をおすすめします。</p>'));
+assert(css.includes(".output-edit-guidance { margin: 0 2px 4px;"));
+assert(html.includes('class="output-quick-settings"'));
+assert(css.includes(".output-settings-row { display: grid; grid-template-columns: max-content minmax(0, 1fr);"));
+assert(css.includes(".output-settings-mobile:not([open]) { display: none; }"), "closed result settings must hide the complete settings frame");
+assert(css.includes("@container (max-width: 720px)"), "result settings must respond to the resized result frame width");
+assert(css.includes(".output-settings-row { grid-template-columns: minmax(0, 1fr); }"), "narrow result settings must stack without horizontal overflow");
 assert(css.includes(".auxiliary-panel-heading { margin: -9px -12px 9px -10px;"));
 assert(html.includes('<div class="output-column-headings" aria-hidden="true"><span>No.</span><span>変換後テキスト</span></div>'));
 assert(css.includes(".output-column-headings { grid-column: 1 / -1; grid-row: 1; display: grid; grid-template-columns: subgrid;"));
@@ -97,9 +130,9 @@ assert(html.includes('<div class="right-lower-stack">'));
 assert(css.includes(".right-lower-stack { grid-column: 2; grid-row: 3; align-self: start; display: grid; gap: 12px;"));
 assert(css.includes(".final-card, .committed-card { min-width: 0; margin-top: 0; }"));
 assert(css.includes(".status-support-panel { min-width: 0; margin: 0;"));
-assert(css.includes(".correction-card { grid-column: 1; grid-row: 2; }"));
+assert(css.includes(".correction-card { z-index: 10; grid-column: 1; grid-row: 2; transform: translateY(var(--correction-controls-offset, 0px)); }"));
 assert(css.includes(".output-card .editor-shell { grid-template-rows: 1.45em minmax(0, 1fr); height: var(--result-editor-height); border-color: var(--result-line); }"));
-assert(css.includes(".output-card { grid-column: 2; grid-row: 2; margin-top: var(--result-controls-offset, 0px); }"));
+assert(css.includes(".output-card { container-type: inline-size; grid-column: 2; grid-row: 2; }"));
 assert(!css.includes(".committed-card { grid-column: 2; grid-row: 4;"));
 assert(!app.includes("--settings-clearance"));
 

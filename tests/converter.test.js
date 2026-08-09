@@ -18,9 +18,9 @@ assert.strictEqual(CBFConverter.parseTokens("[E7(9,11)]")[0]?.kind, "chord", "a 
 const cases = [
   ["plain text", "plain text"],
   ["{title:Test}", "{title:Test}"],
-  ["[C]", "[|][C][----][----][|]", "8"],
-  ["[C][G]", "[|][C][----][----][|][G][----][----][|]", "88"],
-  ["[C][G][Am]", "[|][C][----][----][|][G][----][----][|][|][Am][----][----][|]", "888"],
+  ["[C]", "[|][C][----][|]", "4"],
+  ["[C][G]", "[|][C][----][G][----][|]", "44"],
+  ["[C][G][Am]", "[|][C][----][G][----][|][Am][----][|]", "444"],
   ["[C]lyrics[G]words", "[|][C][----]lyrics[G][----]words[|]", "44"]
 ];
 
@@ -61,16 +61,16 @@ fractionalLyricPatterns.forEach(([name, code, patternSettings, lyric, expected])
   }
 });
 const expanded = CBFConverter.convertChordText("[C][D][E][F][G][A]", settings, []);
-if (expanded.corrections !== "888888") {
+if (expanded.corrections !== "444444") {
   failures += 1;
-  console.error(`FAIL expanded uniform correction\nexpected: 888888\nactual: ${expanded.corrections}`);
+  console.error(`FAIL expanded uniform correction\nexpected: 444444\nactual: ${expanded.corrections}`);
 }
 const spacedChordOnly = CBFConverter.renderCompletedOutput(
   CBFConverter.convertChordText("[C][D][Bm7][Em7]", settings, []).output,
   [4],
   4
 ).output;
-if (spacedChordOnly !== "|[C]---- ----|[D]---- ----|[Bm7]---- ----|[Em7]---- ----|") {
+if (spacedChordOnly !== "|[C]----[D]----|[Bm7]----[Em7]----|") {
   failures += 1;
   console.error(`FAIL chord-only hyphen spacing\nactual: ${spacedChordOnly}`);
 }

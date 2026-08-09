@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <title>リアルタイムエディター｜ChordWiki Bar Formatter</title>
+  <link rel="icon" type="image/png" href="logo/260810_favicon_touka.png">
+  <link rel="stylesheet" href="style.css?v=20260810-106">
+</head>
+<body class="score-window-page">
+  <header class="score-window-toolbar">
+    <div class="score-window-heading">
+      <a class="score-window-brand-logo" href="index.html" aria-label="ChordWiki Bar Formatter トップページへ"><img src="logo/260810_chordwiki_logo.png" alt="ChordWiki Bar Formatter"></a>
+      <div class="score-window-heading-copy"><h1>リアルタイムエディター</h1><p id="committed-window-status" class="score-window-status">テキストと譜面プレビューを比較しながら編集できます。</p></div>
+    </div>
+    <div class="score-window-controls">
+      <label class="committed-transpose-control"><select id="committed-transpose" aria-label="リアルタイムプレビューの移調"></select><button id="committed-transpose-down" type="button" aria-label="プレビューを半音下げる">−</button><button id="committed-transpose-up" type="button" aria-label="プレビューを半音上げる">＋</button></label>
+      <button id="committed-layout-toggle" class="layout-toggle-button" type="button" aria-pressed="true">左右比較へ</button>
+      <details class="score-window-settings">
+        <summary>表示設定</summary>
+        <div class="score-window-settings-panel">
+          <label class="preview-control font-size-control"><span>文字サイズ <output id="committed-font-size-value">14px</output></span><input id="committed-font-size" type="range" min="11" max="24" value="14"></label>
+          <label class="preview-control line-height-control"><span>テキスト行間 <output id="committed-line-height-value">1.65倍</output></span><input id="committed-line-height" type="range" min="1.4" max="3.2" step="0.05" value="1.65"></label>
+          <label class="preview-control"><span>フォント</span><select id="committed-font"><option value="Meiryo, sans-serif">メイリオ</option><option value="system-ui, sans-serif">system-ui</option><option value="'Yu Gothic UI', sans-serif">游ゴシック</option><option value="'BIZ UDPGothic', sans-serif">BIZ UDゴシック</option></select></label>
+          <label class="preview-control"><span>テーマ</span><select id="committed-theme"><option value="light">ライト</option><option value="dark">ダーク</option><option value="dark-gray">ダークグレー</option></select></label>
+          <label class="final-bar-setting"><input id="committed-text-coloring" type="checkbox" checked> <span>文字色</span></label>
+          <label class="final-bar-setting"><input id="committed-bold-code" type="checkbox" checked> <span>太字コード</span></label>
+          <label class="final-bar-setting"><input id="committed-scroll-sync" type="checkbox" checked> <span>スクロール連動</span></label>
+        </div>
+      </details>
+    </div>
+  </header>
+  <main class="score-window-main committed-window-layout committed-window-stacked" id="committed-window-layout">
+    <section class="committed-window-pane committed-window-editor-pane"><div class="committed-window-pane-title">編集テキスト</div><div class="committed-window-editor-wrap"><div id="committed-window-lines" class="line-numbers" aria-hidden="true"></div><div class="editor-text-layer"><pre id="committed-window-highlight" class="editor-highlight" aria-hidden="true"></pre><textarea id="committed-window-text" class="committed-window-editor" wrap="off" spellcheck="false" aria-label="編集テキスト"></textarea></div></div></section>
+    <div id="committed-window-divider" class="committed-window-divider" role="separator" aria-label="テキストとプレビューの高さを調整" aria-orientation="horizontal" tabindex="0"></div>
+    <section class="committed-window-pane committed-window-preview-pane"><div class="committed-window-pane-title">譜面プレビュー</div><div id="committed-window-preview" class="chordwiki-preview committed-window-preview" aria-label="譜面プレビュー"></div></section>
+  </main>
+  <script type="module" src="/js/entries/committed-preview.js"></script>
+</body>
+</html>

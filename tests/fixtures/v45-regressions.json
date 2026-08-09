@@ -20,22 +20,22 @@
                                 "corrections":  ""
                             },
                             {
-                                "name":  "one chord fills one measure",
+                                "name":  "one code-only chord uses the standard width",
                                 "input":  "[C]",
-                                "output":  "[|][C][----][----][|]",
-                                "corrections":  "8"
+                                "output":  "[|][C][----][|]",
+                                "corrections":  "4"
                             },
                             {
-                                "name":  "two chord-only measures",
+                                "name":  "two code-only chords share one measure",
                                 "input":  "[C][G]",
-                                "output":  "[|][C][----][----][|][G][----][----][|]",
-                                "corrections":  "88"
+                                "output":  "[|][C][----][G][----][|]",
+                                "corrections":  "44"
                             },
                             {
-                                "name":  "odd chord count starts a new two-measure group",
+                                "name":  "odd code-only chord count closes its partial measure",
                                 "input":  "[C][G][Am]",
-                                "output":  "[|][C][----][----][|][G][----][----][|][|][Am][----][----][|]",
-                                "corrections":  "888"
+                                "output":  "[|][C][----][G][----][|][Am][----][|]",
+                                "corrections":  "444"
                             },
                             {
                                 "name":  "lyrics stay attached to their chords",
@@ -46,8 +46,8 @@
                             {
                                 "name":  "complex chord suffixes are not mistaken for text",
                                 "input":  "[F7(13)][C#7(b9#11)][Bm7-5]",
-                                "output":  "[|][F7(13)][----][----][|][C#7(b9#11)][----][----][|][|][Bm7-5][----][----][|]",
-                                "corrections":  "888"
+                                "output":  "[|][F7(13)][----][C#7(b9#11)][----][|][Bm7-5][----][|]",
+                                "corrections":  "444"
                             },
                             {
                                 "name":  "on chord is normalized to slash chord",

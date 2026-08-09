@@ -81,7 +81,7 @@ assert.deepStrictEqual(incompleteEdit.correctionErrors, [], "the missing right t
 
 const singleValueEdit = CBFConverter.convertChordText("[C][D][E][F]", settings, ["2"]);
 assert.strictEqual(singleValueEdit.appliedCorrections, "2", "one entered value remains one explicit value instead of expanding to every chord");
-assert.strictEqual(singleValueEdit.automaticCorrections, "8888");
-assert.strictEqual(singleValueEdit.output, "[|][C][--][D][--][----][|][--][E][--][----][|][--][F][--][----][|][--][|]", "only the first chord changes and the automatic right tail remains intact");
+assert.strictEqual(singleValueEdit.automaticCorrections, "4444");
+assert.strictEqual(singleValueEdit.output, "[|][C][--][D][----][E][--][|][--][F][----][|]", "only the first chord changes and the automatic right tail remains intact");
 
 console.log("PASS: latest edit wins inside the affected measure while other manual measures remain intact");

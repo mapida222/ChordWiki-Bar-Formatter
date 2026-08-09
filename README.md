@@ -56,7 +56,7 @@ ChordPro形式のコード譜へ、**小節線と音の長さを表す記号を�
 
 ## 基本的な使い方
 
-1. `index.html`をブラウザーで開きます。
+1. 公開URL、または`npm run dev`で起動した開発URLをブラウザーで開きます。
 2. 「02. 変換前」へChordPro形式のコード譜を貼り付けます。
 3. 必要に応じて「03. 初期設定」を曲の拍子に合わせます。
 4. 曲と合わない箇所を「04. 行修正」で調整します。
@@ -104,13 +104,21 @@ ChordPro形式のコード譜へ、**小節線と音の長さを表す記号を�
 
 ## 開発とテスト
 
-Node.js 18以上を用意し、リポジトリのルートで次を実行します。
+Node.js 20.19以上を用意し、リポジトリのルートで次を実行します。
 
 ```sh
+npm install
+npm run dev
 npm test
+npm run build
+npm run preview
 ```
 
-テストは`tests`内の全ファイルと、主要JavaScriptの構文を検査します。外部パッケージのインストールは不要です。
+`npm run dev`は開発サーバー、`npm run build`はGitHub Pages用の`dist/`、`npm run preview`はその成果物の確認用サーバーを起動します。
+
+テストは`tests`内の全ファイル、公式ChordWiki Parserとの統合、主要JavaScriptの構文を検査します。依存関係は`package-lock.json`で固定しています。
+
+プレビューは公式[`@chordwiki/chordpro-parser`](https://github.com/ChordWiki/chordpro-parser)でChordWiki方言を解析し、Formatter固有記法のAdapterを経由して旧ChordWiki表示Rendererへ渡します。変換エンジンと保存形式はこの表示処理から独立しています。
 
 Python版との共通回帰ケースは`tests/fixtures/v45-regressions.json`で管理します。
 
@@ -121,6 +129,8 @@ Python版との共通回帰ケースは`tests/fixtures/v45-regressions.json`で�
 
 譜面プレビューの基準は[レイアウト設定書](LAYOUT_REFERENCE.md)と`PREVIEW-001`に記録しています。
 保存済みの状態は`layout-snapshots/2026-07-22-good/`にあります。
+
+今回の責務分離、`wiki.cgi`の分析、復元方法は[リファクタリング設計書](docs/REFACTORING.md)に記録しています。
 
 ## 公開情報
 

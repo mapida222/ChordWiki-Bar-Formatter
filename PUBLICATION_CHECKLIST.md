@@ -19,7 +19,7 @@
 ## 公開設定
 
 - GitHubリポジトリ：<https://github.com/mapida222/ChordWiki-Bar-Formatter>
-- 公開元：`main`ブランチからGitHub Actionsが抽出した公開用ファイル
+- 公開元：`main`ブランチをGitHub ActionsがViteでbuildした`dist/`
 - 公開URL：<https://mapida222.github.io/ChordWiki-Bar-Formatter/>
 - 公開用Gitリモート：`origin`（`https://github.com/mapida222/ChordWiki-Bar-Formatter.git`）
 - 公開ライセンス：[MIT License](LICENSE)
@@ -37,6 +37,6 @@
 
 ## 公開候補
 
-このアプリはビルド不要の静的サイトです。
-GitHub Actionsで`index.html`、別画面プレビュー、CSS、JavaScript、画像など実行に必要なファイルだけを抽出し、GitHub Pagesへ配置します。
+このアプリはViteでbuildする静的サイトです。
+GitHub Actionsで`npm ci`、`npm test`、`npm run build`を実行し、`dist/`だけをGitHub Pagesへ配置します。
 入口は`index.html`です。

@@ -10,13 +10,14 @@ const pagesWorkflow = fs.readFileSync(path.join(root, ".github", "workflows", "p
 const readme = fs.readFileSync(path.join(root, "README.md"), "utf8");
 
 assert(testWorkflow.includes("node-version: 24"));
+assert(testWorkflow.includes("run: npm ci"));
 assert(testWorkflow.includes("run: npm test"));
 assert(pagesWorkflow.includes("actions/upload-pages-artifact@v5"));
 assert(pagesWorkflow.includes("actions/deploy-pages@v5"));
-assert(pagesWorkflow.includes("cp index.html chordwiki-preview.html style.css style-row-edit-test.css site/"));
-assert(pagesWorkflow.includes("cp -R js site/js"));
-assert(pagesWorkflow.includes("cp -R logo site/logo"));
-assert(!pagesWorkflow.includes("cp row-edit-test.html"));
+assert(pagesWorkflow.includes("run: npm ci"));
+assert(pagesWorkflow.includes("run: npm run build"));
+assert(pagesWorkflow.includes("path: dist"));
+assert(!pagesWorkflow.includes("row-edit-test.html"));
 assert(readme.includes("![現在のヘルプ画面](help-usage-screenshot.png)"));
 assert(readme.includes("[Releases](https://github.com/mapida222/ChordWiki-Bar-Formatter/releases)"));
 

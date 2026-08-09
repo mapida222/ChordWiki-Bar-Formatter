@@ -128,7 +128,7 @@
         ? String.fromCharCode(character.charCodeAt(0) - 0xFEE0)
         : character;
       const symbol = ascii.toLowerCase();
-      if (symbol === "/") return "|";
+      if (symbol === "/" || symbol === "\\") return "|";
       return /^[x\^*s|]$/.test(symbol) ? symbol : "";
     });
     return normalized.every(Boolean) ? normalized.join("") : "";
@@ -155,7 +155,7 @@
     // A user may add a chord in the rendered text first and then add its row-edit
     // value, or may temporarily type an incomplete expression while editing.
     // Validation belongs to conversion, not to the textarea's input handler.
-    return normalizedWidth.replace(/\//g, "|").replace(/[^0-9a-isn@?x\^*|]/gi, "").toLowerCase();
+    return normalizedWidth.replace(/[\\/]/g, "|").replace(/[^0-9a-isn@?x\^*|]/gi, "").toLowerCase();
   }
 
   function modifierInsertionAtLineEnd(line, key) {

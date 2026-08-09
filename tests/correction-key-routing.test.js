@@ -8,6 +8,7 @@ const root = path.resolve(__dirname, "..");
 const app = fs.readFileSync(path.join(root, "js", "app.js"), "utf8");
 const correctionInput = fs.readFileSync(path.join(root, "js", "correction-input.js"), "utf8");
 const html = fs.readFileSync(path.join(root, "index.html"), "utf8");
+const entry = fs.readFileSync(path.join(root, "js", "entries", "main.js"), "utf8");
 
 const correctionKeydownRoutes = app.match(/elements\.correction\.addEventListener\("keydown"/g) || [];
 assert.strictEqual(correctionKeydownRoutes.length, 1, "row-edit keyboard input must have exactly one keydown route");
@@ -33,7 +34,7 @@ assert.ok(app.includes("CBFCorrectionInput.deletionEdit"), "Backspace/Delete mus
 assert.ok(app.includes('if (event.key === "Enter")'), "Enter must not create an unpaired correction row");
 assert.ok(app.includes('moveCorrectionSlot("ArrowDown")'), "Enter must move to the next existing correction row");
 assert.ok(app.includes("CBFCorrectionInput.syncopationRemovalEdit"), "pressing s again must remove an existing sync marker");
-assert.ok(app.includes('if (/^[x\\^*s|\\/]$/i.test(event.key))'), "slash must route through the same boundary-symbol handler as | ");
+assert.ok(app.includes('if (/^[x\\^*s|\\\\\\/]$/i.test(event.key))'), "slash and backslash must route through the same boundary-symbol handler as | ");
 assert.ok(app.includes("restoreEditorScrollPositions(captureEditorScrollPositions());"), "boundary symbols must preserve the editor viewport while their active slot is refreshed");
 assert.ok(app.includes("elements.correction.setSelectionRange(nextCaret, nextCaret);"), "white-note entry must leave a duration insertion point after @");
 assert.ok(app.includes("const awaitingWhiteNoteDuration = textarea.selectionStart === textarea.selectionEnd"), "selection tracking must not reselect @ while waiting for its duration");
@@ -41,7 +42,8 @@ assert.ok(app.includes('let correctionCaretMode = "slot";'), "slot selection and
 assert.ok(app.includes('correctionCaretMode = "boundary";'), "symbol insertion must preserve its resulting boundary caret");
 assert.ok(app.includes('correctionCaretMode === "boundary"'), "position refresh must not force a boundary caret back onto the last beat");
 assert.ok(app.includes('document.querySelectorAll("[data-correction-symbol]")'), "keyboard routing stays available after compact symbol buttons are removed");
-assert.ok(html.includes('js/correction-input.js?v=20260802-11'), "the row-edit navigation helper must use the current correction-input cache version");
-assert.ok(html.includes('js/app.js?v=20260803-40'), "the row-edit hotfix must use the current app.js cache version");
+assert.ok(html.includes('type="module" src="/js/entries/main.js"'), "the browser must load the module entry");
+assert.ok(entry.includes('import "../correction-input.js"'), "the row-edit navigation helper must load before the app");
+assert.ok(entry.includes('await import("../app.js")'), "the app must start after its dependencies");
 
 console.log("PASS: row-edit keys use one input route and the browser loads the hotfix version");

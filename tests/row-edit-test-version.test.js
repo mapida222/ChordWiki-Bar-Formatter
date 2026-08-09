@@ -9,10 +9,11 @@ const launcher = fs.readFileSync(path.join(root, "row-edit-test.html"), "utf8");
 const html = fs.readFileSync(path.join(root, "index.html"), "utf8");
 const css = fs.readFileSync(path.join(root, "style-row-edit-test.css"), "utf8");
 const script = fs.readFileSync(path.join(root, "js", "row-edit-test.js"), "utf8");
+const entry = fs.readFileSync(path.join(root, "js", "entries", "main.js"), "utf8");
 
 assert(launcher.includes("index.html?rowEditTest=1"), "the standalone test launcher must open the opt-in experiment");
 assert(html.includes("style-row-edit-test.css?v=20260801-3"));
-assert(html.includes("js/row-edit-test.js?v=20260801-8"));
+assert(entry.includes('await import("../row-edit-test.js")'));
 assert(script.includes('get("rowEditTest") !== "1"'), "the normal app must remain unaffected unless the experiment is requested");
 assert(script.includes('correction.dataset.rowEditTextMode = "true"'));
 assert(script.includes('addEventListener("beforeinput"'));

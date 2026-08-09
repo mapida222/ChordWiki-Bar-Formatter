@@ -51,6 +51,9 @@
 | `ROW-035` | 行修正の最終拍を入力したら、空白行を飛ばして次の入力対象行の先頭スロットへ移動 | 有効 | `js/app.js`、`js/correction-input.js`、`tests/correction-key-routing.test.js`、`tests/correction-input.test.js` |
 | `ROW-036` | 行修正値を貼り付けた際、選択中スロットの再計算をしても全入力欄のスクロール位置を維持 | 有効 | `js/app.js`、`tests/source-paste-scroll.test.js` |
 | `ROW-037` | 空白行を含む行修正へ連続した複数行を貼り付けても、空白行を区切りとして保持 | 有効 | `index.html`、`js/correction-input.js`、`tests/correction-paste.test.js` |
+| `ROW-038` | 小節頭記号として入力したバックスラッシュを`|`へ正規化し、`@8\@8`等の明示値を無効化しない | 有効 | `js/app.js`、`js/correction-input.js`、`tests/local-prebranch-regressions.test.js` |
+| `ROW-039` | 長い白玉が小節をまたぐ場合、コード継続設定とは独立して各小節へ白玉を継続表示 | 有効 | `js/converter.js`、`tests/white-note-regression-matrix.test.js`、`tests/local-prebranch-regressions.test.js` |
+| `ROW-040` | 端数拍・シンコペーションで前置きする歌詞に連続する閉じ括弧を追従 | 有効 | `js/converter.js`、`tests/local-prebranch-regressions.test.js` |
 | `CONVERT-001` | 歌詞行のハイフン省略モード | 有効 | `index.html`、`js/app.js`、`js/converter.js` |
 | `CONVERT-002` | 1小節3コード以上でタイミング用ハイフンを保持 | 有効 | `js/converter.js` |
 | `CONVERT-003` | コード・拍記号・小節線だけの行を歌詞と誤認しない | 有効 | `js/converter.js`、`tests/conversion-bug-regressions.test.js` |
@@ -68,6 +71,7 @@
 | `CONVERT-011` | 演奏記号行の`(Key)`などの英字ラベルと単独の`～`を歌詞と誤認せず、手入力のリズム表記を保持。単独の`～`は白玉相当、語中の`～`は歌詞として扱う | 有効 | `js/converter.js`、`tests/arrangement-notation-preservation.test.js` |
 | `CONVERT-012` | 行頭の小節線で区切られた歌詞小節と手入力リズム小節の混在行では、歌詞側のみ`[|]`へ変換し、後半のリズム表記はコンパクト表記のまま保持 | 有効 | `js/converter.js`、`tests/arrangement-notation-preservation.test.js` |
 | `CONVERT-013` | 変換後の`[|]`直後が歌詞文字なら、重なり防止の全角空白を自動挿入。コード`[`・小節線`|`・注記の括弧の前には挿入しない | 有効 | `js/converter.js`、`tests/arrangement-notation-preservation.test.js` |
+| `CONVERT-014` | コードのみ行も1コードの標準ハイフン数を使い、手入力済みの間奏リズムは原文どおり保持 | 有効 | `js/converter.js`、`tests/converter.test.js`、`tests/local-prebranch-regressions.test.js` |
 | `WARNING-001` | 変換前と初期設定の1小節ハイフン数不一致警告 | 有効 | `js/app.js`、`js/converter.js` |
 | `LAYOUT-001` | 行修正枠と変換後枠の入力欄上端を揃える | 有効 | `style.css`、`js/app.js` |
 | `LAYOUT-002` | 確定譜面テキスト枠の右下リサイズとサイズ保存 | 有効 | `index.html`、`style.css`、`js/app.js`、`tests/committed-resize.test.js` |
@@ -78,6 +82,18 @@
 | `LAYOUT-007` | 初期設定は行修正と重なっても配置を維持し、変換前・変換後枠は左端からも横幅を調整できる。使用例は初期表示で折り畳み可能 | 有効 | `style.css`、`js/app.js`、`index.html`、`tests/default-layout.test.js`、`tests/frame-edge-resize.test.js` |
 | `LAYOUT-008` | 初期設定・行修正・変換前・変換後・譜面プレビューを上下左右の端からサイズ変更し、初期設定の高さを保存・復元 | 有効 | `index.html`、`style.css`、`js/app.js`、`tests/frame-edge-resize.test.js` |
 | `LAYOUT-009` | スマホでは行修正と変換後を縦2段にし、編集行が見えなくなった時だけ連動追従。各セクションの補助・表示設定は見出し右の開閉操作へ集約し、本文枠の標準横スクロールバーは常時表示する。タブレットはPCレイアウトを維持 | 有効 | `index.html`、`style.css`、`js/app.js` |
+| `LAYOUT-010` | 変換後・譜面プレビューの表示設定を全画面幅で見出し右から開閉し、初期状態は開く | 有効 | `index.html`、`style.css`、`js/app.js`、`tests/header-controls.test.js`、`tests/mobile-linked-editors.test.js` |
+| `LAYOUT-011` | 右上の表示設定を操作群の右端で強調し、外側クリックとEscで閉じる | 有効 | `index.html`、`style.css`、`js/app.js`、`tests/header-controls.test.js` |
+| `LAYOUT-012` | 変換後の表示設定を閉じた際に内容を確実に非表示にし、右上の表示設定文字を隣接ボタンと同じサイズへ統一 | 有効 | `style.css`、`js/app.js`、`tests/header-controls.test.js` |
+| `LAYOUT-013` | 変換前・変換後の右端リサイズ方向を反転し、左端の挙動を維持。変換前の下端直下へ変換後見出しを配置 | 有効 | `index.html`、`style.css`、`js/app.js`、`tests/frame-edge-resize.test.js`、`tests/default-layout.test.js` |
+| `LAYOUT-014` | 変換後枠の幅に応じて表示設定を折り返し、閉じた際は内容だけでなく外枠も完全に非表示 | 有効 | `style.css`、`tests/header-controls.test.js` |
+| `LAYOUT-015` | 行修正の位置説明を画面から外し、操作を縦線区切りの一行へ凝縮。03・04入力枠の上端位置合わせを最優先で維持 | 有効 | `index.html`、`style.css`、`js/app.js`、`tests/header-controls.test.js`、`tests/default-layout.test.js` |
+| `LAYOUT-016` | 行修正操作を見出し内の縁付きボタンへ統合し、不要な編集サポート開閉を廃止。右列の01・04は常に詰め、03だけを移動して03・04入力枠上端を一致 | 有効 | `index.html`、`style.css`、`js/app.js`、`tests/header-controls.test.js`、`tests/default-layout.test.js`、`tests/mobile-linked-editors.test.js` |
+| `LAYOUT-017` | 編集サポートの開閉は復活させず、03見出し下へ青い2段の操作枠を復元。上段に戻す・進む・この行を更新、下段に変換後から行修正を復元・丸型ヘルプを配置 | 有効 | `index.html`、`style.css`、`js/app.js`、`tests/header-controls.test.js` |
+| `LAYOUT-018` | 03編集サポート枠のヘルプを前面表示し、丸型ヘルプを中央配置。「この行を更新」と「変換後から行修正を復元」の両方を説明 | 有効 | `index.html`、`style.css`、`tests/header-controls.test.js` |
+| `LAYOUT-019` | スマホの縦並びではPC用03・04入力枠位置合わせを無効化し、03が04へ重ならないよう通常のグリッド順を維持 | 有効 | `js/app.js`、`style.css`、`tests/mobile-linked-editors.test.js` |
+| `LAYOUT-020` | 02初期設定と05譜面プレビューにも03・04同様の右下サイズ変更ハンドルを用意し、スマホでも表示 | 有効 | `index.html`、`style.css`、`tests/frame-edge-resize.test.js`、`tests/mobile-linked-editors.test.js` |
+| `LAYOUT-021` | スマホのリアルタイムエディター見出しを横一行に保ち、操作群は次行へ配置 | 有効 | `style.css`、`tests/mobile-linked-editors.test.js` |
 | `PREVIEW-001` | 譜面プレビューのベスト条件 | 基準 | `LAYOUT_REFERENCE.md`、`layout-snapshots/2026-07-22-good/`、Gitタグ `preview-layout-best-2026-07-22` |
 | `PREVIEW-002` | 拍記号に挟まれた縦小節線が直後の拍記号と重ならないよう補正 | 有効 | `js/chordwiki-preview.js`、`style.css`、`tests/preview-layout.test.js` |
 | `PREVIEW-003` | 譜面プレビューの移調では`{key:...}`だけを移調し、`{ci:...}`・`{title:...}`・`{subtitle:...}`などコメント系ディレクティブ内部のコード風文字列は保持 | 有効 | `js/transposer.js`、`tests/transposer.test.js` |
@@ -86,6 +102,16 @@
 | `HISTORY-003` | 使用履歴から保存時の作業状態を一括復元 | 有効 | `js/app.js`、`index.html`、`tests/history-restore.test.js` |
 | `TEST-001` | プロジェクト全体の回帰テスト | 有効 | `tests/*.test.js` |
 | `PROJECT-001` | チャット間で共有する管理ID台帳 | 有効 | `AGENTS.md`、`MANAGEMENT_IDS.md` |
+| `PROJECT-002` | 大規模コード整理と責務分離 | 有効 | `docs/REFACTORING.md`、`js/entries/`、`vite.config.js`、`package.json` |
+| `PROJECT-003` | 変換後の改行・直接編集と行修正のデータフロー調査 | 調査済み | `docs/OUTPUT_EDIT_DATA_FLOW.md`、`js/app.js`、`js/converter.js`、`js/correction-input.js` |
+| `PROJECT-004` | Viteの応答を待ってからブラウザを開くローカル起動バッチ | 有効 | `start-local.bat`、`tests/local-launcher.test.js` |
+| `PROJECT-005` | 安定した変換前行IDを基準に自動生成結果と変換後の手動上書きを別レイヤーで保存・再適用 | 有効 | `js/output-overrides.js`、`js/app.js`、`js/history.js`、`tests/output-overrides.test.js` |
+| `PREVIEW-004` | 公式Parser Adapterと旧ChordWiki表示Rendererの再構築 | 有効 | `js/parser/`、`js/renderer/`、`js/chordwiki-preview.js`、`tests/official-parser-integration.test.mjs` |
+| `PREVIEW-005` | リアルタイム編集の保存済み下書きが異なる場合に、上書き・前回内容を保持・キャンセルを選択 | 有効 | `js/app.js`、`js/committed-preview-window.js`、`tests/committed-preview-window.test.js` |
+| `PREVIEW-006` | リアルタイム編集のプレビュー背景ドラッグで縦横スクロール | 有効 | `js/committed-preview-window.js`、`style.css`、`tests/committed-preview-window.test.js` |
+| `PREVIEW-007` | リアルタイム編集へ既存Transposerを使った表示専用±12移調を追加 | 有効 | `committed-preview.html`、`js/entries/committed-preview.js`、`js/committed-preview-window.js`、`tests/committed-preview-window.test.js` |
+| `PREVIEW-008` | 旧ChordWikiの二重角括弧を通常・別画面・リアルタイムプレビューで二段上付き表示し、リアルタイム移調を「移調なし／−／＋」順へ統一 | 有効 | `js/chordwiki-preview.js`、`js/renderer/old-chordwiki-renderer.js`、`committed-preview.html`、`style.css`、`tests/preview.test.js`、`tests/official-parser-integration.test.mjs`、`tests/committed-preview-window.test.js` |
+| `PREVIEW-009` | リアルタイム編集の譜面プレビューは、譜面上のコード・歌詞からでも上下左右へドラッグ移動できる | 有効 | `js/committed-preview-window.js`、`style.css`、`tests/committed-preview-window.test.js` |
 | `PUBLIC-001` | 公開準備と公開前確認 | 有効 | `README.md`、`PUBLICATION_CHECKLIST.md`、`help-usage-screenshot.png`、`.gitignore`、`package.json` |
 | `PUBLIC-002` | GitHubトップページの文章・画像改善 | 有効 | `README.md`、`docs/images/readme-*.png`、`docs/README_CAPTURE_SAMPLE.md` |
 | `PUBLIC-003` | クレジット・意見要望・応援リンク | 有効 | `index.html`、`style.css`、`tests/public-links.test.js` |
@@ -93,10 +119,16 @@
 | `PUBLIC-005` | GitHubコミュニティ文書、セキュリティ設定、タグとReleaseの公開運用 | 有効 | `CONTRIBUTING.md`、`.github/ISSUE_TEMPLATE/`、`.github/pull_request_template.md` |
 | `PUBLIC-006` | Google Analyticsによる利用状況計測とプライバシー告知 | 有効 | `index.html`、`privacy.html`、`tests/public-links.test.js` |
 | `PUBLIC-007` | 製品名・リポジトリ名・公開URLから「Web」を削除 | 有効 | `index.html`、`privacy.html`、`README.md`、`PUBLICATION_CHECKLIST.md`、`package.json` |
+| `PUBLIC-008` | 全HTMLエントリのfaviconを透過版`logo_touka_favicon.png`へ統一し、画面ロゴは透過版製品ロゴを使用 | 有効 | `index.html`、`privacy.html`、`chordwiki-preview.html`、`committed-preview.html`、`tests/public-links.test.js` |
+| `PUBLIC-009` | 再デザインした透過ロゴをヘッダー・フッター・リアルタイムエディターへ適用し、全HTMLエントリのfaviconも新デザインへ統一 | 有効 | `logo/260810_chordwiki_logo.png`、`logo/260810_favicon_touka.png`、`index.html`、`privacy.html`、`chordwiki-preview.html`、`committed-preview.html`、`tests/public-links.test.js` |
+| `PUBLIC-009` | Analytics・CSP・AdSense導入余地を監査し、導入条件と配置を記録 | 調査済み | `docs/ADSENSE_READINESS.md`、`index.html`、`privacy.html`、`cgi/wiki.cgi` |
+| `PUBLIC-010` | 実publisher IDによるGoogle AdSense自動広告コード、CSP許可先、広告プライバシー告知 | 有効 | `index.html`、`privacy.html`、`docs/ADSENSE_READINESS.md`、`tests/public-links.test.js` |
 | `SAMPLE-001` | 入力サンプルの変換前・行修正・設定を固定 | 有効 | `js/app.js`、`docs/README_CAPTURE_SAMPLE.md`、`tests/readme-capture-sample.test.js` |
 | `HELP-001` | 丸い「？」による補足説明 | 有効 | `index.html`、`style.css`、`js/app.js`、`docs/TOOLTIP_HELP_DRAFT.md` |
 | `HELP-002` | ヘルプ画面の見出し、対象枠表記、確定までの基本フロー、行の採用状態、行修正の更新・復元案内 | 有効 | `index.html`、`style.css`、`tests/help-layout.test.js` |
 | `HELP-003` | TOPの行修正ヘルプへ`?`の非対応位置保持を追記 | 有効 | `index.html`、`tests/header-controls.test.js` |
+| `HELP-004` | 変換後の直接編集を自動生成と分けて保存し、再変換後も保持する案内を表示 | 有効 | `index.html`、`style.css`、`tests/header-controls.test.js` |
+| `HELP-005` | 変換後の直接編集案内を、改行やふりがな、コードは変換前で編集する推奨文へ簡潔化 | 有効 | `index.html`、`tests/header-controls.test.js` |
 
 ## カテゴリ
 

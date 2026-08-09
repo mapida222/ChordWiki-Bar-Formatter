@@ -503,9 +503,18 @@
     return chunks.map((chunk) => `[${chunk}]`).join("");
   }
 
+  const LYRIC_CLOSING_MARK_RE = /^[)）\]］}｝〉》」』】〕〗〙〛]/u;
+  function lyricSpanWithClosingMarks(value, span) {
+    let resolved = span;
+    for (const character of [...value.slice(resolved)]) {
+      if (!LYRIC_CLOSING_MARK_RE.test(character)) break;
+      resolved += character.length;
+    }
+    return resolved;
+  }
   function firstLyricSpan(value) {
     const english = value.match(/^[A-Za-z]+/);
-    if (english) return english[0].length;
+    if (english) return lyricSpanWithClosingMarks(value, english[0].length);
     const characters = [...value];
     const first = characters[0] || "";
     if (!/[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff]/u.test(first)) return 0;
@@ -514,7 +523,7 @@
       if (!/\p{Mark}/u.test(character)) break;
       span += character.length;
     }
-    return span;
+    return lyricSpanWithClosingMarks(value, span);
   }
 
   function lyricGraphemes(value) {
@@ -664,7 +673,7 @@
     let suppressPendingBar = false;
     let suppressNextSourceBar = false;
     let trailingBarSuppressed = false;
-    function appendDuration(unit, continuationChord = "", followingLyric = null, authoredLyric = "") {
+    function appendDuration(unit, continuationChord = "", followingLyric = null, authoredLyric = "", continuationWhiteNote = false) {
       let remaining = syncopated ? (unit.width * 2) + (Number(unit.syncBefore) || 0) - (Number(unit.syncAfter) || 0) : unit.width;
       if (remaining < 0) return;
       const lyricDistribution = longBeatLyricDistribution(unit, followingLyric, position, capacity, settings, syncopated, authoredLyric);
@@ -710,6 +719,7 @@
           if (remaining > 0) {
             parts.push("[|]");
             if (settings.showContinuationChord && !syncopated && continuationChord) parts.push(`[${continuationChord}]`);
+            if (continuationWhiteNote) parts.push("[○]");
             position = 0;
           } else {
             pendingBar = true;
@@ -778,13 +788,13 @@
           parts.push("[○]");
           const remainingSourceSlots = sourceTokens.slice(tokenIndex + 1)
             .filter((remaining) => remaining.kind === "chord" || (remaining.kind === "text" && remaining.value === "[○]")).length;
-          if (units.length - chordIndex > remainingSourceSlots) appendDuration(units[chordIndex++]);
+          if (units.length - chordIndex > remainingSourceSlots) appendDuration(units[chordIndex++], token.value, null, "", true);
           else {
             // Replacing a visible beat such as 4 with @ creates a white note
             // with the configured default beat length. @4 remains available
             // when a different white-note duration is wanted explicitly.
             const durationUnit = { ...unit, width: Math.max(1, Number(settings.hyphenUnit) || 1), whiteNoteMarker: false };
-            appendDuration(durationUnit);
+            appendDuration(durationUnit, token.value, null, "", true);
           }
         }
       } else if (!followedByWhiteNote) {
@@ -825,15 +835,26 @@
       if (!chords.length) parts.push("[|]");
       return { body: parts.join(""), beatCode: encodeBeatValue(unit) || "n", target: true };
     }
-    chords.forEach((chord, index) => {
-      if (index === 0 || index % 2 === 0) parts.push("[|]");
-      parts.push(`[${chord}]${beatMarkers(capacity, unit)}[|]`);
+    let position = 0;
+    if (chords.length) parts.push("[|]");
+    chords.forEach((chord) => {
+      if (position && position + unit > capacity) {
+        parts.push("[|]");
+        position = 0;
+      }
+      parts.push(`[${chord}]${beatMarkers(unit, unit)}`);
+      position += unit;
+      if (position >= capacity) {
+        parts.push("[|]");
+        position = 0;
+      }
     });
+    if (position) parts.push("[|]");
     if (!chords.length) {
       parts.push("[|]");
     }
-    const capacityCode = encodeBeatValue(capacity);
-    const beatCode = capacityCode ? compactUniform(capacityCode.repeat(chords.length)) : "n";
+    const unitCode = encodeBeatValue(unit);
+    const beatCode = unitCode ? compactUniform(unitCode.repeat(chords.length)) : "n";
     return { body: parts.join(""), beatCode, target: true };
   }
 

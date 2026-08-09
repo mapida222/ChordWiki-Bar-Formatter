@@ -16,7 +16,7 @@ const path = require("path");
 const settings = { hyphenUnit: 4, measureCapacity: 8, hyphenSpacing: 4, shortFractionPrepose: 1, showContinuationChord: 0 };
 
 const automatic = CBFConverter.convertChordText("[C][G]", settings, ["22"], [], [], ["auto"]);
-assert.strictEqual(automatic.output, "[|][C][----][----][|][G][----][----][|]");
+assert.strictEqual(automatic.output, "[|][C][----][G][----][|]");
 assert.strictEqual(automatic.corrections, "22");
 assert.deepStrictEqual(automatic.correctionStates, ["auto"]);
 
@@ -63,7 +63,7 @@ assert(css.includes('button.correction-mode-row[data-mode="fixed"]'));
 assert(app.includes('const ROW_MODE_LABELS = { auto: "自動", edit: "修正", source: "固定", recovered: "固定", fixed: "固定" };'));
 assert(app.includes('const directlyEdited = mode === "edit" && manualOutputLines.has(index);'));
 assert(app.includes('if (musicStructureChanged && rowAdoptionModes[index] !== "source") rowAdoptionModes[index] = "auto";'));
-assert(app.includes('if (!preserveUserEdits && !changedLineIndices?.size) {'));
+assert(app.includes("syncManualOutputLinesFromOverrides();"), "manual result ownership must come from the stable override layer");
 assert(app.includes('preserveUserEdits: !refresh,'));
 
 console.log("PASS: automatic, row-edit, cross-row direct-edit and source adoption states");
