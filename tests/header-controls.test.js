@@ -22,8 +22,8 @@ assert(html.includes("↻ この行を更新"));
 assert(html.includes('<button id="correction-rebuild-all" class="correction-rebuild-button" type="button"'));
 assert(html.includes("↻ 変換後から行修正を復元"));
 assert(html.includes("「?」は自動変換できなかった位置です。その部分の変換後表示を保持します。"));
-assert(html.includes('aria-label="行修正を復元の説明"'));
-assert(html.includes("異常時用の復旧機能です。変換後の全行から行修正値を推論し直します。"));
+assert(html.includes('aria-label="この行を更新と行修正を復元の説明"'));
+assert(html.includes("<b>変換後から行修正を復元</b>：変換後の全行から行修正値を推論し直します。"));
 assert(html.includes('id="correction-position" class="correction-position" aria-live="polite" hidden'));
 assert.strictEqual((html.match(/class="correction-action-divider"/g) || []).length, 0, "the restored support frame must use button spacing instead of pipe separators");
 assert(!html.includes('id="correction-support-toggle"'), "row-edit support must stay visible without a redundant collapse button");
@@ -40,7 +40,12 @@ assert(css.includes(".correction-context-bar { position: relative; margin-bottom
 assert(css.includes(".correction-history-actions { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));"));
 assert(css.includes(".correction-history-actions .correction-rebuild-button { grid-column: 1 / 3; }"));
 assert(css.includes("border: 1px solid var(--line); border-radius: 4px;"), "row-edit actions must remain bordered buttons");
-assert(css.includes(".correction-history-actions .context-help-button { flex: 0 0 18px; width: 18px; height: 18px; min-height: 18px; padding: 0; border-radius: 50%; }"), "row-edit help must remain a circular question button");
+assert(html.includes('aria-label="この行を更新と行修正を復元の説明"'));
+assert(html.includes('<strong class="context-help-title">03. 行修正の操作</strong>'));
+assert(html.includes('<b>この行を更新</b>') && html.includes('<b>変換後から行修正を復元</b>'));
+assert(css.includes(".correction-card { z-index: 10; grid-column: 1; grid-row: 2; transform: translateY(var(--correction-controls-offset, 0px)); }"), "row-edit help must be above the result column");
+assert(css.includes(".correction-history-actions > .context-help { display: grid; place-items: center; align-self: center; justify-self: center; }"));
+assert(css.includes(".correction-history-actions .context-help-button { flex: 0 0 18px; width: 18px; height: 18px; min-height: 18px; padding: 0; border-radius: 50%; place-items: center; }"), "row-edit help must remain a centered circular question button");
 assert(html.includes('class="column-resize-edge guide-column-resize-edge"'));
 assert(!html.includes('data-panel="guide"'));
 assert(css.includes(".correction-input-guide { position: relative; min-width: 0; min-height: 72px; height: auto;"));
@@ -74,7 +79,7 @@ assert.strictEqual((html.match(/class="context-help-title"/g) || []).length, 5);
 [
   "02. 初期設定",
   "03. 行修正",
-  "03. 行修正：変換後から復元",
+  "03. 行修正の操作",
   "04. 変換後：歌詞行のハイフン",
   "05. 譜面プレビュー"
 ].forEach((title) => assert(html.includes(`class="context-help-title">${title}</strong>`), `${title} help title`));
@@ -125,7 +130,7 @@ assert(html.includes('<div class="right-lower-stack">'));
 assert(css.includes(".right-lower-stack { grid-column: 2; grid-row: 3; align-self: start; display: grid; gap: 12px;"));
 assert(css.includes(".final-card, .committed-card { min-width: 0; margin-top: 0; }"));
 assert(css.includes(".status-support-panel { min-width: 0; margin: 0;"));
-assert(css.includes(".correction-card { grid-column: 1; grid-row: 2; transform: translateY(var(--correction-controls-offset, 0px)); }"));
+assert(css.includes(".correction-card { z-index: 10; grid-column: 1; grid-row: 2; transform: translateY(var(--correction-controls-offset, 0px)); }"));
 assert(css.includes(".output-card .editor-shell { grid-template-rows: 1.45em minmax(0, 1fr); height: var(--result-editor-height); border-color: var(--result-line); }"));
 assert(css.includes(".output-card { container-type: inline-size; grid-column: 2; grid-row: 2; }"));
 assert(!css.includes(".committed-card { grid-column: 2; grid-row: 4;"));

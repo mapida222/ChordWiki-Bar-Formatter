@@ -28,7 +28,7 @@ assert(css.includes(".correction-history-actions button { width: 100%; min-width
 assert(css.includes("border: 1px solid var(--line); border-radius: 4px;"), "row-edit action buttons must retain clear rounded outlines");
 assert(css.includes(".settings-column-resize-edge { top: 0; bottom: 0; }"), "the settings panel must expose a vertical resize edge");
 assert(css.includes(".settings-panel.settings-closed .settings-reset-button, .settings-panel.settings-closed .settings-footer-actions, .settings-panel.settings-closed .settings-example-toggle { display: none; }"), "a closed 03 panel must hide the usage-example control even before JavaScript initializes");
-assert(html.includes("style.css?v=20260810-102"));
+assert(html.includes("style.css?v=20260810-103"));
 assert(html.includes('type="module" src="/js/entries/main.js"'));
 assert(entry.includes('await import("../app.js")'));
 
