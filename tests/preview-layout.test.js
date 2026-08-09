@@ -17,14 +17,14 @@ assert.strictEqual((html.match(/cw-code-token/g) || []).length, 4);
 const mixedRhythm = preview.render("|[GM7]---=[GM7]=|----|[Am7]---=[D7]=|----|[GM7]---=[GM7]=|----|[Am7]---=[D7]=|----|");
 assert.strictEqual((mixedRhythm.match(/cw-code-token/g) || []).length, 8);
 assert.strictEqual((mixedRhythm.match(/cw-body-bar-token/g) || []).length, 9);
-assert(mixedRhythm.includes('<span class="cw-body">=<span class="cw-body-bar-token" data-token-type="bar">|</span>----<span class="cw-body-bar-token" data-token-type="bar">|</span></span>'));
+assert(mixedRhythm.includes('<span class="cw-body">=<span class="cw-body-bar-token cw-bar-before-rhythm" data-token-type="bar">|</span>----<span class="cw-body-bar-token" data-token-type="bar">|</span></span>'));
 
 const finalAccent = preview.render("|[F]----|[F]-[C]-[F]--|[N.C.]----|[F]>|");
 assert(finalAccent.includes('<span class="cw-body">&gt;<span class="cw-body-bar-token" data-token-type="bar">|</span></span>'));
 
 const barBetweenRhythm = preview.render("|[A]---- ---[Asus4]-|-[A]--[Asus4]- -[A]---|[A]---- ---[Asus4]-|-[A]--[Asus4]- -[A]---|");
 assert.strictEqual((barBetweenRhythm.match(/cw-bar-between-hyphens/g) || []).length, 2);
-assert(barBetweenRhythm.includes('<span class="cw-body">-<span class="cw-body-bar-token cw-bar-between-hyphens" data-token-type="bar">|</span>-</span>'));
+assert(barBetweenRhythm.includes('<span class="cw-body">-<span class="cw-body-bar-token cw-bar-between-hyphens cw-bar-before-rhythm" data-token-type="bar">|</span>-</span>'));
 
 const css = fs.readFileSync(path.join(__dirname, "..", "style.css"), "utf8");
 const page = fs.readFileSync(path.join(__dirname, "..", "index.html"), "utf8");
@@ -44,15 +44,18 @@ assert(css.includes(".cw-body { position: relative; left: -.8em; display: inline
 assert(css.includes(".cw-score-line-has-lyrics .cw-body-bar-token { top: 0; }"));
 assert(css.includes(".cw-score-line-has-lyrics .cw-body-bar-token-before-text { margin-right: .4em; }"));
 assert(css.includes(".bars-through .cw-boundary { color: transparent; }"));
-assert(css.includes(".cw-bar-between-hyphens { margin-right: .4em; }"));
-assert(page.includes("js/chordwiki-preview.js?v=20260731-4"));
+assert(css.includes(".cw-bar-between-hyphens { margin-right: .6em; }"));
+assert(page.includes("js/chordwiki-preview.js?v=20260731-5"));
 assert(css.includes(".cw-boundary-upper { top: -1.1em;"));
 assert(css.includes(".cw-boundary-leading { margin-right: .28em; }"));
 assert(css.includes(".cw-boundary-leading.cw-boundary-before-chord { margin-right: .08em; }"));
-assert(css.includes(".cw-boundary-trailing { left: .6em; margin-right: .28em; margin-left: .18em; }"));
+assert(css.includes(".cw-boundary-trailing { left: .6em; margin-right: .72em; margin-left: .18em; }"));
+assert(css.includes(".cw-boundary-leading.cw-boundary-before-rhythm { margin-right: .8em; }"));
+assert(css.includes(".cw-boundary-trailing.cw-boundary-before-rhythm { margin-right: 1em; }"));
+assert(css.includes(".cw-bar-before-rhythm { margin-right: .6em; }"));
 assert(css.includes(".cw-score-line-has-lyrics .cw-boundary-leading.cw-boundary-line-start { margin-right: .78em; }"));
 assert(css.includes(".cw-score-line-has-lyrics .cw-boundary-leading.cw-boundary-line-start.cw-boundary-before-chord { margin-right: .58em; }"));
-assert(css.includes(".cw-score-line-has-lyrics .cw-boundary-trailing { left: -.2em; }"));
+assert(css.includes(".cw-score-line-has-lyrics .cw-boundary-trailing { left: -.2em; margin-right: .28em; }"));
 assert(css.includes(".bars-through .cw-boundary-upper { top: 0; }"));
 assert(css.includes(".bold-chords .cw-code-token { font-weight: 700; -webkit-text-stroke: 0; }"));
 assert(!css.includes(".bold-chords .cw-code-token { font-weight: 400; -webkit-text-stroke: .35px"));

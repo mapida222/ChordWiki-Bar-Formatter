@@ -15,8 +15,8 @@ assert(html.includes('data-row="bottom" data-edge="top"'), "the result editor ne
 assert(html.includes('data-row="bottom" data-edge="bottom"'), "the result editor needs a draggable bottom edge");
 assert(html.includes('data-row="final" data-edge="top"') && html.includes('data-row="final" data-edge="bottom"'), "the score preview needs both vertical resize edges");
 assert(html.match(/class="frame-resize-edge[^\"]*"[^>]+aria-orientation="horizontal"/g)?.length >= 10, "all requested panel edges must expose horizontal separator semantics");
-assert(html.includes('class="column-resize-edge editor-column-resize-edge" data-column="inverse" role="separator" aria-label="変換前枠の左端を左右に調整"'));
-assert(html.includes('class="column-resize-edge editor-column-resize-edge" data-column="inverse" role="separator" aria-label="変換後枠の左端を左右に調整"'));
+assert(html.includes('class="column-resize-edge editor-column-resize-edge" data-column="direct" role="separator" aria-label="変換前枠の左端を左右に調整"'));
+assert(html.includes('class="column-resize-edge editor-column-resize-edge" data-column="direct" role="separator" aria-label="変換後枠の左端を左右に調整"'));
 assert(html.match(/class="column-resize-edge[^\"]*"[^>]+aria-orientation="vertical"/g)?.length >= 10, "all requested panel edges must expose vertical separator semantics");
 assert(css.includes(".frame-resize-edge {"));
 assert(css.includes("cursor: ns-resize"));

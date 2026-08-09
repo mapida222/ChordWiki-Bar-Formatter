@@ -7,10 +7,11 @@
     workspace: $(".workspace"), fontPanel: $(".font-panel"), displaySettingsShell: $("#display-settings-shell"), displaySettingsToggle: $("#display-settings-toggle"), correctionGuide: $(".correction-input-guide"), guideToggleAll: $("#guide-toggle-all"), correctionShell: $("#correction-shell"), inputShell: $("#input-shell"), outputShell: $("#output-shell"), finalOutputShell: $("#final-output-shell"),
     correctionLines: $("#correction-lines"), correctionModes: $("#correction-modes"), inputLines: $("#input-lines"), outputLines: $("#output-lines"), finalOutputLines: $("#final-output-lines"), committedOutputLines: $("#committed-output-lines"),
     correctionHighlight: $("#correction-highlight"), inputHighlight: $("#input-highlight"), outputHighlight: $("#output-highlight"), finalOutputHighlight: $("#final-output-highlight"), committedOutputHighlight: $("#committed-output-highlight"),
-    correctionCount: $("#correction-count"), correctionPosition: $("#correction-position"), correctionUndo: $("#correction-undo"), correctionRedo: $("#correction-redo"), correctionRefreshLine: $("#correction-refresh-line"), correctionRebuildAll: $("#correction-rebuild-all"), inputCount: $("#input-count"), outputCount: $("#output-count"), finalOutputCount: $("#final-output-count"), committedOutputCount: $("#committed-output-count"), committedOutputShell: $("#committed-output-shell"), committedOutputToggle: $("#committed-output-toggle"),
+    correctionCount: $("#correction-count"), correctionPosition: $("#correction-position"), correctionUndo: $("#correction-undo"), correctionRedo: $("#correction-redo"), correctionRefreshLine: $("#correction-refresh-line"), correctionRebuildAll: $("#correction-rebuild-all"), inputCount: $("#input-count"), outputCount: $("#output-count"), finalOutputCount: $("#final-output-count"), committedOutputCount: $("#committed-output-count"), committedOutputShell: $("#committed-output-shell"), committedOutputToggle: $("#committed-output-toggle"), openCommittedPreview: $("#open-committed-preview"), openRealtimeEditor: $("#open-realtime-editor"),
     removalTargets: $("#hyphen-removal-targets"), removalLinked: $("#hyphen-removal-linked"), lyricHyphenMode: $("#lyric-hyphen-mode"), removalSummary: $("#removal-summary"), measureCapacityWarning: $("#measure-capacity-warning"), measureCapacityWarningText: $("#measure-capacity-warning-text"), measureCapacityWarningOpen: $("#measure-capacity-warning-open"), measureCapacityWarningDismiss: $("#measure-capacity-warning-dismiss"),
     statusDetail: $("#status-detail"), toast: $("#toast"), helpDialog: $("#help-dialog"), helpExamplePreview: $("#help-example-preview"), historyDialog: $("#history-dialog"), historyList: $("#history-list"), historyPreviewPanel: $("#history-preview-panel"), historyPreviewTabs: $("#history-preview-tabs"), historyTextPreview: $("#history-text-preview"), historyPreview: $("#history-score-preview"), historyPreviewTitle: $("#history-preview-title"), historyPreviewDate: $("#history-preview-date"), historyRestore: $("#history-restore"), historyExportTest: $("#history-export-test"), historyImportTest: $("#history-import-test"), historyImportFile: $("#history-import-file"), historyDeleteAll: $("#history-delete-all"), keySettingsDialog: $("#key-settings-dialog"), keySettingsList: $("#key-settings-list"), keySettingsPreview: $("#key-settings-score-preview")
   };
+  elements.displaySettingsToggle.insertAdjacentElement("afterend", elements.fontPanel);
   const correctionGuideItems = [...document.querySelectorAll(".guide-item")];
   const contextHelpButtons = [...document.querySelectorAll(".context-help-button")];
   let contextHelpHoverTimer;
@@ -132,7 +133,7 @@
   const ROW_ADOPTION_MODES_STORAGE_KEY = "chordWikiBarFormatter.rowAdoptionModes.v1";
   const CORRECTION_SYNTAX_VERSION_KEY = "chordWikiBarFormatter.correctionSyntaxVersion";
   const LAYOUT_STORAGE_KEY = "chordWikiBarFormatter.editorLayout.v3";
-  const DISPLAY_PANEL_STORAGE_KEY = "chordWikiBarFormatter.displayPanelOpen.v3";
+  const DISPLAY_PANEL_STORAGE_KEY = "chordWikiBarFormatter.displayPanelOpen.v4";
   const THEME_STORAGE_KEY = "chordWikiBarFormatter.theme.v1";
   const PLAIN_EDIT_BARS_STORAGE_KEY = "chordWikiBarFormatter.plainEditBars.v1";
   const FINAL_BARS_THROUGH_STORAGE_KEY = "chordWikiBarFormatter.finalBarsThrough.v1";
@@ -980,6 +981,7 @@
     return {
       source,
       text: elements.finalOutput.value,
+      committedText: elements.committedOutput.value,
       transpose: Number.parseInt(elements.previewTranspose.value, 10) || 0,
       spelling: elements.previewSpelling.value,
       theoretical: elements.previewTheoretical.checked,
@@ -990,6 +992,9 @@
       editorFont: elements.fontSelect.value,
       editorFontStack: getComputedStyle(document.documentElement).getPropertyValue("--editor-font").trim(),
       editorFontSize: elements.fontSizeValue.value,
+      scrollSync: scrollSyncEnabled,
+      textColoring: elements.textColoring.checked,
+      boldCode: elements.boldCode.checked,
       updatedAt: scoreWindowRevision
     };
   }
@@ -1688,16 +1693,19 @@
   elements.scrollSync.addEventListener("change", () => {
     scrollSyncEnabled = elements.scrollSync.checked;
     localStorage.setItem(SCROLL_SYNC_STORAGE_KEY, String(scrollSyncEnabled));
+    publishScoreWindow();
     markActivity();
   });
   elements.textColoring.addEventListener("change", () => {
     document.documentElement.classList.toggle("colorized-editors", elements.textColoring.checked);
     localStorage.setItem(TEXT_COLORING_STORAGE_KEY, String(elements.textColoring.checked));
+    publishScoreWindow();
     markActivity();
   });
   elements.boldCode.addEventListener("change", () => {
     document.documentElement.classList.toggle("bold-chords", elements.boldCode.checked);
     localStorage.setItem(BOLD_CODE_STORAGE_KEY, String(elements.boldCode.checked));
+    publishScoreWindow();
     markActivity();
   });
   elements.addedBackground.addEventListener("change", () => {
@@ -1745,6 +1753,15 @@
   if (scorePreviewChannel) {
     scorePreviewChannel.addEventListener("message", (event) => {
       if (event.data?.type === "score-controls") applyScoreWindowControls(event.data.payload);
+      if (event.data?.type === "committed-text") {
+        const text = String(event.data.text || "");
+        if (text === elements.committedOutput.value) return;
+        elements.committedOutput.value = text;
+        localStorage.setItem(COMMITTED_OUTPUT_STORAGE_KEY, text);
+        updateCount(elements.committedOutput, elements.committedOutputCount);
+        updateLineNumbers(elements.committedOutput, elements.committedOutputLines);
+        publishScoreWindow();
+      }
     });
   }
   window.addEventListener("storage", (event) => {
@@ -1759,11 +1776,22 @@
       applyScoreWindowControls(event.data.payload);
       return;
     }
+    if (event.data.type === "committed-text") {
+      const text = String(event.data.text || "");
+      if (text !== elements.committedOutput.value) {
+        elements.committedOutput.value = text;
+        localStorage.setItem(COMMITTED_OUTPUT_STORAGE_KEY, text);
+        updateCount(elements.committedOutput, elements.committedOutputCount);
+        updateLineNumbers(elements.committedOutput, elements.committedOutputLines);
+        publishScoreWindow();
+      }
+      return;
+    }
     if (event.data.type !== "score-request" || !event.source) return;
     const targetOrigin = event.origin === "null" ? "*" : event.origin;
     event.source.postMessage({ type: "score-state", payload: scoreWindowPayload() }, targetOrigin);
   });
-  elements.openScoreWindow.addEventListener("click", () => {
+  elements.openScoreWindow?.addEventListener("click", () => {
     publishScoreWindow();
   });
   window.addEventListener("focus", publishScoreWindow);
@@ -2144,6 +2172,22 @@
     });
   });
   const outputAssistButtons = [...document.querySelectorAll("[data-output-insert], [data-output-move], [data-output-backspace]")];
+  const revealEditorAhead = (editor, direction) => {
+    const caret = editor.selectionEnd;
+    const lineStart = Math.max(editor.value.lastIndexOf("\n", caret - 1), editor.value.lastIndexOf("\r", caret - 1)) + 1;
+    const linePrefix = editor.value.slice(lineStart, caret);
+    const style = window.getComputedStyle(editor);
+    const canvas = document.createElement("canvas");
+    const context = canvas.getContext("2d");
+    if (!context) return;
+    context.font = `${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
+    const letterSpacing = Number.parseFloat(style.letterSpacing) || 0;
+    const caretX = (Number.parseFloat(style.paddingLeft) || 0) + context.measureText(linePrefix).width + linePrefix.length * letterSpacing;
+    const maxScrollLeft = Math.max(0, editor.scrollWidth - editor.clientWidth);
+    const caretViewportRatio = direction === "left" ? 0.58 : 0.42;
+    const preferredScrollLeft = Math.max(0, Math.min(maxScrollLeft, caretX - editor.clientWidth * caretViewportRatio));
+    if ((direction === "left" && preferredScrollLeft < editor.scrollLeft) || (direction === "right" && preferredScrollLeft > editor.scrollLeft)) editor.scrollLeft = preferredScrollLeft;
+  };
   const moveOutputCursor = (direction) => {
     const value = elements.output.value;
     const position = elements.output.selectionEnd;
@@ -2169,7 +2213,30 @@
     }
     elements.output.setSelectionRange(nextPosition, nextPosition);
     elements.output.focus({ preventScroll: true });
+    if (["left", "right"].includes(direction)) requestAnimationFrame(() => revealEditorAhead(elements.output, direction));
   };
+  elements.output.addEventListener("keydown", (event) => {
+    if (!["ArrowLeft", "ArrowRight"].includes(event.key) || event.altKey || event.ctrlKey || event.metaKey) return;
+    requestAnimationFrame(() => revealEditorAhead(elements.output, event.key === "ArrowLeft" ? "left" : "right"));
+  });
+  elements.input.addEventListener("keydown", (event) => {
+    if (!["ArrowLeft", "ArrowRight"].includes(event.key) || event.altKey || event.ctrlKey || event.metaKey) return;
+    requestAnimationFrame(() => revealEditorAhead(elements.input, event.key === "ArrowLeft" ? "left" : "right"));
+  });
+  const preserveEditorHorizontalScroll = (editor) => {
+    const scrollLeft = editor.scrollLeft;
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      if (editor.scrollLeft === scrollLeft) return;
+      editor.scrollLeft = scrollLeft;
+      syncHighlightScroll(editor);
+    }));
+  };
+  [elements.input, elements.output].forEach((editor) => {
+    editor.addEventListener("keydown", (event) => {
+      if (!["ArrowUp", "ArrowDown"].includes(event.key) || event.altKey || event.ctrlKey || event.metaKey) return;
+      preserveEditorHorizontalScroll(editor);
+    });
+  });
   outputAssistButtons.forEach((button) => {
     button.addEventListener("pointerdown", (event) => event.preventDefault());
     button.addEventListener("click", () => {
@@ -2761,20 +2828,33 @@
   $("#commit-preview-to-output").addEventListener("click", () => {
     if (!elements.finalOutput.value) return notify("確定する譜面がありません。", true);
     const next = transposedPreviewText();
-    if (elements.committedOutput.value && elements.committedOutput.value !== next && !window.confirm("07. 確定譜面テキストを現在のプレビューで上書きします。よろしいですか？")) return;
+    if (elements.committedOutput.value && elements.committedOutput.value !== next && !window.confirm("確定譜面テキストを現在のプレビューで上書きします。よろしいですか？")) return;
     elements.committedOutput.value = next;
     localStorage.setItem(COMMITTED_OUTPUT_STORAGE_KEY, next);
     updateCount(elements.committedOutput, elements.committedOutputCount);
     updateLineNumbers(elements.committedOutput, elements.committedOutputLines);
+    publishScoreWindow();
     setCommittedOutputOpen(true);
     markActivity();
-    notify("譜面プレビューを07. 確定譜面テキストへ保存しました。");
+    notify("譜面プレビューを確定譜面テキストへ保存しました。");
   });
   elements.committedOutputToggle.addEventListener("click", () => setCommittedOutputOpen(elements.committedOutputShell.classList.contains("committed-collapsed")));
+  elements.openCommittedPreview.addEventListener("click", () => publishScoreWindow());
+  elements.openRealtimeEditor.addEventListener("click", () => {
+    // 05 is the editable source. 06 only renders that text as a score, so
+    // opening the realtime editor must carry the exact 05 text across.
+    elements.committedOutput.value = elements.output.value;
+    localStorage.setItem(COMMITTED_OUTPUT_STORAGE_KEY, elements.committedOutput.value);
+    localStorage.setItem("chordWikiBarFormatter.committedWindowDraft.v1", JSON.stringify({ text: elements.committedOutput.value, updatedAt: Date.now() }));
+    updateCount(elements.committedOutput, elements.committedOutputCount);
+    updateLineNumbers(elements.committedOutput, elements.committedOutputLines);
+    publishScoreWindow();
+  });
   elements.committedOutput.addEventListener("input", () => {
     localStorage.setItem(COMMITTED_OUTPUT_STORAGE_KEY, elements.committedOutput.value);
     updateCount(elements.committedOutput, elements.committedOutputCount);
     updateLineNumbers(elements.committedOutput, elements.committedOutputLines);
+    publishScoreWindow();
     markActivity();
   });
   elements.committedOutput.addEventListener("scroll", () => {
@@ -2852,21 +2932,7 @@
     syncResultRowAlignment();
   });
   function positionSettingsPanel() {
-    if (window.matchMedia("(max-width: 699px)").matches) {
-      Object.assign(elements.settingsPanel.style, { left: "", top: "", width: "", height: "" });
-      return;
-    }
-    const workspaceRect = elements.workspace.getBoundingClientRect();
-    const displayRect = elements.fontPanel.getBoundingClientRect();
-    const correctionRect = elements.correctionCard.getBoundingClientRect();
-    const left = correctionRect.left - workspaceRect.left;
-    const top = displayRect.bottom - workspaceRect.top + 2;
-    Object.assign(elements.settingsPanel.style, {
-      left: `${left}px`,
-      top: `${top}px`,
-      width: `${correctionRect.width}px`,
-      height: ""
-    });
+    Object.assign(elements.settingsPanel.style, { left: "", top: "", width: "", height: "" });
     positionFrameResizeEdges();
   }
   function positionFrameResizeEdges() {
@@ -2942,7 +3008,7 @@
   function setDisplaySettingsOpen(open, save = true) {
     elements.displaySettingsShell.hidden = false;
     elements.displaySettingsShell.classList.toggle("display-collapsed", !open);
-    elements.displaySettingsToggle.textContent = open ? "設定を閉じる▲" : "設定を開く▼";
+    elements.displaySettingsToggle.textContent = open ? "表示設定▲" : "表示設定▼";
     elements.displaySettingsToggle.setAttribute("aria-expanded", String(open));
     if (save) localStorage.setItem(DISPLAY_PANEL_STORAGE_KEY, String(open));
     requestAnimationFrame(positionSettingsPanel);
@@ -2952,7 +3018,7 @@
     try {
       const layout = JSON.parse(localStorage.getItem(LAYOUT_STORAGE_KEY) || "null");
       if (!layout) return;
-      if (Number.isFinite(layout.displayHeight)) elements.displaySettingsShell.style.height = `${layout.displayHeight}px`;
+      elements.displaySettingsShell.style.removeProperty("height");
       if (Number.isFinite(layout.settingsHeight)) elements.settingsShell.style.height = `${layout.settingsHeight}px`;
       elements.correctionGuide.style.removeProperty("height");
       if (Number.isFinite(layout.leftWidth)) setLeftColumnWidth(layout.leftWidth);

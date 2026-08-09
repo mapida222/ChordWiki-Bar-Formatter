@@ -45,18 +45,19 @@
     const alignedValue = alignWithLeadingBoundary ? String(value).replace(/^\s+(?=\|)/, "") : String(value);
     const characters = Array.from(alignedValue);
     return characters.map((character, index) => character === "|"
-      ? `<span class="cw-body-bar-token${atLineStart && index === 0 ? " cw-bar-token-line-start" : ""}${characters[index - 1] === "-" && characters[index + 1] === "-" ? " cw-bar-between-hyphens" : ""}${characters[index + 1] && !/[\s\-=>≧○|*]/.test(characters[index + 1]) ? " cw-body-bar-token-before-text" : ""}" data-token-type="bar">|</span>`
+      ? `<span class="cw-body-bar-token${atLineStart && index === 0 ? " cw-bar-token-line-start" : ""}${characters[index - 1] === "-" && characters[index + 1] === "-" ? " cw-bar-between-hyphens" : ""}${characters[index + 1] && /[\-=>≧○*]/.test(characters[index + 1]) ? " cw-bar-before-rhythm" : ""}${characters[index + 1] && !/[\s\-=>≧○|*]/.test(characters[index + 1]) ? " cw-body-bar-token-before-text" : ""}" data-token-type="bar">|</span>`
       : decoratedText(character)).join("");
   }
 
-  function renderBoundary(position, row = "body", atLineStart = false, beforeChord = false) {
+  function renderBoundary(position, row = "body", atLineStart = false, beforeChord = false, beforeRhythm = false) {
     const classes = ["cw-boundary", `cw-boundary-${position}`, `cw-boundary-${row}`];
     if (atLineStart) classes.push("cw-boundary-line-start");
     if (beforeChord) classes.push("cw-boundary-before-chord");
+    if (beforeRhythm) classes.push("cw-boundary-before-rhythm");
     return `<span class="${classes.join(" ")}" data-token-type="bar"><span>|</span></span>`;
   }
 
-  function renderSegment(part, index) {
+  function renderSegment(part, index, parts) {
     const hasTrailingBar = part.body.endsWith("|");
     const body = part.body;
     const hasTrailingUpperBar = Boolean(part.trailingUpperBar);
@@ -67,8 +68,12 @@
     if (hasTrailingBar) classes.push("cw-segment-has-trailing-bar");
     if (hasTrailingUpperBar) classes.push("cw-segment-has-trailing-upper-bar");
     if (upper.length) classes.push("cw-segment-has-upper");
-    const leadingBar = hasLeadingBar ? renderBoundary("leading", "upper", index === 0, upper.some((token) => !isRhythmToken(token))) : "";
-    const trailingUpperBar = hasTrailingUpperBar ? renderBoundary("trailing", "upper") : "";
+    const beginsWithRhythm = Boolean(upper.length && isRhythmToken(upper[0]));
+    const nextPart = parts[index + 1];
+    const nextUpper = nextPart?.upper?.[0] === "|" ? nextPart.upper.slice(1) : nextPart?.upper || [];
+    const nextBeginsWithRhythm = Boolean(nextUpper.length && isRhythmToken(nextUpper[0]));
+    const leadingBar = hasLeadingBar ? renderBoundary("leading", "upper", index === 0, upper.some((token) => !isRhythmToken(token)), beginsWithRhythm) : "";
+    const trailingUpperBar = hasTrailingUpperBar ? renderBoundary("trailing", "upper", false, false, nextBeginsWithRhythm) : "";
     const chord = upper.length ? `<span class="cw-chord">${decoratedUpper(upper)}</span>` : "";
     const bodySpan = body ? `<span class="cw-body">${decoratedBody(body, index === 0, hasLeadingBar)}</span>` : "";
     return `${leadingBar}<span class="${classes.join(" ")}">${chord}${bodySpan}</span>${trailingUpperBar}`;

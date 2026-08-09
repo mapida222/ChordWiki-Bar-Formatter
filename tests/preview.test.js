@@ -71,6 +71,15 @@ assert(!throughBarPair.includes("cw-boundary-before-chord"));
 const leadingBarBeforeChord = preview.render("[|][DbM7]く");
 assert(leadingBarBeforeChord.includes("cw-boundary-line-start cw-boundary-before-chord"));
 
+const leadingBarBeforeRhythm = preview.render("[|][----][C7]");
+assert(leadingBarBeforeRhythm.includes("cw-boundary-before-chord cw-boundary-before-rhythm"));
+
+const trailingBarBeforeRhythm = preview.render("[>][|][----]");
+assert(trailingBarBeforeRhythm.includes("cw-boundary-trailing cw-boundary-upper cw-boundary-before-rhythm"));
+
+const bodyBarBeforeRhythm = preview.render("[C]>|----");
+assert(bodyBarBeforeRhythm.includes("cw-body-bar-token cw-bar-before-rhythm"));
+
 const bracketedBars = preview.render("[|][C][----]歌詞[|]");
 assert.strictEqual((bracketedBars.match(/cw-boundary-upper/g) || []).length, 2);
 assert.strictEqual((bracketedBars.match(/cw-body-bar-token/g) || []).length, 0);

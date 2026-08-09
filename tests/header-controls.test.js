@@ -67,11 +67,11 @@ assert(showOption >= 0 && showOption < targetOption && targetOption < minimizeOp
 assert.strictEqual((html.match(/class="context-help-button"/g) || []).length, 5);
 assert.strictEqual((html.match(/class="context-help-title"/g) || []).length, 5);
 [
-  "03. 初期設定・使用例",
-  "04. 行修正",
-  "04. 行修正：変換後から復元",
-  "05. 変換後：歌詞行のハイフン",
-  "06. 譜面プレビュー"
+  "02. 初期設定",
+  "03. 行修正",
+  "03. 行修正：変換後から復元",
+  "04. 変換後：歌詞行のハイフン",
+  "05. 譜面プレビュー"
 ].forEach((title) => assert(html.includes(`class="context-help-title">${title}</strong>`), `${title} help title`));
 assert(css.includes(".context-help-title { display: block;"));
 assert(html.includes("表示方法を選びます。<br>「省略しない」：すべてのハイフンを表示します。"));
@@ -86,7 +86,21 @@ assert(app.includes("updateLyricHyphenControls"));
 assert(!html.includes('id="hide-lyric-hyphens"'));
 assert(css.includes("gap: 0 10px; align-items: start;"));
 assert(css.includes(".input-card { grid-column: 2; grid-row: 1; align-self: end; }"));
-assert(css.includes(".font-panel { grid-column: 1; grid-row: 1; align-self: start; min-width: 0; margin-bottom: 122px; }"));
+assert(html.includes('<h2 id="settings-title" class="compact-editor-title">02. 初期設定'));
+assert(html.includes('<label for="input-text">01. 変換前'));
+assert(html.includes('id="display-settings-toggle" class="help-open-button display-settings-trigger"'));
+assert(html.includes('aria-controls="display-settings-shell">表示設定▼</button>'));
+assert(html.indexOf('id="display-settings-toggle"') < html.indexOf('id="history-save"'));
+assert(app.includes('elements.displaySettingsToggle.insertAdjacentElement("afterend", elements.fontPanel);'));
+assert(html.indexOf('id="reset-layout"') > html.indexOf('id="display-settings-body"'));
+assert(css.includes(".settings-panel { position: relative; z-index: 30; grid-column: 1; grid-row: 1;"));
+assert(css.includes(".font-panel { position: absolute; z-index: 60; top: calc(100% + 7px); right: 0;"));
+assert(css.includes(".display-settings-shell.display-collapsed { display: none; }"));
+assert(css.includes(".settings-panel { position: relative; z-index: 30; grid-column: 1; grid-row: 1; align-self: start; overflow: visible; min-width: 0; height: 78px;"));
+assert(html.includes('id="output-settings-toggle" class="mobile-heading-toggle" type="button" aria-expanded="true"'));
+assert(html.includes('class="output-settings-row"'));
+assert(html.includes('class="output-quick-settings"'));
+assert(css.includes(".output-settings-row { display: grid; grid-template-columns: max-content minmax(0, 1fr);"));
 assert(css.includes(".auxiliary-panel-heading { margin: -9px -12px 9px -10px;"));
 assert(html.includes('<div class="output-column-headings" aria-hidden="true"><span>No.</span><span>変換後テキスト</span></div>'));
 assert(css.includes(".output-column-headings { grid-column: 1 / -1; grid-row: 1; display: grid; grid-template-columns: subgrid;"));

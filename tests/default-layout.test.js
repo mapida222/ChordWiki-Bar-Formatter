@@ -14,7 +14,7 @@ assert(html.includes('id="settings-panel" class="settings-panel settings-closed"
 assert(html.includes('id="settings-example-toggle" class="text-button settings-example-toggle" type="button" aria-expanded="true" hidden'), "the usage-example toggle must be hidden before 03 is opened");
 assert(app.includes('setDisplaySettingsOpen(savedDisplayPanel === "true", false);'), "01 must stay collapsed when no preference has been saved");
 assert(app.includes('const LAYOUT_STORAGE_KEY = "chordWikiBarFormatter.editorLayout.v3";'), "the wider layout must not inherit incompatible saved dimensions");
-assert(app.includes('const DISPLAY_PANEL_STORAGE_KEY = "chordWikiBarFormatter.displayPanelOpen.v3";'), "01 must start collapsed once when adopting the new default layout");
+assert(app.includes('const DISPLAY_PANEL_STORAGE_KEY = "chordWikiBarFormatter.displayPanelOpen.v4";'), "the display popover must start collapsed once after moving into the 02 heading");
 assert(app.includes('setDisplaySettingsOpen(false);') && app.includes('setSettingsMode("closed");'), "layout reset must restore both control panels to the collapsed state");
 assert(app.includes('setSettingsExamplesOpen(true);'), "layout reset must reopen compact usage examples");
 assert(css.includes("--top-editor-height: clamp(210px, 24vh, 230px)"), "the source editor must use the compact default height");
@@ -27,7 +27,7 @@ assert(css.includes("border: 2px solid color-mix(in srgb, var(--correction-line)
 assert(css.includes("border-radius: 8px"), "the row-edit context frame must have rounded corners");
 assert(css.includes(".settings-column-resize-edge { top: 0; bottom: 0; }"), "the settings panel must expose a vertical resize edge");
 assert(css.includes(".settings-panel.settings-closed .settings-reset-button, .settings-panel.settings-closed .settings-footer-actions, .settings-panel.settings-closed .settings-example-toggle { display: none; }"), "a closed 03 panel must hide the usage-example control even before JavaScript initializes");
-assert(html.includes("style.css?v=20260803-61"));
-assert(html.includes("js/app.js?v=20260803-40"));
+assert(html.includes("style.css?v=20260805-94"));
+assert(html.includes("js/app.js?v=20260805-55"));
 
 console.log("PASS: LAYOUT-003 compact default layout and clear row-edit context frame");
