@@ -986,10 +986,7 @@
   function syncResultRowAlignment() {
     cancelAnimationFrame(resultAlignmentFrame);
     resultAlignmentFrame = requestAnimationFrame(() => {
-      elements.workspace.style.setProperty("--result-controls-offset", "0px");
-      const correctionTop = elements.correctionShell.getBoundingClientRect().top;
-      const outputTop = elements.outputShell.getBoundingClientRect().top;
-      elements.workspace.style.setProperty("--result-controls-offset", `${Math.max(0, correctionTop - outputTop)}px`);
+      elements.workspace.style.removeProperty("--result-controls-offset");
       positionFrameResizeEdges();
     });
   }

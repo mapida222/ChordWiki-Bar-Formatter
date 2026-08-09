@@ -264,7 +264,7 @@ main { padding: 12px 0 28px; }
 .support-jump-button { flex: 0 0 auto; min-height: 25px; padding: 3px 7px; border: 1px solid var(--correction-line); border-radius: 3px; color: var(--text); background: color-mix(in srgb, var(--panel) 86%, var(--correction-line)); cursor: pointer; font: 800 .68rem/1 var(--sans); }
 .support-jump-button:hover { background: color-mix(in srgb, var(--panel) 72%, var(--correction-line)); }
 .input-card { grid-column: 2; grid-row: 1; align-self: end; }
-.output-card { grid-column: 2; grid-row: 2; margin-top: var(--result-controls-offset, 0px); }
+.output-card { grid-column: 2; grid-row: 2; }
 .right-lower-stack { grid-column: 2; grid-row: 3; align-self: start; display: grid; gap: 12px; min-width: 0; margin-top: 12px; }
 .final-card, .committed-card { min-width: 0; margin-top: 0; }
 .input-card::after, .output-card::after, .correction-card::after { position: absolute; z-index: 2; pointer-events: none; font: 700 12px/1 var(--sans); }

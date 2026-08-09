@@ -85,6 +85,7 @@
 | `LAYOUT-010` | 変換後・譜面プレビューの表示設定を全画面幅で見出し右から開閉し、初期状態は開く | 有効 | `index.html`、`style.css`、`js/app.js`、`tests/header-controls.test.js`、`tests/mobile-linked-editors.test.js` |
 | `LAYOUT-011` | 右上の表示設定を操作群の右端で強調し、外側クリックとEscで閉じる | 有効 | `index.html`、`style.css`、`js/app.js`、`tests/header-controls.test.js` |
 | `LAYOUT-012` | 変換後の表示設定を閉じた際に内容を確実に非表示にし、右上の表示設定文字を隣接ボタンと同じサイズへ統一 | 有効 | `style.css`、`js/app.js`、`tests/header-controls.test.js` |
+| `LAYOUT-013` | 変換前・変換後の右端リサイズ方向を反転し、左端の挙動を維持。変換前の下端直下へ変換後見出しを配置 | 有効 | `index.html`、`style.css`、`js/app.js`、`tests/frame-edge-resize.test.js`、`tests/default-layout.test.js` |
 | `PREVIEW-001` | 譜面プレビューのベスト条件 | 基準 | `LAYOUT_REFERENCE.md`、`layout-snapshots/2026-07-22-good/`、Gitタグ `preview-layout-best-2026-07-22` |
 | `PREVIEW-002` | 拍記号に挟まれた縦小節線が直後の拍記号と重ならないよう補正 | 有効 | `js/chordwiki-preview.js`、`style.css`、`tests/preview-layout.test.js` |
 | `PREVIEW-003` | 譜面プレビューの移調では`{key:...}`だけを移調し、`{ci:...}`・`{title:...}`・`{subtitle:...}`などコメント系ディレクティブ内部のコード風文字列は保持 | 有効 | `js/transposer.js`、`tests/transposer.test.js` |
@@ -118,6 +119,7 @@
 | `HELP-002` | ヘルプ画面の見出し、対象枠表記、確定までの基本フロー、行の採用状態、行修正の更新・復元案内 | 有効 | `index.html`、`style.css`、`tests/help-layout.test.js` |
 | `HELP-003` | TOPの行修正ヘルプへ`?`の非対応位置保持を追記 | 有効 | `index.html`、`tests/header-controls.test.js` |
 | `HELP-004` | 変換後の直接編集を自動生成と分けて保存し、再変換後も保持する案内を表示 | 有効 | `index.html`、`style.css`、`tests/header-controls.test.js` |
+| `HELP-005` | 変換後の直接編集案内を、改行やふりがな、コードは変換前で編集する推奨文へ簡潔化 | 有効 | `index.html`、`tests/header-controls.test.js` |
 
 ## カテゴリ
 

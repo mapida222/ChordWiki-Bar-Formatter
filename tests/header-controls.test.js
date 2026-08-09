@@ -103,7 +103,7 @@ assert(css.includes(".settings-panel { position: relative; z-index: 30; grid-col
 assert(html.includes('id="output-settings-toggle" class="mobile-heading-toggle" type="button" aria-expanded="true"'));
 assert(css.includes(".mobile-heading-toggle { display: inline-flex;"));
 assert(html.includes('class="output-settings-row"'));
-assert(html.includes('<p class="output-edit-guidance">ここで直接編集した内容は自動生成結果と分けて保存し、変換前や設定を変更しても保持します。</p>'));
+assert(html.includes('<p class="output-edit-guidance">改行やふりがな、コードは、変換前での編集をおすすめします。</p>'));
 assert(css.includes(".output-edit-guidance { margin: 0 2px 4px;"));
 assert(html.includes('class="output-quick-settings"'));
 assert(css.includes(".output-settings-row { display: grid; grid-template-columns: max-content minmax(0, 1fr);"));
@@ -120,7 +120,7 @@ assert(css.includes(".final-card, .committed-card { min-width: 0; margin-top: 0;
 assert(css.includes(".status-support-panel { min-width: 0; margin: 0;"));
 assert(css.includes(".correction-card { grid-column: 1; grid-row: 2; }"));
 assert(css.includes(".output-card .editor-shell { grid-template-rows: 1.45em minmax(0, 1fr); height: var(--result-editor-height); border-color: var(--result-line); }"));
-assert(css.includes(".output-card { grid-column: 2; grid-row: 2; margin-top: var(--result-controls-offset, 0px); }"));
+assert(css.includes(".output-card { grid-column: 2; grid-row: 2; }"));
 assert(!css.includes(".committed-card { grid-column: 2; grid-row: 4;"));
 assert(!app.includes("--settings-clearance"));
 
