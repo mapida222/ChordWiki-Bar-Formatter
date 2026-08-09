@@ -16,7 +16,7 @@ const path = require("path");
 const settings = { hyphenUnit: 4, measureCapacity: 8, hyphenSpacing: 4, shortFractionPrepose: 1, showContinuationChord: 0 };
 
 const automatic = CBFConverter.convertChordText("[C][G]", settings, ["22"], [], [], ["auto"]);
-assert.strictEqual(automatic.output, "[|][C][----][----][|][G][----][----][|]");
+assert.strictEqual(automatic.output, "[|][C][----][G][----][|]");
 assert.strictEqual(automatic.corrections, "22");
 assert.deepStrictEqual(automatic.correctionStates, ["auto"]);
 

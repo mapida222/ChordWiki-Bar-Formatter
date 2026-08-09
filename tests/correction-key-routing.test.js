@@ -34,7 +34,7 @@ assert.ok(app.includes("CBFCorrectionInput.deletionEdit"), "Backspace/Delete mus
 assert.ok(app.includes('if (event.key === "Enter")'), "Enter must not create an unpaired correction row");
 assert.ok(app.includes('moveCorrectionSlot("ArrowDown")'), "Enter must move to the next existing correction row");
 assert.ok(app.includes("CBFCorrectionInput.syncopationRemovalEdit"), "pressing s again must remove an existing sync marker");
-assert.ok(app.includes('if (/^[x\\^*s|\\/]$/i.test(event.key))'), "slash must route through the same boundary-symbol handler as | ");
+assert.ok(app.includes('if (/^[x\\^*s|\\\\\\/]$/i.test(event.key))'), "slash and backslash must route through the same boundary-symbol handler as | ");
 assert.ok(app.includes("restoreEditorScrollPositions(captureEditorScrollPositions());"), "boundary symbols must preserve the editor viewport while their active slot is refreshed");
 assert.ok(app.includes("elements.correction.setSelectionRange(nextCaret, nextCaret);"), "white-note entry must leave a duration insertion point after @");
 assert.ok(app.includes("const awaitingWhiteNoteDuration = textarea.selectionStart === textarea.selectionEnd"), "selection tracking must not reselect @ while waiting for its duration");

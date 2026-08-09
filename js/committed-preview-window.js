@@ -3,6 +3,8 @@
   const STATE_KEY = "chordWikiBarFormatter.scoreWindow.v1";
   const CHANNEL_NAME = "chordWikiBarFormatter.scoreWindow.channel.v1";
   const TEXT_KEY = "chordWikiBarFormatter.committedOutput.v1";
+  const DRAFT_KEY = "chordWikiBarFormatter.committedWindowDraft.v1";
+  const keepExistingDraft = new URLSearchParams(window.location.search).get("draft") === "keep";
   const layout = document.querySelector("#committed-window-layout");
   const text = document.querySelector("#committed-window-text");
   const lines = document.querySelector("#committed-window-lines");
@@ -83,7 +85,7 @@
   function publishText() {
     const payload = { type: "committed-text", text: text.value };
     draftUpdatedAt = Date.now();
-    try { localStorage.setItem(TEXT_KEY, text.value); localStorage.setItem("chordWikiBarFormatter.committedWindowDraft.v1", JSON.stringify({ text: text.value, updatedAt: draftUpdatedAt })); } catch (_error) { /* opener/channel can still sync */ }
+    try { localStorage.setItem(TEXT_KEY, text.value); localStorage.setItem(DRAFT_KEY, JSON.stringify({ text: text.value, updatedAt: draftUpdatedAt })); } catch (_error) { /* opener/channel can still sync */ }
     if (channel) channel.postMessage(payload);
     try { if (window.opener && !window.opener.closed) window.opener.postMessage(payload, window.location.origin === "null" ? "*" : window.location.origin); } catch (_error) { /* ignore */ }
     render(); status.textContent = "譜面プレビューへリアルタイムで反映しました。";
@@ -157,8 +159,8 @@
   window.addEventListener("storage", (event) => { if (event.key === STATE_KEY && event.newValue) { try { applyState(JSON.parse(event.newValue)); } catch (_error) {} } if (event.key === TEXT_KEY && event.newValue !== text.value) { text.value = event.newValue; render(); } });
   try { const saved = JSON.parse(localStorage.getItem(displayKey) || "null"); if (saved) { fontSize.value = saved.fontSize || fontSize.value; font.value = saved.font || font.value; theme.value = saved.theme || theme.value; const savedCheckboxDefaults = saved.checkboxDefaultsVersion === 1; textColoring.checked = savedCheckboxDefaults ? saved.textColoring !== false : true; boldCode.checked = savedCheckboxDefaults ? saved.boldCode !== false : true; scrollSync.checked = savedCheckboxDefaults ? saved.scrollSync !== false : true; layoutMode = saved.layoutPreferenceVersion === 1 && saved.layoutMode === "side" ? "side" : "stacked"; stackedLineHeight = Math.max(1.4, Math.min(3.2, Number.parseFloat(saved.stackedLineHeight) || 1.65)); sideLineHeight = Math.max(1.4, Math.min(3.2, Number.parseFloat(saved.sideLineHeight) || 2.75)); stackedPaneSize = Math.max(6, Math.min(94, Number.parseFloat(saved.stackedPaneSize) || 48)); sidePaneSize = Math.max(6, Math.min(94, Number.parseFloat(saved.sidePaneSize) || 48)); } } catch (_error) {}
   applyDisplaySettings();
-  try { const draft = JSON.parse(localStorage.getItem("chordWikiBarFormatter.committedWindowDraft.v1") || "null"); if (draft?.text) { text.value = draft.text; draftUpdatedAt = Number(draft.updatedAt) || 0; } } catch (_error) {}
-  try { applyState(JSON.parse(localStorage.getItem(STATE_KEY) || "null")); } catch (_error) {}
+  try { const draft = JSON.parse(localStorage.getItem(DRAFT_KEY) || "null"); if (draft?.text) { text.value = draft.text; draftUpdatedAt = Number(draft.updatedAt) || 0; } } catch (_error) {}
+  if (!keepExistingDraft) { try { applyState(JSON.parse(localStorage.getItem(STATE_KEY) || "null")); } catch (_error) {} }
   if (!text.value) { try { text.value = localStorage.getItem(TEXT_KEY) || ""; } catch (_error) {} }
   // A saved draft can already fill the textarea without producing the line
   // numbers, syntax layer, or score preview. Always perform an initial render.

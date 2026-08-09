@@ -12,6 +12,12 @@ const preview = require(path.join(root, "js", "chordwiki-preview.js"));
 const entry = fs.readFileSync(path.join(root, "js", "entries", "committed-preview.js"), "utf8");
 
 assert(windowScript.includes('if (!text.value) { try { text.value = localStorage.getItem(TEXT_KEY) || ""; } catch (_error) {} }\n  // A saved draft'));
+assert(windowScript.includes('const keepExistingDraft = new URLSearchParams(window.location.search).get("draft") === "keep";'));
+assert(windowScript.includes('if (!keepExistingDraft) { try { applyState(JSON.parse(localStorage.getItem(STATE_KEY) || "null")); } catch (_error) {} }'));
+const app = fs.readFileSync(path.join(root, "js", "app.js"), "utf8");
+assert(app.includes("リアルタイム編集ページには前回の編集内容があります。"));
+assert(app.includes('elements.openRealtimeEditor.href = "committed-preview.html?draft=keep";'));
+assert(app.includes("event.preventDefault();"), "cancel must prevent opening the realtime editor");
 assert(windowScript.includes("// numbers, syntax layer, or score preview. Always perform an initial render.\n  render();"));
 assert(html.includes('type="module" src="/js/entries/committed-preview.js"'));
 assert(entry.includes('await import("../committed-preview-window.js")'));

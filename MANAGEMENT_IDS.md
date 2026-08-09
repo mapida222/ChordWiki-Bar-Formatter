@@ -51,6 +51,9 @@
 | `ROW-035` | 行修正の最終拍を入力したら、空白行を飛ばして次の入力対象行の先頭スロットへ移動 | 有効 | `js/app.js`、`js/correction-input.js`、`tests/correction-key-routing.test.js`、`tests/correction-input.test.js` |
 | `ROW-036` | 行修正値を貼り付けた際、選択中スロットの再計算をしても全入力欄のスクロール位置を維持 | 有効 | `js/app.js`、`tests/source-paste-scroll.test.js` |
 | `ROW-037` | 空白行を含む行修正へ連続した複数行を貼り付けても、空白行を区切りとして保持 | 有効 | `index.html`、`js/correction-input.js`、`tests/correction-paste.test.js` |
+| `ROW-038` | 小節頭記号として入力したバックスラッシュを`|`へ正規化し、`@8\@8`等の明示値を無効化しない | 有効 | `js/app.js`、`js/correction-input.js`、`tests/local-prebranch-regressions.test.js` |
+| `ROW-039` | 長い白玉が小節をまたぐ場合、コード継続設定とは独立して各小節へ白玉を継続表示 | 有効 | `js/converter.js`、`tests/white-note-regression-matrix.test.js`、`tests/local-prebranch-regressions.test.js` |
+| `ROW-040` | 端数拍・シンコペーションで前置きする歌詞に連続する閉じ括弧を追従 | 有効 | `js/converter.js`、`tests/local-prebranch-regressions.test.js` |
 | `CONVERT-001` | 歌詞行のハイフン省略モード | 有効 | `index.html`、`js/app.js`、`js/converter.js` |
 | `CONVERT-002` | 1小節3コード以上でタイミング用ハイフンを保持 | 有効 | `js/converter.js` |
 | `CONVERT-003` | コード・拍記号・小節線だけの行を歌詞と誤認しない | 有効 | `js/converter.js`、`tests/conversion-bug-regressions.test.js` |
@@ -68,6 +71,7 @@
 | `CONVERT-011` | 演奏記号行の`(Key)`などの英字ラベルと単独の`～`を歌詞と誤認せず、手入力のリズム表記を保持。単独の`～`は白玉相当、語中の`～`は歌詞として扱う | 有効 | `js/converter.js`、`tests/arrangement-notation-preservation.test.js` |
 | `CONVERT-012` | 行頭の小節線で区切られた歌詞小節と手入力リズム小節の混在行では、歌詞側のみ`[|]`へ変換し、後半のリズム表記はコンパクト表記のまま保持 | 有効 | `js/converter.js`、`tests/arrangement-notation-preservation.test.js` |
 | `CONVERT-013` | 変換後の`[|]`直後が歌詞文字なら、重なり防止の全角空白を自動挿入。コード`[`・小節線`|`・注記の括弧の前には挿入しない | 有効 | `js/converter.js`、`tests/arrangement-notation-preservation.test.js` |
+| `CONVERT-014` | コードのみ行も1コードの標準ハイフン数を使い、手入力済みの間奏リズムは原文どおり保持 | 有効 | `js/converter.js`、`tests/converter.test.js`、`tests/local-prebranch-regressions.test.js` |
 | `WARNING-001` | 変換前と初期設定の1小節ハイフン数不一致警告 | 有効 | `js/app.js`、`js/converter.js` |
 | `LAYOUT-001` | 行修正枠と変換後枠の入力欄上端を揃える | 有効 | `style.css`、`js/app.js` |
 | `LAYOUT-002` | 確定譜面テキスト枠の右下リサイズとサイズ保存 | 有効 | `index.html`、`style.css`、`js/app.js`、`tests/committed-resize.test.js` |
@@ -88,6 +92,7 @@
 | `PROJECT-001` | チャット間で共有する管理ID台帳 | 有効 | `AGENTS.md`、`MANAGEMENT_IDS.md` |
 | `PROJECT-002` | 大規模コード整理と責務分離 | 有効 | `docs/REFACTORING.md`、`js/entries/`、`vite.config.js`、`package.json` |
 | `PREVIEW-004` | 公式Parser Adapterと旧ChordWiki表示Rendererの再構築 | 有効 | `js/parser/`、`js/renderer/`、`js/chordwiki-preview.js`、`tests/official-parser-integration.test.mjs` |
+| `PREVIEW-005` | リアルタイム編集の保存済み下書きが異なる場合に、上書き・前回内容を保持・キャンセルを選択 | 有効 | `js/app.js`、`js/committed-preview-window.js`、`tests/committed-preview-window.test.js` |
 | `PUBLIC-001` | 公開準備と公開前確認 | 有効 | `README.md`、`PUBLICATION_CHECKLIST.md`、`help-usage-screenshot.png`、`.gitignore`、`package.json` |
 | `PUBLIC-002` | GitHubトップページの文章・画像改善 | 有効 | `README.md`、`docs/images/readme-*.png`、`docs/README_CAPTURE_SAMPLE.md` |
 | `PUBLIC-003` | クレジット・意見要望・応援リンク | 有効 | `index.html`、`style.css`、`tests/public-links.test.js` |

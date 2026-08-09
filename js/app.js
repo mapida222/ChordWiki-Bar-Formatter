@@ -143,6 +143,7 @@
   const PREVIEW_DOUBLE_SHARP_STORAGE_KEY = "chordWikiBarFormatter.previewDoubleSharp.v1";
   const PREVIEW_KEY_SECTIONS_STORAGE_KEY = "chordWikiBarFormatter.previewKeySections.v1";
   const COMMITTED_OUTPUT_STORAGE_KEY = "chordWikiBarFormatter.committedOutput.v1";
+  const COMMITTED_DRAFT_STORAGE_KEY = "chordWikiBarFormatter.committedWindowDraft.v1";
   const SCORE_WINDOW_STATE_KEY = "chordWikiBarFormatter.scoreWindow.v1";
   const SCORE_WINDOW_CHANNEL = "chordWikiBarFormatter.scoreWindow.channel.v1";
   const REMOVAL_LINKED_STORAGE_KEY = "chordWikiBarFormatter.hyphenRemovalLinked.v1";
@@ -2387,7 +2388,7 @@
       moveCorrectionSlot("ArrowDown");
       return;
     }
-    if (/^[x\^*s|\/]$/i.test(event.key)) {
+    if (/^[x\^*s|\\\/]$/i.test(event.key)) {
       const lineStart = Math.max(value.lastIndexOf("\n", start - 1), value.lastIndexOf("\r", start - 1)) + 1;
       const nextLf = value.indexOf("\n", start);
       const nextCr = value.indexOf("\r", start);
@@ -2840,12 +2841,26 @@
   });
   elements.committedOutputToggle.addEventListener("click", () => setCommittedOutputOpen(elements.committedOutputShell.classList.contains("committed-collapsed")));
   elements.openCommittedPreview.addEventListener("click", () => publishScoreWindow());
-  elements.openRealtimeEditor.addEventListener("click", () => {
+  elements.openRealtimeEditor.addEventListener("click", (event) => {
     // 05 is the editable source. 06 only renders that text as a score, so
     // opening the realtime editor must carry the exact 05 text across.
-    elements.committedOutput.value = elements.output.value;
+    const currentText = elements.output.value;
+    let savedDraft = null;
+    try { savedDraft = JSON.parse(localStorage.getItem(COMMITTED_DRAFT_STORAGE_KEY) || "null"); } catch (_error) { savedDraft = null; }
+    const hasDifferentDraft = Boolean(savedDraft?.text) && savedDraft.text !== currentText;
+    if (hasDifferentDraft && !window.confirm("リアルタイム編集ページには前回の編集内容があります。\n現在の変換結果で上書きして開きますか？\n\n［OK］上書きして開く\n［キャンセル］次の選択へ")) {
+      if (!window.confirm("前回の内容を残して開きますか？\n\n［OK］前回の内容を残して開く\n［キャンセル］開くのをやめる")) {
+        event.preventDefault();
+        return;
+      }
+      elements.openRealtimeEditor.href = "committed-preview.html?draft=keep";
+      setTimeout(() => { elements.openRealtimeEditor.href = "committed-preview.html"; }, 0);
+      return;
+    }
+    elements.openRealtimeEditor.href = "committed-preview.html";
+    elements.committedOutput.value = currentText;
     localStorage.setItem(COMMITTED_OUTPUT_STORAGE_KEY, elements.committedOutput.value);
-    localStorage.setItem("chordWikiBarFormatter.committedWindowDraft.v1", JSON.stringify({ text: elements.committedOutput.value, updatedAt: Date.now() }));
+    localStorage.setItem(COMMITTED_DRAFT_STORAGE_KEY, JSON.stringify({ text: elements.committedOutput.value, updatedAt: Date.now() }));
     updateCount(elements.committedOutput, elements.committedOutputCount);
     updateLineNumbers(elements.committedOutput, elements.committedOutputLines);
     publishScoreWindow();
