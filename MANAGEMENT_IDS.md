@@ -92,6 +92,7 @@
 | `LAYOUT-017` | 編集サポートの開閉は復活させず、03見出し下へ青い2段の操作枠を復元。上段に戻す・進む・この行を更新、下段に変換後から行修正を復元・丸型ヘルプを配置 | 有効 | `index.html`、`style.css`、`js/app.js`、`tests/header-controls.test.js` |
 | `LAYOUT-018` | 03編集サポート枠のヘルプを前面表示し、丸型ヘルプを中央配置。「この行を更新」と「変換後から行修正を復元」の両方を説明 | 有効 | `index.html`、`style.css`、`tests/header-controls.test.js` |
 | `LAYOUT-019` | スマホの縦並びではPC用03・04入力枠位置合わせを無効化し、03が04へ重ならないよう通常のグリッド順を維持 | 有効 | `js/app.js`、`style.css`、`tests/mobile-linked-editors.test.js` |
+| `LAYOUT-020` | 02初期設定と05譜面プレビューにも03・04同様の右下サイズ変更ハンドルを用意し、スマホでも表示 | 有効 | `index.html`、`style.css`、`tests/frame-edge-resize.test.js`、`tests/mobile-linked-editors.test.js` |
 | `PREVIEW-001` | 譜面プレビューのベスト条件 | 基準 | `LAYOUT_REFERENCE.md`、`layout-snapshots/2026-07-22-good/`、Gitタグ `preview-layout-best-2026-07-22` |
 | `PREVIEW-002` | 拍記号に挟まれた縦小節線が直後の拍記号と重ならないよう補正 | 有効 | `js/chordwiki-preview.js`、`style.css`、`tests/preview-layout.test.js` |
 | `PREVIEW-003` | 譜面プレビューの移調では`{key:...}`だけを移調し、`{ci:...}`・`{title:...}`・`{subtitle:...}`などコメント系ディレクティブ内部のコード風文字列は保持 | 有効 | `js/transposer.js`、`tests/transposer.test.js` |
@@ -109,6 +110,7 @@
 | `PREVIEW-006` | リアルタイム編集のプレビュー背景ドラッグで縦横スクロール | 有効 | `js/committed-preview-window.js`、`style.css`、`tests/committed-preview-window.test.js` |
 | `PREVIEW-007` | リアルタイム編集へ既存Transposerを使った表示専用±12移調を追加 | 有効 | `committed-preview.html`、`js/entries/committed-preview.js`、`js/committed-preview-window.js`、`tests/committed-preview-window.test.js` |
 | `PREVIEW-008` | 旧ChordWikiの二重角括弧を通常・別画面・リアルタイムプレビューで二段上付き表示し、リアルタイム移調を「移調なし／−／＋」順へ統一 | 有効 | `js/chordwiki-preview.js`、`js/renderer/old-chordwiki-renderer.js`、`committed-preview.html`、`style.css`、`tests/preview.test.js`、`tests/official-parser-integration.test.mjs`、`tests/committed-preview-window.test.js` |
+| `PREVIEW-009` | リアルタイム編集の譜面プレビューは、譜面上のコード・歌詞からでも上下左右へドラッグ移動できる | 有効 | `js/committed-preview-window.js`、`style.css`、`tests/committed-preview-window.test.js` |
 | `PUBLIC-001` | 公開準備と公開前確認 | 有効 | `README.md`、`PUBLICATION_CHECKLIST.md`、`help-usage-screenshot.png`、`.gitignore`、`package.json` |
 | `PUBLIC-002` | GitHubトップページの文章・画像改善 | 有効 | `README.md`、`docs/images/readme-*.png`、`docs/README_CAPTURE_SAMPLE.md` |
 | `PUBLIC-003` | クレジット・意見要望・応援リンク | 有効 | `index.html`、`style.css`、`tests/public-links.test.js` |

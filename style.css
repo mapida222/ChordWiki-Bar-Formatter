@@ -561,7 +561,7 @@ textarea::placeholder { color: var(--muted); opacity: .7; }
 .committed-window-divider { cursor: col-resize; background: var(--line); touch-action: none; }
 .committed-window-stacked .committed-window-divider { cursor: row-resize; }
 .committed-window-preview { height: 100%; margin: 0; border: 0; border-radius: 0; font-size: var(--editor-font-size) !important; }
-.committed-window-preview { cursor: grab; touch-action: pan-x pan-y; }
+.committed-window-preview { cursor: grab; touch-action: none; }
 .committed-window-preview.is-panning { cursor: grabbing; user-select: none; }
 .committed-window-preview > * { cursor: text; }
 .committed-window-preview > [data-source-line] { min-width: 100%; cursor: pointer; }
@@ -1006,7 +1006,7 @@ textarea::placeholder { color: var(--muted); opacity: .7; }
   .correction-card::after { content: "▼"; top: auto; right: auto; bottom: -13px; left: 50%; transform: translateX(-50%); }
   .correction-card .editor-shell, .output-card .editor-shell { min-height: 108px; }
   .frame-resize-edge, .frame-resize-corner, .column-resize-edge { display: none; }
-  .correction-card > .frame-resize-corner, .output-card > .frame-resize-corner { display: block; right: 3px; bottom: 3px; width: 28px; height: 28px; background-size: 24px 24px, 15px 15px; cursor: ns-resize; }
+  .settings-panel > .frame-resize-corner, .correction-card > .frame-resize-corner, .output-card > .frame-resize-corner, .final-card > .frame-resize-corner { display: block; right: 3px; bottom: 3px; width: 28px; height: 28px; background-size: 24px 24px, 15px 15px; cursor: ns-resize; }
   .output-card .editor-tools { gap: 4px; }
   .output-card .editor-tools .counter { display: none; }
   .output-settings-mobile { display: block; margin-bottom: 4px; padding: 4px 6px; border: 1px solid color-mix(in srgb, var(--result-line) 42%, var(--line)); border-radius: 4px; background: color-mix(in srgb, var(--panel) 96%, var(--result-line)); }

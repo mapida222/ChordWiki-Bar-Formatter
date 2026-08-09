@@ -10,10 +10,12 @@ const css = fs.readFileSync(path.join(root, "style.css"), "utf8");
 const html = fs.readFileSync(path.join(root, "index.html"), "utf8");
 
 assert(html.includes('data-row="top" data-edge="top"'), "the source editor needs a draggable top edge");
+assert(html.includes('class="frame-resize-corner two-axis" data-panel="settings" data-column="direct" role="separator" aria-label="初期設定枠の幅と高さを調整"'), "settings needs the same bottom-right resize handle as the editor frames");
 assert(html.includes('data-row="top" data-edge="bottom"'), "the source editor needs a draggable bottom edge");
 assert(html.includes('data-row="bottom" data-edge="top"'), "the result editor needs a draggable top edge");
 assert(html.includes('data-row="bottom" data-edge="bottom"'), "the result editor needs a draggable bottom edge");
 assert(html.includes('data-row="final" data-edge="top"') && html.includes('data-row="final" data-edge="bottom"'), "the score preview needs both vertical resize edges");
+assert(html.includes('class="frame-resize-corner two-axis" data-row="final" data-column="direct" role="separator" aria-label="譜面プレビュー枠の幅と高さを調整"'), "score preview needs a bottom-right resize handle");
 assert(html.match(/class="frame-resize-edge[^\"]*"[^>]+aria-orientation="horizontal"/g)?.length >= 10, "all requested panel edges must expose horizontal separator semantics");
 assert(html.includes('class="column-resize-edge editor-column-resize-edge" data-column="direct" role="separator" aria-label="変換前枠の左端を左右に調整"'));
 assert(html.includes('class="column-resize-edge editor-column-resize-edge" data-column="direct" role="separator" aria-label="変換後枠の左端を左右に調整"'));

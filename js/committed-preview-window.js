@@ -164,7 +164,7 @@
   transposeUp.addEventListener("click", () => stepTranspose(1));
   preview.addEventListener("pointerdown", (event) => {
     const sourceLine = event.target.closest?.("[data-source-line]");
-    const startedOnBackground = event.target === preview || (sourceLine && event.target === sourceLine);
+    const startedOnBackground = event.target === preview || Boolean(sourceLine);
     if (!startedOnBackground || (event.pointerType === "mouse" && event.button !== 0)) return;
     const startX = event.clientX; const startY = event.clientY;
     const startLeft = preview.scrollLeft; const startTop = preview.scrollTop;
