@@ -987,6 +987,10 @@
     cancelAnimationFrame(resultAlignmentFrame);
     resultAlignmentFrame = requestAnimationFrame(() => {
       elements.workspace.style.setProperty("--correction-controls-offset", "0px");
+      if (window.matchMedia("(max-width: 699px)").matches) {
+        positionFrameResizeEdges();
+        return;
+      }
       const correctionTop = elements.correctionShell.getBoundingClientRect().top;
       const outputTop = elements.outputShell.getBoundingClientRect().top;
       elements.workspace.style.setProperty("--correction-controls-offset", `${outputTop - correctionTop}px`);

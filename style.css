@@ -993,7 +993,7 @@ textarea::placeholder { color: var(--muted); opacity: .7; }
   .input-card .editor-heading { flex-wrap: wrap; gap: 4px; }
   .input-card .editor-tools { width: 100%; justify-content: flex-end; gap: 4px; }
   .input-card .editor-shell { height: clamp(142px, 22vh, 180px); }
-  .correction-card { grid-column: 1; grid-row: 3; }
+  .correction-card { grid-column: 1; grid-row: 3; transform: none; }
   .correction-symbol-toolbar, .output-symbol-toolbar { display: flex; align-items: center; gap: 4px; min-width: 0; padding: 2px 5px; overflow-x: auto; border: 1px solid color-mix(in srgb, var(--correction-line) 55%, var(--line)); border-radius: 4px; background: color-mix(in srgb, var(--panel) 91%, var(--correction-line)); }
   .correction-symbol-toolbar { grid-column: 1; grid-row: 4; }
   .output-symbol-toolbar { grid-column: 1; grid-row: 6; border-color: color-mix(in srgb, var(--result-line) 55%, var(--line)); background: color-mix(in srgb, var(--panel) 91%, var(--result-line)); }

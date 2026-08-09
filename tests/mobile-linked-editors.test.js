@@ -11,7 +11,7 @@ const html = fs.readFileSync(path.join(root, "index.html"), "utf8");
 
 assert(css.includes("@media (max-width: 699px)"), "narrow screens must use the linked-editor layout");
 assert(css.includes(".settings-panel { position: relative; z-index: 30; grid-column: 1; grid-row: 1; width: 100%; height: 72px;"), "settings must stay compact and may overlay row editing when expanded");
-assert(css.includes(".correction-card { grid-column: 1; grid-row: 3; }"), "row editing must follow source and settings on mobile");
+assert(css.includes(".correction-card { grid-column: 1; grid-row: 3; transform: none; }"), "row editing must follow source and settings without desktop alignment movement on mobile");
 assert(html.includes("class=\"correction-symbol-toolbar\""), "mobile row editing needs a one-row symbol toolbar");
 assert(html.includes("class=\"output-symbol-toolbar\""), "mobile result editing needs a one-row input toolbar");
 assert(html.includes("data-correction-move=\"ArrowLeft\""), "row editing toolbar must include cursor movement");
@@ -42,6 +42,7 @@ assert(css.includes("#input-text, #output-text, #final-output-text, #committed-o
 assert(css.includes("::-webkit-scrollbar:horizontal"), "native horizontal scrollbars must be comfortably thick");
 assert(app.includes("closeCorrectionGuideOnNarrowLayout"), "the row-edit symbol guide must close on narrow screens");
 assert(app.includes("applyMobileSectionCollapse"), "mobile settings and support must apply their initial open state");
+assert(app.includes('window.matchMedia("(max-width: 699px)").matches'), "desktop 03/04 editor alignment must not move the stacked mobile layout");
 assert(app.includes("setMobilePreviewSettingsOpen"), "preview settings must follow the mobile collapse state");
 assert(app.includes("const allowColumnResize = !window.matchMedia(\"(max-width: 699px)\").matches;"), "mobile resize corners must not change the single-column layout width");
 assert(app.includes("function keepMobileLinkedLineInView(lineIndex)"), "active mobile rows must have a linked viewport follower");
