@@ -102,7 +102,7 @@ assert(css.includes(".settings-panel { position: relative; z-index: 30; grid-col
 assert(html.includes('id="output-settings-toggle" class="mobile-heading-toggle" type="button" aria-expanded="true"'));
 assert(css.includes(".mobile-heading-toggle { display: inline-flex;"));
 assert(html.includes('class="output-settings-row"'));
-assert(html.includes('<p class="output-edit-guidance">改行・振り仮名・コードの修正は、行修正との対応を保つため変換前で行ってください。</p>'));
+assert(html.includes('<p class="output-edit-guidance">ここで直接編集した内容は自動生成結果と分けて保存し、変換前や設定を変更しても保持します。</p>'));
 assert(css.includes(".output-edit-guidance { margin: 0 2px 4px;"));
 assert(html.includes('class="output-quick-settings"'));
 assert(css.includes(".output-settings-row { display: grid; grid-template-columns: max-content minmax(0, 1fr);"));

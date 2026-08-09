@@ -11,7 +11,14 @@ class MemoryStorage {
 let currentTime = Date.UTC(2026, 6, 14, 12, 0, 0);
 const storage = new MemoryStorage();
 const store = historyApi.createStore(storage, () => currentTime);
-const snapshot = { inputText: "{title:履歴テスト}\n[C]歌詞", correctionText: "4", rowAdoptionModes: ["source"], settings: { converter: { hyphenUnit: "4" } } };
+const snapshot = {
+  inputText: "{title:履歴テスト}\n[C]歌詞",
+  correctionText: "4",
+  rowAdoptionModes: ["source"],
+  sourceLineIds: ["source-title", "source-music"],
+  outputOverrides: { "source-music": { text: "[C]手動", baseText: "[C]歌詞", suppressed: false } },
+  settings: { converter: { hyphenUnit: "4" } }
+};
 
 const first = store.saveHistory(snapshot);
 if (!first.saved || first.entry.title !== "履歴テスト" || store.list().length !== 1) throw new Error("history save/title failed");
@@ -115,6 +122,7 @@ store.saveCrash(changed);
 const crash = store.getCrash();
 if (crash?.inputText !== "タイトルなし") throw new Error("crash save failed");
 if (crash?.rowAdoptionModes?.[0] !== "source") throw new Error("crash row adoption mode save failed");
+if (crash?.sourceLineIds?.[1] !== "source-music" || crash?.outputOverrides?.["source-music"]?.text !== "[C]手動") throw new Error("crash output override layer save failed");
 if (!historyApi.shouldRestoreCrash(crash, changed, currentTime - 1)) throw new Error("current crash should restore");
 if (historyApi.shouldRestoreCrash(crash, snapshot, currentTime + 1)) throw new Error("stale crash should not overwrite newer work");
 store.clearCrash();

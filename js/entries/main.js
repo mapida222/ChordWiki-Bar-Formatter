@@ -8,6 +8,7 @@ import "../correction-input.js";
 import "../transposer.js";
 import "../history.js";
 import "../test-data.js";
+import "../output-overrides.js";
 import "../parser/formatter-notation.js";
 import "../parser/chordwiki-adapter.js";
 import "../renderer/old-chordwiki-renderer.js";

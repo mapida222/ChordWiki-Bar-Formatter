@@ -2,21 +2,17 @@
 
 ## 結論
 
-このリポジトリには、ChordWiki Bar Formatter所有者のAdSense publisher ID、広告ユニットID、導入コードはない。
-`cgi/wiki.cgi` にある `ca-pub-6362118305215071` は参照用に同梱された旧ChordWiki側のコードであり、本サイトへ流用してはならない。
+ChordWiki Bar Formatter所有者のpublisher ID `ca-pub-4561699699325989` を確認し、Google公式の自動広告用共通コードを `index.html` と `privacy.html` へ導入した。
+`cgi/wiki.cgi` にある `ca-pub-6362118305215071` は参照用に同梱された旧ChordWiki側のコードであり、本サイトでは使用しない。
 
-実IDがない状態で広告スクリプトや空の広告枠を追加すると、所有者の取り違え、CSP違反、レイアウトの空白化を招くため、今回はコードを追加しない。
+## 現在の計測・広告
 
-## 現在の計測
+- `index.html` と `privacy.html` はGoogle Analytics `G-5584BE36ZV` とAdSense自動広告コードを読み込む。
+- CSPはAnalyticsとAdSenseに必要なGoogle配信元をscript、frame、image、connectへ限定して許可する。
+- プライバシーポリシーはAnalytics、広告配信、Cookie、第三者配信事業者、広告設定を説明する。
 
-- `index.html` と `privacy.html` は Google Analytics `G-5584BE36ZV` を読み込む。
-- CSPはGoogle Tag ManagerのscriptとGoogle Analyticsのconnectだけを許可している。
-- プライバシーポリシーはAnalyticsを説明しているが、広告配信・Cookie・第三者配信事業者の説明はまだない。
+## 今後、手動広告ユニットを追加する場合に必要な情報
 
-## 導入時に必要な情報
-
-- ChordWiki Bar Formatter所有者の `ca-pub-...`
-- 自動広告か手動広告ユニットか
 - 手動の場合は広告ユニットIDと希望位置
 - 同意管理が必要な配信地域と運用方針
 

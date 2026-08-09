@@ -5,12 +5,14 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://www.googletagmanager.com; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://www.google-analytics.com https://region1.google-analytics.com; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://www.googletagmanager.com https://*.googlesyndication.com https://*.doubleclick.net https://*.google.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://*.googlesyndication.com https://*.doubleclick.net https://*.google.com; connect-src 'self' https://www.google-analytics.com https://region1.google-analytics.com https://*.googlesyndication.com https://*.doubleclick.net https://*.google.com; frame-src https://*.googlesyndication.com https://*.doubleclick.net https://*.google.com; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <meta name="google-adsense-account" content="ca-pub-4561699699325989">
   <meta name="referrer" content="no-referrer">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="ChordWikiのコード譜を小節単位に整形するブラウザアプリ">
   <!-- Google tag (gtag.js) -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-5584BE36ZV"></script>
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4561699699325989" crossorigin="anonymous"></script>
   <title>ChordWiki Bar Formatter ～演奏しやすいリズム付きコード譜へ～</title>
   <link rel="icon" type="image/png" href="logo/logo_touka_favicon.png">
   <link rel="stylesheet" href="style.css?v=20260805-94">
@@ -304,7 +306,7 @@
           </div>
           </div>
         </details>
-        <p class="output-edit-guidance">改行・振り仮名・コードの修正は、行修正との対応を保つため変換前で行ってください。</p>
+        <p class="output-edit-guidance">ここで直接編集した内容は自動生成結果と分けて保存し、変換前や設定を変更しても保持します。</p>
         <div id="output-shell" class="editor-shell">
           <div class="output-column-headings" aria-hidden="true"><span>No.</span><span>変換後テキスト</span></div>
           <span id="removal-summary" role="status" aria-live="polite"></span>
@@ -611,7 +613,7 @@
             </section>
             <section class="help-intro-card" aria-labelledby="help-privacy-title">
               <h4 id="help-privacy-title">入力したコード譜は送信されますか？</h4>
-              <p>いいえ。入力内容はブラウザ内で処理し、運営者のサーバーへ送信・保存しません。利用状況の計測にはGoogle Analyticsを使用します。詳しくは<a href="privacy.html" target="_blank" rel="noopener noreferrer">プライバシーポリシー</a>をご確認ください。</p>
+              <p>いいえ。入力内容はブラウザ内で処理し、運営者のサーバーへ送信・保存しません。利用状況の計測と広告配信にはGoogle AnalyticsとGoogle AdSenseを使用します。詳しくは<a href="privacy.html" target="_blank" rel="noopener noreferrer">プライバシーポリシー</a>をご確認ください。</p>
             </section>
             <section class="help-intro-card" aria-labelledby="help-bug-title">
               <h4 id="help-bug-title">挙動がおかしくなりました。</h4>

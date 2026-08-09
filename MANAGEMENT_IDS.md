@@ -95,6 +95,7 @@
 | `PROJECT-002` | 大規模コード整理と責務分離 | 有効 | `docs/REFACTORING.md`、`js/entries/`、`vite.config.js`、`package.json` |
 | `PROJECT-003` | 変換後の改行・直接編集と行修正のデータフロー調査 | 調査済み | `docs/OUTPUT_EDIT_DATA_FLOW.md`、`js/app.js`、`js/converter.js`、`js/correction-input.js` |
 | `PROJECT-004` | Viteの応答を待ってからブラウザを開くローカル起動バッチ | 有効 | `start-local.bat`、`tests/local-launcher.test.js` |
+| `PROJECT-005` | 安定した変換前行IDを基準に自動生成結果と変換後の手動上書きを別レイヤーで保存・再適用 | 有効 | `js/output-overrides.js`、`js/app.js`、`js/history.js`、`tests/output-overrides.test.js` |
 | `PREVIEW-004` | 公式Parser Adapterと旧ChordWiki表示Rendererの再構築 | 有効 | `js/parser/`、`js/renderer/`、`js/chordwiki-preview.js`、`tests/official-parser-integration.test.mjs` |
 | `PREVIEW-005` | リアルタイム編集の保存済み下書きが異なる場合に、上書き・前回内容を保持・キャンセルを選択 | 有効 | `js/app.js`、`js/committed-preview-window.js`、`tests/committed-preview-window.test.js` |
 | `PREVIEW-006` | リアルタイム編集のプレビュー背景ドラッグで縦横スクロール | 有効 | `js/committed-preview-window.js`、`style.css`、`tests/committed-preview-window.test.js` |
@@ -107,12 +108,13 @@
 | `PUBLIC-006` | Google Analyticsによる利用状況計測とプライバシー告知 | 有効 | `index.html`、`privacy.html`、`tests/public-links.test.js` |
 | `PUBLIC-007` | 製品名・リポジトリ名・公開URLから「Web」を削除 | 有効 | `index.html`、`privacy.html`、`README.md`、`PUBLICATION_CHECKLIST.md`、`package.json` |
 | `PUBLIC-008` | 全HTMLエントリのfaviconを透過版`logo_touka_favicon.png`へ統一し、画面ロゴは透過版製品ロゴを使用 | 有効 | `index.html`、`privacy.html`、`chordwiki-preview.html`、`committed-preview.html`、`tests/public-links.test.js` |
-| `PUBLIC-009` | Analytics・CSP・AdSense導入余地を監査し、所有者publisher ID未提供のため設計のみ記録 | 調査済み | `docs/ADSENSE_READINESS.md`、`index.html`、`privacy.html`、`cgi/wiki.cgi` |
+| `PUBLIC-009` | Analytics・CSP・AdSense導入余地を監査し、導入条件と配置を記録 | 調査済み | `docs/ADSENSE_READINESS.md`、`index.html`、`privacy.html`、`cgi/wiki.cgi` |
+| `PUBLIC-010` | 実publisher IDによるGoogle AdSense自動広告コード、CSP許可先、広告プライバシー告知 | 有効 | `index.html`、`privacy.html`、`docs/ADSENSE_READINESS.md`、`tests/public-links.test.js` |
 | `SAMPLE-001` | 入力サンプルの変換前・行修正・設定を固定 | 有効 | `js/app.js`、`docs/README_CAPTURE_SAMPLE.md`、`tests/readme-capture-sample.test.js` |
 | `HELP-001` | 丸い「？」による補足説明 | 有効 | `index.html`、`style.css`、`js/app.js`、`docs/TOOLTIP_HELP_DRAFT.md` |
 | `HELP-002` | ヘルプ画面の見出し、対象枠表記、確定までの基本フロー、行の採用状態、行修正の更新・復元案内 | 有効 | `index.html`、`style.css`、`tests/help-layout.test.js` |
 | `HELP-003` | TOPの行修正ヘルプへ`?`の非対応位置保持を追記 | 有効 | `index.html`、`tests/header-controls.test.js` |
-| `HELP-004` | 変換後枠へ、改行・振り仮名・コード修正は変換前で行う注意を表示 | 有効 | `index.html`、`style.css`、`tests/header-controls.test.js` |
+| `HELP-004` | 変換後の直接編集を自動生成と分けて保存し、再変換後も保持する案内を表示 | 有効 | `index.html`、`style.css`、`tests/header-controls.test.js` |
 
 ## カテゴリ
 

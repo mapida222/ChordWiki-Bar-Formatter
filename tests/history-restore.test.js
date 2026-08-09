@@ -16,6 +16,8 @@ const restoreEnd = app.indexOf("function clearHistoryPreview()", restoreStart);
 assert(restoreStart >= 0 && restoreEnd > restoreStart, "history work-state restore function must exist");
 const restoreBody = app.slice(restoreStart, restoreEnd);
 assert(restoreBody.includes("restoreSnapshot(entry);"), "saved input, corrections, row modes and settings must be restored");
+assert(app.includes("sourceLineIds: [...sourceLineIds]"), "stable source IDs must be included in saved work state");
+assert(app.includes("outputOverrides: CBFOutputOverrides.sanitize(outputOverrides)"), "manual output overrides must be included in saved work state");
 assert(restoreBody.includes('typeof entry.historyText === "string"'), "saved output must be restored when available");
 assert(restoreBody.includes("elements.output.value = restoredText;"), "saved result text must be restored exactly");
 assert(restoreBody.includes("elements.finalOutput.value = restoredText;"), "score text must follow the restored result");
@@ -30,5 +32,7 @@ assert(!app.includes("adoptHistoryAsInput"), "legacy output-to-input adoption mu
 const historyStore = fs.readFileSync(path.join(root, "js", "history.js"), "utf8");
 assert(historyStore.includes("committedOutputText: snapshot.committedOutputText == null ? undefined : String(snapshot.committedOutputText)"));
 assert(historyStore.includes("snapshot.committedOutputText != null ? { committedOutputText: String(snapshot.committedOutputText) }"));
+assert(historyStore.includes("sourceLineIds: Array.isArray(snapshot.sourceLineIds) ? snapshot.sourceLineIds : []"));
+assert(historyStore.includes("outputOverrides: snapshot.outputOverrides || {}"));
 
 console.log("PASS: HISTORY-003 restores the complete saved work state");

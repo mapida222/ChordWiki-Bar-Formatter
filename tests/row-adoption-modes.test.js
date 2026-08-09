@@ -63,7 +63,7 @@ assert(css.includes('button.correction-mode-row[data-mode="fixed"]'));
 assert(app.includes('const ROW_MODE_LABELS = { auto: "自動", edit: "修正", source: "固定", recovered: "固定", fixed: "固定" };'));
 assert(app.includes('const directlyEdited = mode === "edit" && manualOutputLines.has(index);'));
 assert(app.includes('if (musicStructureChanged && rowAdoptionModes[index] !== "source") rowAdoptionModes[index] = "auto";'));
-assert(app.includes('if (!preserveUserEdits && !changedLineIndices?.size) {'));
+assert(app.includes("syncManualOutputLinesFromOverrides();"), "manual result ownership must come from the stable override layer");
 assert(app.includes('preserveUserEdits: !refresh,'));
 
 console.log("PASS: automatic, row-edit, cross-row direct-edit and source adoption states");

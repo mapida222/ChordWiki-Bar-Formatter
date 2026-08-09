@@ -110,6 +110,10 @@
   let outputHighlightValue = "";
   let outputAddedOffsets = new Set();
   let manualOutputLines = new Set();
+  let sourceLineIds = [];
+  let outputOverrides = {};
+  let lastGeneratedOutput = "";
+  let sourceLineIdSequence = 0;
   let lastAppliedCorrectionLines = [];
   let inferenceFallbackCorrectionLines = [];
   let correctionDisplayStates = [];
@@ -136,6 +140,8 @@
   const INPUT_STORAGE_KEY = "chordWikiBarFormatter.inputText.v1";
   const CORRECTION_STORAGE_KEY = "chordWikiBarFormatter.correctionText.v1";
   const ROW_ADOPTION_MODES_STORAGE_KEY = "chordWikiBarFormatter.rowAdoptionModes.v1";
+  const SOURCE_LINE_IDS_STORAGE_KEY = "chordWikiBarFormatter.sourceLineIds.v1";
+  const OUTPUT_OVERRIDES_STORAGE_KEY = "chordWikiBarFormatter.outputOverrides.v1";
   const CORRECTION_SYNTAX_VERSION_KEY = "chordWikiBarFormatter.correctionSyntaxVersion";
   const LAYOUT_STORAGE_KEY = "chordWikiBarFormatter.editorLayout.v3";
   const DISPLAY_PANEL_STORAGE_KEY = "chordWikiBarFormatter.displayPanelOpen.v4";
@@ -659,6 +665,32 @@
     applyLinkedPosition();
   }
   const ROW_MODE_LABELS = { auto: "自動", edit: "修正", source: "固定", recovered: "固定", fixed: "固定" };
+  function createSourceLineId() {
+    if (globalThis.crypto?.randomUUID) return `source-${globalThis.crypto.randomUUID()}`;
+    sourceLineIdSequence += 1;
+    return `source-${Date.now().toString(36)}-${sourceLineIdSequence.toString(36)}`;
+  }
+  function normalizeSourceLineIds() {
+    sourceLineIds = CBFOutputOverrides.normalizeIds(
+      elements.input.value.split(/\r\n|\r|\n/).length,
+      sourceLineIds,
+      createSourceLineId
+    );
+  }
+  function persistOutputLayer() {
+    localStorage.setItem(SOURCE_LINE_IDS_STORAGE_KEY, JSON.stringify(sourceLineIds));
+    localStorage.setItem(OUTPUT_OVERRIDES_STORAGE_KEY, JSON.stringify(outputOverrides));
+  }
+  function syncManualOutputLinesFromOverrides() {
+    manualOutputLines = CBFOutputOverrides.overriddenIndices(sourceLineIds, outputOverrides);
+    outputManuallyEdited = manualOutputLines.size > 0;
+  }
+  function removeOutputOverride(index) {
+    const id = sourceLineIds[index];
+    if (id && outputOverrides[id]) delete outputOverrides[id];
+    syncManualOutputLinesFromOverrides();
+    persistOutputLayer();
+  }
   function persistRowAdoptionModes() {
     while (rowAdoptionModes.length && !rowAdoptionModes[rowAdoptionModes.length - 1]) rowAdoptionModes.pop();
     localStorage.setItem(ROW_ADOPTION_MODES_STORAGE_KEY, JSON.stringify(rowAdoptionModes));
@@ -686,7 +718,7 @@
   function setRowAdoptionMode(index, mode) {
     if (!(correctionSlotCounts[index] > 0) || !ROW_MODE_LABELS[mode]) return;
     rowAdoptionModes[index] = mode;
-    if (mode !== "edit") manualOutputLines.delete(index);
+    if (mode !== "edit") removeOutputOverride(index);
     persistRowAdoptionModes();
     updateCorrectionModes();
     convert({ changedLineIndices: new Set([index]) });
@@ -1073,9 +1105,13 @@
     const result = CBFConverter.renderCompletedOutput(convertedOutput, targets, hyphenSpacing, visibilityMode, keepSingleCharacterHyphens);
     const renderedOutput = renderBars(result.output, elements.plainEditBars.checked);
     const nextOutput = CBFConverter.restoreSourceAdoptedLines(renderedOutput, elements.input.value, rowAdoptionModes);
+    lastGeneratedOutput = nextOutput;
+    const layeredOutput = CBFOutputOverrides.apply(nextOutput, sourceLineIds, outputOverrides);
     if (changedLineIndices?.size) {
       const previousValue = elements.output.value;
-      const mergedValue = CBFConverter.mergeChangedLines(previousValue, nextOutput, changedLineIndices);
+      const mergedValue = outputManuallyEdited
+        ? layeredOutput
+        : CBFConverter.mergeChangedLines(previousValue, layeredOutput, changedLineIndices);
       elements.output.value = mergedValue;
       elements.finalOutput.value = mergedValue;
       // A row correction and a direct output edit can coexist on the same line.
@@ -1083,8 +1119,8 @@
       outputManuallyEdited = manualOutputLines.size > 0;
       updateMergedOutputAddedOffsets(previousValue, mergedValue, changedLineIndices);
     } else {
-      elements.output.value = nextOutput;
-      elements.finalOutput.value = nextOutput;
+      elements.output.value = layeredOutput;
+      elements.finalOutput.value = layeredOutput;
       resetOutputAddedOffsets();
     }
     renderFinalPreview();
@@ -1111,6 +1147,8 @@
       inputText: elements.input.value,
       correctionText: elements.correction.value,
       rowAdoptionModes: [...rowAdoptionModes],
+      sourceLineIds: [...sourceLineIds],
+      outputOverrides: CBFOutputOverrides.sanitize(outputOverrides),
       committedOutputText: elements.committedOutput.value,
       settings: {
         settingsProfile: CBFSettings.activeProfile(),
@@ -1217,6 +1255,14 @@
       : CBFSettings.activeProfile();
     elements.input.value = String(snapshot.inputText || "");
     elements.correction.value = String(snapshot.correctionText || "");
+    sourceLineIds = CBFOutputOverrides.normalizeIds(
+      elements.input.value.split(/\r\n|\r|\n/).length,
+      Array.isArray(snapshot.sourceLineIds) ? snapshot.sourceLineIds : [],
+      createSourceLineId
+    );
+    outputOverrides = CBFOutputOverrides.sanitize(snapshot.outputOverrides);
+    syncManualOutputLinesFromOverrides();
+    persistOutputLayer();
     rowAdoptionModes = Array.isArray(snapshot.rowAdoptionModes) ? snapshot.rowAdoptionModes.map((mode) => ROW_MODE_LABELS[mode] ? mode : "") : [];
     persistRowAdoptionModes();
     resetCorrectionHistory();
@@ -1370,6 +1416,16 @@
         const generatedIndex = lineMapping[index];
         if (generatedIndex < 0 || line !== generatedLines[generatedIndex]) manualOutputLines.add(index);
       });
+      if (!entry.outputOverrides) {
+        outputOverrides = CBFOutputOverrides.capture(
+          lastGeneratedOutput,
+          restoredText,
+          sourceLineIds,
+          CBFConverter.alignLineIndices
+        );
+        syncManualOutputLinesFromOverrides();
+        persistOutputLayer();
+      }
       elements.output.value = restoredText;
       elements.finalOutput.value = restoredText;
       outputManuallyEdited = manualOutputLines.size > 0;
@@ -1541,6 +1597,10 @@
       resetCorrectionHistory();
       outputManuallyEdited = false;
       manualOutputLines.clear();
+      sourceLineIds = [];
+      outputOverrides = {};
+      lastGeneratedOutput = "";
+      persistOutputLayer();
       rowAdoptionModes = [];
       persistRowAdoptionModes();
       lastConvertedInputLines = [""];
@@ -1565,21 +1625,13 @@
         if (line === (inferenceFallbackCorrectionLines[index] || "")) return "";
         return line;
       });
-    const currentOutputLines = elements.output.value.split(/\r\n|\r|\n/);
-    const manualSources = refreshCorrections
-      ? []
-      : currentOutputLines.map((line, index) => manualOutputLines.has(index) && !sourceChanged.has(index) ? line : undefined);
+    const manualSources = [];
     const previousCorrections = [...lastAppliedCorrectionLines];
     const result = CBFConverter.convertChordText(elements.input.value, settings.values, rowCorrections, manualSources, previousCorrections, rowAdoptionModes);
     convertedOutput = result.output;
     correctionDisplayStates = result.correctionStates || [];
     inferenceFallbackCorrectionLines = String(result.automaticCorrections || result.corrections).split(/\r\n|\r|\n/);
-    if (!preserveUserEdits && !changedLineIndices?.size) {
-      outputManuallyEdited = false;
-      manualOutputLines.clear();
-    }
-    sourceChanged.forEach((lineIndex) => manualOutputLines.delete(lineIndex));
-    outputManuallyEdited = manualOutputLines.size > 0;
+    syncManualOutputLinesFromOverrides();
     if (refreshCorrections || sourceChanged.size) {
       elements.correction.value = result.corrections;
       if (refreshCorrections) resetCorrectionHistory();
@@ -2536,6 +2588,9 @@
     if (currentLines.length !== lastConvertedInputLines.length) {
       const previousLines = [...lastConvertedInputLines];
       const mapping = CBFConverter.alignMusicLineIndices(previousLines, currentLines);
+      sourceLineIds = CBFOutputOverrides.remapIds(mapping, sourceLineIds, createSourceLineId);
+      syncManualOutputLinesFromOverrides();
+      persistOutputLayer();
       const chordCounts = (lines) => lines.map((line) => CBFConverter.parseTokens(line).filter((token) => token.kind === "chord").length);
       const previousChordCounts = chordCounts(previousLines);
       const currentChordCounts = chordCounts(currentLines);
@@ -2617,6 +2672,9 @@
       scheduleConversion(false, null, changedLines);
     }
     else {
+      normalizeSourceLineIds();
+      syncManualOutputLinesFromOverrides();
+      persistOutputLayer();
       const changedLines = new Set();
       currentLines.forEach((line, index) => { if (line !== (lastConvertedInputLines[index] || "")) changedLines.add(index); });
       changedLines.forEach((index) => {
@@ -2791,6 +2849,15 @@
     updateLineNumbers(elements.output, elements.outputLines);
     updateCount(elements.finalOutput, elements.finalOutputCount);
     updateLineNumbers(elements.finalOutput, elements.finalOutputLines);
+    outputOverrides = CBFOutputOverrides.capture(
+      lastGeneratedOutput,
+      elements.output.value,
+      sourceLineIds,
+      CBFConverter.alignLineIndices
+    );
+    syncManualOutputLinesFromOverrides();
+    persistOutputLayer();
+    updateCorrectionModes();
     markActivity();
   });
   elements.removalTargets.addEventListener("input", () => {
@@ -3205,6 +3272,13 @@
   const savedInput = localStorage.getItem(INPUT_STORAGE_KEY);
   let savedCorrection = localStorage.getItem(CORRECTION_STORAGE_KEY);
   try {
+    const savedIds = JSON.parse(localStorage.getItem(SOURCE_LINE_IDS_STORAGE_KEY) || "[]");
+    sourceLineIds = Array.isArray(savedIds) ? savedIds : [];
+  } catch (_error) { sourceLineIds = []; }
+  try {
+    outputOverrides = CBFOutputOverrides.sanitize(JSON.parse(localStorage.getItem(OUTPUT_OVERRIDES_STORAGE_KEY) || "{}"));
+  } catch (_error) { outputOverrides = {}; }
+  try {
     const savedRowModes = JSON.parse(localStorage.getItem(ROW_ADOPTION_MODES_STORAGE_KEY) || "[]");
     rowAdoptionModes = Array.isArray(savedRowModes) ? savedRowModes.map((mode) => ROW_MODE_LABELS[mode] ? mode : "") : [];
   } catch (_error) { rowAdoptionModes = []; }
@@ -3235,6 +3309,9 @@
   }
   const migratedInput = savedInput === null ? INITIAL_INPUT : savedInput.replace("{comment Bar Formatterの機能確認用ダミー歌詞です}", "{comment:ChordWiki Bar Formatterの機能確認用ダミー歌詞です}");
   elements.input.value = migratedInput;
+  normalizeSourceLineIds();
+  syncManualOutputLinesFromOverrides();
+  persistOutputLayer();
   lastConvertedInputLines = elements.input.value.split(/\r\n|\r|\n/);
   elements.committedOutput.value = localStorage.getItem(COMMITTED_OUTPUT_STORAGE_KEY) || "";
   setCommittedOutputOpen(false);

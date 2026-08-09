@@ -25,6 +25,8 @@
       inputText: String(snapshot.inputText || ""),
       correctionText: String(snapshot.correctionText || ""),
       rowAdoptionModes: Array.isArray(snapshot.rowAdoptionModes) ? snapshot.rowAdoptionModes : [],
+      sourceLineIds: Array.isArray(snapshot.sourceLineIds) ? snapshot.sourceLineIds : [],
+      outputOverrides: snapshot.outputOverrides || {},
       settings: snapshot.settings || {}
     }));
   }
@@ -99,6 +101,8 @@
           ...(snapshot.committedOutputText != null ? { committedOutputText: String(snapshot.committedOutputText) } : {}),
           ...(snapshot.correctionText != null ? { correctionText: String(snapshot.correctionText) } : {}),
           ...(Array.isArray(snapshot.rowAdoptionModes) ? { rowAdoptionModes: snapshot.rowAdoptionModes } : {}),
+          ...(Array.isArray(snapshot.sourceLineIds) ? { sourceLineIds: snapshot.sourceLineIds } : {}),
+          ...(snapshot.outputOverrides && typeof snapshot.outputOverrides === "object" ? { outputOverrides: snapshot.outputOverrides } : {}),
           ...(snapshot.settings && typeof snapshot.settings === "object" ? { settings: snapshot.settings } : {}),
           ...(canEnrich ? {
             title: String(snapshot.title || "").trim() || current.title,
@@ -127,6 +131,8 @@
         committedOutputText: snapshot.committedOutputText == null ? undefined : String(snapshot.committedOutputText),
         correctionText: String(snapshot.correctionText || ""),
         rowAdoptionModes: Array.isArray(snapshot.rowAdoptionModes) ? snapshot.rowAdoptionModes : [],
+        sourceLineIds: Array.isArray(snapshot.sourceLineIds) ? snapshot.sourceLineIds : [],
+        outputOverrides: snapshot.outputOverrides || {},
         settings: snapshot.settings || {},
         signature: entrySignature
       };
@@ -142,6 +148,8 @@
         committedOutputText: String(snapshot.committedOutputText || ""),
         correctionText: String(snapshot.correctionText || ""),
         rowAdoptionModes: Array.isArray(snapshot.rowAdoptionModes) ? snapshot.rowAdoptionModes : [],
+        sourceLineIds: Array.isArray(snapshot.sourceLineIds) ? snapshot.sourceLineIds : [],
+        outputOverrides: snapshot.outputOverrides || {},
         settings: snapshot.settings || {},
         signature: signature(snapshot)
       };
