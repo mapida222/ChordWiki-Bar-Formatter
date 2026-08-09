@@ -1,7 +1,10 @@
-const { resolve } = require("path");
-const { defineConfig } = require("vite");
+import { defineConfig } from "vite";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 
-module.exports = defineConfig({
+const __dirname = dirname(fileURLToPath(import.meta.url));
+
+export default defineConfig({
   base: "./",
   build: {
     rollupOptions: {
