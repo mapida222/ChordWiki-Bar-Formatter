@@ -110,6 +110,7 @@
 | `PUBLIC-006` | Google Analyticsによる利用状況計測とプライバシー告知 | 有効 | `index.html`、`privacy.html`、`tests/public-links.test.js` |
 | `PUBLIC-007` | 製品名・リポジトリ名・公開URLから「Web」を削除 | 有効 | `index.html`、`privacy.html`、`README.md`、`PUBLICATION_CHECKLIST.md`、`package.json` |
 | `PUBLIC-008` | 全HTMLエントリのfaviconを透過版`logo_touka_favicon.png`へ統一し、画面ロゴは透過版製品ロゴを使用 | 有効 | `index.html`、`privacy.html`、`chordwiki-preview.html`、`committed-preview.html`、`tests/public-links.test.js` |
+| `PUBLIC-009` | 再デザインした透過ロゴをヘッダー・フッター・リアルタイムエディターへ適用し、全HTMLエントリのfaviconも新デザインへ統一 | 有効 | `logo/260810_chordwiki_logo.png`、`logo/260810_favicon_touka.png`、`index.html`、`privacy.html`、`chordwiki-preview.html`、`committed-preview.html`、`tests/public-links.test.js` |
 | `PUBLIC-009` | Analytics・CSP・AdSense導入余地を監査し、導入条件と配置を記録 | 調査済み | `docs/ADSENSE_READINESS.md`、`index.html`、`privacy.html`、`cgi/wiki.cgi` |
 | `PUBLIC-010` | 実publisher IDによるGoogle AdSense自動広告コード、CSP許可先、広告プライバシー告知 | 有効 | `index.html`、`privacy.html`、`docs/ADSENSE_READINESS.md`、`tests/public-links.test.js` |
 | `SAMPLE-001` | 入力サンプルの変換前・行修正・設定を固定 | 有効 | `js/app.js`、`docs/README_CAPTURE_SAMPLE.md`、`tests/readme-capture-sample.test.js` |
