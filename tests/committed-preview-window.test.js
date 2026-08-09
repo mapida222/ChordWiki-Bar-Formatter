@@ -28,6 +28,15 @@ assert(html.includes("リアルタイムエディター｜ChordWiki Bar Formatte
 assert(html.includes('<details class="score-window-settings">'));
 assert(css.includes(".score-window-settings-panel { position: absolute;"));
 assert(html.includes('id="committed-line-height"'));
+assert(html.includes('id="committed-transpose"'));
+assert(html.includes('id="committed-transpose-down"'));
+assert(html.includes('id="committed-transpose-up"'));
+assert(entry.includes('import "../transposer.js"'));
+assert(windowScript.includes('window.ChordWikiTranspose.transposeText(text.value, transpose.value, "preserve")'));
+assert(windowScript.includes('const startedOnBackground = event.target === preview || (sourceLine && event.target === sourceLine);'));
+assert(windowScript.includes('if (!startedOnBackground || (event.pointerType === "mouse" && event.button !== 0)) return;'));
+assert(windowScript.includes('preview.setPointerCapture(event.pointerId);'));
+assert(css.includes('.committed-window-preview.is-panning { cursor: grabbing; user-select: none; }'));
 assert(html.includes('id="committed-font-size-value"'));
 assert(html.includes('id="committed-bold-code" type="checkbox" checked'));
 assert(windowScript.includes("const contentLineTop = paddingTop + activeLine * lineHeight;"));

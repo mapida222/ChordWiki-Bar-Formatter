@@ -82,6 +82,8 @@
 | `LAYOUT-007` | 初期設定は行修正と重なっても配置を維持し、変換前・変換後枠は左端からも横幅を調整できる。使用例は初期表示で折り畳み可能 | 有効 | `style.css`、`js/app.js`、`index.html`、`tests/default-layout.test.js`、`tests/frame-edge-resize.test.js` |
 | `LAYOUT-008` | 初期設定・行修正・変換前・変換後・譜面プレビューを上下左右の端からサイズ変更し、初期設定の高さを保存・復元 | 有効 | `index.html`、`style.css`、`js/app.js`、`tests/frame-edge-resize.test.js` |
 | `LAYOUT-009` | スマホでは行修正と変換後を縦2段にし、編集行が見えなくなった時だけ連動追従。各セクションの補助・表示設定は見出し右の開閉操作へ集約し、本文枠の標準横スクロールバーは常時表示する。タブレットはPCレイアウトを維持 | 有効 | `index.html`、`style.css`、`js/app.js` |
+| `LAYOUT-010` | 変換後・譜面プレビューの表示設定を全画面幅で見出し右から開閉し、初期状態は開く | 有効 | `index.html`、`style.css`、`js/app.js`、`tests/header-controls.test.js`、`tests/mobile-linked-editors.test.js` |
+| `LAYOUT-011` | 右上の表示設定を操作群の右端で強調し、外側クリックとEscで閉じる | 有効 | `index.html`、`style.css`、`js/app.js`、`tests/header-controls.test.js` |
 | `PREVIEW-001` | 譜面プレビューのベスト条件 | 基準 | `LAYOUT_REFERENCE.md`、`layout-snapshots/2026-07-22-good/`、Gitタグ `preview-layout-best-2026-07-22` |
 | `PREVIEW-002` | 拍記号に挟まれた縦小節線が直後の拍記号と重ならないよう補正 | 有効 | `js/chordwiki-preview.js`、`style.css`、`tests/preview-layout.test.js` |
 | `PREVIEW-003` | 譜面プレビューの移調では`{key:...}`だけを移調し、`{ci:...}`・`{title:...}`・`{subtitle:...}`などコメント系ディレクティブ内部のコード風文字列は保持 | 有効 | `js/transposer.js`、`tests/transposer.test.js` |
@@ -91,8 +93,11 @@
 | `TEST-001` | プロジェクト全体の回帰テスト | 有効 | `tests/*.test.js` |
 | `PROJECT-001` | チャット間で共有する管理ID台帳 | 有効 | `AGENTS.md`、`MANAGEMENT_IDS.md` |
 | `PROJECT-002` | 大規模コード整理と責務分離 | 有効 | `docs/REFACTORING.md`、`js/entries/`、`vite.config.js`、`package.json` |
+| `PROJECT-003` | 変換後の改行・直接編集と行修正のデータフロー調査 | 調査済み | `docs/OUTPUT_EDIT_DATA_FLOW.md`、`js/app.js`、`js/converter.js`、`js/correction-input.js` |
 | `PREVIEW-004` | 公式Parser Adapterと旧ChordWiki表示Rendererの再構築 | 有効 | `js/parser/`、`js/renderer/`、`js/chordwiki-preview.js`、`tests/official-parser-integration.test.mjs` |
 | `PREVIEW-005` | リアルタイム編集の保存済み下書きが異なる場合に、上書き・前回内容を保持・キャンセルを選択 | 有効 | `js/app.js`、`js/committed-preview-window.js`、`tests/committed-preview-window.test.js` |
+| `PREVIEW-006` | リアルタイム編集のプレビュー背景ドラッグで縦横スクロール | 有効 | `js/committed-preview-window.js`、`style.css`、`tests/committed-preview-window.test.js` |
+| `PREVIEW-007` | リアルタイム編集へ既存Transposerを使った表示専用±12移調を追加 | 有効 | `committed-preview.html`、`js/entries/committed-preview.js`、`js/committed-preview-window.js`、`tests/committed-preview-window.test.js` |
 | `PUBLIC-001` | 公開準備と公開前確認 | 有効 | `README.md`、`PUBLICATION_CHECKLIST.md`、`help-usage-screenshot.png`、`.gitignore`、`package.json` |
 | `PUBLIC-002` | GitHubトップページの文章・画像改善 | 有効 | `README.md`、`docs/images/readme-*.png`、`docs/README_CAPTURE_SAMPLE.md` |
 | `PUBLIC-003` | クレジット・意見要望・応援リンク | 有効 | `index.html`、`style.css`、`tests/public-links.test.js` |
@@ -100,10 +105,13 @@
 | `PUBLIC-005` | GitHubコミュニティ文書、セキュリティ設定、タグとReleaseの公開運用 | 有効 | `CONTRIBUTING.md`、`.github/ISSUE_TEMPLATE/`、`.github/pull_request_template.md` |
 | `PUBLIC-006` | Google Analyticsによる利用状況計測とプライバシー告知 | 有効 | `index.html`、`privacy.html`、`tests/public-links.test.js` |
 | `PUBLIC-007` | 製品名・リポジトリ名・公開URLから「Web」を削除 | 有効 | `index.html`、`privacy.html`、`README.md`、`PUBLICATION_CHECKLIST.md`、`package.json` |
+| `PUBLIC-008` | 全HTMLエントリのfaviconを透過版`logo_touka_favicon.png`へ統一し、画面ロゴは透過版製品ロゴを使用 | 有効 | `index.html`、`privacy.html`、`chordwiki-preview.html`、`committed-preview.html`、`tests/public-links.test.js` |
+| `PUBLIC-009` | Analytics・CSP・AdSense導入余地を監査し、所有者publisher ID未提供のため設計のみ記録 | 調査済み | `docs/ADSENSE_READINESS.md`、`index.html`、`privacy.html`、`cgi/wiki.cgi` |
 | `SAMPLE-001` | 入力サンプルの変換前・行修正・設定を固定 | 有効 | `js/app.js`、`docs/README_CAPTURE_SAMPLE.md`、`tests/readme-capture-sample.test.js` |
 | `HELP-001` | 丸い「？」による補足説明 | 有効 | `index.html`、`style.css`、`js/app.js`、`docs/TOOLTIP_HELP_DRAFT.md` |
 | `HELP-002` | ヘルプ画面の見出し、対象枠表記、確定までの基本フロー、行の採用状態、行修正の更新・復元案内 | 有効 | `index.html`、`style.css`、`tests/help-layout.test.js` |
 | `HELP-003` | TOPの行修正ヘルプへ`?`の非対応位置保持を追記 | 有効 | `index.html`、`tests/header-controls.test.js` |
+| `HELP-004` | 変換後枠へ、改行・振り仮名・コード修正は変換前で行う注意を表示 | 有効 | `index.html`、`style.css`、`tests/header-controls.test.js` |
 
 ## カテゴリ
 

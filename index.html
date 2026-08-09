@@ -23,10 +23,10 @@
       <h1 class="app-logo"><a href="https://mapida222.github.io/ChordWiki-Bar-Formatter/" aria-label="ChordWiki Bar Formatter トップページ"><img src="logo/logo_touka_ChordWikiBarFormatter1.png" alt="ChordWiki Bar Formatter"></a></h1>
     </div>
     <div class="header-actions">
-      <button id="display-settings-toggle" class="help-open-button display-settings-trigger" type="button" aria-expanded="false" aria-controls="display-settings-shell">表示設定▼</button>
       <button id="history-save" class="help-open-button" type="button" title="04. 変換後の表示を保存">履歴に追加</button>
       <button id="history-open" class="help-open-button" type="button">使用履歴</button>
       <button id="help-open" class="help-open-button" type="button">ヘルプ・使い方</button>
+      <button id="display-settings-toggle" class="help-open-button display-settings-trigger" type="button" aria-expanded="false" aria-controls="display-settings-shell">表示設定▼</button>
     </div>
   </header>
 
@@ -304,6 +304,7 @@
           </div>
           </div>
         </details>
+        <p class="output-edit-guidance">改行・振り仮名・コードの修正は、行修正との対応を保つため変換前で行ってください。</p>
         <div id="output-shell" class="editor-shell">
           <div class="output-column-headings" aria-hidden="true"><span>No.</span><span>変換後テキスト</span></div>
           <span id="removal-summary" role="status" aria-live="polite"></span>

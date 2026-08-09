@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
   <title>リアルタイムエディター｜ChordWiki Bar Formatter</title>
+  <link rel="icon" type="image/png" href="logo/logo_touka_favicon.png">
   <link rel="stylesheet" href="style.css?v=20260805-94">
 </head>
 <body class="score-window-page">
@@ -14,6 +15,7 @@
       <div class="score-window-heading-copy"><h1>リアルタイムエディター</h1><p id="committed-window-status" class="score-window-status">テキストと譜面プレビューを比較しながら編集できます。</p></div>
     </div>
     <div class="score-window-controls">
+      <label class="committed-transpose-control"><span>移調</span><button id="committed-transpose-down" type="button" aria-label="プレビューを半音下げる">−</button><select id="committed-transpose" aria-label="リアルタイムプレビューの移調"></select><button id="committed-transpose-up" type="button" aria-label="プレビューを半音上げる">＋</button></label>
       <button id="committed-layout-toggle" class="layout-toggle-button" type="button" aria-pressed="true">左右比較へ</button>
       <details class="score-window-settings">
         <summary>表示設定</summary>

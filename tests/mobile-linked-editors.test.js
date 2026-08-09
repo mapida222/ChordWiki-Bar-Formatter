@@ -29,8 +29,9 @@ assert(app.includes("[data-correction-move]"), "row editing toolbar must move th
 assert(css.includes("--result-editor-height: clamp(108px, 19vh, 148px)"), "mobile linked editors must remain compact enough to view together");
 assert(html.includes("id=\"correction-support-toggle\""), "row editing support must be toggled from its heading");
 assert(html.includes('id="output-settings-toggle" class="mobile-heading-toggle" type="button" aria-expanded="true"'), "result settings must be toggled from its heading");
+assert(app.includes("setMobileOutputSettingsOpen(true);"), "result settings must start open on narrow screens");
+assert(app.includes("setMobilePreviewSettingsOpen(true);"), "preview settings must start open on narrow screens");
 assert(html.includes("id=\"output-settings-mobile\""), "result settings must use a compact collapsible container");
-assert(app.includes("setMobileOutputSettingsOpen(false);"), "result settings must start closed on narrow screens");
 assert(html.includes("id=\"preview-settings-toggle\""), "preview settings must be toggled from its heading");
 assert(html.includes("id=\"preview-settings-mobile\""), "preview settings must have a collapsible container");
 assert(html.includes("class=\"committed-actions\""), "committed score controls must use their own row");
@@ -40,7 +41,7 @@ assert(css.includes("@media (max-width: 380px)"), "very narrow phones must stack
 assert(css.includes("#input-text, #output-text, #final-output-text, #committed-output-text, #final-score-preview { overflow-x: scroll; scrollbar-gutter: stable; }"), "all long-text panes must keep their native horizontal scrollbar visible");
 assert(css.includes("::-webkit-scrollbar:horizontal"), "native horizontal scrollbars must be comfortably thick");
 assert(app.includes("closeCorrectionGuideOnNarrowLayout"), "the row-edit symbol guide must close on narrow screens");
-assert(app.includes("applyMobileSectionCollapse"), "mobile settings and support must start collapsed");
+assert(app.includes("applyMobileSectionCollapse"), "mobile settings and support must apply their initial open state");
 assert(app.includes("setMobilePreviewSettingsOpen"), "preview settings must follow the mobile collapse state");
 assert(app.includes("const allowColumnResize = !window.matchMedia(\"(max-width: 699px)\").matches;"), "mobile resize corners must not change the single-column layout width");
 assert(app.includes("function keepMobileLinkedLineInView(lineIndex)"), "active mobile rows must have a linked viewport follower");

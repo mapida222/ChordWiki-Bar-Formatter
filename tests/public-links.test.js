@@ -22,6 +22,10 @@ assert(html.includes("https://anipu.web.fc2.com/helper/lyricker.html"));
 assert(html.includes("worris様"));
 assert(html.includes("fluno様"));
 assert(html.includes('src="logo/logo_touka_ChordWikiBarFormatter1.png"'));
+for (const page of ["index.html", "privacy.html", "chordwiki-preview.html", "committed-preview.html"]) {
+  const markup = fs.readFileSync(path.join(root, page), "utf8");
+  assert(markup.includes('href="logo/logo_touka_favicon.png"'), `${page} must use the transparent formatter favicon`);
+}
 assert.strictEqual((html.match(/src="logo\/logo_touka_ChordWikiBarFormatter1\.png"/g) || []).length, 2);
 assert(html.includes('src="logo/logo_GitHub_Lockup_White.png"'));
 assert(html.includes("<h3>関連ツール <span>/ RELATED TOOLS</span></h3>"));

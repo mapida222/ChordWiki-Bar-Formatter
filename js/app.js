@@ -52,9 +52,14 @@
   });
   document.addEventListener("click", (event) => {
     if (!event.target.closest(".context-help")) closeContextHelp();
+    if (!elements.displaySettingsShell.classList.contains("display-collapsed")
+        && !event.target.closest(".font-panel") && !event.target.closest("#display-settings-toggle")) setDisplaySettingsOpen(false);
   });
   document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape") closeContextHelp();
+    if (event.key === "Escape") {
+      closeContextHelp();
+      if (!elements.displaySettingsShell.classList.contains("display-collapsed")) setDisplaySettingsOpen(false);
+    }
   });
   function updateGuideToggleAll() {
     if (!elements.guideToggleAll) return;
@@ -3369,8 +3374,8 @@
   const applyMobileSectionCollapse = () => {
     if (narrowLayout.matches) {
       setMobileCorrectionSupportOpen(false);
-      setMobileOutputSettingsOpen(false);
-      setMobilePreviewSettingsOpen(false);
+      setMobileOutputSettingsOpen(true);
+      setMobilePreviewSettingsOpen(true);
     } else {
       setMobileCorrectionSupportOpen(true);
       setMobileOutputSettingsOpen(true);
