@@ -3,7 +3,7 @@
   const $ = (selector) => document.querySelector(selector);
   const elements = {
     settingsGrid: $("#settings-grid"), settingsProfilePicker: $("#settings-profile-picker"), settingsRecommendationValues: $("#settings-recommendation-values"), customProfileNameField: $("#custom-profile-name-field"), customProfileName: $("#custom-profile-name"), settingsPanel: $("#settings-panel"), settingsShell: $("#settings-shell"), settingsBody: $("#settings-body"), settingsToggle: $("#settings-toggle"), settingsExampleToggle: $("#settings-example-toggle"), theme: $("#setting-theme"), fontSelect: $("#setting-editor-font"), fontSizeValue: $("#font-size-value"), scrollSync: $("#scroll-sync"), textColoring: $("#text-coloring"), boldCode: $("#bold-code"), addedBackground: $("#added-background"), plainEditBars: $("#plain-edit-bars"), finalBarsThrough: $("#final-bars-through"), previewTransposeMain: $("#preview-transpose-main"), previewTransposeMainDown: $("#preview-transpose-main-down"), previewTransposeMainUp: $("#preview-transpose-main-up"), previewSpellingMain: $("#preview-spelling-main"), previewTranspose: $("#preview-transpose"), previewTransposeDown: $("#preview-transpose-down"), previewTransposeUp: $("#preview-transpose-up"), previewSpelling: $("#preview-spelling"), previewDoubleSharp: $("#preview-double-sharp"), previewTheoretical: $("#preview-theoretical"), openScoreWindow: $("#open-score-window"),
-    correctionCard: $(".correction-card"), correctionHeading: $(".correction-card .editor-heading"), correctionContext: $(".correction-context-bar"), correctionSupportToggle: $("#correction-support-toggle"), outputHeading: $(".output-card .editor-heading"), outputSettingsToggle: $("#output-settings-toggle"), outputSettingsMobile: $("#output-settings-mobile"), previewSettingsToggle: $("#preview-settings-toggle"), previewSettingsMobile: $("#preview-settings-mobile"), removalControls: $(".removal-controls"), correction: $("#correction-text"), input: $("#input-text"), output: $("#output-text"), finalOutput: $("#final-output-text"), finalPreview: $("#final-score-preview"), committedOutput: $("#committed-output-text"),
+    correctionCard: $(".correction-card"), correctionHeading: $(".correction-card .editor-heading"), outputHeading: $(".output-card .editor-heading"), outputSettingsToggle: $("#output-settings-toggle"), outputSettingsMobile: $("#output-settings-mobile"), previewSettingsToggle: $("#preview-settings-toggle"), previewSettingsMobile: $("#preview-settings-mobile"), removalControls: $(".removal-controls"), correction: $("#correction-text"), input: $("#input-text"), output: $("#output-text"), finalOutput: $("#final-output-text"), finalPreview: $("#final-score-preview"), committedOutput: $("#committed-output-text"),
     workspace: $(".workspace"), fontPanel: $(".font-panel"), displaySettingsShell: $("#display-settings-shell"), displaySettingsToggle: $("#display-settings-toggle"), correctionGuide: $(".correction-input-guide"), guideToggleAll: $("#guide-toggle-all"), correctionShell: $("#correction-shell"), inputShell: $("#input-shell"), outputShell: $("#output-shell"), finalOutputShell: $("#final-output-shell"),
     correctionLines: $("#correction-lines"), correctionModes: $("#correction-modes"), inputLines: $("#input-lines"), outputLines: $("#output-lines"), finalOutputLines: $("#final-output-lines"), committedOutputLines: $("#committed-output-lines"),
     correctionHighlight: $("#correction-highlight"), inputHighlight: $("#input-highlight"), outputHighlight: $("#output-highlight"), finalOutputHighlight: $("#final-output-highlight"), committedOutputHighlight: $("#committed-output-highlight"),
@@ -986,12 +986,10 @@
   function syncResultRowAlignment() {
     cancelAnimationFrame(resultAlignmentFrame);
     resultAlignmentFrame = requestAnimationFrame(() => {
-      elements.workspace.style.setProperty("--result-controls-offset", "0px");
       elements.workspace.style.setProperty("--correction-controls-offset", "0px");
       const correctionTop = elements.correctionShell.getBoundingClientRect().top;
       const outputTop = elements.outputShell.getBoundingClientRect().top;
-      if (correctionTop > outputTop) elements.workspace.style.setProperty("--result-controls-offset", `${correctionTop - outputTop}px`);
-      else if (outputTop > correctionTop) elements.workspace.style.setProperty("--correction-controls-offset", `${outputTop - correctionTop}px`);
+      elements.workspace.style.setProperty("--correction-controls-offset", `${outputTop - correctionTop}px`);
       positionFrameResizeEdges();
     });
   }
@@ -3435,11 +3433,6 @@
     correctionGuideItems.forEach((item) => { item.open = false; });
     updateGuideToggleAll();
   };
-  const setMobileCorrectionSupportOpen = (open) => {
-    elements.correctionCard.classList.toggle("mobile-support-collapsed", !open);
-    elements.correctionSupportToggle.setAttribute("aria-expanded", String(open));
-    elements.correctionSupportToggle.textContent = open ? "編集サポート▲" : "編集サポート▼";
-  };
   const setMobileOutputSettingsOpen = (open) => {
     elements.outputSettingsMobile.open = open;
     elements.outputSettingsToggle.setAttribute("aria-expanded", String(open));
@@ -3452,18 +3445,13 @@
   };
   const applyMobileSectionCollapse = () => {
     if (narrowLayout.matches) {
-      setMobileCorrectionSupportOpen(false);
       setMobileOutputSettingsOpen(true);
       setMobilePreviewSettingsOpen(true);
     } else {
-      setMobileCorrectionSupportOpen(true);
       setMobileOutputSettingsOpen(true);
       setMobilePreviewSettingsOpen(true);
     }
   };
-  elements.correctionSupportToggle.addEventListener("click", () => {
-    setMobileCorrectionSupportOpen(elements.correctionCard.classList.contains("mobile-support-collapsed"));
-  });
   elements.outputSettingsToggle.addEventListener("click", () => {
     setMobileOutputSettingsOpen(!elements.outputSettingsMobile.open);
   });
@@ -3482,7 +3470,7 @@
   syncResultRowAlignment();
   if ("ResizeObserver" in window) {
     const resultAlignmentObserver = new ResizeObserver(syncResultRowAlignment);
-    [elements.correctionHeading, elements.correctionContext, elements.outputHeading, elements.measureCapacityWarning, elements.removalControls].forEach((element) => resultAlignmentObserver.observe(element));
+    [elements.correctionHeading, elements.outputHeading, elements.measureCapacityWarning, elements.removalControls].forEach((element) => resultAlignmentObserver.observe(element));
     const settingsLayoutObserver = new ResizeObserver(positionSettingsPanel);
     [elements.inputShell, elements.fontPanel, elements.settingsShell].forEach((element) => settingsLayoutObserver.observe(element));
   }

@@ -27,7 +27,7 @@ assert(css.includes(".left-lower-stack { grid-column: 1; grid-row: 8; margin-top
 assert(app.includes("moveOutputCursor"), "result toolbar must move the output caret");
 assert(app.includes("[data-correction-move]"), "row editing toolbar must move the correction cursor");
 assert(css.includes("--result-editor-height: clamp(108px, 19vh, 148px)"), "mobile linked editors must remain compact enough to view together");
-assert(html.includes("id=\"correction-support-toggle\""), "row editing support must be toggled from its heading");
+assert(!html.includes("id=\"correction-support-toggle\""), "row editing must not show a redundant support collapse button");
 assert(html.includes('id="output-settings-toggle" class="mobile-heading-toggle" type="button" aria-expanded="true"'), "result settings must be toggled from its heading");
 assert(app.includes("setMobileOutputSettingsOpen(true);"), "result settings must start open on narrow screens");
 assert(app.includes("setMobilePreviewSettingsOpen(true);"), "preview settings must start open on narrow screens");
@@ -35,7 +35,7 @@ assert(html.includes("id=\"output-settings-mobile\""), "result settings must use
 assert(html.includes("id=\"preview-settings-toggle\""), "preview settings must be toggled from its heading");
 assert(html.includes("id=\"preview-settings-mobile\""), "preview settings must have a collapsible container");
 assert(html.includes("class=\"committed-actions\""), "committed score controls must use their own row");
-assert(css.includes(".correction-card.mobile-support-collapsed .correction-context-bar"), "row editing support must collapse on mobile");
+assert(!app.includes("setMobileCorrectionSupportOpen"), "row-edit actions must remain available without mobile collapse state");
 assert(css.includes(".correction-card > .frame-resize-corner, .output-card > .frame-resize-corner { display: block;"), "mobile row-edit and result cards must keep an easy-to-grab resize corner");
 assert(css.includes("@media (max-width: 380px)"), "very narrow phones must stack result-setting fields cleanly");
 assert(css.includes("#input-text, #output-text, #final-output-text, #committed-output-text, #final-score-preview { overflow-x: scroll; scrollbar-gutter: stable; }"), "all long-text panes must keep their native horizontal scrollbar visible");

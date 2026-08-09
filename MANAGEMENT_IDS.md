@@ -88,6 +88,7 @@
 | `LAYOUT-013` | 変換前・変換後の右端リサイズ方向を反転し、左端の挙動を維持。変換前の下端直下へ変換後見出しを配置 | 有効 | `index.html`、`style.css`、`js/app.js`、`tests/frame-edge-resize.test.js`、`tests/default-layout.test.js` |
 | `LAYOUT-014` | 変換後枠の幅に応じて表示設定を折り返し、閉じた際は内容だけでなく外枠も完全に非表示 | 有効 | `style.css`、`tests/header-controls.test.js` |
 | `LAYOUT-015` | 行修正の位置説明を画面から外し、操作を縦線区切りの一行へ凝縮。03・04入力枠の上端位置合わせを最優先で維持 | 有効 | `index.html`、`style.css`、`js/app.js`、`tests/header-controls.test.js`、`tests/default-layout.test.js` |
+| `LAYOUT-016` | 行修正操作を見出し内の縁付きボタンへ統合し、不要な編集サポート開閉を廃止。右列の01・04は常に詰め、03だけを移動して03・04入力枠上端を一致 | 有効 | `index.html`、`style.css`、`js/app.js`、`tests/header-controls.test.js`、`tests/default-layout.test.js`、`tests/mobile-linked-editors.test.js` |
 | `PREVIEW-001` | 譜面プレビューのベスト条件 | 基準 | `LAYOUT_REFERENCE.md`、`layout-snapshots/2026-07-22-good/`、Gitタグ `preview-layout-best-2026-07-22` |
 | `PREVIEW-002` | 拍記号に挟まれた縦小節線が直後の拍記号と重ならないよう補正 | 有効 | `js/chordwiki-preview.js`、`style.css`、`tests/preview-layout.test.js` |
 | `PREVIEW-003` | 譜面プレビューの移調では`{key:...}`だけを移調し、`{ci:...}`・`{title:...}`・`{subtitle:...}`などコメント系ディレクティブ内部のコード風文字列は保持 | 有効 | `js/transposer.js`、`tests/transposer.test.js` |

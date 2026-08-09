@@ -15,7 +15,7 @@
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4561699699325989" crossorigin="anonymous"></script>
   <title>ChordWiki Bar Formatter ～演奏しやすいリズム付きコード譜へ～</title>
   <link rel="icon" type="image/png" href="logo/260810_favicon_touka.png">
-  <link rel="stylesheet" href="style.css?v=20260810-99">
+  <link rel="stylesheet" href="style.css?v=20260810-101">
   <link rel="stylesheet" href="style-row-edit-test.css?v=20260801-3">
 </head>
 <body>
@@ -137,13 +137,7 @@
         <div class="editor-heading">
           <div class="heading-with-help"><h2 class="compact-editor-title"><label for="correction-text">03. 行修正 <span>/ ROW EDIT</span></label></h2><span class="context-help"><button class="context-help-button" type="button" aria-label="行修正の説明" aria-expanded="false" aria-controls="help-tip-correction">?</button><span id="help-tip-correction" class="context-help-popover" role="tooltip" hidden><strong class="context-help-title">03. 行修正</strong>1行のコード順に対応する数字や記号を上書きして、音の長さや小節位置を調整します。<br>入力例と記号の意味は、下の「行修正で使える記号」で確認できます。<br>「?」は自動変換できなかった位置です。その部分の変換後表示を保持します。</span></span></div>
           <div class="editor-tools">
-            <button id="correction-support-toggle" class="mobile-heading-toggle" type="button" aria-expanded="true">編集サポート▲</button>
-            <span id="correction-count" class="counter">0行</span>
-          </div>
-        </div>
-        <div class="correction-context-bar">
-          <span id="correction-position" class="correction-position" aria-live="polite" hidden></span>
-          <div class="correction-history-actions" role="group" aria-label="行修正の操作">
+            <div class="correction-history-actions" role="group" aria-label="行修正の操作">
             <button id="correction-undo" type="button" disabled title="元に戻す（Ctrl+Z）">↶ 戻す</button>
             <span class="correction-action-divider" aria-hidden="true">｜</span>
             <button id="correction-redo" type="button" disabled title="やり直す（Ctrl+Y）">↷ 進む</button>
@@ -152,6 +146,9 @@
             <span class="correction-action-divider" aria-hidden="true">｜</span>
             <button id="correction-rebuild-all" class="correction-rebuild-button" type="button" title="変換後の全行から行修正を作り直す">↻ 全行を復元</button>
             <span class="context-help"><button class="context-help-button" type="button" aria-label="行修正を復元の説明" aria-expanded="false" aria-controls="help-tip-correction-rebuild">?</button><span id="help-tip-correction-rebuild" class="context-help-popover" role="tooltip" hidden><strong class="context-help-title">03. 行修正：変換後から復元</strong>異常時用の復旧機能です。変換後の全行から行修正値を推論し直します。<br>現在の行修正値は置き換わりますが、変換後の表示内容は維持されます。コード・白玉がない行は空欄になります。</span></span>
+            </div>
+            <span id="correction-count" class="counter">0行</span>
+            <span id="correction-position" class="correction-position" aria-live="polite" hidden></span>
           </div>
         </div>
         <div id="correction-shell" class="editor-shell">
