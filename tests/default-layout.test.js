@@ -23,12 +23,12 @@ assert(css.includes("--left-column-width: clamp(220px, 28%, 360px)"), "the left 
 assert(css.includes("grid-template-columns: var(--left-column-width) minmax(0, 1fr)"), "the right column must compress before the left control column does");
 assert(app.includes("Math.max(220, Math.min(width, Math.max(220, workspaceWidth - 10)))"), "manual column resizing must preserve the left-column baseline on a narrow screen");
 assert(!app.includes('const minimumOffset = settingsBottom + 16 - correctionCardTop;'), "row edit may remain beneath the settings panel");
-assert(app.includes('elements.workspace.style.removeProperty("--result-controls-offset")'), "the result heading must sit directly below the source frame");
-assert(css.includes("border: 2px solid color-mix(in srgb, var(--correction-line) 78%, var(--line))"), "the row-edit context frame must have a clear solid outline");
-assert(css.includes("border-radius: 8px"), "the row-edit context frame must have rounded corners");
+assert(app.includes('correctionTop > outputTop') && app.includes('outputTop > correctionTop'), "row 03 and row 04 editor tops must align in either direction");
+assert(css.includes("border: 1px solid color-mix(in srgb, var(--correction-line) 78%, var(--line))"), "the compact row-edit action frame must retain a clear outline");
+assert(css.includes("border-radius: 5px"), "the compact row-edit action frame must retain rounded corners");
 assert(css.includes(".settings-column-resize-edge { top: 0; bottom: 0; }"), "the settings panel must expose a vertical resize edge");
 assert(css.includes(".settings-panel.settings-closed .settings-reset-button, .settings-panel.settings-closed .settings-footer-actions, .settings-panel.settings-closed .settings-example-toggle { display: none; }"), "a closed 03 panel must hide the usage-example control even before JavaScript initializes");
-assert(html.includes("style.css?v=20260810-97"));
+assert(html.includes("style.css?v=20260810-99"));
 assert(html.includes('type="module" src="/js/entries/main.js"'));
 assert(entry.includes('await import("../app.js")'));
 

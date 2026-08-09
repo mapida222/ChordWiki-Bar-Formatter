@@ -206,16 +206,18 @@ main { padding: 12px 0 28px; }
 .sample-header-button:hover { border-color: var(--source-line); background: color-mix(in srgb, var(--panel) 88%, var(--source-line)); }
 .bracket-header-button { justify-content: center; padding-inline: 7px; white-space: nowrap; }
 .inline-tool-icon { position: relative; display: inline-block; flex: 0 0 28px; width: 28px; height: 28px; vertical-align: middle; }
-.correction-card { grid-column: 1; grid-row: 2; }
-.correction-context-bar { position: relative; display: grid; gap: 5px; margin-bottom: 6px; padding: 6px 7px; border: 2px solid color-mix(in srgb, var(--correction-line) 78%, var(--line)); border-radius: 8px; background: color-mix(in srgb, var(--panel) 90%, var(--correction-line)); }
+.correction-card { grid-column: 1; grid-row: 2; transform: translateY(var(--correction-controls-offset, 0px)); }
+.correction-context-bar { position: relative; display: flex; align-items: center; min-width: 0; margin-bottom: 4px; padding: 3px 5px; border: 1px solid color-mix(in srgb, var(--correction-line) 78%, var(--line)); border-radius: 5px; background: color-mix(in srgb, var(--panel) 90%, var(--correction-line)); }
 .correction-position-with-help { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 4px; min-width: 0; padding-right: 22px; }
 .correction-position-with-help > .context-help { position: absolute; top: 4px; right: 4px; }
 .correction-position-with-help .context-help-popover { right: 0; left: auto; }
 .correction-position { display: block; min-width: 0; color: var(--text); font: 700 .66rem/1.45 var(--editor-font); overflow-wrap: anywhere; }
+.correction-position[hidden] { display: none !important; }
 .correction-rebuild-button { min-height: 23px; padding: 3px 6px; border: 1px solid var(--correction-line); border-radius: 3px; color: var(--text); background: var(--panel); cursor: pointer; font: 800 .64rem/1.1 var(--sans); white-space: nowrap; }
 .correction-rebuild-button:hover, .correction-rebuild-button:focus-visible { background: color-mix(in srgb, var(--panel) 80%, var(--correction-line)); }
-.correction-history-actions { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.35fr); gap: 4px; align-items: end; }
-.correction-history-actions button { min-width: 0; min-height: 27px; padding: 3px 5px; border: 1px solid var(--line); border-radius: 3px; color: var(--text); background: var(--panel); cursor: pointer; font: 800 .65rem/1 var(--sans); }
+.correction-history-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 2px; min-width: 0; }
+.correction-history-actions button { min-width: 0; min-height: 23px; padding: 2px 4px; border: 0; border-radius: 3px; color: var(--text); background: transparent; cursor: pointer; font: 800 .63rem/1 var(--sans); white-space: nowrap; }
+.correction-action-divider { color: var(--muted); font-size: .65rem; line-height: 1; }
 .correction-history-actions button:hover:not(:disabled) { border-color: var(--correction-line); background: color-mix(in srgb, var(--panel) 84%, var(--correction-line)); }
 .correction-history-actions button:disabled { color: var(--muted); cursor: default; opacity: .5; }
 .left-lower-stack { grid-column: 1; grid-row: 3; align-self: start; display: grid; gap: 12px; min-width: 0; margin-top: 12px; }
@@ -264,7 +266,7 @@ main { padding: 12px 0 28px; }
 .support-jump-button { flex: 0 0 auto; min-height: 25px; padding: 3px 7px; border: 1px solid var(--correction-line); border-radius: 3px; color: var(--text); background: color-mix(in srgb, var(--panel) 86%, var(--correction-line)); cursor: pointer; font: 800 .68rem/1 var(--sans); }
 .support-jump-button:hover { background: color-mix(in srgb, var(--panel) 72%, var(--correction-line)); }
 .input-card { grid-column: 2; grid-row: 1; align-self: end; }
-.output-card { container-type: inline-size; grid-column: 2; grid-row: 2; }
+.output-card { container-type: inline-size; grid-column: 2; grid-row: 2; margin-top: var(--result-controls-offset, 0px); }
 .right-lower-stack { grid-column: 2; grid-row: 3; align-self: start; display: grid; gap: 12px; min-width: 0; margin-top: 12px; }
 .final-card, .committed-card { min-width: 0; margin-top: 0; }
 .input-card::after, .output-card::after, .correction-card::after { position: absolute; z-index: 2; pointer-events: none; font: 700 12px/1 var(--sans); }

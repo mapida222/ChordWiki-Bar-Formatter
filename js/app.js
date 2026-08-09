@@ -986,7 +986,12 @@
   function syncResultRowAlignment() {
     cancelAnimationFrame(resultAlignmentFrame);
     resultAlignmentFrame = requestAnimationFrame(() => {
-      elements.workspace.style.removeProperty("--result-controls-offset");
+      elements.workspace.style.setProperty("--result-controls-offset", "0px");
+      elements.workspace.style.setProperty("--correction-controls-offset", "0px");
+      const correctionTop = elements.correctionShell.getBoundingClientRect().top;
+      const outputTop = elements.outputShell.getBoundingClientRect().top;
+      if (correctionTop > outputTop) elements.workspace.style.setProperty("--result-controls-offset", `${correctionTop - outputTop}px`);
+      else if (outputTop > correctionTop) elements.workspace.style.setProperty("--correction-controls-offset", `${outputTop - correctionTop}px`);
       positionFrameResizeEdges();
     });
   }
