@@ -94,6 +94,7 @@
 | `LAYOUT-019` | スマホの縦並びではPC用03・04入力枠位置合わせを無効化し、03が04へ重ならないよう通常のグリッド順を維持 | 有効 | `js/app.js`、`style.css`、`tests/mobile-linked-editors.test.js` |
 | `LAYOUT-020` | 02初期設定と05譜面プレビューにも03・04同様の右下サイズ変更ハンドルを用意し、スマホでも表示 | 有効 | `index.html`、`style.css`、`tests/frame-edge-resize.test.js`、`tests/mobile-linked-editors.test.js` |
 | `LAYOUT-021` | スマホのリアルタイムエディター見出しを横一行に保ち、操作群は次行へ配置 | 有効 | `style.css`、`tests/mobile-linked-editors.test.js` |
+| `LAYOUT-022` | スマホの右下サイズ変更ハンドルを02初期設定から01変換前へ移動 | 有効 | `style.css`、`tests/mobile-linked-editors.test.js` |
 | `PREVIEW-001` | 譜面プレビューのベスト条件 | 基準 | `LAYOUT_REFERENCE.md`、`layout-snapshots/2026-07-22-good/`、Gitタグ `preview-layout-best-2026-07-22` |
 | `PREVIEW-002` | 拍記号に挟まれた縦小節線が直後の拍記号と重ならないよう補正 | 有効 | `js/chordwiki-preview.js`、`style.css`、`tests/preview-layout.test.js` |
 | `PREVIEW-003` | 譜面プレビューの移調では`{key:...}`だけを移調し、`{ci:...}`・`{title:...}`・`{subtitle:...}`などコメント系ディレクティブ内部のコード風文字列は保持 | 有効 | `js/transposer.js`、`tests/transposer.test.js` |

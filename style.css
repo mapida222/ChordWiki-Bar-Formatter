@@ -1006,7 +1006,7 @@ textarea::placeholder { color: var(--muted); opacity: .7; }
   .correction-card::after { content: "▼"; top: auto; right: auto; bottom: -13px; left: 50%; transform: translateX(-50%); }
   .correction-card .editor-shell, .output-card .editor-shell { min-height: 108px; }
   .frame-resize-edge, .frame-resize-corner, .column-resize-edge { display: none; }
-  .settings-panel > .frame-resize-corner, .correction-card > .frame-resize-corner, .output-card > .frame-resize-corner, .final-card > .frame-resize-corner { display: block; right: 3px; bottom: 3px; width: 28px; height: 28px; background-size: 24px 24px, 15px 15px; cursor: ns-resize; }
+  .input-card > .frame-resize-corner, .correction-card > .frame-resize-corner, .output-card > .frame-resize-corner, .final-card > .frame-resize-corner { display: block; right: 3px; bottom: 3px; width: 28px; height: 28px; background-size: 24px 24px, 15px 15px; cursor: ns-resize; }
   .output-card .editor-tools { gap: 4px; }
   .output-card .editor-tools .counter { display: none; }
   .output-settings-mobile { display: block; margin-bottom: 4px; padding: 4px 6px; border: 1px solid color-mix(in srgb, var(--result-line) 42%, var(--line)); border-radius: 4px; background: color-mix(in srgb, var(--panel) 96%, var(--result-line)); }
