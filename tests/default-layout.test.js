@@ -24,11 +24,11 @@ assert(css.includes("grid-template-columns: var(--left-column-width) minmax(0, 1
 assert(app.includes("Math.max(220, Math.min(width, Math.max(220, workspaceWidth - 10)))"), "manual column resizing must preserve the left-column baseline on a narrow screen");
 assert(!app.includes('const minimumOffset = settingsBottom + 16 - correctionCardTop;'), "row edit may remain beneath the settings panel");
 assert(app.includes('`${outputTop - correctionTop}px`'), "only row 03 may shift to align its editor top with row 04");
-assert(css.includes(".correction-history-actions button { min-width: 0; min-height: 25px;"), "row-edit actions must use compact bordered buttons");
+assert(css.includes(".correction-history-actions button { width: 100%; min-width: 0; min-height: 25px;"), "row-edit actions must use compact bordered buttons");
 assert(css.includes("border: 1px solid var(--line); border-radius: 4px;"), "row-edit action buttons must retain clear rounded outlines");
 assert(css.includes(".settings-column-resize-edge { top: 0; bottom: 0; }"), "the settings panel must expose a vertical resize edge");
 assert(css.includes(".settings-panel.settings-closed .settings-reset-button, .settings-panel.settings-closed .settings-footer-actions, .settings-panel.settings-closed .settings-example-toggle { display: none; }"), "a closed 03 panel must hide the usage-example control even before JavaScript initializes");
-assert(html.includes("style.css?v=20260810-101"));
+assert(html.includes("style.css?v=20260810-102"));
 assert(html.includes('type="module" src="/js/entries/main.js"'));
 assert(entry.includes('await import("../app.js")'));
 
