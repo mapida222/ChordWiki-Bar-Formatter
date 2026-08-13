@@ -2,10 +2,10 @@
   "use strict";
   const $ = (selector) => document.querySelector(selector);
   const elements = {
-    settingsGrid: $("#settings-grid"), settingsProfilePicker: $("#settings-profile-picker"), settingsRecommendationValues: $("#settings-recommendation-values"), customProfileNameField: $("#custom-profile-name-field"), customProfileName: $("#custom-profile-name"), settingsPanel: $("#settings-panel"), settingsShell: $("#settings-shell"), settingsBody: $("#settings-body"), settingsToggle: $("#settings-toggle"), settingsExampleToggle: $("#settings-example-toggle"), theme: $("#setting-theme"), fontSelect: $("#setting-editor-font"), fontSizeValue: $("#font-size-value"), scrollSync: $("#scroll-sync"), textColoring: $("#text-coloring"), boldCode: $("#bold-code"), addedBackground: $("#added-background"), plainEditBars: $("#plain-edit-bars"), finalBarsThrough: $("#final-bars-through"), previewTransposeMain: $("#preview-transpose-main"), previewTransposeMainDown: $("#preview-transpose-main-down"), previewTransposeMainUp: $("#preview-transpose-main-up"), previewSpellingMain: $("#preview-spelling-main"), previewTranspose: $("#preview-transpose"), previewTransposeDown: $("#preview-transpose-down"), previewTransposeUp: $("#preview-transpose-up"), previewSpelling: $("#preview-spelling"), previewDoubleSharp: $("#preview-double-sharp"), previewTheoretical: $("#preview-theoretical"), openScoreWindow: $("#open-score-window"),
+    settingsGrid: $("#settings-grid"), settingsAdvanced: $("#settings-advanced"), settingsAdvancedGrid: $("#settings-advanced-grid"), settingsProfilePicker: $("#settings-profile-picker"), settingsRecommendationValues: $("#settings-recommendation-values"), customProfileNameField: $("#custom-profile-name-field"), customProfileName: $("#custom-profile-name"), settingsPanel: $("#settings-panel"), settingsShell: $("#settings-shell"), settingsBody: $("#settings-body"), settingsToggle: $("#settings-toggle"), settingsExampleToggle: $("#settings-example-toggle"), theme: $("#setting-theme"), fontSelect: $("#setting-editor-font"), fontSizeValue: $("#font-size-value"), scrollSync: $("#scroll-sync"), textColoring: $("#text-coloring"), boldCode: $("#bold-code"), addedBackground: $("#added-background"), plainEditBars: $("#plain-edit-bars"), finalBarsThrough: $("#final-bars-through"), previewTransposeMain: $("#preview-transpose-main"), previewTransposeMainDown: $("#preview-transpose-main-down"), previewTransposeMainUp: $("#preview-transpose-main-up"), previewSpellingMain: $("#preview-spelling-main"), previewTranspose: $("#preview-transpose"), previewTransposeDown: $("#preview-transpose-down"), previewTransposeUp: $("#preview-transpose-up"), previewSpelling: $("#preview-spelling"), previewDoubleSharp: $("#preview-double-sharp"), previewTheoretical: $("#preview-theoretical"), openScoreWindow: $("#open-score-window"),
     correctionCard: $(".correction-card"), correctionHeading: $(".correction-card .editor-heading"), correctionContext: $(".correction-context-bar"), outputHeading: $(".output-card .editor-heading"), outputSettingsToggle: $("#output-settings-toggle"), outputSettingsMobile: $("#output-settings-mobile"), previewSettingsToggle: $("#preview-settings-toggle"), previewSettingsMobile: $("#preview-settings-mobile"), removalControls: $(".removal-controls"), correction: $("#correction-text"), input: $("#input-text"), output: $("#output-text"), finalOutput: $("#final-output-text"), finalPreview: $("#final-score-preview"), committedOutput: $("#committed-output-text"),
     workspace: $(".workspace"), fontPanel: $(".font-panel"), displaySettingsShell: $("#display-settings-shell"), displaySettingsToggle: $("#display-settings-toggle"), correctionGuide: $(".correction-input-guide"), guideToggleAll: $("#guide-toggle-all"), correctionShell: $("#correction-shell"), inputShell: $("#input-shell"), outputShell: $("#output-shell"), finalOutputShell: $("#final-output-shell"),
-    correctionLines: $("#correction-lines"), correctionModes: $("#correction-modes"), inputLines: $("#input-lines"), outputLines: $("#output-lines"), finalOutputLines: $("#final-output-lines"), committedOutputLines: $("#committed-output-lines"),
+    correctionLines: $("#correction-lines"), correctionModes: $("#correction-modes"), correctionGrid: $("#correction-grid"), inputLines: $("#input-lines"), outputLines: $("#output-lines"), finalOutputLines: $("#final-output-lines"), committedOutputLines: $("#committed-output-lines"),
     correctionHighlight: $("#correction-highlight"), inputHighlight: $("#input-highlight"), outputHighlight: $("#output-highlight"), finalOutputHighlight: $("#final-output-highlight"), committedOutputHighlight: $("#committed-output-highlight"),
     correctionCount: $("#correction-count"), correctionPosition: $("#correction-position"), correctionUndo: $("#correction-undo"), correctionRedo: $("#correction-redo"), correctionRefreshLine: $("#correction-refresh-line"), correctionRebuildAll: $("#correction-rebuild-all"), inputCount: $("#input-count"), outputCount: $("#output-count"), finalOutputCount: $("#final-output-count"), committedOutputCount: $("#committed-output-count"), committedOutputShell: $("#committed-output-shell"), committedOutputToggle: $("#committed-output-toggle"), openCommittedPreview: $("#open-committed-preview"), openRealtimeEditor: $("#open-realtime-editor"),
     removalTargets: $("#hyphen-removal-targets"), removalLinked: $("#hyphen-removal-linked"), lyricHyphenMode: $("#lyric-hyphen-mode"), removalSummary: $("#removal-summary"), measureCapacityWarning: $("#measure-capacity-warning"), measureCapacityWarningText: $("#measure-capacity-warning-text"), measureCapacityWarningOpen: $("#measure-capacity-warning-open"), measureCapacityWarningDismiss: $("#measure-capacity-warning-dismiss"),
@@ -103,8 +103,9 @@
   let mobileLinkedScrollPaused = false;
   let mobileProgrammaticScroll = false;
   let mobileLastLinkedLine = -1;
-  let settingsMode = "closed";
-  let settingsExamplesOpen = true;
+  let keyPreviewTargets = [];
+  let settingsMode = "compact";
+  let settingsExamplesOpen = false;
   let convertedOutput = "";
   let outputManuallyEdited = false;
   let outputHighlightValue = "";
@@ -148,7 +149,7 @@
   const THEME_STORAGE_KEY = "chordWikiBarFormatter.theme.v1";
   const PLAIN_EDIT_BARS_STORAGE_KEY = "chordWikiBarFormatter.plainEditBars.v1";
   const FINAL_BARS_THROUGH_STORAGE_KEY = "chordWikiBarFormatter.finalBarsThrough.v1";
-  const PREVIEW_TRANSPOSE_STORAGE_KEY = "chordWikiBarFormatter.previewTranspose.v1";
+  const PREVIEW_TRANSPOSE_STORAGE_KEY = "chordWikiBarFormatter.previewTranspose.v2";
   const PREVIEW_SPELLING_STORAGE_KEY = "chordWikiBarFormatter.previewSpelling.v1";
   const PREVIEW_THEORETICAL_STORAGE_KEY = "chordWikiBarFormatter.previewTheoretical.v1";
   const PREVIEW_DOUBLE_SHARP_STORAGE_KEY = "chordWikiBarFormatter.previewDoubleSharp.v1";
@@ -199,11 +200,11 @@
     "[F]編集[G]お疲れ[Csus4]様で[C]す！（ありが[N.C.]とう！）"
   ].join("\n");
   const INITIAL_CORRECTION = ["", "", "", "", "", "88448", "3535", "844", "", "4444", "628", "4*s433a", "444^22"].join("\n");
-  const INITIAL_SETTINGS = { measureCapacity: 8, hyphenUnit: 4, hyphenSpacing: 4, shortFractionPrepose: 1, longBeatLyricPlacement: 1, singleCharacterHyphens: 0, showContinuationChord: 0 };
+  const INITIAL_SETTINGS = { measureCapacity: 8, hyphenUnit: 4, hyphenSpacing: 4, shortFractionPrepose: 1, longBeatLyricPlacement: 3, singleCharacterHyphens: 0, showContinuationChord: 0 };
   const CUSTOM_PROFILE_NAME_STORAGE_KEY = "chordWikiBarFormatter.customProfileName.v1";
   const RECOMMENDED_VALUES = {
-    fourFour: [0, 4, 8, 16, 24, 32],
-    sixEight: [0, 3, 6, 9, 12, 24],
+    fourFour: [0, 2, 4, 8, 16, 24, 32],
+    sixEight: [0, 2, 3, 6, 9, 12, 24],
     custom: [0, 2, 3, 4, 6, 8, 9, 12, 16, 24, 32]
   };
   const SETTING_GUIDES = {
@@ -211,7 +212,7 @@
     measureCapacity: (defaultValue) => `1小節分に相当するハイフンの合計数です。デフォルト：${defaultValue}。`,
     hyphenSpacing: () => "長く連続するハイフンを、指定した数ごとに空白で区切ります。0では区切りません。",
     shortFractionPrepose: () => "コード間の長さに端数ができたとき、歌詞を1文字手前へ移動します。する：歌詞を前へ寄せる（デフォルト）、しない：歌詞位置を変えない。",
-    longBeatLyricPlacement: () => "行修正で長い拍を指定したときの歌詞位置です。前後に分ける：最初と最後へ配置（おすすめ）、均等に分ける：すべての長さ記号へ配置、移動しない：従来どおり。",
+    longBeatLyricPlacement: () => "行修正で長い拍を指定したときの歌詞位置です。前に分ける：歌詞を最初へ、前後に分ける：最初と最後へ、均等に分ける：すべての長さ記号へ、後に分ける：歌詞を最後へ配置します。",
     singleCharacterHyphens: () => "1文字だけで完結する小節のハイフンです。省略する：歌詞だけを表示（デフォルト）、残す：拍の長さを表示。",
     showContinuationChord: () => "コードがない小節に直前のコードを引き継ぎます。する：直前のコードを表示、しない：小節線のみ（デフォルト）。"
   };
@@ -233,7 +234,7 @@
   ];
 
   function applyTheme(value, save = true) {
-    const theme = ["dark", "dark-gray", "light"].includes(value) ? value : "light";
+    const theme = value === "dark-gray" ? "dark" : ["dark", "light"].includes(value) ? value : "light";
     document.documentElement.dataset.theme = theme;
     elements.theme.value = theme;
     if (save) localStorage.setItem(THEME_STORAGE_KEY, theme);
@@ -282,35 +283,57 @@
 
   function renderSettings(values) {
     elements.settingsGrid.textContent = "";
-    CBFSettings.definitions.forEach((definition, index) => {
+    elements.settingsAdvancedGrid.textContent = "";
+    const basicKeys = new Set(["measureCapacity", "hyphenUnit", "hyphenSpacing"]);
+    const standardValues = new Set([...RECOMMENDED_VALUES.fourFour, ...RECOMMENDED_VALUES.sixEight]);
+    // Keep the visible order aligned with the conversion priority:
+    // measure/grid -> remainder placement -> long-beat lyric placement -> chord carry-over -> single lyric.
+    const settingOrder = ["measureCapacity", "hyphenUnit", "hyphenSpacing", "shortFractionPrepose", "longBeatLyricPlacement", "showContinuationChord", "singleCharacterHyphens"];
+    const orderedDefinitions = settingOrder
+      .map((key) => CBFSettings.definitions.find((definition) => definition.key === key))
+      .filter(Boolean);
+    orderedDefinitions.forEach((definition, index) => {
       const field = document.createElement("div");
       field.className = `setting-field${definition.choices ? " setting-field-choice" : ""}`;
       const profileDefault = CBFSettings.profileDefaults(CBFSettings.activeProfile())[definition.key];
       const candidates = recommendedValues().filter((value) => value >= definition.min && value <= definition.max);
       const control = definition.choices
-        ? `<div class="setting-value-stepper"><select id="setting-${definition.key}" name="${definition.key}" aria-describedby="help-${definition.key} error-${definition.key}">${definition.choices.map((choice) => `<option value="${choice.value}"${Number(values[definition.key]) === choice.value ? " selected" : ""}>${choice.label}</option>`).join("")}</select><button type="button" data-setting-cycle="1" data-setting-key="${definition.key}" aria-label="${definition.label}を次の候補へ">▼</button><button type="button" data-setting-cycle="-1" data-setting-key="${definition.key}" aria-label="${definition.label}を前の候補へ">▲</button></div>`
-        : `<div class="setting-value-stepper"><input id="setting-${definition.key}" name="${definition.key}" type="text" value="${values[definition.key]}" list="recommended-${definition.key}" inputmode="numeric" pattern="[0-9]*" autocomplete="off" aria-describedby="help-${definition.key} error-${definition.key}"><button type="button" data-setting-cycle="-1" data-setting-key="${definition.key}" aria-label="${definition.label}を前の候補へ">▼</button><button type="button" data-setting-cycle="1" data-setting-key="${definition.key}" aria-label="${definition.label}を次の候補へ">▲</button></div>`;
+        ? `<div class="setting-value-stepper"><select id="setting-${definition.key}" name="${definition.key}" aria-describedby="help-${definition.key} error-${definition.key}">${definition.choices.map((choice) => `<option value="${choice.value}"${Number(values[definition.key]) === choice.value ? " selected" : ""}>${choice.label}</option>`).join("")}</select></div>`
+        : `<select id="setting-${definition.key}" name="${definition.key}" aria-describedby="help-${definition.key} error-${definition.key}">${Array.from({ length: definition.max - definition.min + 1 }, (_, offset) => definition.min + offset).map((value) => `<option value="${value}" class="${standardValues.has(value) ? "setting-option-common" : "setting-option-rare"}"${Number(values[definition.key]) === value ? " selected" : ""}>${value}</option>`).join("")}</select>`;
       const recommendations = definition.choices ? "" : `<datalist id="recommended-${definition.key}">${candidates.map((value) => `<option value="${value}"></option>`).join("")}</datalist>`;
       const bounds = definition.choices ? definition.bounds : `${definition.min}～${definition.max}、デフォルト：${profileDefault}`;
       const guide = SETTING_GUIDES[definition.key]?.(profileDefault) || definition.prompt;
+      const guideMarkup = guide.replace(/。(?!$)/gu, "。<br>");
+      const exampleMarkup = definition.examples.map((example) => {
+        if (example.endsWith("：")) return `<span class="example-subhead">${example}</span>`;
+        const arrowIndex = example.indexOf(" → ");
+        if (arrowIndex < 0) return `<span>${example}</span>`;
+        const label = example.slice(0, arrowIndex);
+        const result = example.slice(arrowIndex + 3);
+        return `<span class="setting-example-row"><span class="setting-example-label">${label}</span><span class="setting-example-result">→ ${result}</span></span>`;
+      }).join("");
+      const exampleLabelWidth = Math.max(1, ...definition.examples.map((example) => {
+        const arrowIndex = example.indexOf(" → ");
+        return arrowIndex < 0 ? 0 : [...example.slice(0, arrowIndex)].length;
+      })) + 1;
       field.innerHTML = `<div class="setting-core"><label for="setting-${definition.key}" title="${definition.prompt}"><span class="setting-number">${index + 1}.</span>${definition.label}</label>
           ${control}${recommendations}
           <small id="help-${definition.key}" class="setting-bounds">（${bounds}）</small>
           <small id="error-${definition.key}" class="setting-error" aria-live="polite"></small>
-          <p class="setting-quick-help"><span>${guide}</span></p>
+          <span class="setting-help context-help"><button class="context-help-button setting-help-button" type="button" aria-label="${definition.label}の説明" aria-expanded="false" aria-controls="help-popover-${definition.key}">?</button><span id="help-popover-${definition.key}" class="context-help-popover" role="tooltip" hidden><strong class="context-help-title">${definition.label}</strong>${guide}</span></span>
         </div>
-        <div class="setting-example">${definition.examples.map((example) => `<span class="${example.endsWith("：") ? "example-subhead" : ""}">${example}</span>`).join("")}</div>`;
-      elements.settingsGrid.append(field);
+        <div class="setting-example" style="--setting-example-label-width:${exampleLabelWidth}em"><span class="example-description">${guideMarkup}</span>${exampleMarkup}</div>`;
+      (basicKeys.has(definition.key) ? elements.settingsGrid : elements.settingsAdvancedGrid).append(field);
     });
   }
 
   function updateSettingsProfileUI() {
     const profile = CBFSettings.activeProfile();
-    elements.settingsProfilePicker.querySelectorAll("[data-settings-profile]").forEach((button) => {
+    elements.settingsProfilePicker?.querySelectorAll("[data-settings-profile]").forEach((button) => {
       if (button.dataset.settingsProfile === "custom") button.textContent = customProfileName();
       button.setAttribute("aria-pressed", String(button.dataset.settingsProfile === profile));
     });
-    elements.settingsRecommendationValues.textContent = recommendedValues().join(", ");
+    if (elements.settingsRecommendationValues) elements.settingsRecommendationValues.textContent = recommendedValues().join(", ");
     elements.customProfileNameField.hidden = profile !== "custom";
     elements.customProfileName.value = localStorage.getItem(CUSTOM_PROFILE_NAME_STORAGE_KEY) || "";
   }
@@ -348,20 +371,56 @@
       syncResultRowAlignment();
       return;
     }
-    const mismatch = CBFConverter.analyzeAuthoredMeasureCapacity(elements.input.value, values.measureCapacity);
-    if (!mismatch) {
+    const measureMismatch = CBFConverter.analyzeAuthoredMeasureCapacity(elements.input.value, values.measureCapacity);
+    const formatting = CBFConverter.analyzeAuthoredFormatting(elements.input.value, values);
+    const mismatch = measureMismatch || { detected: 0, percentage: 0 };
+    const hyphenUnitMismatch = formatting.hyphenUnit && formatting.hyphenUnit.detected !== Number(values.hyphenUnit);
+    const hyphenSpacingMismatch = formatting.hyphenSpacing && formatting.hyphenSpacing.detected !== Number(values.hyphenSpacing);
+    if (!measureMismatch && !hyphenUnitMismatch && !hyphenSpacingMismatch) {
       elements.measureCapacityWarning.hidden = true;
       elements.measureCapacityWarningText.textContent = "";
       syncResultRowAlignment();
       return;
     }
     const useSixEightProfile = [3, 6, 9, 12].includes(mismatch.detected);
-    elements.measureCapacityWarningText.textContent = useSixEightProfile
+    elements.measureCapacityWarningText.textContent = measureMismatch && useSixEightProfile
       ? `※変換前で使われている1小節のハイフン数が、初期設定と異なるようです。判定できた小節の約${mismatch.percentage}%が「1小節${mismatch.detected}ハイフン」です。6/8拍子タブへ切り替え、合計${mismatch.detected}を適用しますか？`
-      : `※変換前で使われている1小節のハイフン数が、初期設定と異なるようです。判定できた小節の約${mismatch.percentage}%が「1小節${mismatch.detected}ハイフン」です。初期設定を${mismatch.detected}に変更しますか？`;
-    elements.measureCapacityWarningOpen.dataset.detected = String(mismatch.detected);
+      : measureMismatch
+        ? `※変換前で使われている1小節のハイフン数が、初期設定と異なるようです。判定できた小節の約${mismatch.percentage}%が「1小節${mismatch.detected}ハイフン」です。初期設定を${mismatch.detected}に変更しますか？`
+        : "※変換前の譜面を解析した結果、現在の初期設定と異なる書式が検出されました。設定を変更しますか？";
+    const formattingDetails = [];
+    const detail = (label, result, configured) => {
+      const detected = result?.detected ?? Number(configured);
+      const percentage = result ? `（${result.percentage}%）` : "（現状と同じ）";
+      const same = result && detected === Number(configured) ? "（現状と同じ）" : "";
+      return `${label}：${detected}ハイフン${percentage}${same}`;
+    };
+    formattingDetails.push(measureMismatch
+      ? `1小節：${mismatch.detected}ハイフン（${mismatch.percentage}%）`
+      : `1小節：${Number(values.measureCapacity)}ハイフン（現状と同じ）`);
+    formattingDetails.push(detail("コード直後", formatting.hyphenUnit, values.hyphenUnit));
+    formattingDetails.push(detail("区切り間隔", formatting.hyphenSpacing, values.hyphenSpacing));
+    if (formattingDetails.length) {
+      const actionText = measureMismatch
+        ? useSixEightProfile
+          ? `6/8拍子タブへ切り替え、合計${mismatch.detected}を適用しますか？`
+          : `初期設定を${mismatch.detected}に変更しますか？`
+        : "検出した書式を初期設定へ反映しますか？";
+      elements.measureCapacityWarningText.textContent = `※変換前の譜面を解析した結果、現在の初期設定と異なる書式が検出されました。\n\n${formattingDetails.map((detail, index) => `${index + 1}: ${detail}`).join("\n")}\n\n${actionText}`;
+    }
+    elements.measureCapacityWarningOpen.dataset.detected = measureMismatch ? String(mismatch.detected) : "";
+    elements.measureCapacityWarningOpen.dataset.formatting = JSON.stringify({
+      hyphenUnit: formatting.hyphenUnit?.detected || null,
+      hyphenSpacing: formatting.hyphenSpacing?.detected || null
+    });
     elements.measureCapacityWarningOpen.dataset.profile = useSixEightProfile ? "sixEight" : "";
-    elements.measureCapacityWarningOpen.textContent = useSixEightProfile ? `6/8・${mismatch.detected}を適用` : `${mismatch.detected}に変更`;
+    elements.measureCapacityWarningOpen.textContent = formattingDetails.length > 1
+      ? "設定を一括適用"
+      : !measureMismatch
+        ? "設定を変更"
+      : useSixEightProfile
+        ? `6/8・${mismatch.detected}を適用`
+        : `${mismatch.detected}に変更`;
     elements.measureCapacityWarning.hidden = false;
     syncResultRowAlignment();
   }
@@ -598,6 +657,10 @@
     gutterByEditor.forEach((gutter) => {
       gutter.querySelectorAll("span").forEach((line, index) => line.classList.toggle("active-line", index === linkedLineIndex));
     });
+    elements.correctionGrid?.querySelectorAll(".correction-grid-row").forEach((row, index) => {
+      row.classList.toggle("active-row", index === linkedLineIndex);
+      row.classList.toggle("before-active-row", index + 1 === linkedLineIndex);
+    });
     highlightByEditor.forEach((highlight, textarea) => {
       const visible = linkedLineIndex >= 0 && linkedLineIndex < Math.max(1, lineCount(textarea.value));
       highlight.classList.toggle("active-line-visible", visible);
@@ -657,10 +720,26 @@
     highlight.innerHTML = colorizeText(textarea.value, activeOffset, addedOffsets, linkedTokenOffset);
     syncHighlightScroll(textarea);
   }
+  function syncCorrectionScrollbarWidth() {
+    const textarea = elements.correction;
+    const shell = elements.correctionShell;
+    if (!textarea || !shell) return;
+    const scrollbarWidth = Math.max(0, textarea.offsetWidth - textarea.clientWidth);
+    shell.style.setProperty("--correction-scrollbar-width", `${scrollbarWidth}px`);
+  }
+  function syncCorrectionModeScroll(scrollTop = elements.correction?.scrollTop || 0) {
+    if (!elements.correctionModes) return;
+    elements.correctionModes.style.setProperty("--correction-mode-scroll-top", `${scrollTop}px`);
+  }
   function updateLineNumbers(textarea, gutter) {
     const count = Math.max(1, lineCount(textarea.value));
     gutter.innerHTML = Array.from({ length: count }, (_, index) => `<span>${index + 1}</span>`).join("");
     gutter.scrollTop = textarea.scrollTop;
+    if (textarea === elements.correction && elements.correctionGrid) {
+      syncCorrectionScrollbarWidth();
+      elements.correctionGrid.innerHTML = Array.from({ length: count }, () => '<span></span><span></span>').map((cells) => `<div class="correction-grid-row">${cells}</div>`).join("");
+      elements.correctionGrid.scrollTop = textarea.scrollTop;
+    }
     updateEditorHighlight(textarea);
     applyLinkedPosition();
   }
@@ -713,7 +792,7 @@
       const detail = directlyEdited ? "変換後を直接編集した内容を保持中。行修正を変更すると修正へ切り替わります" : mode === "recovered" ? "復元した行修正値を表示中。変更するまで変換後を保持します" : mode === "fixed" ? "非対応の表記を保持中。行修正では上書きしません" : `${label}を採用中`;
       return `<button type="button" class="correction-mode-row" data-line="${index}" data-mode="${displayMode}" aria-label="${index + 1}行目：${detail}。押すと${next}へ切替" title="${detail}（押すと${next}）">${label}</button>`;
     }).join("");
-    elements.correctionModes.scrollTop = elements.correction.scrollTop;
+    syncCorrectionModeScroll();
   }
   function setRowAdoptionMode(index, mode) {
     if (!(correctionSlotCounts[index] > 0) || !ROW_MODE_LABELS[mode]) return;
@@ -762,7 +841,7 @@
       elements.correction.scrollTop = scrollTop;
       elements.correction.scrollLeft = scrollLeft;
       elements.correctionLines.scrollTop = scrollTop;
-      if (elements.correctionModes) elements.correctionModes.scrollTop = scrollTop;
+      syncCorrectionModeScroll(scrollTop);
       syncHighlightScroll(elements.correction);
     };
     restoringCorrectionHistory = true;
@@ -875,6 +954,19 @@
   }
   function editorLine(textarea, lineIndex) {
     return textarea.value.split(/\r\n|\r|\n/)[lineIndex] || "";
+  }
+  function applyKeyTransitionOnEnter(textarea, event) {
+    if (event.key !== "Enter" || event.altKey || event.ctrlKey || event.metaKey || event.isComposing) return false;
+    const lineNumber = textarea.value.slice(0, textarea.selectionStart).split(/\r\n|\r|\n/).length;
+    const result = window.ChordWikiTranspose.applyKeyTransition(textarea.value, lineNumber);
+    if (!result.changed) return false;
+    event.preventDefault();
+    textarea.value = result.text;
+    const lines = result.text.split(/\r\n|\r|\n/);
+    const nextLineStart = lines.slice(0, result.lineNumber).join("\n").length + 1;
+    textarea.setSelectionRange(Math.min(nextLineStart, result.text.length), Math.min(nextLineStart, result.text.length));
+    textarea.dispatchEvent(new Event("input", { bubbles: true }));
+    return true;
   }
   function replaceCorrectionLine(lineIndex, nextValue) {
     const lines = elements.correction.value.split(/\r\n|\r|\n/);
@@ -1015,8 +1107,8 @@
       elements.previewTranspose.value,
       elements.previewSpelling.value,
       elements.previewTheoretical.checked,
-      keySectionSettings,
-      elements.previewDoubleSharp.value
+      [],
+      "##"
     );
   }
   function scoreWindowPayload(source = "main") {
@@ -1027,8 +1119,8 @@
       transpose: Number.parseInt(elements.previewTranspose.value, 10) || 0,
       spelling: elements.previewSpelling.value,
       theoretical: elements.previewTheoretical.checked,
-      doubleSharp: elements.previewDoubleSharp.value,
-      keySections: keySectionSettings,
+      doubleSharp: "##",
+      keySections: [],
       barsThrough: elements.finalBarsThrough.checked,
       theme: elements.theme.value,
       editorFont: elements.fontSelect.value,
@@ -1165,7 +1257,7 @@
         previewTranspose: Number.parseInt(elements.previewTranspose.value, 10) || 0,
         previewSpelling: elements.previewSpelling.value,
         previewTheoretical: elements.previewTheoretical.checked,
-        previewDoubleSharp: elements.previewDoubleSharp.value,
+        previewDoubleSharp: "##",
         previewKeySections: keySectionSettings,
         theme: elements.theme.value,
         editorFont: elements.fontSelect.value,
@@ -1244,8 +1336,8 @@
     localStorage.setItem(PREVIEW_TRANSPOSE_STORAGE_KEY, elements.previewTranspose.value);
     localStorage.setItem(PREVIEW_SPELLING_STORAGE_KEY, elements.previewSpelling.value);
     localStorage.setItem(PREVIEW_THEORETICAL_STORAGE_KEY, String(elements.previewTheoretical.checked));
-    localStorage.setItem(PREVIEW_DOUBLE_SHARP_STORAGE_KEY, elements.previewDoubleSharp.value);
-    localStorage.setItem(PREVIEW_KEY_SECTIONS_STORAGE_KEY, JSON.stringify(keySectionSettings));
+    localStorage.setItem(PREVIEW_DOUBLE_SHARP_STORAGE_KEY, "##");
+    localStorage.setItem(PREVIEW_KEY_SECTIONS_STORAGE_KEY, JSON.stringify([]));
     localStorage.setItem(REMOVAL_LINKED_STORAGE_KEY, String(removalLinked));
     localStorage.setItem(LYRIC_HYPHEN_MODE_STORAGE_KEY, elements.lyricHyphenMode.value);
   }
@@ -1295,8 +1387,7 @@
     syncPreviewControlMirrors();
     updatePreviewTransposeButtons();
     elements.previewTheoretical.checked = Boolean(state.previewTheoretical);
-    elements.previewDoubleSharp.value = state.previewDoubleSharp === "x" ? "x" : "##";
-    keySectionSettings = Array.isArray(state.previewKeySections) ? state.previewKeySections : [];
+    keySectionSettings = [];
     applyTheme(state.theme || "light");
     elements.fontSelect.value = editorFonts.some((font) => font.value === state.editorFont) ? state.editorFont : "meiryo";
     applyEditorFont(elements.fontSelect.value);
@@ -1365,10 +1456,62 @@
       key: card.querySelector(".key-section-manual")?.value.trim() || ""
     }));
   }
+  function addKeySectionPreviewDirectives(text, sections, draftSections) {
+    const lines = String(text || "").replace(/\r\n?|\r/g, "\n").split("\n");
+    [...sections].sort((left, right) => right.startLine - left.startLine).forEach((section) => {
+      const draft = draftSections[section.index] || {};
+      if (section.explicit || draft.mode !== "key" || !draft.key) return;
+      lines.splice(Math.max(0, section.startLine - 1), 0, `{key:${draft.key.replace(/[{}]/g, "")}}`);
+    });
+    return lines.join("\n");
+  }
   function renderKeySettingsPreview() {
-    const text = window.ChordWikiTranspose.transposeText(elements.finalOutput.value, elements.previewTranspose.value, elements.previewSpelling.value, elements.previewTheoretical.checked, draftKeySectionSettings(), elements.previewDoubleSharp.value);
+    const sections = window.ChordWikiTranspose.analyzeKeySections(elements.finalOutput.value);
+    const draftSections = draftKeySectionSettings();
+    const transposed = window.ChordWikiTranspose.transposeText(elements.finalOutput.value, elements.previewTranspose.value, elements.previewSpelling.value, elements.previewTheoretical.checked, draftSections, "##");
+    const text = addKeySectionPreviewDirectives(transposed, sections, draftSections);
     elements.keySettingsPreview.classList.toggle("bars-through", elements.finalBarsThrough.checked);
     window.ChordWikiPreview.renderInto(elements.keySettingsPreview, text);
+    keyPreviewTargets = [];
+    const model = window.ChordWikiPreview.parse(text);
+    const children = [...elements.keySettingsPreview.children];
+    const insertedBefore = sections.map((section) => sections.filter((candidate) => candidate.startLine <= section.startLine && !candidate.explicit && draftSections[candidate.index]?.mode === "key" && draftSections[candidate.index]?.key).length);
+    let childIndex = 0;
+    sections.forEach((section, sectionIndex) => {
+      const previewLine = section.startLine + insertedBefore[sectionIndex];
+      for (let lineIndex = 0; lineIndex < previewLine - 1; lineIndex += 1) {
+        if (model.lines[lineIndex]?.kind !== "hidden") childIndex += 1;
+      }
+      const target = children[childIndex];
+      if (target) {
+        target.dataset.keySectionIndex = String(section.index);
+        target.classList.add("key-preview-section-start");
+        keyPreviewTargets.push({ index: section.index, element: target });
+      }
+      childIndex = 0;
+    });
+    syncKeySectionLink();
+  }
+  function setActiveKeySection(index) {
+    elements.keySettingsList.querySelectorAll(".key-section-card").forEach((card) => {
+      card.classList.toggle("is-active", Number(card.dataset.sectionIndex) === index);
+    });
+    keyPreviewTargets.forEach((target) => target.element.classList.toggle("is-active", target.index === index));
+  }
+  function syncKeySectionLink() {
+    if (!keyPreviewTargets.length) return;
+    const top = elements.keySettingsPreview.scrollTop + 24;
+    const current = [...keyPreviewTargets].reverse().find((target) => target.element.offsetTop <= top);
+    if (current) setActiveKeySection(current.index);
+  }
+  function addKeyDirectivesToText(text, sections, draftSections) {
+    const lines = String(text || "").replace(/\r\n?|\r/g, "\n").split("\n");
+    [...sections].sort((left, right) => right.startLine - left.startLine).forEach((section) => {
+      const draft = draftSections[section.index] || {};
+      if (section.explicit || draft.mode !== "key" || !draft.key) return;
+      lines.splice(Math.max(0, section.startLine - 1), 0, `{key:${draft.key.replace(/[{}]/g, "")}}`);
+    });
+    return lines.join("\n");
   }
   function applyKeySectionSettings() {
     const sections = window.ChordWikiTranspose.analyzeKeySections(elements.finalOutput.value);
@@ -1384,7 +1527,19 @@
       }
       next[index] = { mode, key };
     }
-    keySectionSettings = next;
+    const keyedOutput = addKeyDirectivesToText(elements.finalOutput.value, sections, next);
+    const directivesAdded = keyedOutput !== elements.finalOutput.value;
+    if (directivesAdded) {
+      elements.output.value = keyedOutput;
+      elements.finalOutput.value = keyedOutput;
+      lastGeneratedOutput = keyedOutput;
+      outputManuallyEdited = true;
+      updateCount(elements.output, elements.outputCount);
+      updateLineNumbers(elements.output, elements.outputLines);
+      updateCount(elements.finalOutput, elements.finalOutputCount);
+      updateLineNumbers(elements.finalOutput, elements.finalOutputLines);
+    }
+    keySectionSettings = directivesAdded ? [] : next;
     persistFeatureSettings();
     renderFinalPreview();
     closeDialog(elements.keySettingsDialog);
@@ -1547,7 +1702,7 @@
         editor.scrollLeft = left;
         const gutter = gutterByEditor.get(editor);
         if (gutter) gutter.scrollTop = top;
-        if (editor === elements.correction && elements.correctionModes) elements.correctionModes.scrollTop = top;
+        if (editor === elements.correction) syncCorrectionModeScroll(top);
         syncHighlightScroll(editor);
       });
       requestAnimationFrame(() => { restoringPasteScroll = false; });
@@ -1656,6 +1811,7 @@
     renderSupport(result.warnings, result.correctionErrors || []);
   }
   function scheduleConversion(refreshCorrections = false, changedLineIndices = null, sourceChangedLineIndices = null) {
+    renderSupport("解析中…");
     pendingCorrectionRefresh ||= refreshCorrections;
     if (changedLineIndices) changedLineIndices.forEach((lineIndex) => pendingCorrectionLineIndices.add(lineIndex));
     if (sourceChangedLineIndices) sourceChangedLineIndices.forEach((lineIndex) => pendingSourceLineIndices.add(lineIndex));
@@ -1692,7 +1848,7 @@
     }, 100);
   }
 
-  elements.settingsGrid.addEventListener("input", (event) => {
+  elements.settingsBody.addEventListener("input", (event) => {
     if (event.target.id === "setting-hyphenUnit" && removalLinked) {
       elements.removalTargets.value = event.target.value;
       localStorage.setItem(REMOVAL_STORAGE_KEY, elements.removalTargets.value);
@@ -1701,8 +1857,17 @@
     else scheduleConversion(true);
     markActivity();
   });
-  CBFNumericEntry.attach(elements.settingsGrid);
-  elements.settingsGrid.addEventListener("click", (event) => {
+  CBFNumericEntry.attach(elements.settingsBody);
+  elements.settingsBody.addEventListener("change", (event) => {
+    if (event.target.matches("#settings-grid select, #settings-advanced-grid select")) event.target.dispatchEvent(new Event("input", { bubbles: true }));
+  });
+  document.addEventListener("click", (event) => {
+    const button = event.target.closest?.(".setting-help-button");
+    if (!button) return;
+    event.stopPropagation();
+    showContextHelp(button, true);
+  });
+  elements.settingsBody.addEventListener("click", (event) => {
     const button = event.target.closest("[data-setting-cycle]");
     if (!button) return;
     const definition = CBFSettings.definitions.find((item) => item.key === button.dataset.settingKey);
@@ -1727,7 +1892,7 @@
     input.dispatchEvent(new Event("input", { bubbles: true }));
     input.focus();
   });
-  elements.settingsProfilePicker.addEventListener("click", (event) => {
+  elements.settingsProfilePicker?.addEventListener("click", (event) => {
     const button = event.target.closest("[data-settings-profile]");
     if (!button || button.dataset.settingsProfile === CBFSettings.activeProfile()) return;
     switchSettingsProfile(button.dataset.settingsProfile);
@@ -1797,7 +1962,6 @@
     elements.previewSpelling.value = elements.previewSpellingMain.value;
     elements.previewSpelling.dispatchEvent(new Event("change", { bubbles: true }));
   });
-  elements.previewDoubleSharp.addEventListener("change", refreshGlobalKeySettings);
   elements.previewTheoretical.addEventListener("change", refreshGlobalKeySettings);
   function applyScoreWindowControls(payload) {
     if (!payload || payload.source !== "score-window") return;
@@ -1806,7 +1970,6 @@
     syncPreviewControlMirrors();
     updatePreviewTransposeButtons();
     elements.previewTheoretical.checked = Boolean(payload.theoretical);
-    elements.previewDoubleSharp.value = payload.doubleSharp === "x" ? "x" : "##";
     if (Array.isArray(payload.keySections)) keySectionSettings = payload.keySections;
     elements.finalBarsThrough.checked = Boolean(payload.barsThrough);
     persistFeatureSettings();
@@ -1881,9 +2044,17 @@
     renderFinalPreview();
   });
   elements.keySettingsDialog.addEventListener("click", (event) => { if (event.target === elements.keySettingsDialog) closeDialog(elements.keySettingsDialog); });
+  elements.keySettingsPreview.addEventListener("scroll", syncKeySectionLink, { passive: true });
   elements.keySettingsList.addEventListener("click", (event) => {
     const card = event.target.closest(".key-section-card");
     if (!card) return;
+    if (!event.target.closest("select, input, button")) {
+      const target = keyPreviewTargets.find((candidate) => candidate.index === Number(card.dataset.sectionIndex));
+      if (target) {
+        elements.keySettingsPreview.scrollTo({ top: Math.max(0, target.element.offsetTop - 18), behavior: "smooth" });
+        setActiveKeySection(Number(card.dataset.sectionIndex));
+      }
+    }
     if (event.target.closest(".key-estimate")) {
       const sections = window.ChordWikiTranspose.analyzeKeySections(elements.finalOutput.value);
       const candidates = window.ChordWikiTranspose.estimateKeys(keySectionSource(sections[Number(card.dataset.sectionIndex)]), 3);
@@ -2278,10 +2449,12 @@
     if (["left", "right"].includes(direction)) requestAnimationFrame(() => revealEditorAhead(elements.output, direction));
   };
   elements.output.addEventListener("keydown", (event) => {
+    if (applyKeyTransitionOnEnter(elements.output, event)) return;
     if (!["ArrowLeft", "ArrowRight"].includes(event.key) || event.altKey || event.ctrlKey || event.metaKey) return;
     requestAnimationFrame(() => revealEditorAhead(elements.output, event.key === "ArrowLeft" ? "left" : "right"));
   });
   elements.input.addEventListener("keydown", (event) => {
+    if (applyKeyTransitionOnEnter(elements.input, event)) return;
     if (!["ArrowLeft", "ArrowRight"].includes(event.key) || event.altKey || event.ctrlKey || event.metaKey) return;
     requestAnimationFrame(() => revealEditorAhead(elements.input, event.key === "ArrowLeft" ? "left" : "right"));
   });
@@ -2697,6 +2870,7 @@
       const scrollPositions = captureEditorScrollPositions();
       elements.input.setRangeText(text, elements.input.selectionStart, elements.input.selectionEnd, "end");
       elements.input.dispatchEvent(new Event("input", { bubbles: true }));
+      requestAnimationFrame(() => scheduleConversion(false));
       elements.input.focus();
       restoreEditorScrollPositions(scrollPositions);
       notify("変換前へ貼り付けました。");
@@ -2958,10 +3132,11 @@
     catch (_error) { notify("確定譜面をコピーできませんでした。", true); elements.committedOutput.select(); }
   });
   $("#settings-reset").addEventListener("click", () => {
-    const profile = CBFSettings.activeProfile();
+    const currentValues = CBFSettings.load();
+    const profile = CBFSettings.inferProfileFromValues(currentValues);
     const label = settingsProfileLabel(profile);
     if (!window.confirm(`${label}の設定を初期値に戻します。よろしいですか？`)) return;
-    const values = CBFSettings.resetActive();
+    const values = CBFSettings.resetForValues(currentValues);
     renderSettings(values);
     updateSettingsProfileUI();
     if (removalLinked) {
@@ -2974,12 +3149,14 @@
   });
   function setSettingsMode(mode) {
     settingsMode = mode === "expanded" ? "compact" : mode;
+    elements.settingsShell.style.removeProperty("height");
     elements.settingsPanel.classList.toggle("settings-closed", mode === "closed");
     elements.settingsPanel.classList.toggle("settings-compact", settingsMode === "compact");
+    elements.settingsPanel.classList.toggle("settings-examples-closed", !settingsExamplesOpen);
     elements.settingsPanel.classList.remove("settings-expanded");
     elements.settingsBody.hidden = mode === "closed";
     elements.settingsToggle.setAttribute("aria-expanded", String(settingsMode !== "closed"));
-    elements.settingsToggle.textContent = settingsMode === "closed" ? "設定を開く▼" : "設定を閉じる▲";
+    elements.settingsToggle.textContent = settingsMode === "closed" ? "設定を開く▼" : "設定を閉じる▼";
     elements.settingsExampleToggle.hidden = settingsMode === "closed";
     positionSettingsPanel();
   }
@@ -2987,16 +3164,22 @@
     settingsExamplesOpen = Boolean(open);
     elements.settingsPanel.classList.toggle("settings-examples-closed", !settingsExamplesOpen);
     elements.settingsExampleToggle.setAttribute("aria-expanded", String(settingsExamplesOpen));
-    elements.settingsExampleToggle.textContent = settingsExamplesOpen ? "使用例を閉じる▲" : "使用例を表示▼";
+    elements.settingsExampleToggle.textContent = "説明・使用例▼";
     positionSettingsPanel();
     syncResultRowAlignment();
   }
   elements.settingsToggle.addEventListener("click", () => setSettingsMode(settingsMode === "closed" ? "compact" : "closed"));
   elements.settingsExampleToggle.addEventListener("click", () => setSettingsExamplesOpen(!settingsExamplesOpen));
+  elements.settingsAdvanced?.addEventListener("toggle", () => {
+    const summary = elements.settingsAdvanced.querySelector("summary");
+    if (summary) summary.textContent = elements.settingsAdvanced.open ? "詳細設定▲" : "詳細設定▼";
+  });
   elements.measureCapacityWarningOpen.addEventListener("click", () => {
     const detected = Number(elements.measureCapacityWarningOpen.dataset.detected);
     const targetProfile = elements.measureCapacityWarningOpen.dataset.profile;
-    if (!Number.isInteger(detected) || detected < 2) return;
+    let formatting = {};
+    try { formatting = JSON.parse(elements.measureCapacityWarningOpen.dataset.formatting || "{}"); } catch (_error) { formatting = {}; }
+    if ((!Number.isInteger(detected) || detected < 2) && !formatting.hyphenUnit && !formatting.hyphenSpacing) return;
     elements.measureCapacityWarning.hidden = true;
     syncResultRowAlignment();
     if (targetProfile === "sixEight" && CBFSettings.activeProfile() !== "sixEight") {
@@ -3010,11 +3193,19 @@
     }
     setSettingsMode("compact");
     requestAnimationFrame(() => {
-      const input = $("#setting-measureCapacity");
-      if (!input || !detected) return;
-      input.value = String(detected);
-      input.dispatchEvent(new Event("input", { bubbles: true }));
-      input.focus();
+      const changes = {
+        measureCapacity: detected >= 2 ? detected : null,
+        hyphenUnit: Number.isInteger(formatting.hyphenUnit) ? formatting.hyphenUnit : null,
+        hyphenSpacing: Number.isInteger(formatting.hyphenSpacing) ? formatting.hyphenSpacing : null
+      };
+      Object.entries(changes).forEach(([key, value]) => {
+        const input = $(`#setting-${key}`);
+        if (value === null || !input) return;
+        if (key === "measureCapacity") input.value = String(detected);
+        else input.value = String(value);
+        input.dispatchEvent(new Event("input", { bubbles: true }));
+      });
+      $("#setting-measureCapacity")?.focus();
     });
   });
   elements.measureCapacityWarningDismiss.addEventListener("click", () => {
@@ -3087,7 +3278,7 @@
     elements.addedBackground.checked = true;
     localStorage.setItem(ADDED_BACKGROUND_STORAGE_KEY, "true");
     setDisplaySettingsOpen(false);
-    setSettingsMode("closed");
+    setSettingsMode("compact");
     setSettingsExamplesOpen(true);
     positionSettingsPanel();
     notify("レイアウトと表示設定を初期化しました。");
@@ -3110,7 +3301,7 @@
       const layout = JSON.parse(localStorage.getItem(LAYOUT_STORAGE_KEY) || "null");
       if (!layout) return;
       elements.displaySettingsShell.style.removeProperty("height");
-      if (Number.isFinite(layout.settingsHeight)) elements.settingsShell.style.height = `${layout.settingsHeight}px`;
+      elements.settingsShell.style.removeProperty("height");
       elements.correctionGuide.style.removeProperty("height");
       if (Number.isFinite(layout.leftWidth)) setLeftColumnWidth(layout.leftWidth);
       if (Number.isFinite(layout.topHeight)) setRowHeight("top", layout.topHeight);
@@ -3343,8 +3534,8 @@
   elements.previewSpelling.value = ["preserve", "sharp", "flat"].includes(savedPreviewSpelling) ? savedPreviewSpelling : "preserve";
   syncPreviewControlMirrors();
   updatePreviewTransposeButtons();
-  elements.previewTheoretical.checked = localStorage.getItem(PREVIEW_THEORETICAL_STORAGE_KEY) === "true";
-  elements.previewDoubleSharp.value = localStorage.getItem(PREVIEW_DOUBLE_SHARP_STORAGE_KEY) === "x" ? "x" : "##";
+  const savedTheoretical = localStorage.getItem(PREVIEW_THEORETICAL_STORAGE_KEY);
+  elements.previewTheoretical.checked = savedTheoretical === null ? true : savedTheoretical === "true";
   try {
     const savedKeySections = JSON.parse(localStorage.getItem(PREVIEW_KEY_SECTIONS_STORAGE_KEY) || "[]");
     keySectionSettings = Array.isArray(savedKeySections) ? savedKeySections : [];
@@ -3374,6 +3565,7 @@
   updateCount(elements.committedOutput, elements.committedOutputCount);
   let syncingScroll = false;
   const scrollEditors = [elements.correction, elements.input, elements.output, elements.finalOutput];
+  window.addEventListener("resize", syncCorrectionScrollbarWidth);
   [
     [elements.correction, elements.correctionLines],
     [elements.input, elements.inputLines],
@@ -3389,19 +3581,24 @@
     });
     editor.addEventListener("scroll", () => {
       gutter.scrollTop = editor.scrollTop;
-      if (editor === elements.correction && elements.correctionModes) elements.correctionModes.scrollTop = editor.scrollTop;
+      if (editor === elements.correction) syncCorrectionModeScroll(editor.scrollTop);
+      if (editor === elements.correction && elements.correctionGrid) elements.correctionGrid.scrollTop = editor.scrollTop;
       syncHighlightScroll(editor);
       if ([elements.correction, elements.output].includes(editor) && !mobileProgrammaticScroll && !syncingScroll && !restoringPasteScroll && window.matchMedia("(max-width: 699px)").matches) mobileLinkedScrollPaused = true;
       if (syncingScroll || restoringPasteScroll) return;
       const correctionResultPair = [elements.correction, elements.output];
-      const syncTargets = scrollSyncEnabled ? scrollEditors : correctionResultPair.includes(editor) ? correctionResultPair : [editor];
+      const syncTargets = scrollSyncEnabled
+        ? editor === elements.input
+          ? [elements.input, elements.output, elements.finalOutput]
+          : scrollEditors
+        : correctionResultPair.includes(editor) ? correctionResultPair : [editor];
       if (syncTargets.length === 1) return;
       syncingScroll = true;
       syncTargets.forEach((other) => {
         other.scrollTop = editor.scrollTop;
         other.scrollLeft = editor.scrollLeft;
         gutterByEditor.get(other).scrollTop = editor.scrollTop;
-        if (other === elements.correction && elements.correctionModes) elements.correctionModes.scrollTop = editor.scrollTop;
+        if (other === elements.correction) syncCorrectionModeScroll(editor.scrollTop);
         syncHighlightScroll(other);
       });
       if (scrollSyncEnabled && elements.finalOutputShell.classList.contains("preview-mode")) {
@@ -3424,7 +3621,7 @@
       editor.scrollTop = elements.finalPreview.scrollTop;
       editor.scrollLeft = elements.finalPreview.scrollLeft;
       gutterByEditor.get(editor).scrollTop = elements.finalPreview.scrollTop;
-      if (editor === elements.correction && elements.correctionModes) elements.correctionModes.scrollTop = elements.finalPreview.scrollTop;
+      if (editor === elements.correction) syncCorrectionModeScroll(elements.finalPreview.scrollTop);
       syncHighlightScroll(editor);
     });
     requestAnimationFrame(() => { syncingScroll = false; });

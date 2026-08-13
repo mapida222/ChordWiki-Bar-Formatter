@@ -55,6 +55,10 @@ assert(html.includes('<div class="correction-column-headings" aria-hidden="true"
 assert(html.includes('<div class="output-column-headings" aria-hidden="true"><span>No.</span><span>変換後テキスト</span></div>'));
 assert(css.includes('grid-template-rows: 1.45em minmax(0, 1fr);'));
 assert(css.includes('.correction-column-headings { grid-column: 1 / -1; grid-row: 1; display: grid; grid-template-columns: subgrid;'));
+assert(html.includes('id="correction-grid" class="correction-grid"'), "row-edit needs a scrollable row grid overlay");
+assert(css.includes('.correction-grid { position: absolute;') && css.includes('.correction-grid-row { display: grid;'), "row-edit grid must be made of row-sized grid elements");
+assert(css.includes('top: calc(1.45em + 14px)') && css.includes('--correction-row-height: calc(var(--editor-font-size) * 1.65)'), "row-edit grid must share the text row origin and height");
+assert(app.includes('elements.correctionGrid.scrollTop = textarea.scrollTop;'), "row-edit grid must follow the correction textarea scroll position");
 assert(css.includes('.correction-card .line-numbers { text-align: center; }'));
 assert(css.includes('grid-template-columns: max-content minmax(0, 1fr) var(--correction-mode-width) var(--correction-scrollbar-width);'));
 assert(css.includes('.correction-card .editor-text-layer textarea, .correction-card .editor-highlight { padding-right: calc(var(--correction-mode-width) + var(--correction-scrollbar-width)); text-align: left; }'));

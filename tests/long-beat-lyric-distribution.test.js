@@ -18,7 +18,7 @@ const source = "長（な[Fm]が）い旅（た[Bb]び）の途中　君[DbM7]�
 const frontBack = CBFConverter.convertChordText(source, settings, ["cccc"]);
 assert.strictEqual(
   frontBack.output,
-  "長（な[|][Fm][---]が）い[---][|][---][---]旅（た[|][Bb][---]び）の途中[---][|][---][---]君[|][DbM7][---]に出逢い[---][|][---][---]うつ[|][Eb][---]ろう[---][|][---][---]景色[|]",
+  "長（な[|][Fm][---]が）い[---][|][---][---]旅（た[|][Bb][---]び）の途中　[---][|][---][---]君[|][DbM7][---]に出逢い　[---][|][---][---]うつ[|][Eb][---]ろう[---][|][---][---]景色[|]",
   "recommended mode should put lyric halves on the first and last visible markers"
 );
 
@@ -40,7 +40,7 @@ const uniform = CBFConverter.convertChordText(
 );
 assert.strictEqual(
   uniform.output,
-  "長（な[|][Fm][---]が）[---]い旅[|][---]（[---]た[|][Bb][---]び）[---]の途[|][---]中[---]君[|][DbM7][---]に出[---]逢い[|][---]う[---]つ[|][Eb][---]ろ[---]う[|][---]景[---]色[|]",
+  "長（な[|][Fm][---]が）[---]い[|][---]旅[---]（た[|][Bb][---]び）[---]の[|][---]途[---]中君[|][DbM7][---]に出[---]逢[|][---]い[---]うつ[|][Eb][---]ろ[---]う[|][---]景[---]色[|]",
   "uniform mode should distribute grapheme clusters across every visible marker"
 );
 
@@ -51,7 +51,7 @@ const fullWidthBoundary = CBFConverter.convertChordText(
 );
 assert.strictEqual(
   fullWidthBoundary.output,
-  "[|][Bbm7][---]今日[---]も[|][Cm7][---]笑い[---]合え[|][DbM7][---]る[---][|][---][---]居場所　紡ぐ[|]",
+  "[|][Bbm7][---]今日[---]も[|][Cm7][---]笑い[---]合え[|][DbM7][---]る　[---][|][---][---]居場所　紡ぐ[|]",
   "the first authored full-width space should split front/back placement without removing later spaces"
 );
 
@@ -69,7 +69,7 @@ assert.strictEqual(
 const completed = CBFConverter.renderCompletedOutput(fullWidthBoundary.output, [6], 3);
 assert.strictEqual(
   completed.output,
-  "[|][Bbm7]今日も[|][Cm7]笑い合え[|][DbM7][---]る[---][|][---][---]居場所　紡ぐ[|]",
+  "[|][Bbm7]今日も[|][Cm7]笑い合え[|][DbM7][---]る　[---][|][---][---]居場所　紡ぐ[|]",
   "selected six-beat markers should still be removable after lyric placement"
 );
 
@@ -89,6 +89,12 @@ assert.strictEqual(
   longPlacementWithoutPrepose,
   "eligible long-beat placement takes priority instead of being repositioned again by fractional prepose"
 );
+const fourBeatFrontBack = CBFConverter.convertChordText(
+  "[E]けて[C#m/F]みたい[F#m]の",
+  { ...settings, measureCapacity: 8, hyphenSpacing: 4, longBeatLyricPlacement: 1 },
+  ["349"]
+).output;
+assert.ok(fourBeatFrontBack.includes("[E][---]けて[C#m/F][-]み[---]たい[F#m][-]の"), "a four-beat spacing unit should split for front/back lyric placement");
 assert.notStrictEqual(
   longPlacementWithPrepose,
   CBFConverter.convertChordText(

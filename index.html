@@ -15,7 +15,7 @@
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4561699699325989" crossorigin="anonymous"></script>
   <title>ChordWiki Bar Formatter ～演奏しやすいリズム付きコード譜へ～</title>
   <link rel="icon" type="image/png" href="logo/260810_favicon_touka.png">
-  <link rel="stylesheet" href="style.css?v=20260810-107">
+  <link rel="stylesheet" href="style.css?v=20260812-016">
   <link rel="stylesheet" href="style-row-edit-test.css?v=20260801-3">
 </head>
 <body>
@@ -34,7 +34,7 @@
 
   <main>
     <section class="workspace" aria-label="コード譜変換エリア">
-      <section id="settings-panel" class="settings-panel settings-closed" aria-labelledby="settings-title">
+      <section id="settings-panel" class="settings-panel settings-compact settings-examples-closed" aria-labelledby="settings-title">
         <div class="editor-heading settings-panel-heading">
           <div class="settings-heading-copy">
             <h2 id="settings-title" class="compact-editor-title">02. 初期設定 <span>/ SETTINGS</span></h2>
@@ -50,7 +50,6 @@
           <label for="setting-theme">テーマ</label>
           <select id="setting-theme">
             <option value="light" selected>ライト</option>
-            <option value="dark-gray">ダークグレー</option>
             <option value="dark">ダーク</option>
           </select>
         </div>
@@ -106,17 +105,15 @@
         </aside>
         <div id="settings-shell" class="settings-shell">
         <div class="settings-primary-actions">
-          <button id="settings-toggle" class="text-button" type="button" aria-expanded="false" aria-controls="settings-body">設定を開く▼</button>
-          <button id="settings-example-toggle" class="text-button settings-example-toggle" type="button" aria-expanded="true" hidden>使用例を閉じる▲</button>
+          <button id="settings-toggle" class="text-button" type="button" aria-expanded="true" aria-controls="settings-body">設定を閉じる▼</button>
+          <button id="settings-example-toggle" class="text-button settings-example-toggle" type="button" aria-expanded="false">説明・使用例▼</button>
         </div>
-        <div id="settings-body" hidden>
-          <div id="settings-profile-picker" class="settings-profile-picker" role="group" aria-label="拍子ごとの初期設定">
-            <button type="button" data-settings-profile="fourFour" aria-pressed="false">4/4拍子</button>
-            <button type="button" data-settings-profile="sixEight" aria-pressed="false">6/8拍子</button>
-            <button type="button" data-settings-profile="custom" aria-pressed="false">カスタム</button>
-          </div>
-          <p class="settings-recommendation"><strong>推奨値：</strong><span id="settings-recommendation-values">4, 8, 16, 24, 32</span></p>
+        <div id="settings-body">
           <div id="settings-grid" class="settings-grid"></div>
+          <details id="settings-advanced" class="settings-advanced">
+            <summary>詳細設定▼</summary>
+            <div id="settings-advanced-grid" class="settings-grid settings-grid-advanced"></div>
+          </details>
         </div>
         <div class="settings-footer-actions">
           <label id="custom-profile-name-field" class="custom-profile-name-field" hidden>
@@ -131,7 +128,6 @@
         <div class="column-resize-edge editor-column-resize-edge settings-left-resize-edge" data-column="inverse" role="separator" aria-label="初期設定枠の左端を左右に調整" aria-orientation="vertical" tabindex="0"></div>
         <div class="frame-resize-edge frame-resize-edge-top" data-panel="settings" data-edge="top" role="separator" aria-label="初期設定枠の上端を上下に調整" aria-orientation="horizontal" tabindex="0"></div>
         <div class="frame-resize-edge" data-panel="settings" data-edge="bottom" role="separator" aria-label="初期設定枠の下端を上下に調整" aria-orientation="horizontal" tabindex="0"></div>
-        <div class="frame-resize-corner two-axis" data-panel="settings" data-column="direct" role="separator" aria-label="初期設定枠の幅と高さを調整" tabindex="0"></div>
       </section>
 
       <article class="editor-card correction-card">
@@ -156,6 +152,7 @@
           <div id="correction-lines" class="line-numbers" aria-hidden="true"></div>
           <div class="editor-text-layer"><pre id="correction-highlight" class="editor-highlight" aria-hidden="true"></pre><textarea id="correction-text" wrap="off" spellcheck="false" placeholder="&#10;&#10;&#10;&#10;&#10;88448&#10;3535&#10;844&#10;&#10;4444&#10;628&#10;4*s433a&#10;444^22"></textarea></div>
           <div id="correction-modes" class="correction-modes" aria-label="行ごとの採用方法"></div>
+          <div id="correction-grid" class="correction-grid" aria-hidden="true"></div>
         </div>
         <div class="frame-resize-corner two-axis" data-row="bottom" data-column="direct" role="separator" aria-label="行修正枠の幅と高さを調整" tabindex="0"></div>
         <div class="column-resize-edge" data-column="direct" role="separator" aria-label="行修正枠の右端を左右に調整" aria-orientation="vertical" tabindex="0"></div>
@@ -291,9 +288,9 @@
           <summary>表示設定</summary>
           <div class="output-settings-row">
           <div class="output-quick-settings">
-          <span class="diff-legend" hidden title="変換時に自動追加された小節線・拍記号"><i aria-hidden="true"></i>自動追加</span>
           <label class="output-diff-setting"><input id="added-background" type="checkbox" checked> <span>差分背景</span></label>
           <label class="output-bar-setting"><input id="plain-edit-bars" type="checkbox"> <span>小節線[|]にカッコをつけない</span></label>
+          <span class="diff-legend" hidden title="変換時に自動追加された小節線・拍記号"><i aria-hidden="true"></i>自動追加</span>
           </div>
           <div class="removal-controls">
           <span class="removal-label-with-help"><label for="lyric-hyphen-mode">歌詞行のハイフン</label><span class="context-help"><button class="context-help-button" type="button" aria-label="歌詞行のハイフン省略の説明" aria-expanded="false" aria-controls="help-tip-lyric-hyphens">?</button><span id="help-tip-lyric-hyphens" class="context-help-popover" role="tooltip" hidden><strong class="context-help-title">04. 変換後：歌詞行のハイフン</strong>歌詞行に付いたハイフンの表示方法を選びます。<br>「省略しない」：すべてのハイフンを表示します。<br>「指定数だけ省略」：入力した長さだけ省略します。複数指定はカンマ区切りで入力します（例：4,8）。<br>「できるだけ省略」：コードチェンジの位置が必要な箇所を残して省略します。<br>「すべて省略」：タイミング情報も含めて省略します。</span></span></span>
@@ -308,7 +305,7 @@
           </div>
           </div>
         </details>
-        <p class="output-edit-guidance">改行やふりがな、コードは、変換前での編集をおすすめします。</p>
+        <p class="output-edit-guidance">改行・ふりがな・コードの編集は、変換前で行うことをおすすめします。</p>
         <div id="output-shell" class="editor-shell">
           <div class="output-column-headings" aria-hidden="true"><span>No.</span><span>変換後テキスト</span></div>
           <span id="removal-summary" role="status" aria-live="polite"></span>
@@ -399,7 +396,7 @@
       </div>
     </section>
 
-    <dialog id="key-settings-dialog" class="help-dialog key-settings-dialog" aria-labelledby="key-settings-title">
+    <dialog id="key-settings-dialog" class="help-dialog key-settings-dialog" aria-labelledby="key-settings-title" hidden>
       <div class="help-dialog-frame">
         <header class="help-dialog-header">
           <div><p class="eyebrow">KEY SETTINGS</p><h2 id="key-settings-title">キー詳細設定</h2></div>
@@ -413,8 +410,7 @@
                 <div class="key-global-controls">
                   <label class="preview-control" for="preview-transpose"><span>移調</span><span class="preview-transpose-stepper"><select id="preview-transpose" aria-label="譜面プレビューの移調"></select><button id="preview-transpose-down" type="button" aria-label="移調を半音下げる">▼</button><button id="preview-transpose-up" type="button" aria-label="移調を半音上げる">▲</button></span></label>
                   <label class="preview-control" for="preview-spelling"><span>音名</span><select id="preview-spelling" aria-label="シャープ・フラット表記"><option value="preserve">元表記</option><option value="sharp">♯表記</option><option value="flat">♭表記</option></select></label>
-                  <label class="preview-control" for="preview-double-sharp"><span>重♯</span><select id="preview-double-sharp" aria-label="ダブルシャープ表記"><option value="##">##</option><option value="x">x</option></select></label>
-                  <label class="final-bar-setting" title="{key:}ごとに転調を判定し、bb・##を含む異名同音を使い分けます"><input id="preview-theoretical" type="checkbox"> <span>キー・転調に合わせて異名同音を自動選択</span></label>
+                  <label class="final-bar-setting" title="キーや移調に合わせて、♯・♭の表記を自動で選びます"><input id="preview-theoretical" type="checkbox" checked> <span>キー・転調に合わせて異名同音を自動選択</span></label>
                 </div>
               </section>
               <p class="key-settings-note">全体設定は本番プレビューへ即時反映されます。区間ごとの変更は右の仮プレビューで確認し、「設定を適用」すると本番へ反映されます。</p>
@@ -546,25 +542,20 @@
             <article class="help-task-card">
               <header><span>1</span><div><h4>初期設定でハイフン数を変える</h4><strong>対象枠：02. 初期設定、04. 変換後</strong></div></header>
               <p>曲の拍子に合わせて設定値を変えると、自動追加されるハイフン数が変わります。</p>
-              <div class="help-task-example-stack">
-                <div><code>4/4拍子：合計8、コード直後4</code><b aria-hidden="true">➜</b><code>[|][C][----][G][----][|]</code></div>
-                <div><code>6/8拍子：合計6、コード直後3</code><b aria-hidden="true">➜</b><code>[|][C][---][G][---][|]</code></div>
-              </div>
+              <div class="help-capability-example help-task-capability-example"><div class="help-rendered-pair"><span class="help-mini-score"><i>C　　 Am</i><span>あいう　えお</span></span><span class="help-preview-arrow">➜</span><span class="help-mini-score"><i>| C ----　Am ---- |</i><span>あいう<span class="help-preview-second-lyric">えお</span></span></span></div><div class="help-chordpro-pair"><code>[C]あいう[Am]えお</code><b>自動</b><code>[|][C][----]あいう[Am][----]えお[|]</code></div></div>
+              <p class="help-mini-note">4/4拍子：合計8、コード直後4 ／ 6/8拍子：合計6、コード直後3</p>
             </article>
             <article class="help-task-card">
               <header><span>2</span><div><h4>数字でハイフン数を変える</h4><strong>対象枠：03. 行修正、04. 変換後</strong></div></header>
               <p>コード順に数字を入力して、行ごとのハイフン数を修正します。</p>
-              <div class="help-task-example-stack">
-                <div><code>[C][G][Am] ＋ 行修正 224</code><b aria-hidden="true">➜</b><code>[|][C][--][G][--][Am][----][|]</code></div>
-              </div>
+              <div class="help-capability-example help-task-capability-example"><div class="help-rendered-pair"><span class="help-mini-score"><i>C ----　G ----　Am ----</i><span>あいう　えお　かき</span></span><span class="help-preview-arrow">➜</span><span class="help-mini-score"><i>| C --　G --　Am ---- |</i><span>あい　う　えお　かき</span></span></div><span class="help-operation help-operation-only"><b>224</b></span><code class="help-result-chordpro">[|][C][--][G][--][Am][----][|]</code></div>
             </article>
             <article class="help-task-card">
               <header><span>3</span><div><h4>シンコペーションを設定する</h4><strong>対象枠：03. 行修正、04. 変換後</strong></div></header>
               <p><strong>ハイフン食い</strong>は<code>s</code>、<strong>イコール食い</strong>は<code>*s</code>を、食い込む位置へ入力します。</p>
-              <div class="help-task-example-stack">
-                <div><code>ハイフン食い：4s4</code><b aria-hidden="true">➜</b><code>[C][---][G][-][----]</code></div>
-                <div><code>イコール食い：4*s4</code><b aria-hidden="true">➜</b><code>[C][---=][G][=][----]</code></div>
-              </div>
+              <div class="help-capability-example help-task-capability-example"><div class="help-rendered-pair"><span class="help-mini-score"><i>C　　 Am</i><span>あいう　えお</span></span><span class="help-preview-arrow">➜</span><span class="help-mini-score"><i>| C ---　Am - ---- |</i><span>あいう<span class="help-preview-second-lyric">え　お</span></span></span></div><span class="help-operation help-operation-only"><b>s</b><em>ハイフン食い</em></span><code class="help-result-chordpro">[|][C][---]あいう[Am][-]え[----]お[|]</code></div>
+              <div class="help-capability-example help-task-capability-example"><div class="help-rendered-pair"><span class="help-mini-score"><i>C　　 Am</i><span>あいう　えお</span></span><span class="help-preview-arrow">➜</span><span class="help-mini-score"><i>| C ---=　Am = ---- |</i><span>あいう<span class="help-preview-second-lyric">え　お</span></span></span></div><span class="help-operation help-operation-only"><b>*s</b><em>イコール食い</em></span><code class="help-result-chordpro">[|][C][---=]あいう[Am][=]え[----]お[|]</code></div>
+              <p class="help-mini-note">イコール食いは <code>*s</code> で同じように指定します。</p>
             </article>
             <article class="help-task-card">
               <header><span>4</span><div><h4>自動／修正／固定を切り替える</h4><strong>対象枠：03. 行修正、04. 変換後</strong></div></header>
@@ -586,9 +577,7 @@
             <article class="help-task-card">
               <header><span>6</span><div><h4>移調して確定する</h4><strong>対象枠：05. 譜面プレビュー、確定譜面テキスト</strong></div></header>
               <p>譜面プレビューで移調を確認し、「譜面プレビューを確定」で07へ保存します。</p>
-              <div class="help-task-example-stack">
-                <div><code>[C]　[G]　[Am]</code><b aria-hidden="true">➜</b><code>＋2：[D]　[A]　[Bm]</code></div>
-              </div>
+              <div class="help-capability-example help-task-capability-example"><div class="help-rendered-pair"><span class="help-mini-score"><i>C　　 G　　 Am</i><span>あいう　えお　かき</span></span><span class="help-preview-arrow">➜</span><span class="help-mini-score"><i>D　　 A　　 Bm</i><span>あいう　えお　かき</span></span></div><span class="help-operation help-operation-only"><b>+2</b></span><code class="help-result-chordpro">[D]あいう[A]えお[Bm]かき</code></div>
             </article>
           </div>
         </details>
@@ -598,11 +587,11 @@
           <div class="help-limitations-body">
             <p class="help-limitations-note">このツールは、コード譜へ<strong>小節線やリズム記号を追加して整えるツール</strong>です。次の機能はありません。</p>
             <ul>
-              <li><strong>コードを入力する機能：</strong>コード入力を省力化したい場合は、<a href="https://www.chordlistener.com/editor/" target="_blank" rel="noopener noreferrer">ChordWiki 用コード譜エディター</a>（作成：ぐらふぃーむ様）がおすすめです。</li>
-              <li><strong>コードを歌詞の文字間へ入力する機能：</strong><a href="https://anipu.web.fc2.com/helper/lyricker.html" target="_blank" rel="noopener noreferrer">りりか</a>がおすすめです。</li>
+              <li><strong>コードを入力する機能：</strong>コード入力を省力化したい場合は、<a href="https://www.chordlistener.com/editor/" target="_blank" rel="noopener noreferrer">ChordWiki 用コード譜エディター</a>（ぐらふぃーむ様）がおすすめです。</li>
+              <li><strong>コードを歌詞の文字間へ入力する機能：</strong><a href="https://anipu.web.fc2.com/helper/lyricker.html" target="_blank" rel="noopener noreferrer">りりか</a>（fluno様）がおすすめです。</li>
               <li><strong>一部の特殊・複雑なリズム表記：</strong><code>[&gt;--&gt;]</code>など、対応していない表記があります。</li>
             </ul>
-            <p class="help-manual-required-note">※ 自動変換だけで完成するものではありません。実際の曲を確認し、最後は手動で修正してください。</p>
+            <p class="help-manual-required-note">※ 自動変換だけで完成するものではありません。音源を聞きながら手動で修正してください。</p>
           </div>
         </details>
 

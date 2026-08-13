@@ -46,7 +46,7 @@
       doubleSharp: candidate.doubleSharp === "x" ? "x" : "##",
       keySections: Array.isArray(candidate.keySections) ? candidate.keySections : [],
       barsThrough: Boolean(candidate.barsThrough),
-      theme: ["dark", "dark-gray", "light"].includes(candidate.theme) ? candidate.theme : "light"
+      theme: candidate.theme === "dark-gray" ? "dark" : ["dark", "light"].includes(candidate.theme) ? candidate.theme : "light"
     };
   }
 

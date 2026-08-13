@@ -540,13 +540,15 @@
   }
 
   function longBeatLyricDistribution(unit, followingLyric, position, capacity, settings, syncopated, authoredLyric) {
-    const placementMode = Number(settings.longBeatLyricPlacement ?? 0);
-    if (placementMode !== 1 && placementMode !== 2) return null;
+    const placementMode = settings.longBeatLyricPlacement == null ? -1 : Number(settings.longBeatLyricPlacement);
+    if (![1, 2, 3, 4].includes(placementMode)) return null;
     if (syncopated || unit.halfNote || unit.accents || unit.suffixStar || unit.noLeadingBar || unit.noTrailingBar) return null;
     if (followingLyric?.kind !== "text") return null;
     const authoredText = String(authoredLyric || "");
     if (!authoredText || !followingLyric.value.startsWith(authoredText)) return null;
-    const phrase = authoredText.replace(/　+$/u, "");
+    // Full-width spaces are authored lyric spacing, not padding. Keep them in
+    // the rendered phrase while excluding them from the beat-count calculation.
+    const phrase = authoredText;
     const characters = lyricGraphemes(phrase.replace(/　/gu, ""));
     if (!characters.length) return null;
 
@@ -561,16 +563,29 @@
       plannedPosition = (plannedPosition + segmentWidth) % capacity;
       remaining -= segmentWidth;
     }
+    const forcedSpacingSplit = markerCount < 2
+      && [1, 2].includes(placementMode)
+      && unit.width === Number(settings.hyphenUnit)
+      && unit.width === spacing
+      && unit.width >= 2
+      && characters.length >= 2;
+    if (forcedSpacingSplit) markerCount = 2;
     if (markerCount < 2) return null;
 
     let insertions;
-    if (placementMode === 1) {
+    if (placementMode === 3 || placementMode === 4) {
+      insertions = Array.from({ length: markerCount }, () => "");
+      insertions[placementMode === 3 ? 0 : markerCount - 1] = phrase;
+    } else if (placementMode === 1) {
       const boundaryIndex = phrase.indexOf("　");
       let front;
       let back;
       if (boundaryIndex > 0 && phrase.slice(boundaryIndex + 1).replace(/　/gu, "")) {
-        front = phrase.slice(0, boundaryIndex).replace(/　/gu, "");
+        front = phrase.slice(0, boundaryIndex + 1);
         back = phrase.slice(boundaryIndex + 1).replace(/^　+/u, "");
+      } else if (forcedSpacingSplit) {
+        front = characters[0] || "";
+        back = characters.slice(1).join("");
       } else {
         const frontSize = Math.ceil(characters.length / 2);
         front = characters.slice(0, frontSize).join("");
@@ -580,17 +595,24 @@
       insertions[0] = front;
       insertions[markerCount - 1] = back;
     } else {
-      const baseSize = Math.floor(characters.length / markerCount);
-      const remainder = characters.length % markerCount;
+      const lyricCharacters = characters.filter((character) => !/^\s$/u.test(character));
+      const baseSize = Math.floor(lyricCharacters.length / markerCount);
+      const remainder = lyricCharacters.length % markerCount;
+      const targetSizes = Array.from({ length: markerCount }, (_unused, markerIndex) => baseSize + (markerIndex < remainder ? 1 : 0));
+      insertions = Array.from({ length: markerCount }, () => "");
+      let markerIndex = 0;
       let characterIndex = 0;
-      insertions = Array.from({ length: markerCount }, (_unused, markerIndex) => {
-        const size = baseSize + (markerIndex < remainder ? 1 : 0);
-        const insertion = characters.slice(characterIndex, characterIndex + size).join("");
-        characterIndex += size;
-        return insertion;
-      });
+      for (const character of characters) {
+        if (/^\s$/u.test(character)) {
+          insertions[markerIndex] += character;
+          continue;
+        }
+        insertions[markerIndex] += character;
+        characterIndex += 1;
+        if (characterIndex >= targetSizes[markerIndex] && markerIndex < markerCount - 1) markerIndex += 1;
+      }
     }
-    return { insertions, markerIndex: 0, consumedLength: authoredText.length };
+    return { insertions, markerIndex: 0, consumedLength: authoredText.length, forcedSpacingSplit, startPosition: position };
   }
 
   function insertDistributedLyric(rendered, distribution) {
@@ -683,7 +705,8 @@
       }
       while (remaining > 0) {
         const available = capacity - position || capacity;
-        const segmentWidth = Math.min(remaining, available);
+        let segmentWidth = Math.min(remaining, available);
+        if (lyricDistribution?.forcedSpacingSplit && remaining === unit.width && position === lyricDistribution.startPosition) segmentWidth = 1;
         const boundaryFraction = position > 0 && position + segmentWidth === capacity;
         const spacingGrid = settings.hyphenSpacing > 0 ? settings.hyphenSpacing * (syncopated ? 2 : 1) : 0;
         const shortWidth = spacingGrid > 0 ? segmentWidth % spacingGrid : 0;
@@ -886,14 +909,24 @@
     const unit = Math.min(settings.hyphenUnit, settings.measureCapacity);
     const chordCount = chordsOf(measure).length;
     const result = [];
+    const trailingHyphens = [];
+    const lyricLength = [...measure.filter((token) => token.kind === "text").map((token) => token.value).join("").replace(/[ \t　]/g, "")].length;
+    const prioritizeShortLyric = chordCount === 1 && lyricLength === 1;
     measure.forEach((token, index) => {
       result.push(token);
       if (token.kind !== "chord") return;
       const whiteNote = measure[index + 1]?.kind === "text" && measure[index + 1].value === "[○]";
       if (!whiteNote) result.push({ kind: "hyphen", value: "-".repeat(unit) });
-      if (chordCount === 1 && !whiteNote) for (let width = Math.max(settings.measureCapacity - used, 0); width > 0; width -= unit) result.push({ kind: "hyphen", value: "-".repeat(Math.min(unit, width)) });
+      if (chordCount === 1 && !whiteNote) {
+        for (let width = Math.max(settings.measureCapacity - used, 0); width > 0; width -= unit) trailingHyphens.push({ kind: "hyphen", value: "-".repeat(Math.min(unit, width)) });
+      }
     });
     if (forceVisible && chordCount > 1) for (let width = Math.max(settings.measureCapacity - used, 0); width > 0; width -= unit) result.push({ kind: "hyphen", value: "-".repeat(Math.min(unit, width)) });
+    if (prioritizeShortLyric) result.push(...trailingHyphens);
+    else if (trailingHyphens.length) {
+      const lastLyric = result.findIndex((token) => token.kind === "text");
+      result.splice(lastLyric >= 0 ? lastLyric : result.length, 0, ...trailingHyphens);
+    }
     result.push({ kind: "bar", value: "|" });
     return result;
   }
@@ -1241,6 +1274,44 @@
       candidateCount: candidates.length,
       percentage: Math.round((dominant.length / candidates.length) * 100),
       lineNumbers: [...new Set(dominant.map((candidate) => candidate.line))]
+    };
+  }
+
+  function dominantAuthoredValue(values, configured, includeConfigured = false) {
+    const candidates = values.filter((value) => Number.isInteger(value) && value > 0);
+    if (candidates.length < 2) return null;
+    const grouped = new Map();
+    candidates.forEach((value) => grouped.set(value, (grouped.get(value) || 0) + 1));
+    const ranked = [...grouped.entries()].sort((left, right) => right[1] - left[1] || right[0] - left[0]);
+    if (ranked.length > 1 && ranked[0][1] === ranked[1][1]) return null;
+    const [detected, count] = ranked[0];
+    if (count / candidates.length <= 0.5 || (!includeConfigured && detected === Number(configured))) return null;
+    return { configured: Number(configured), detected, count, candidateCount: candidates.length, percentage: Math.round(count / candidates.length * 100) };
+  }
+
+  function analyzeAuthoredFormatting(inputText, configuredSettings = {}) {
+    const directHyphens = [];
+    const spacingGroups = [];
+    const authoredHyphenWidth = (token) => /^-+$/u.test(token?.value || "") ? token.value.length : 0;
+    String(inputText || "").split(/\r\n|\r|\n/).forEach((line) => {
+      const tokens = parseTokens(line);
+      tokens.forEach((token, index) => {
+        if (token.kind === "chord" && !token.value.includes("/") && tokens[index + 1]?.kind === "hyphen") {
+          const width = authoredHyphenWidth(tokens[index + 1]);
+          if (width) directHyphens.push(width);
+        }
+        if (token.kind !== "hyphen") return;
+        const previous = tokens[index - 1];
+        const beforeSeparator = tokens[index - 2];
+        if (previous?.kind === "text" && /^[ \t　]+$/u.test(previous.value) && beforeSeparator?.kind === "hyphen" && authoredHyphenWidth(beforeSeparator)) {
+          const width = authoredHyphenWidth(token);
+          if (width) spacingGroups.push(width);
+        }
+      });
+    });
+    return {
+      hyphenUnit: dominantAuthoredValue(directHyphens, configuredSettings.hyphenUnit, true),
+      hyphenSpacing: dominantAuthoredValue(spacingGroups, configuredSettings.hyphenSpacing, true)
     };
   }
 
@@ -2008,7 +2079,26 @@
     const added = [];
     const sourceLines = String(sourceText || "").replace(/\r\n?/g, "\n").split("\n");
     const outputLines = String(outputText || "").replace(/\r\n?/g, "\n").split("\n");
-    let absoluteOffset = 0;
+    const lineMapping = [];
+    const lineLcs = Array.from({ length: sourceLines.length + 1 }, () => new Uint32Array(outputLines.length + 1));
+    for (let sourceIndex = 1; sourceIndex <= sourceLines.length; sourceIndex += 1) {
+      for (let outputIndex = 1; outputIndex <= outputLines.length; outputIndex += 1) {
+        lineLcs[sourceIndex][outputIndex] = sourceLines[sourceIndex - 1] === outputLines[outputIndex - 1]
+          ? lineLcs[sourceIndex - 1][outputIndex - 1] + 1
+          : Math.max(lineLcs[sourceIndex - 1][outputIndex], lineLcs[sourceIndex][outputIndex - 1]);
+      }
+    }
+    let sourceLineIndex = sourceLines.length;
+    let outputLineIndex = outputLines.length;
+    while (sourceLineIndex > 0 && outputLineIndex > 0) {
+      if (sourceLines[sourceLineIndex - 1] === outputLines[outputLineIndex - 1]) {
+        lineMapping[sourceLineIndex - 1] = outputLineIndex - 1;
+        sourceLineIndex -= 1;
+        outputLineIndex -= 1;
+      } else if (lineLcs[sourceLineIndex - 1][outputLineIndex] >= lineLcs[sourceLineIndex][outputLineIndex - 1]) sourceLineIndex -= 1;
+      else outputLineIndex -= 1;
+    }
+    const mappedSourceLines = new Set(lineMapping.filter((index) => Number.isInteger(index)));
     function compareSegment(sourceSegment, outputSegment, outputOffset) {
       const rows = sourceSegment.length + 1;
       const columns = outputSegment.length + 1;
@@ -2046,8 +2136,16 @@
         }
       }
     }
-    outputLines.forEach((outputLine, lineIndex) => {
-      const sourceLine = sourceLines[lineIndex] || "";
+    let outputOffset = 0;
+    outputLines.forEach((outputLine, outputIndex) => {
+      let sourceIndex = lineMapping.indexOf(outputIndex);
+      if (sourceIndex < 0 && outputIndex < sourceLines.length && !mappedSourceLines.has(outputIndex)) sourceIndex = outputIndex;
+      const sourceLine = sourceIndex >= 0 ? sourceLines[sourceIndex] : "";
+      if (sourceIndex < 0) {
+        for (let index = 0; index < outputLine.length; index += 1) added.push(outputOffset + index);
+        outputOffset += outputLine.length + 1;
+        return;
+      }
       const anchors = [...sourceLine.matchAll(/\[([^\[\]\r\n]+)\]/g)]
         .filter((match) => match[1] === "○" || isChordSymbol(match[1]));
       let sourceCursor = 0;
@@ -2055,12 +2153,12 @@
       anchors.forEach((anchor) => {
         const outputAnchor = outputLine.indexOf(anchor[0], outputCursor);
         if (outputAnchor < 0) return;
-        compareSegment(sourceLine.slice(sourceCursor, anchor.index), outputLine.slice(outputCursor, outputAnchor), absoluteOffset + outputCursor);
+        compareSegment(sourceLine.slice(sourceCursor, anchor.index), outputLine.slice(outputCursor, outputAnchor), outputOffset + outputCursor);
         sourceCursor = anchor.index + anchor[0].length;
         outputCursor = outputAnchor + anchor[0].length;
       });
-      compareSegment(sourceLine.slice(sourceCursor), outputLine.slice(outputCursor), absoluteOffset + outputCursor);
-      absoluteOffset += outputLine.length + 1;
+      compareSegment(sourceLine.slice(sourceCursor), outputLine.slice(outputCursor), outputOffset + outputCursor);
+      outputOffset += outputLine.length + 1;
     });
     return added.sort((left, right) => left - right);
   }
@@ -2116,5 +2214,5 @@
     return renderedLines.map((line, index) => rowModes?.[index] === "source" ? (sourceLines[index] ?? "") : line).join("\n");
   }
 
-  window.CBFConverter = { convertChordText, parseTokens, isChordSymbol, normalizeChordSymbol, moveDelayedRhythmAfterChord, suppressTrailingBarAfterParenthesizedFinalChord, renderWithBeatCode, mergeCorrectionScope, renderCompletedOutput, restoreSourceAdoptedLines, inferBeatCodeFromRenderedLine, recoverBeatCodeFromRenderedLine, protectUnsupportedCorrectionSlots, mergeChangedLines, alignLineIndices, musicLineSignature, sameMusicStructure, alignMusicLineIndices, addedCharacterIndices, remapTrackedCharacterIndices, addContinuationChordsToManualRhythm, analyzeAuthoredMeasureCapacity };
+  window.CBFConverter = { convertChordText, parseTokens, isChordSymbol, normalizeChordSymbol, moveDelayedRhythmAfterChord, suppressTrailingBarAfterParenthesizedFinalChord, renderWithBeatCode, mergeCorrectionScope, renderCompletedOutput, restoreSourceAdoptedLines, inferBeatCodeFromRenderedLine, recoverBeatCodeFromRenderedLine, protectUnsupportedCorrectionSlots, mergeChangedLines, alignLineIndices, musicLineSignature, sameMusicStructure, alignMusicLineIndices, addedCharacterIndices, remapTrackedCharacterIndices, addContinuationChordsToManualRhythm, analyzeAuthoredMeasureCapacity, analyzeAuthoredFormatting };
 }());

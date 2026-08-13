@@ -46,8 +46,10 @@ assert.strictEqual(settings.activeProfile(), "fourFour");
 assert.strictEqual(settings.load().hyphenUnit, 4);
 assert.strictEqual(settings.load().measureCapacity, 8);
 assert.strictEqual(settings.load().hyphenSpacing, 4);
-assert.strictEqual(settings.load().longBeatLyricPlacement, 1);
+assert.strictEqual(settings.load().longBeatLyricPlacement, 3);
 assert.strictEqual(settings.load().singleCharacterHyphens, 0);
+assert.strictEqual(settings.inferProfileFromValues({ measureCapacity: 8, hyphenUnit: 4, hyphenSpacing: 4 }), "fourFour");
+assert.strictEqual(settings.inferProfileFromValues({ measureCapacity: 6, hyphenUnit: 3, hyphenSpacing: 3 }), "sixEight");
 
 const zeroSpacing = settings.validate({ ...settings.defaults(), hyphenSpacing: 0 });
 assert.strictEqual(zeroSpacing.valid, true);
@@ -75,4 +77,11 @@ assert.strictEqual(settings.load().measureCapacity, 16);
 
 settings.resetActive();
 assert.strictEqual(settings.load().measureCapacity, 8);
+settings.setActiveProfile("fourFour");
+settings.save({ ...settings.load(), measureCapacity: 6, hyphenUnit: 3, hyphenSpacing: 3 });
+settings.resetForValues(settings.load());
+assert.strictEqual(settings.activeProfile(), "sixEight");
+assert.strictEqual(settings.load().measureCapacity, 6);
+assert.strictEqual(settings.load().hyphenUnit, 3);
+assert.strictEqual(settings.load().hyphenSpacing, 3);
 console.log("settings profile tests passed");
