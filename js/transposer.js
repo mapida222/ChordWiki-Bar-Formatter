@@ -127,13 +127,63 @@
     return spacing ? { match, spacing, key: spacing[2] } : null;
   }
 
+  function keyTransitionParts(line) {
+    const match = String(line).match(/^\s*\{key\s*:\s*([^,}\s]+)\s*,\s*([^}\s]+)\s*\}\s*$/i);
+    if (!match || !CHORD_PATTERN.test(match[1]) || !CHORD_PATTERN.test(match[2])) return null;
+    return { from: match[1], to: match[2] };
+  }
+
+  function keyPreference(key) {
+    if (String(key).includes("b")) return "flat";
+    if (String(key).includes("#")) return "sharp";
+    return "preserve";
+  }
+
+  function signedKeyDistance(from, to) {
+    const source = from.match(CHORD_PATTERN);
+    const target = to.match(CHORD_PATTERN);
+    if (!source || !target) return null;
+    const distance = (pitchOf(target[2], target[3]) - pitchOf(source[2], source[3]) + 12) % 12;
+    return distance > 6 ? distance - 12 : distance;
+  }
+
+  function applyKeyTransition(text, lineNumber) {
+    const lines = String(text || "").replace(/\r\n?|\r/g, "\n").split("\n");
+    const index = Math.max(0, Number(lineNumber) - 1);
+    const transition = keyTransitionParts(lines[index] || "");
+    if (!transition) return { changed: false, text: String(text || "") };
+    const amount = signedKeyDistance(transition.from, transition.to);
+    if (amount === null) return { changed: false, text: String(text || "") };
+    const nextKeyLine = lines.findIndex((line, candidate) => candidate > index && keyLineParts(line));
+    const end = nextKeyLine < 0 ? lines.length : nextKeyLine;
+    const section = [`{key:${transition.from}}`, ...lines.slice(index + 1, end)].join("\n");
+    const converted = transposeText(section, amount, keyPreference(transition.to), false).split(/\r\n?|\r|\n/);
+    converted[0] = `{key:${transition.to}}`;
+    lines.splice(index, end - index, ...converted);
+    return { changed: true, text: lines.join("\n"), lineNumber: index + 1, key: transition.to };
+  }
+
+  function isScoreLine(line) {
+    const matches = String(line).matchAll(/\[([^\[\]\r\n]*)\]/g);
+    for (const match of matches) {
+      const token = match[1].trim();
+      if (!token || /^[|\-=>≧○*\s]+$/u.test(token)) continue;
+      const chord = token.match(CHORD_PATTERN);
+      if (chord && SUFFIX_PATTERN.test(chord[4])) return true;
+    }
+    return false;
+  }
+
   function analyzeKeySections(text) {
     const lines = String(text || "").split(/\r\n|\r|\n/);
-    const keyLines = lines.map((line, index) => keyLineParts(line) ? index : -1).filter((index) => index >= 0);
-    const starts = keyLines.length ? (keyLines[0] > 0 ? [0, ...keyLines] : keyLines) : [0];
+    const firstScoreLine = lines.findIndex(isScoreLine);
+    if (firstScoreLine < 0) return [];
+    const keyLines = lines.map((line, index) => keyLineParts(line) ? index : -1).filter((index) => index >= firstScoreLine);
+    const precedingKeyLine = lines.slice(0, firstScoreLine).map((line, index) => keyLineParts(line) ? index : -1).filter((index) => index >= 0).pop();
+    const starts = [firstScoreLine, ...keyLines.filter((index) => index > firstScoreLine)];
     return starts.map((start, index) => {
       const end = (starts[index + 1] ?? lines.length) - 1;
-      const parts = keyLineParts(lines[start]);
+      const parts = keyLineParts(lines[start]) || (index === 0 && precedingKeyLine !== undefined ? keyLineParts(lines[precedingKeyLine]) : null);
       return {
         index,
         startLine: start + 1,
@@ -256,5 +306,5 @@
     }
   }
 
-  return { transposeText, transposeChordToken, transposeNote, transposeKeyToken, analyzeKeySections, estimateKeys, fillTransposeSelect };
+  return { transposeText, transposeChordToken, transposeNote, transposeKeyToken, analyzeKeySections, estimateKeys, fillTransposeSelect, applyKeyTransition };
 }));

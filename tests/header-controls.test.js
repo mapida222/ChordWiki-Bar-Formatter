@@ -12,6 +12,12 @@ const app = fs.readFileSync(path.join(root, "js", "app.js"), "utf8");
 assert(html.includes('<span>小節線[|]にカッコをつけない</span>'));
 assert.strictEqual((html.match(/id="added-background"/g) || []).length, 1);
 assert(html.includes('<label class="output-diff-setting"><input id="added-background" type="checkbox" checked> <span>差分背景</span></label>'));
+const resultSettingOrder = [
+  html.indexOf('<label class="output-diff-setting">'),
+  html.indexOf('<label class="output-bar-setting">'),
+  html.indexOf('<span class="diff-legend"')
+];
+assert(resultSettingOrder.every((position, index) => position >= 0 && (index === 0 || position > resultSettingOrder[index - 1])), "04. 変換後設定 must order diff, bar bracket, then auto-added legend");
 assert(!html.includes("自動追加の背景に色付ける"));
 const diffBackgroundHandler = app.match(/elements\.addedBackground\.addEventListener\("change", \(\) => \{([\s\S]*?)\n  \}\);/);
 assert(diffBackgroundHandler);
@@ -113,7 +119,7 @@ assert(css.includes(".settings-panel { position: relative; z-index: 30; grid-col
 assert(html.includes('id="output-settings-toggle" class="mobile-heading-toggle" type="button" aria-expanded="true"'));
 assert(css.includes(".mobile-heading-toggle { display: inline-flex;"));
 assert(html.includes('class="output-settings-row"'));
-assert(html.includes('<p class="output-edit-guidance">改行やふりがな、コードは、変換前での編集をおすすめします。</p>'));
+assert(html.includes('<p class="output-edit-guidance">改行・ふりがな・コードの編集は、変換前で行うことをおすすめします。</p>'));
 assert(css.includes(".output-edit-guidance { margin: 0 2px 4px;"));
 assert(html.includes('class="output-quick-settings"'));
 assert(css.includes(".output-settings-row { display: grid; grid-template-columns: max-content minmax(0, 1fr);"));

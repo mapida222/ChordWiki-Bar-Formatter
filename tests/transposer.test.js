@@ -49,6 +49,14 @@ assert.deepStrictEqual(
   [{ startLine: 1, endLine: 1, key: "" }, { startLine: 2, endLine: 3, key: "Eb" }, { startLine: 4, endLine: 5, key: "F#" }]
 );
 assert.ok(transposer.estimateKeys("[C][F][G][C]", 2).some((candidate) => candidate.key === "C"));
+assert.strictEqual(
+  transposer.applyKeyTransition("{key:D,E}\n[D]歌詞\n[G]続き\n{key:A}\n[A]次", 1).text,
+  "{key:E}\n[E]歌詞\n[A]続き\n{key:A}\n[A]次"
+);
+assert.strictEqual(
+  transposer.applyKeyTransition("{key:F#,Gb}\n[F#]歌詞\n[C#]続き", 1).text,
+  "{key:Gb}\n[Gb]歌詞\n[Db]続き"
+);
 assert.strictEqual(transposer.transposeText("[G]", 0, "preserve", false, [{ mode: "key", key: "G#" }]), "[Fx]");
 assert.strictEqual(transposer.transposeText("[D]", 0, "preserve", false, [{ mode: "key", key: "D#" }]), "[Cx]");
 assert.strictEqual(transposer.transposeText("[A]", 0, "preserve", false, [{ mode: "key", key: "A#" }]), "[Gx]");

@@ -10,7 +10,7 @@ const css = fs.readFileSync(path.join(root, "style.css"), "utf8");
 const html = fs.readFileSync(path.join(root, "index.html"), "utf8");
 
 assert(html.includes('data-row="top" data-edge="top"'), "the source editor needs a draggable top edge");
-assert(html.includes('class="frame-resize-corner two-axis" data-panel="settings" data-column="direct" role="separator" aria-label="初期設定枠の幅と高さを調整"'), "settings needs the same bottom-right resize handle as the editor frames");
+assert(!html.includes('class="frame-resize-corner two-axis" data-panel="settings" data-column="direct" role="separator" aria-label="初期設定枠の幅と高さを調整"'), "settings must not expose a bottom-right resize handle");
 assert(html.includes('data-row="top" data-edge="bottom"'), "the source editor needs a draggable bottom edge");
 assert(html.includes('data-row="bottom" data-edge="top"'), "the result editor needs a draggable top edge");
 assert(html.includes('data-row="bottom" data-edge="bottom"'), "the result editor needs a draggable bottom edge");

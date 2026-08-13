@@ -1,0 +1,28 @@
+"use strict";
+
+const assert = require("assert");
+const fs = require("fs");
+const path = require("path");
+
+const root = path.join(__dirname, "..");
+const html = fs.readFileSync(path.join(root, "index.html"), "utf8");
+const app = fs.readFileSync(path.join(root, "js", "app.js"), "utf8");
+const css = fs.readFileSync(path.join(root, "style.css"), "utf8");
+
+assert(!html.includes('id="settings-profile-picker"'), "拍子プロファイルの選択UIは設定欄から削除する");
+assert(html.includes('id="settings-advanced-grid"'), "詳細設定用の表示領域が必要");
+assert(html.includes("説明・使用例"), "説明・使用例の折りたたみボタンを表示する");
+assert(!html.includes('data-panel="settings" data-column="direct"'), "設定欄の右下リサイズ枠を表示しない");
+assert(app.includes('const basicKeys = new Set(["measureCapacity", "hyphenUnit", "hyphenSpacing"])'));
+assert(app.includes('const settingOrder = ["measureCapacity", "hyphenUnit", "hyphenSpacing", "shortFractionPrepose", "longBeatLyricPlacement", "showContinuationChord", "singleCharacterHyphens"]'), "visible settings order must follow conversion priority");
+assert(app.includes('elements.settingsBody.addEventListener("input"'));
+assert(app.includes('class="setting-help context-help"'));
+assert(app.includes('Array.from({ length: definition.max - definition.min + 1 }'));
+assert(app.includes('const standardValues = new Set([...RECOMMENDED_VALUES.fourFour, ...RECOMMENDED_VALUES.sixEight])'));
+assert(app.includes('setting-option-common') && app.includes('setting-option-rare'), "numeric settings must distinguish recommended and less-used options visually");
+assert(css.includes(".settings-panel.settings-compact { height: auto; }"));
+assert(css.includes(".settings-panel.settings-closed { height: auto; min-height: 0; overflow: visible; }"), "closed settings must keep its heading and open button visible");
+assert(css.includes(".settings-panel.settings-compact .settings-advanced > summary"));
+assert(css.includes("@media (min-width: 700px)") && css.includes(".settings-panel { position: absolute; top: 0; left: 0; width: var(--left-column-width); }"), "desktop settings must overlay the row-edit card when open");
+
+console.log("PASS: compact settings layout keeps existing setting keys and removes profile/corner UI");

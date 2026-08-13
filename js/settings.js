@@ -28,10 +28,10 @@
       choices: [{ value: 1, label: "する" }, { value: 0, label: "しない" }]
     },
     {
-      key: "longBeatLyricPlacement", label: "長い拍の歌詞配置", prompt: "行修正で長い拍を指定したとき、拍の途中へ歌詞を配置する方法を選びます。", min: 0, max: 2, defaultValue: 1,
-      bounds: "移動しない / 前後に分ける（デフォルト）/ 均等に分ける",
-      examples: ["行修正 g（16）のとき：", "移動しない → [|][A][----][----][|][----][----]あいうえおかき[|]", "前後に分ける → [|][A][----]あいうえ[----][|][----][----]おかき[|]（デフォルト）", "均等に分ける → [|][A][----]あい[----]うえ[|][----]おか[----]き[|]"],
-      choices: [{ value: 0, label: "移動しない（従来どおり）" }, { value: 1, label: "前後に分ける（おすすめ）" }, { value: 2, label: "均等に分ける" }]
+      key: "longBeatLyricPlacement", label: "長い拍の歌詞配置", prompt: "行修正で長い拍を指定したとき、拍の途中へ歌詞を配置する方法を選びます。", min: 0, max: 4, defaultValue: 3,
+      bounds: "前に分ける / 前後に分ける / 均等に分ける / 後に分ける",
+      examples: ["行修正 g（16）のとき：", "前に分ける → [|][A]あいうえおかき[----][----][|][----][----][|]（デフォルト）", "前後に分ける → [|][A][----]あいうえ[----][|][----][----]おかき[|]", "均等に分ける → [|][A][----]あい[----]うえ[|][----]おか[----]き[|]", "後に分ける → [|][A][----][----][|][----][----]あいうえおかき[|]"],
+      choices: [{ value: 3, label: "前に分ける" }, { value: 1, label: "前後に分ける" }, { value: 2, label: "均等に分ける" }, { value: 4, label: "後に分ける" }]
     },
     {
       key: "shortFractionPrepose", label: "端数の歌詞前置き", prompt: "コード間の長さに端数ができたとき、歌詞を1文字手前へ移動します。", min: 0, max: 1, defaultValue: 1,
@@ -43,7 +43,7 @@
       key: "singleCharacterHyphens", label: "1文字歌詞のハイフン有無", prompt: "1文字だけで完結する小節のハイフンを、変換後に省略するか残すかを選びます。", min: 0, max: 1, defaultValue: 0,
       bounds: "省略する（デフォルト）/ 残す",
       examples: ["省略する → [|][A]あい[B]うえ[|][C#m7]お　[|]（デフォルト）", "残す → [|][A]あい[B]うえ[|][C#m7][----]お[----][|]"],
-      choices: [{ value: 0, label: "省略する（デフォルト）" }, { value: 1, label: "残す" }]
+      choices: [{ value: 0, label: "省略する" }, { value: 1, label: "残す" }]
     }
   ];
 
@@ -136,5 +136,22 @@
     return save(values, profile);
   }
 
-  window.CBFSettings = { definitions, defaults, profileDefaults, activeProfile, load, validate, save, setActiveProfile, resetActive, PROFILE_KEYS };
+  function inferProfileFromValues(values = {}) {
+    const measureCapacity = Number(values.measureCapacity);
+    const hyphenUnit = Number(values.hyphenUnit);
+    const hyphenSpacing = Number(values.hyphenSpacing);
+    if (measureCapacity === 6 && hyphenUnit === 3 && hyphenSpacing === 3) return "sixEight";
+    if (measureCapacity === 8 && hyphenUnit === 4 && hyphenSpacing === 4) return "fourFour";
+    if (measureCapacity === 6) return "sixEight";
+    if (measureCapacity === 8) return "fourFour";
+    return activeProfile();
+  }
+
+  function resetForValues(values) {
+    const profile = inferProfileFromValues(values);
+    localStorage.setItem(ACTIVE_PROFILE_KEY, profile);
+    return resetActive();
+  }
+
+  window.CBFSettings = { definitions, defaults, profileDefaults, activeProfile, inferProfileFromValues, load, validate, save, setActiveProfile, resetActive, resetForValues, PROFILE_KEYS };
 }());

@@ -11,12 +11,13 @@ const html = fs.readFileSync(path.join(root, "index.html"), "utf8");
 const entry = fs.readFileSync(path.join(root, "js", "entries", "main.js"), "utf8");
 
 assert(html.includes('id="display-settings-shell" class="display-settings-shell display-collapsed"'), "01 must render collapsed before JavaScript starts");
-assert(html.includes('id="settings-panel" class="settings-panel settings-closed"'), "03 must render collapsed by default");
-assert(html.includes('id="settings-example-toggle" class="text-button settings-example-toggle" type="button" aria-expanded="true" hidden'), "the usage-example toggle must be hidden before 03 is opened");
+assert(html.includes('id="settings-panel" class="settings-panel settings-compact settings-examples-closed"'), "02 must render open by default");
+assert(html.includes('id="settings-toggle" class="text-button" type="button" aria-expanded="true"'), "02 must expose its settings by default");
+assert(html.includes('id="settings-example-toggle" class="text-button settings-example-toggle" type="button" aria-expanded="false">説明・使用例▼'), "the explanation toggle must be visible while settings are open");
 assert(app.includes('setDisplaySettingsOpen(savedDisplayPanel === "true", false);'), "01 must stay collapsed when no preference has been saved");
 assert(app.includes('const LAYOUT_STORAGE_KEY = "chordWikiBarFormatter.editorLayout.v3";'), "the wider layout must not inherit incompatible saved dimensions");
 assert(app.includes('const DISPLAY_PANEL_STORAGE_KEY = "chordWikiBarFormatter.displayPanelOpen.v4";'), "the display popover must start collapsed once after moving into the 02 heading");
-assert(app.includes('setDisplaySettingsOpen(false);') && app.includes('setSettingsMode("closed");'), "layout reset must restore both control panels to the collapsed state");
+assert(app.includes('setDisplaySettingsOpen(false);') && app.includes('setSettingsMode("compact");'), "layout reset must restore the settings panel to its default open state");
 assert(app.includes('setSettingsExamplesOpen(true);'), "layout reset must reopen compact usage examples");
 assert(css.includes("--top-editor-height: clamp(210px, 24vh, 230px)"), "the source editor must use the compact default height");
 assert(css.includes("--left-column-width: clamp(220px, 28%, 360px)"), "the left control and row-edit column must stay usable on a narrow screen");
@@ -28,7 +29,10 @@ assert(css.includes(".correction-history-actions button { width: 100%; min-width
 assert(css.includes("border: 1px solid var(--line); border-radius: 4px;"), "row-edit action buttons must retain clear rounded outlines");
 assert(css.includes(".settings-column-resize-edge { top: 0; bottom: 0; }"), "the settings panel must expose a vertical resize edge");
 assert(css.includes(".settings-panel.settings-closed .settings-reset-button, .settings-panel.settings-closed .settings-footer-actions, .settings-panel.settings-closed .settings-example-toggle { display: none; }"), "a closed 03 panel must hide the usage-example control even before JavaScript initializes");
-assert(html.includes("style.css?v=20260810-107"));
+assert(css.includes(".settings-panel.settings-closed { height: auto; min-height: 0; overflow: visible; }"), "a closed settings panel must keep its heading and open button visible");
+assert(css.includes(".settings-panel.settings-closed .settings-shell { height: auto !important; overflow: hidden; }"), "a closed settings shell must not leak a saved height");
+assert(app.includes("elements.settingsShell.style.removeProperty(\"height\");"), "settings open/close must clear saved manual height");
+assert(html.includes("style.css?v=20260812-016"));
 assert(html.includes('type="module" src="/js/entries/main.js"'));
 assert(entry.includes('await import("../app.js")'));
 

@@ -5,7 +5,7 @@ const fs = require("fs");
 const path = require("path");
 
 const root = path.resolve(__dirname, "..");
-const windowScript = fs.readFileSync(path.join(root, "js", "committed-preview-window.js"), "utf8");
+const windowScript = fs.readFileSync(path.join(root, "js", "committed-preview-window.js"), "utf8").replace(/\r\n/g, "\n");
 const html = fs.readFileSync(path.join(root, "committed-preview.html"), "utf8");
 const css = fs.readFileSync(path.join(root, "style.css"), "utf8");
 const preview = require(path.join(root, "js", "chordwiki-preview.js"));
