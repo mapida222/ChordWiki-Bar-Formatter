@@ -1151,6 +1151,13 @@
     elements.removalTargets.disabled = !targetMode;
     elements.removalLinked.disabled = !targetMode;
   }
+  function shouldOmitPreviewLongRhythm() {
+    const mode = elements.lyricHyphenMode.value;
+    if (mode === "all" || mode === "minimize") return true;
+    if (mode !== "target") return false;
+    const targets = parseRemovalTargets(elements.removalTargets.value);
+    return Array.isArray(targets) && targets.includes(4);
+  }
   function transposedPreviewText() {
     if (!window.ChordWikiTranspose) return elements.finalOutput.value;
     return window.ChordWikiTranspose.transposeText(
@@ -1191,6 +1198,7 @@
   }
   function renderFinalPreview() {
     elements.finalPreview.classList.toggle("bars-through", elements.finalBarsThrough.checked);
+    elements.finalPreview.classList.toggle("omit-long-rhythm", shouldOmitPreviewLongRhythm());
     if (window.ChordWikiPreview) window.ChordWikiPreview.renderInto(elements.finalPreview, transposedPreviewText());
     publishScoreWindow();
   }
