@@ -19,7 +19,7 @@ assert(app.includes('renderSettings(loadedSettings);') && app.indexOf('renderSet
 assert(app.includes('elements.settingsBody.addEventListener("input"'));
 assert(app.includes('class="setting-help context-help"'));
 assert(app.includes('positionSettingHelpPopover') && app.includes('popover.style.position = "fixed"'), "初期設定のヘルプは画面前面に固定表示する");
-assert(app.includes('document.addEventListener("pointerdown", (event) => {') && app.includes('if (!event.target.closest(".context-help")) closeContextHelp();\n  }, true);'), "ヘルプは設定枠内でイベントが止められても別の場所をクリックすると閉じる");
+assert(app.includes('document.addEventListener("pointerdown", (event) => {') && app.includes('if (!event.target.closest(".context-help")) closeContextHelp();') && app.includes('}, true);'), "ヘルプは設定枠内でイベントが止められても別の場所をクリックすると閉じる");
 assert(app.includes('const keepPinned = pinned || (openContextHelpButton === button && button.dataset.pinned === "true");'), "ホバータイマーはクリック固定状態を解除しない");
 assert(app.includes('if (button.dataset.pinned !== "true") showContextHelp(button);'), "固定中のヘルプをホバー処理で開き直さない");
 assert(app.includes('function toggleContextHelp(button)') && app.includes('if (button.dataset.pinned === "true") closeContextHelp(button);'), "同じヘルプボタンの再クリックで閉じる");
