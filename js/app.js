@@ -17,27 +17,60 @@
   let contextHelpHoverTimer;
   let openContextHelpButton = null;
   function closeContextHelp(button = openContextHelpButton) {
+    clearTimeout(contextHelpHoverTimer);
     if (!button) return;
     const popover = document.getElementById(button.getAttribute("aria-controls"));
-    if (popover) popover.hidden = true;
+    if (popover) {
+      popover.hidden = true;
+      if (button.closest(".setting-help")) {
+        popover.style.position = "";
+        popover.style.top = "";
+        popover.style.left = "";
+        popover.style.right = "";
+      }
+    }
     button.setAttribute("aria-expanded", "false");
     button.dataset.pinned = "false";
     if (openContextHelpButton === button) openContextHelpButton = null;
+  }
+  function positionSettingHelpPopover(button, popover) {
+    if (!button.closest(".setting-help")) return;
+    const buttonRect = button.getBoundingClientRect();
+    const margin = 8;
+    const width = Math.min(270, window.innerWidth - (margin * 2));
+    const left = Math.max(margin, Math.min(window.innerWidth - width - margin, buttonRect.right - width));
+    popover.style.position = "fixed";
+    popover.style.left = `${left}px`;
+    popover.style.right = "auto";
+    popover.style.top = `${buttonRect.bottom + 5}px`;
+    const popoverRect = popover.getBoundingClientRect();
+    if (popoverRect.bottom > window.innerHeight - margin && buttonRect.top > popoverRect.height + margin) {
+      popover.style.top = `${buttonRect.top - popoverRect.height - 5}px`;
+    }
   }
   function showContextHelp(button, pinned = false) {
     if (openContextHelpButton && openContextHelpButton !== button) closeContextHelp(openContextHelpButton);
     const popover = document.getElementById(button.getAttribute("aria-controls"));
     if (!popover) return;
+    const keepPinned = pinned || (openContextHelpButton === button && button.dataset.pinned === "true");
     popover.hidden = false;
+    positionSettingHelpPopover(button, popover);
     button.setAttribute("aria-expanded", "true");
-    button.dataset.pinned = String(pinned);
+    button.dataset.pinned = String(keepPinned);
     openContextHelpButton = button;
+  }
+  function toggleContextHelp(button) {
+    clearTimeout(contextHelpHoverTimer);
+    if (button.dataset.pinned === "true") closeContextHelp(button);
+    else showContextHelp(button, true);
   }
   contextHelpButtons.forEach((button) => {
     const wrapper = button.closest(".context-help");
     wrapper.addEventListener("pointerenter", () => {
       clearTimeout(contextHelpHoverTimer);
-      contextHelpHoverTimer = setTimeout(() => showContextHelp(button), 650);
+      contextHelpHoverTimer = setTimeout(() => {
+        if (button.dataset.pinned !== "true") showContextHelp(button);
+      }, 650);
     });
     wrapper.addEventListener("pointerleave", () => {
       clearTimeout(contextHelpHoverTimer);
@@ -45,9 +78,7 @@
     });
     button.addEventListener("click", (event) => {
       event.stopPropagation();
-      const pinned = button.dataset.pinned === "true";
-      if (pinned) closeContextHelp(button);
-      else showContextHelp(button, true);
+      toggleContextHelp(button);
     });
   });
   document.addEventListener("click", (event) => {
@@ -55,6 +86,9 @@
     if (!elements.displaySettingsShell.classList.contains("display-collapsed")
         && !event.target.closest(".font-panel") && !event.target.closest("#display-settings-toggle")) setDisplaySettingsOpen(false);
   });
+  document.addEventListener("pointerdown", (event) => {
+    if (!event.target.closest(".context-help")) closeContextHelp();
+  }, true);
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape") {
       closeContextHelp();
@@ -79,7 +113,18 @@
     "[|][E]さしす[Am]せそ　たち[|][F][---]つて[D/F#][-]と[----][|]",
     "なに[|][Gsus4]ぬねの　は[|][G]ひふ[G#dim]へほ[|]"
   ].join("\n");
-  if (window.ChordWikiPreview) window.ChordWikiPreview.renderInto(elements.helpExamplePreview, HELP_EXAMPLE_PREVIEW_TEXT);
+  function renderHelpMiniScores() {
+    if (!window.ChordWikiPreview) return;
+    document.querySelectorAll(".help-capability-example").forEach((example) => {
+      const preview = example.querySelector(".help-rendered-pair > .help-mini-score:last-child");
+      const output = example.querySelector(".help-result-chordpro, .help-chordpro-pair > code:last-child");
+      if (preview && output) window.ChordWikiPreview.renderInto(preview, output.textContent);
+    });
+  }
+  if (window.ChordWikiPreview) {
+    window.ChordWikiPreview.renderInto(elements.helpExamplePreview, HELP_EXAMPLE_PREVIEW_TEXT);
+    renderHelpMiniScores();
+  }
   let toastTimer;
   let conversionTimer;
   let pendingCorrectionRefresh = false;
@@ -728,17 +773,23 @@
     shell.style.setProperty("--correction-scrollbar-width", `${scrollbarWidth}px`);
   }
   function syncCorrectionModeScroll(scrollTop = elements.correction?.scrollTop || 0) {
+    elements.correctionShell?.style.setProperty("--correction-row-scroll-top", `${scrollTop}px`);
     if (!elements.correctionModes) return;
     elements.correctionModes.style.setProperty("--correction-mode-scroll-top", `${scrollTop}px`);
+    elements.correctionGrid?.style.setProperty("--correction-grid-scroll-top", `${scrollTop}px`);
   }
   function updateLineNumbers(textarea, gutter) {
     const count = Math.max(1, lineCount(textarea.value));
     gutter.innerHTML = Array.from({ length: count }, (_, index) => `<span>${index + 1}</span>`).join("");
-    gutter.scrollTop = textarea.scrollTop;
+    if (textarea === elements.correction) {
+      gutter.scrollTop = 0;
+      syncCorrectionModeScroll(textarea.scrollTop);
+    } else {
+      gutter.scrollTop = textarea.scrollTop;
+    }
     if (textarea === elements.correction && elements.correctionGrid) {
       syncCorrectionScrollbarWidth();
       elements.correctionGrid.innerHTML = Array.from({ length: count }, () => '<span></span><span></span>').map((cells) => `<div class="correction-grid-row">${cells}</div>`).join("");
-      elements.correctionGrid.scrollTop = textarea.scrollTop;
     }
     updateEditorHighlight(textarea);
     applyLinkedPosition();
@@ -1865,7 +1916,7 @@
     const button = event.target.closest?.(".setting-help-button");
     if (!button) return;
     event.stopPropagation();
-    showContextHelp(button, true);
+    toggleContextHelp(button);
   });
   elements.settingsBody.addEventListener("click", (event) => {
     const button = event.target.closest("[data-setting-cycle]");
@@ -2292,7 +2343,7 @@
     );
     if (!edit) return false;
     if (edit.error === "duplicate-bar-anchor") {
-      notify("行修正の小節頭記号|は1行に1個だけ指定できます。", true);
+      notify("行修正の小節頭記号|または)は1行に1個だけ指定できます。", true);
       return true;
     }
     if (edit.error === "invalid-sync-boundary") {
@@ -3552,7 +3603,6 @@
       : (localStorage.getItem(LEGACY_HIDE_LYRIC_HYPHENS_STORAGE_KEY) === "true" ? "minimize" : "target");
     updateLyricHyphenControls();
   }
-  showScorePreview();
   {
     const savedDisplayPanel = localStorage.getItem(DISPLAY_PANEL_STORAGE_KEY);
     setDisplaySettingsOpen(savedDisplayPanel === "true", false);
@@ -3560,10 +3610,18 @@
   restoreLayout();
   renderSettings(loadedSettings);
   updateSettingsProfileUI();
+  showScorePreview();
   updateCount(elements.input, elements.inputCount);
   updateCount(elements.output, elements.outputCount);
   updateCount(elements.committedOutput, elements.committedOutputCount);
   let syncingScroll = false;
+  const suppressedScrollEditors = new WeakMap();
+  const suppressNextScrollEvent = (editor, top, left) => {
+    if (!editor || (editor.scrollTop === top && editor.scrollLeft === left)) return;
+    suppressedScrollEditors.set(editor, { top, left });
+    editor.scrollTop = top;
+    editor.scrollLeft = left;
+  };
   const scrollEditors = [elements.correction, elements.input, elements.output, elements.finalOutput];
   window.addEventListener("resize", syncCorrectionScrollbarWidth);
   [
@@ -3580,30 +3638,43 @@
       updateEditorHighlight(editor);
     });
     editor.addEventListener("scroll", () => {
-      gutter.scrollTop = editor.scrollTop;
-      if (editor === elements.correction) syncCorrectionModeScroll(editor.scrollTop);
-      if (editor === elements.correction && elements.correctionGrid) elements.correctionGrid.scrollTop = editor.scrollTop;
+      const suppressedPosition = suppressedScrollEditors.get(editor);
+      const suppressed = suppressedPosition
+        && suppressedPosition.top === editor.scrollTop
+        && suppressedPosition.left === editor.scrollLeft;
+      if (suppressed) suppressedScrollEditors.delete(editor);
+      if (editor === elements.correction) {
+        gutter.scrollTop = 0;
+        syncCorrectionModeScroll(editor.scrollTop);
+      } else {
+        gutter.scrollTop = editor.scrollTop;
+      }
+      if (editor === elements.correction && elements.correctionGrid) {
+        elements.correctionGrid.style.setProperty("--correction-grid-scroll-top", `${editor.scrollTop}px`);
+      }
       syncHighlightScroll(editor);
       if ([elements.correction, elements.output].includes(editor) && !mobileProgrammaticScroll && !syncingScroll && !restoringPasteScroll && window.matchMedia("(max-width: 699px)").matches) mobileLinkedScrollPaused = true;
-      if (syncingScroll || restoringPasteScroll) return;
+      if (suppressed || syncingScroll || restoringPasteScroll) return;
       const correctionResultPair = [elements.correction, elements.output];
       const syncTargets = scrollSyncEnabled
         ? editor === elements.input
-          ? [elements.input, elements.output, elements.finalOutput]
+          ? [elements.input, elements.output, elements.correction, elements.finalOutput]
           : scrollEditors
         : correctionResultPair.includes(editor) ? correctionResultPair : [editor];
       if (syncTargets.length === 1) return;
       syncingScroll = true;
       syncTargets.forEach((other) => {
-        other.scrollTop = editor.scrollTop;
-        other.scrollLeft = editor.scrollLeft;
-        gutterByEditor.get(other).scrollTop = editor.scrollTop;
-        if (other === elements.correction) syncCorrectionModeScroll(editor.scrollTop);
+        suppressNextScrollEvent(other, editor.scrollTop, editor.scrollLeft);
+        if (other === elements.correction) {
+          gutterByEditor.get(other).scrollTop = 0;
+          syncCorrectionModeScroll(editor.scrollTop);
+        } else {
+          gutterByEditor.get(other).scrollTop = editor.scrollTop;
+        }
         syncHighlightScroll(other);
       });
       if (scrollSyncEnabled && elements.finalOutputShell.classList.contains("preview-mode")) {
-        elements.finalPreview.scrollTop = editor.scrollTop;
-        elements.finalPreview.scrollLeft = editor.scrollLeft;
+        suppressNextScrollEvent(elements.finalPreview, editor.scrollTop, editor.scrollLeft);
       }
       requestAnimationFrame(() => { syncingScroll = false; });
     });
@@ -3615,13 +3686,21 @@
     updateEditorHighlight(elements.committedOutput);
   });
   elements.finalPreview.addEventListener("scroll", () => {
-    if (syncingScroll || restoringPasteScroll || !scrollSyncEnabled || !elements.finalOutputShell.classList.contains("preview-mode")) return;
+    const suppressedPosition = suppressedScrollEditors.get(elements.finalPreview);
+    const suppressed = suppressedPosition
+      && suppressedPosition.top === elements.finalPreview.scrollTop
+      && suppressedPosition.left === elements.finalPreview.scrollLeft;
+    if (suppressed) suppressedScrollEditors.delete(elements.finalPreview);
+    if (suppressed || syncingScroll || restoringPasteScroll || !scrollSyncEnabled || !elements.finalOutputShell.classList.contains("preview-mode")) return;
     syncingScroll = true;
     scrollEditors.forEach((editor) => {
-      editor.scrollTop = elements.finalPreview.scrollTop;
-      editor.scrollLeft = elements.finalPreview.scrollLeft;
-      gutterByEditor.get(editor).scrollTop = elements.finalPreview.scrollTop;
-      if (editor === elements.correction) syncCorrectionModeScroll(elements.finalPreview.scrollTop);
+      suppressNextScrollEvent(editor, elements.finalPreview.scrollTop, elements.finalPreview.scrollLeft);
+      if (editor === elements.correction) {
+        gutterByEditor.get(editor).scrollTop = 0;
+        syncCorrectionModeScroll(elements.finalPreview.scrollTop);
+      } else {
+        gutterByEditor.get(editor).scrollTop = elements.finalPreview.scrollTop;
+      }
       syncHighlightScroll(editor);
     });
     requestAnimationFrame(() => { syncingScroll = false; });
