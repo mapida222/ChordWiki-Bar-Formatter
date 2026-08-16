@@ -632,14 +632,15 @@
 
   function correctionBarAnchor(code) {
     const value = String(code || "").trim();
-    const first = value.indexOf("|");
-    if (first < 0) return null;
-    if (first !== value.lastIndexOf("|")) return { ok: false, message: "行修正の小節頭記号|は1行に1個だけ指定してください。" };
+    const anchors = [...value.matchAll(/[|)]/g)];
+    if (!anchors.length) return null;
+    if (anchors.length !== 1) return { ok: false, message: "行修正の小節頭記号|または)は1行に1個だけ指定してください。" };
+    const first = anchors[0].index;
     const before = value.slice(0, first);
     const after = value.slice(first + 1);
     const precedingUnits = before ? beatCodeUnits(before) : [];
     const followingUnits = after ? beatCodeUnits(after) : null;
-    if (!precedingUnits?.length || !followingUnits?.length) return { ok: false, message: "|の前後に、コードへ適用する長さを指定してください。" };
+    if (!precedingUnits?.length || !followingUnits?.length) return { ok: false, message: "|または)の前後に、コードへ適用する長さを指定してください。" };
     return { ok: true, forcedBarBeforeSlot: precedingUnits.length, fullCode: before + after };
   }
 

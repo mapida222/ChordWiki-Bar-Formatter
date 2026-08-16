@@ -58,7 +58,11 @@ assert(css.includes('.correction-column-headings { grid-column: 1 / -1; grid-row
 assert(html.includes('id="correction-grid" class="correction-grid"'), "row-edit needs a scrollable row grid overlay");
 assert(css.includes('.correction-grid { position: absolute;') && css.includes('.correction-grid-row { display: grid;'), "row-edit grid must be made of row-sized grid elements");
 assert(css.includes('top: calc(1.45em + 14px)') && css.includes('--correction-row-height: calc(var(--editor-font-size) * 1.65)'), "row-edit grid must share the text row origin and height");
-assert(app.includes('elements.correctionGrid.scrollTop = textarea.scrollTop;'), "row-edit grid must follow the correction textarea scroll position");
+assert(css.includes('--correction-grid-scroll-top: 0px') && css.includes('transform: translateY(calc(-1 * var(--correction-grid-scroll-top)))'), "row-edit grid must move by the exact correction viewport offset");
+assert(css.includes('--correction-row-scroll-top: 0px') && css.includes('.correction-card .line-numbers span { transform: translateY(calc(-1 * var(--correction-row-scroll-top)))'), "row-edit columns must share one row scroll offset");
+assert(app.includes('syncCorrectionModeScroll(textarea.scrollTop);'), "row-edit grid and columns must follow the correction textarea scroll position");
+assert(app.includes('gutterByEditor.get(other).scrollTop = 0;'), "row-edit line numbers must stay in the shared row layer");
+assert(app.includes('elements.correctionGrid.style.setProperty("--correction-grid-scroll-top", `${editor.scrollTop}px`);'), "row-edit grid must receive the correction scroll offset");
 assert(css.includes('.correction-card .line-numbers { text-align: center; }'));
 assert(css.includes('grid-template-columns: max-content minmax(0, 1fr) var(--correction-mode-width) var(--correction-scrollbar-width);'));
 assert(css.includes('.correction-card .editor-text-layer textarea, .correction-card .editor-highlight { padding-right: calc(var(--correction-mode-width) + var(--correction-scrollbar-width)); text-align: left; }'));

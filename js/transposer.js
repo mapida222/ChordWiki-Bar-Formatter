@@ -241,6 +241,10 @@
   function transposeText(text, semitones, preference = "preserve", theoretical = false, sectionSettings = [], doubleSharpStyle = "x") {
     const amount = normalizeSemitones(semitones);
     const source = String(text || "");
+    // The preview is initialized before the first conversion. In that state
+    // the result is intentionally empty, so there is no key section to use.
+    // Return early instead of trying to read sections[0].index.
+    if (!source) return "";
     const sections = analyzeKeySections(source);
     let lineIndex = 0;
     let sectionIndex = -1;

@@ -88,6 +88,7 @@ assert.deepStrictEqual(CBFCorrectionInput.boundarySymbolEdit("88888", 5, "x"), {
 assert.deepStrictEqual(CBFCorrectionInput.boundarySymbolEdit("88888", 2, "^"), { start: 2, end: 2, replacement: "^", caret: 3 }, "accent inserts at the clicked text boundary");
 assert.deepStrictEqual(CBFCorrectionInput.boundarySymbolEdit("88888", 2, "*"), { start: 2, end: 2, replacement: "*", caret: 3 }, "half-value marker inserts at the clicked text boundary");
 assert.deepStrictEqual(CBFCorrectionInput.boundarySymbolEdit("88888", 2, "|"), { start: 2, end: 2, replacement: "|", caret: 3 }, "bar anchor inserts at the clicked text boundary");
+assert.deepStrictEqual(CBFCorrectionInput.boundarySymbolEdit("88888", 2, ")"), { start: 2, end: 2, replacement: ")", caret: 3 }, "pickup boundary inserts at the clicked text boundary");
 assert.deepStrictEqual(CBFCorrectionInput.boundarySymbolEdit("88888", 2, "/"), { start: 2, end: 2, replacement: "|", caret: 3 }, "slash is an alias for the bar anchor");
 assert.deepStrictEqual(CBFCorrectionInput.boundarySymbolEdit("88s888", 3, "s"), { start: 2, end: 3, replacement: "", caret: 2 }, "sync marker toggles off from either side of its boundary");
 assert.strictEqual(CBFCorrectionInput.needsInsertedWhiteNoteDuration("4@44", 2, 4, 0), true, "a new white note may insert its duration before later slots");
@@ -105,6 +106,7 @@ assert.strictEqual(CBFCorrectionInput.normalizeLine("4s44s44", 4), "4s44s44", "v
 assert.strictEqual(CBFCorrectionInput.normalizeLine("88888", 4), "88888", "an extra numeric value must not be deleted while typing");
 assert.strictEqual(CBFCorrectionInput.normalizeLine("^8@4*x", 1), "^8@4*x", "all supported modifiers must remain editable regardless of the automatic count");
 assert.strictEqual(CBFCorrectionInput.normalizeLine("00|26", 4), "00|26", "the explicit measure-head marker must survive normalization");
+assert.strictEqual(CBFCorrectionInput.normalizeLine("2)44", 3), "2)44", "the explicit pickup boundary must survive normalization");
 
 const anchoredSource = "[|][C][----]前[D][----][|][E][----]後[F][----][|]";
 const anchored = CBFConverter.renderWithBeatCode(anchoredSource, "00|26", settings);

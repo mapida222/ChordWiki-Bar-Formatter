@@ -3,7 +3,7 @@
 
   const GROUP_SOURCE = "\\?|@|[x\\^*]*[0-9a-i](?:[x*](?=@|\\?|s|[x\\^*]*[0-9a-i]|$))?";
   const GROUP_PATTERN = new RegExp(GROUP_SOURCE, "gi");
-  const PART_PATTERN = new RegExp(`${GROUP_SOURCE}|\\*s|s|\\|`, "gi");
+  const PART_PATTERN = new RegExp(`${GROUP_SOURCE}|\\*s|s|[\\|)]`, "gi");
   const BEAT_CHARACTER_PATTERN = /[0-9a-i@?]/gi;
 
   function groups(line) {
@@ -28,7 +28,7 @@
         for (let index = 0; index < slotCount; index += 1) flattened.push(null);
         return;
       }
-      const boundarySymbols = (value) => (String(value || "").match(/\*s|s|\|/gi) || []).join("");
+      const boundarySymbols = (value) => (String(value || "").match(/\*s|s|[\|)]/gi) || []).join("");
       matches.forEach((match, index) => {
         const previous = matches[index - 1];
         let separatorBefore = previous
@@ -129,7 +129,7 @@
         : character;
       const symbol = ascii.toLowerCase();
       if (symbol === "/" || symbol === "\\") return "|";
-      return /^[x\^*s|]$/.test(symbol) ? symbol : "";
+      return /^[x\^*s|)]$/.test(symbol) ? symbol : "";
     });
     return normalized.every(Boolean) ? normalized.join("") : "";
   }
@@ -155,7 +155,7 @@
     // A user may add a chord in the rendered text first and then add its row-edit
     // value, or may temporarily type an incomplete expression while editing.
     // Validation belongs to conversion, not to the textarea's input handler.
-    return normalizedWidth.replace(/[\\/]/g, "|").replace(/[^0-9a-isn@?x\^*|]/gi, "").toLowerCase();
+    return normalizedWidth.replace(/[\\/]/g, "|").replace(/[^0-9a-isn@?x\^*|)]/gi, "").toLowerCase();
   }
 
   function modifierInsertionAtLineEnd(line, key) {
@@ -207,10 +207,10 @@
   function boundarySymbolEdit(line, column, key) {
     const text = String(line || "");
     const symbol = String(key || "").toLowerCase() === "/" ? "|" : String(key || "").toLowerCase();
-    if (!["x", "^", "*", "s", "|"].includes(symbol)) return null;
+    if (!["x", "^", "*", "s", "|", ")"].includes(symbol)) return null;
     const caret = Math.max(0, Math.min(text.length, Number(column) || 0));
-    if (symbol === "|") {
-      if (text.includes("|")) return { error: "duplicate-bar-anchor" };
+    if (symbol === "|" || symbol === ")") {
+      if (text.includes("|") || text.includes(")")) return { error: "duplicate-bar-anchor" };
       return { start: caret, end: caret, replacement: symbol, caret: caret + 1 };
     }
     if (symbol === "s") {

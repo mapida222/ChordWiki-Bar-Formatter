@@ -44,6 +44,19 @@ if (accentedFractionalLyric.output !== "[|][G][>--]闇[D][>]に[----]なる[|]" 
   failures += 1;
   console.error(`FAIL accented fractional lyric prepose\nactual: ${accentedFractionalLyric.output}\ncorrection: ${accentedFractionalLyric.corrections}`);
 }
+const longBeatSpacingPatterns = [
+  ["79", "[A]あ[B]い", "[|][A][----]あ[---][B][-]い[|][----][----][|]"],
+  ["62", "[A]あ[B]い", "[|][A][----]あ[--][B][--]い[|]"],
+  ["547", "[A]あ[B]い[C]う", "[|][A][----]あ[-][B][---]い[|][-][C][---]う[----][|]"]
+];
+const longBeatSettings = { ...settings, longBeatLyricPlacement: 3 };
+longBeatSpacingPatterns.forEach(([code, input, expected]) => {
+  const actual = CBFConverter.convertChordText(input, longBeatSettings, [code]).output;
+  if (actual !== expected) {
+    failures += 1;
+    console.error(`FAIL long-beat spacing ${code}\nexpected: ${expected}\nactual: ${actual}`);
+  }
+});
 const fractionalLyricPatterns = [
   ["accent-free one-beat fraction", "35", settings, "になる", "[|][G][---]闇[D][-]に[----]なる[|]"],
   ["two-beat fraction with two accents", "^2^^6", settings, "になる", "[|][G][>-]闇[D][>>]に[----]なる[|]"],

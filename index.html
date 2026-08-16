@@ -15,7 +15,7 @@
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4561699699325989" crossorigin="anonymous"></script>
   <title>ChordWiki Bar Formatter ～演奏しやすいリズム付きコード譜へ～</title>
   <link rel="icon" type="image/png" href="logo/260810_favicon_touka.png">
-  <link rel="stylesheet" href="style.css?v=20260812-016">
+  <link rel="stylesheet" href="style.css?v=20260817-003">
   <link rel="stylesheet" href="style-row-edit-test.css?v=20260801-3">
 </head>
 <body>
@@ -197,6 +197,10 @@
               <details class="guide-item">
                 <summary><code class="guide-input">*s</code><span>=：イコールシンコペーション</span><span class="guide-item-arrow" aria-hidden="true">▼</span></summary>
                 <div class="guide-item-detail"><p><strong class="guide-detail-label">意味</strong><span class="guide-detail-value">次のコードを<code class="guide-output">=</code>1個分早く鳴らします。小節線の位置は動かしません。行頭にも入力できます。</span></p><p><strong class="guide-detail-label">結果</strong><span class="guide-detail-value"><code class="guide-output">=|----</code></span></p><p><strong class="guide-detail-label">入力→結果</strong><span class="guide-detail-value"><code class="guide-input">*s44*s44</code><span class="guide-arrow">→</span><code class="guide-output">[A]=|----[Bm7]---=[C#m7]=|----[D]----|</code></span></p></div>
+              </details>
+              <details class="guide-item">
+                <summary><code class="guide-input">)</code><span>アウフタクト終了を指定</span><span class="guide-item-arrow" aria-hidden="true">▼</span></summary>
+                <div class="guide-item-detail"><p class="guide-detail-heading">文字列説明：</p><p><strong class="guide-detail-label">意味</strong><span class="guide-detail-value">アウフタクト部分の指定の後ろへ<code class="guide-input">)</code>を置き、そこから通常小節へ切り替えます。アウフタクト内にコードが複数ある場合は、コードごとの指定を続けて書きます。</span></p><p><strong class="guide-detail-label">入力→結果</strong><span class="guide-detail-value"><code class="guide-input">22)44</code><span class="guide-arrow">→</span><code class="guide-output">[C][--][G/B][--][|][A][----][Bm][----][|]</code></span></p></div>
               </details>
               <details class="guide-item">
                 <summary><code class="guide-input">| /</code><span>小節頭を指定</span><span class="guide-item-arrow" aria-hidden="true">▼</span></summary>
@@ -555,7 +559,8 @@
               <p><strong>ハイフン食い</strong>は<code>s</code>、<strong>イコール食い</strong>は<code>*s</code>を、食い込む位置へ入力します。</p>
               <div class="help-capability-example help-task-capability-example"><div class="help-rendered-pair"><span class="help-mini-score"><i>C　　 Am</i><span>あいう　えお</span></span><span class="help-preview-arrow">➜</span><span class="help-mini-score"><i>| C ---　Am - ---- |</i><span>あいう<span class="help-preview-second-lyric">え　お</span></span></span></div><span class="help-operation help-operation-only"><b>s</b><em>ハイフン食い</em></span><code class="help-result-chordpro">[|][C][---]あいう[Am][-]え[----]お[|]</code></div>
               <div class="help-capability-example help-task-capability-example"><div class="help-rendered-pair"><span class="help-mini-score"><i>C　　 Am</i><span>あいう　えお</span></span><span class="help-preview-arrow">➜</span><span class="help-mini-score"><i>| C ---=　Am = ---- |</i><span>あいう<span class="help-preview-second-lyric">え　お</span></span></span></div><span class="help-operation help-operation-only"><b>*s</b><em>イコール食い</em></span><code class="help-result-chordpro">[|][C][---=]あいう[Am][=]え[----]お[|]</code></div>
-              <p class="help-mini-note">イコール食いは <code>*s</code> で同じように指定します。</p>
+              <div class="help-capability-example help-task-capability-example"><div class="help-rendered-pair"><span class="help-mini-score"><i>C　 Am　 G</i><span>あ　いう　えお</span></span><span class="help-preview-arrow">➜</span><span class="help-mini-score"><i>C -- | Am ----　G ---- |</i><span>あ　　いう　　えお</span></span></div><span class="help-operation help-operation-only"><b>)</b><em>アウフタクト</em></span><code class="help-result-chordpro">[C][--]あ[|][Am][----]いう[G][----]えお[|]</code></div>
+              <p class="help-mini-note">アウフタクトは、短い冒頭部分の指定の後ろへ <code>)</code> を入力し、そこから通常小節へ切り替えます。</p>
             </article>
             <article class="help-task-card">
               <header><span>4</span><div><h4>自動／修正／固定を切り替える</h4><strong>対象枠：03. 行修正、04. 変換後</strong></div></header>
