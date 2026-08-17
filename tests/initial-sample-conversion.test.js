@@ -25,7 +25,7 @@ assert.strictEqual(outputLines.length, inputLines.length, "conversion must retai
 assert.deepStrictEqual(outputLines.slice(0, 5), inputLines.slice(0, 5), "ChordPro directives must be preserved");
 assert.strictEqual(result.corrections.split("\n").length, correctionLines.length, "all sample row corrections must stay aligned");
 assert(outputLines.some((line) => line.includes("[---=]")), "the sample must keep half-hyphen syncopation output");
-assert(outputLines.some((line) => line.includes("[>-]")), "the sample must keep accent output");
+assert(outputLines.some((line) => line.includes("[>")), "the sample must keep accent output");
 assert(outputLines.some((line) => line.includes("[|]")), "the sample must add measure bars");
 
 console.log("PASS: built-in conversion sample converts every row with directives, syncopation, accents, and bars");

@@ -98,7 +98,7 @@ assert(html.includes("譜面に近い形で確認します。<br>移調、音名
 assert(html.includes("初期設定値を使う"));
 assert(app.includes("LYRIC_HYPHEN_MODE_STORAGE_KEY"));
 assert(app.includes('elements.lyricHyphenMode.addEventListener("change"'));
-assert(app.includes("function shouldOmitPreviewLongRhythm()") && app.includes('elements.finalPreview.classList.toggle("omit-long-rhythm", shouldOmitPreviewLongRhythm());'), "譜面プレビューも4ハイフン省略設定に従う");
+assert(app.includes('elements.finalPreview.classList.remove("omit-long-rhythm");'), "譜面プレビューは最終出力の省略結果をそのまま表示する");
 assert(app.includes("updateLyricHyphenControls"));
 assert(!html.includes('id="hide-lyric-hyphens"'));
 assert(css.includes("gap: 0 10px; align-items: start;"));

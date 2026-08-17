@@ -256,11 +256,68 @@ if (shortFraction.output !== "[|][C][---][G][-][----][|]" || shortFraction.corre
   failures += 1;
   console.error(`FAIL short fraction prepose\nexpected: [|][C][---][G][-][----][|]\nactual: ${shortFraction.output}`);
 }
+const fractionalLyricPreposeAccepted = CBFConverter.convertChordText("[C]あいうえ[G]おかき", settings, ["53"]);
+if (fractionalLyricPreposeAccepted.output !== "[|][C][----]あいう[-]え[G][---]おかき[|]") {
+  failures += 1;
+  console.error(`FAIL adopted 53 lyric prepose\nactual: ${fractionalLyricPreposeAccepted.output}`);
+}
+const overflow335 = CBFConverter.convertChordText("[C]あいう[G]え[Am]おかき", settings, ["335"]);
+if (overflow335.output !== "[|][C][---]あいう[G][---]え[Am][--]おかき[|][---]") {
+  failures += 1;
+  console.error(`FAIL adopted 335 overflow bar\nactual: ${overflow335.output}`);
+}
+const singleChordPickup = CBFConverter.convertChordText("[C]あいう", settings, ["1/4"]);
+if (singleChordPickup.output !== "[C][-]あ[|][----]いう" || singleChordPickup.correctionErrors.length) {
+  failures += 1;
+  console.error(`FAIL single-chord pickup tail\nactual: ${singleChordPickup.output}`);
+}
+const twoBeatSingleChordPickup = CBFConverter.convertChordText("[C]あいうえお", settings, ["2/4"]);
+if (twoBeatSingleChordPickup.output !== "[C][--]あ[|][----]いうえお" || twoBeatSingleChordPickup.correctionErrors.length) {
+  failures += 1;
+  console.error(`FAIL two-beat single-chord pickup tail\nactual: ${twoBeatSingleChordPickup.output}`);
+}
+const multiAnchorPickup = CBFConverter.convertChordText("[C]あいう[G]え[C]おかき[G]くけこ", settings, ["2/422/44"]);
+if (multiAnchorPickup.output !== "[C][--]あ[|][----]いう[G][--]え[C][--]お[|][----]かき[G][----]くけこ[|]" || multiAnchorPickup.correctionErrors.length) {
+  failures += 1;
+  console.error(`FAIL multi-anchor pickup continuation\nactual: ${multiAnchorPickup.output}`);
+}
+const accentedMultiAnchor = CBFConverter.convertChordText("[C]あ[G]い[Am]う", settings, ["4/^3^3^^2/2"]);
+if (accentedMultiAnchor.correctionErrors.length || accentedMultiAnchor.output !== "[C][----]あ[|][>--][G][>--]い[Am][>>]う[|][--][|]") {
+  failures += 1;
+  console.error(`FAIL accented multi-anchor correction\nactual: ${accentedMultiAnchor.output}\nerrors: ${JSON.stringify(accentedMultiAnchor.correctionErrors)}`);
+}
+const authoredBarMultiAnchor = CBFConverter.convertChordText("[|][F]細かい部分は[G]手動修正が[|][E7]必[E7/G#]要[|][Am7]です🙏🏻[|]", settings, ["4/^3^3^2/44"]);
+if (authoredBarMultiAnchor.output !== "[F][----]細かい部分は[|][G][>--]手動修正が[E7][>--]必[E7/G#][>-]要[|][----]です🙏🏻[Am7][----][|]" || authoredBarMultiAnchor.correctionErrors.length) {
+  failures += 1;
+  console.error(`FAIL authored-bar multi-anchor correction\nactual: ${authoredBarMultiAnchor.output}`);
+}
+const authoredBarPickupOnly = CBFConverter.convertChordText("[|][F]細かい部分は[G]手動修正が[|][E7]必[E7/G#]要[|][Am7]です🙏🏻[|]", settings, ["4/^3^3^2/4"]);
+if (authoredBarPickupOnly.output !== "[F][----]細かい部分は[|][G][>--]手動修正が[E7][>--]必[E7/G#][>-]要[|][----]です🙏🏻[Am7][----][|]" || authoredBarPickupOnly.correctionErrors.length) {
+  failures += 1;
+  console.error(`FAIL authored-bar pickup-only continuation\nactual: ${authoredBarPickupOnly.output}`);
+}
+const completedAuthoredBarPickup = CBFConverter.renderCompletedOutput(authoredBarPickupOnly.output, [4], 4).output;
+if (completedAuthoredBarPickup !== "[F][----]細かい部分は[|][G][>--]手動修正が[E7][>--]必[E7/G#][>-]要[|][----]です🙏🏻[Am7][----][|]") {
+  failures += 1;
+  console.error(`FAIL completed authored-bar pickup must retain leading duration\nactual: ${completedAuthoredBarPickup}`);
+}
 const automaticWhiteNote = CBFConverter.convertChordText("[C][○]", settings, []);
 const whiteNote = CBFConverter.convertChordText("[C][○]", settings, ["@8"]);
 if (automaticWhiteNote.corrections !== "@8" || whiteNote.output !== "[|][C][○][----][----][|]" || whiteNote.corrections !== "@8") {
   failures += 1;
   console.error(`FAIL white-note correction\nexpected: [|][C][○][----][----][|]\nactual: ${whiteNote.output}\nautomatic correction: ${automaticWhiteNote.corrections}\ncorrection: ${whiteNote.corrections}`);
+}
+const lyricWhiteNote = CBFConverter.convertChordText("[C]す", settings, ["@8"]);
+if (lyricWhiteNote.output !== "[|][C][○][----]す[----][|]" || lyricWhiteNote.correctionErrors.length) {
+  failures += 1;
+  console.error(`FAIL lyric white-note placement\nactual: ${lyricWhiteNote.output}`);
+}
+const whiteNoteNoBarBeforeDuration = CBFConverter.convertChordText("[F]入力[G]できます[C]す", settings, ["4s4@x4"]);
+const whiteNoteNoBarAfterDuration = CBFConverter.convertChordText("[F]入力[G]できます[C]す", settings, ["4s4@4x"]);
+const expectedWhiteNoteNoBar = "[|][F][---]入力[G][-]で[----]きます[|][C][○][----]す";
+if (whiteNoteNoBarBeforeDuration.output !== expectedWhiteNoteNoBar || whiteNoteNoBarAfterDuration.output !== expectedWhiteNoteNoBar) {
+  failures += 1;
+  console.error(`FAIL white-note x suffix\nbefore duration: ${whiteNoteNoBarBeforeDuration.output}\nafter duration: ${whiteNoteNoBarAfterDuration.output}`);
 }
 const letterHValue = CBFConverter.convertChordText("[C]", settings, ["h"]);
 if (letterHValue.output !== "[|][C][----][----][|][----][----][|][----][----][|]" || letterHValue.corrections !== "h") {

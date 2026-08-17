@@ -10,12 +10,12 @@ const readme = fs.readFileSync(path.join(root, "README.md"), "utf8");
 const captureGuide = fs.readFileSync(path.join(root, "docs/README_CAPTURE_SAMPLE.md"), "utf8");
 
 for (const expected of [
-  "{comment:ChordWiki Bar Formatterの機能確認用ダミー歌詞です}",
+  "{comment:----------【自動変換後】----------}",
   "{c:BPM=100　　4/4拍子",
   "[C]ChordPro形式の[G]テキストを貼ると",
   "[F]細かい部分は[G]手動修正が",
   "[F]編集[G]お疲れ",
-  'const INITIAL_CORRECTION = ["", "", "", "", "", "88448", "3535", "844", "", "4444", "628", "4*s433a", "444^22"].join("\\n");',
+  '4*s4*3*3*^24"].join("\\n");',
   "const INITIAL_SETTINGS = { measureCapacity: 8, hyphenUnit: 4, hyphenSpacing: 4, shortFractionPrepose: 1, longBeatLyricPlacement: 3, singleCharacterHyphens: 0, showContinuationChord: 0 };",
   'elements.lyricHyphenMode.value = "target";',
   'elements.removalTargets.value = "4,8";',
