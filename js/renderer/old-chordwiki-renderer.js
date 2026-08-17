@@ -44,7 +44,7 @@
       const level = typeof token === "object" && token ? token.level || 1 : 1;
       if (value === "|") return `<span class="cw-bar-token${level > 1 ? " cw-upper-token-level-2" : ""}" data-token-type="bar">${decoratedText(value)}</span>`;
       const rhythm = isRhythmToken(value);
-      const className = `${rhythm ? "cw-rhythm-token" : "cw-code-token"}${level > 1 ? " cw-upper-token-level-2" : ""}`;
+      const className = `${rhythm ? "cw-rhythm-token" : "cw-code-token"}${rhythm && value === "----" ? " cw-rhythm-token-long" : ""}${level > 1 ? " cw-upper-token-level-2" : ""}`;
       const tokenType = rhythm ? "rhythm" : "chord";
       return `<span class="${className}" data-token-type="${tokenType}">${decoratedText(value)}</span>`;
     }).join(" ");

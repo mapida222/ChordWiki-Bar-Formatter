@@ -150,7 +150,7 @@
         <div id="correction-shell" class="editor-shell">
           <div class="correction-column-headings" aria-hidden="true"><span>No.</span><span>修正値</span><span>採用中</span></div>
           <div id="correction-lines" class="line-numbers" aria-hidden="true"></div>
-          <div class="editor-text-layer"><pre id="correction-highlight" class="editor-highlight" aria-hidden="true"></pre><textarea id="correction-text" wrap="off" spellcheck="false" placeholder="&#10;&#10;&#10;&#10;&#10;88448&#10;3535&#10;844&#10;&#10;4444&#10;628&#10;4*s433a&#10;444^22"></textarea></div>
+          <div class="editor-text-layer"><pre id="correction-highlight" class="editor-highlight" aria-hidden="true"></pre><textarea id="correction-text" wrap="off" spellcheck="false" placeholder="&#10;&#10;&#10;&#10;&#10;88448&#10;3535&#10;8@4@4&#10;&#10;4444&#10;4s4@4x&#10;4/^3^3^2/44&#10;4*s4*3*3*^24"></textarea></div>
           <div id="correction-modes" class="correction-modes" aria-label="行ごとの採用方法"></div>
           <div id="correction-grid" class="correction-grid" aria-hidden="true"></div>
         </div>
@@ -199,12 +199,12 @@
                 <div class="guide-item-detail"><p><strong class="guide-detail-label">意味</strong><span class="guide-detail-value">次のコードを<code class="guide-output">=</code>1個分早く鳴らします。小節線の位置は動かしません。行頭にも入力できます。</span></p><p><strong class="guide-detail-label">結果</strong><span class="guide-detail-value"><code class="guide-output">=|----</code></span></p><p><strong class="guide-detail-label">入力→結果</strong><span class="guide-detail-value"><code class="guide-input">*s44*s44</code><span class="guide-arrow">→</span><code class="guide-output">[A]=|----[Bm7]---=[C#m7]=|----[D]----|</code></span></p></div>
               </details>
               <details class="guide-item">
-                <summary><code class="guide-input">)</code><span>アウフタクト終了を指定</span><span class="guide-item-arrow" aria-hidden="true">▼</span></summary>
-                <div class="guide-item-detail"><p class="guide-detail-heading">文字列説明：</p><p><strong class="guide-detail-label">意味</strong><span class="guide-detail-value">アウフタクト部分の指定の後ろへ<code class="guide-input">)</code>を置き、そこから通常小節へ切り替えます。アウフタクト内にコードが複数ある場合は、コードごとの指定を続けて書きます。</span></p><p><strong class="guide-detail-label">入力→結果</strong><span class="guide-detail-value"><code class="guide-input">22)44</code><span class="guide-arrow">→</span><code class="guide-output">[C][--][G/B][--][|][A][----][Bm][----][|]</code></span></p></div>
+                <summary><code class="guide-input">/</code><span>アウフタクト・小節またぎ</span><span class="guide-item-arrow" aria-hidden="true">▼</span></summary>
+                <div class="guide-item-detail"><p class="guide-detail-heading">文字列説明：</p><p><strong class="guide-detail-label">意味</strong><span class="guide-detail-value">アウフタクト部分の指定の後ろへ<code class="guide-input">/</code>を置き、そこから通常小節へ切り替えます。アウフタクト内にコードが複数ある場合は、コードごとの指定を続けて書きます。</span></p><p><strong class="guide-detail-label">入力→結果</strong><span class="guide-detail-value"><code class="guide-input">22/44</code><span class="guide-arrow">→</span><code class="guide-output">[C][--][G/B][--][|][A][----][Bm][----][|]</code></span></p></div>
               </details>
               <details class="guide-item">
-                <summary><code class="guide-input">| /</code><span>小節頭を指定</span><span class="guide-item-arrow" aria-hidden="true">▼</span></summary>
-                <div class="guide-item-detail"><p><strong class="guide-detail-label">意味</strong><span class="guide-detail-value"><code class="guide-input">|</code>または<code class="guide-input">/</code>の位置へ優先的に小節線を加え、直後のコードを小節頭にします。</span></p><p><strong class="guide-detail-label">入力→結果</strong><span class="guide-detail-value"><code class="guide-input">22/44</code><span class="guide-arrow">→</span><code class="guide-output">[G][--][G#dim][--][|][C][----][G/B][----][|]</code></span></p></div>
+                <summary><code class="guide-input">|</code><span>小節頭を指定</span><span class="guide-item-arrow" aria-hidden="true">▼</span></summary>
+                <div class="guide-item-detail"><p><strong class="guide-detail-label">意味</strong><span class="guide-detail-value"><code class="guide-input">|</code>の位置へ優先的に小節線を加え、直後のコードを小節頭にします。</span></p><p><strong class="guide-detail-label">入力→結果</strong><span class="guide-detail-value"><code class="guide-input">22|44</code><span class="guide-arrow">→</span><code class="guide-output">[G][--][G#dim][--][|][C][----][G/B][----][|]</code></span></p></div>
               </details>
               <details class="guide-item">
                 <summary><code class="guide-input">x</code><span>小節線消去</span><span class="guide-item-arrow" aria-hidden="true">▼</span></summary>
@@ -559,8 +559,8 @@
               <p><strong>ハイフン食い</strong>は<code>s</code>、<strong>イコール食い</strong>は<code>*s</code>を、食い込む位置へ入力します。</p>
               <div class="help-capability-example help-task-capability-example"><div class="help-rendered-pair"><span class="help-mini-score"><i>C　　 Am</i><span>あいう　えお</span></span><span class="help-preview-arrow">➜</span><span class="help-mini-score"><i>| C ---　Am - ---- |</i><span>あいう<span class="help-preview-second-lyric">え　お</span></span></span></div><span class="help-operation help-operation-only"><b>s</b><em>ハイフン食い</em></span><code class="help-result-chordpro">[|][C][---]あいう[Am][-]え[----]お[|]</code></div>
               <div class="help-capability-example help-task-capability-example"><div class="help-rendered-pair"><span class="help-mini-score"><i>C　　 Am</i><span>あいう　えお</span></span><span class="help-preview-arrow">➜</span><span class="help-mini-score"><i>| C ---=　Am = ---- |</i><span>あいう<span class="help-preview-second-lyric">え　お</span></span></span></div><span class="help-operation help-operation-only"><b>*s</b><em>イコール食い</em></span><code class="help-result-chordpro">[|][C][---=]あいう[Am][=]え[----]お[|]</code></div>
-              <div class="help-capability-example help-task-capability-example"><div class="help-rendered-pair"><span class="help-mini-score"><i>C　 Am　 G</i><span>あ　いう　えお</span></span><span class="help-preview-arrow">➜</span><span class="help-mini-score"><i>C -- | Am ----　G ---- |</i><span>あ　　いう　　えお</span></span></div><span class="help-operation help-operation-only"><b>)</b><em>アウフタクト</em></span><code class="help-result-chordpro">[C][--]あ[|][Am][----]いう[G][----]えお[|]</code></div>
-              <p class="help-mini-note">アウフタクトは、短い冒頭部分の指定の後ろへ <code>)</code> を入力し、そこから通常小節へ切り替えます。</p>
+              <div class="help-capability-example help-task-capability-example"><div class="help-rendered-pair"><span class="help-mini-score"><i>C　 Am　 G</i><span>あ　いう　えお</span></span><span class="help-preview-arrow">➜</span><span class="help-mini-score"><i>C -- | Am ----　G ---- |</i><span>あ　　いう　　えお</span></span></div><span class="help-operation help-operation-only"><b>/</b><em>アウフタクト</em></span><code class="help-result-chordpro">[C][--]あ[|][Am][----]いう[G][----]えお[|]</code></div>
+              <p class="help-mini-note">アウフタクトは、短い冒頭部分の指定の後ろへ <code>/</code> を入力し、そこから通常小節へ切り替えます。</p>
             </article>
             <article class="help-task-card">
               <header><span>4</span><div><h4>自動／修正／固定を切り替える</h4><strong>対象枠：03. 行修正、04. 変換後</strong></div></header>

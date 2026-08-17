@@ -36,7 +36,7 @@ assert.strictEqual(preview.isSpacingBody("--"), true);
 const formatted = preview.render("[|][C][----][----]歌詞[|][G][≧==]続き");
 assert(formatted.includes('class="cw-segment cw-segment-has-leading-bar cw-segment-has-trailing-upper-bar cw-segment-has-upper"'));
 assert(formatted.includes('<span class="cw-boundary cw-boundary-leading cw-boundary-upper cw-boundary-line-start cw-boundary-before-chord" data-token-type="bar"><span>|</span></span><span class="cw-segment'));
-assert(formatted.includes('<span class="cw-chord"><span class="cw-code-token" data-token-type="chord">C</span> <span class="cw-rhythm-token" data-token-type="rhythm">----</span> <span class="cw-rhythm-token" data-token-type="rhythm">----</span></span>'));
+assert(formatted.includes('<span class="cw-chord"><span class="cw-code-token" data-token-type="chord">C</span> <span class="cw-rhythm-token cw-rhythm-token-long" data-token-type="rhythm">----</span> <span class="cw-rhythm-token cw-rhythm-token-long" data-token-type="rhythm">----</span></span>'));
 assert(formatted.includes('<span class="cw-body">歌詞</span></span><span class="cw-boundary cw-boundary-trailing cw-boundary-upper" data-token-type="bar"><span>|</span></span>'));
 assert(formatted.includes('<span class="cw-segment cw-segment-has-upper"><span class="cw-chord"><span class="cw-code-token" data-token-type="chord">G</span> <span class="cw-rhythm-token" data-token-type="rhythm">≧==</span></span>'));
 assert.strictEqual((formatted.match(/data-token-type="rhythm"/g) || []).length, 3);

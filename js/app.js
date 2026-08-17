@@ -232,8 +232,8 @@
   const INITIAL_INPUT = [
     "{title:変換テスト用サンプル}",
     "{subtitle:これは実在する楽曲ではありません}",
-    "{comment:ChordWiki Bar Formatterの機能確認用ダミー歌詞です}",
     "{c:BPM=100　　4/4拍子　-：8分音符　＝：16分音符　>：8分音符アクセント　≧：16分音符アクセント　○：白玉}",
+    "{comment:----------【自動変換後】----------}",
     "{key:C}",
     "[C]ChordPro形式の[G]テキストを貼ると　[Am]自動[G]で小節線[F]と長さ記号を追記します",
     "[E]原曲と異[Am]なる部分は　[F]行修正の[D/F#]数値を変えて",
@@ -242,9 +242,20 @@
     "[Am]＝(イコール)表示は*([G#aug]アスタリスク)で、[C/G]＞(アクセント)は[F#m7-5]^(キャレット)で",
     "[F]入力[G]できま[C]す",
     "[F]細かい部分は[G]手動修正が[E7]必[E7/G#]要[Am7]です🙏🏻",
-    "[F]編集[G]お疲れ[Csus4]様で[C]す！（ありが[N.C.]とう！）"
+    "[F]編集[G]お疲れ[Csus4]様で[Cadd9]す！（[C]ありが[N.C.]とう！）",
+    "",
+    "{comment:----------【行修正後】----------}",
+    "{key:C}",
+    "[C]ChordPro形式の[G]テキストを貼ると　[Am]自動[G]で小節線[F]と長さ記号を追記します",
+    "[E]原曲と異[Am]なる部分は　[F]行修正の[D/F#]数値を変えて",
+    "[Gsus4]ハイフン数を[G]合わせます　[G#dim]",
+    "",
+    "[Am]＝(イコール)表示は*([G#aug]アスタリスク)で、[C/G]＞(アクセント)は[F#m7-5]^(キャレット)で",
+    "[F]入力[G]できま[C]す",
+    "[F]細かい部分は[G]手動修正が[E7]必[E7/G#]要[Am7]です🙏🏻",
+    "[F]編集[G]お疲れ[Csus4]様で[Cadd9]す！（[C]ありが[N.C.]とう！）"
   ].join("\n");
-  const INITIAL_CORRECTION = ["", "", "", "", "", "88448", "3535", "844", "", "4444", "628", "4*s433a", "444^22"].join("\n");
+  const INITIAL_CORRECTION = ["", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "88448", "3535", "8@4@4", "", "4444", "4s4@4x", "4/^3^3^2/44", "4*s4*3*3*^24"].join("\n");
   const INITIAL_SETTINGS = { measureCapacity: 8, hyphenUnit: 4, hyphenSpacing: 4, shortFractionPrepose: 1, longBeatLyricPlacement: 3, singleCharacterHyphens: 0, showContinuationChord: 0 };
   const CUSTOM_PROFILE_NAME_STORAGE_KEY = "chordWikiBarFormatter.customProfileName.v1";
   const RECOMMENDED_VALUES = {
@@ -1191,6 +1202,10 @@
   }
   function renderFinalPreview() {
     elements.finalPreview.classList.toggle("bars-through", elements.finalBarsThrough.checked);
+    // finalOutput already contains the exact, measure-aware hyphen omission
+    // result. The score preview must not hide every `----` token by CSS,
+    // because split rhythms such as 35/53/335 are intentionally retained.
+    elements.finalPreview.classList.remove("omit-long-rhythm");
     if (window.ChordWikiPreview) window.ChordWikiPreview.renderInto(elements.finalPreview, transposedPreviewText());
     publishScoreWindow();
   }
@@ -2343,7 +2358,7 @@
     );
     if (!edit) return false;
     if (edit.error === "duplicate-bar-anchor") {
-      notify("行修正の小節頭記号|または)は1行に1個だけ指定できます。", true);
+      notify("行修正の小節頭記号|は1行に1個までです。/は複数指定できます。", true);
       return true;
     }
     if (edit.error === "invalid-sync-boundary") {
@@ -2378,6 +2393,8 @@
     const rawRelativeEnd = end - lineStart;
     const awaitingWhiteNoteDuration = character !== "@"
       && CBFCorrectionInput.needsInsertedWhiteNoteDuration(line, rawRelativeStart, correctionSlotCounts[lineIndex] || 0, authoredWhiteNoteCounts[lineIndex] || 0);
+    const afterPickupBoundary = correctionCaretMode === "boundary"
+      && /\/[x\^*0-9a-i@?]*$/i.test(line.slice(0, rawRelativeStart));
     // The visible slot selection is authoritative. A browser may briefly
     // collapse the hidden textarea selection between key events; using that
     // caret would target the following beat and appear to skip one slot.
@@ -2386,7 +2403,9 @@
       : null;
     const relativeStart = selectedSlot?.start ?? rawRelativeStart;
     const relativeEnd = selectedSlot?.end ?? rawRelativeEnd;
-    const edit = character === "@"
+    const edit = afterPickupBoundary
+      ? { start: relativeStart, end: relativeStart, replacement: character, caret: relativeStart + 1 }
+      : character === "@"
       ? CBFCorrectionInput.whiteNoteEdit(line, relativeStart, relativeEnd)
       : awaitingWhiteNoteDuration
         ? { start: relativeStart, end: relativeStart, replacement: character, caret: relativeStart + 1 }
@@ -2395,6 +2414,7 @@
     let nextCaret = lineStart + edit.caret;
     nextCaret = CBFCorrectionInput.caretAfterLineEdit(value, lineEnd, nextCaret, character === "@");
     replaceCorrectionText(lineStart + edit.start, lineStart + edit.end, edit.replacement, nextCaret);
+    correctionSymbolOffset = nextCaret;
     if (character === "@") {
       elements.correction.setSelectionRange(nextCaret, nextCaret);
       linkedLineIndex = lineIndex;
@@ -3691,19 +3711,9 @@
       && suppressedPosition.top === elements.finalPreview.scrollTop
       && suppressedPosition.left === elements.finalPreview.scrollLeft;
     if (suppressed) suppressedScrollEditors.delete(elements.finalPreview);
-    if (suppressed || syncingScroll || restoringPasteScroll || !scrollSyncEnabled || !elements.finalOutputShell.classList.contains("preview-mode")) return;
-    syncingScroll = true;
-    scrollEditors.forEach((editor) => {
-      suppressNextScrollEvent(editor, elements.finalPreview.scrollTop, elements.finalPreview.scrollLeft);
-      if (editor === elements.correction) {
-        gutterByEditor.get(editor).scrollTop = 0;
-        syncCorrectionModeScroll(elements.finalPreview.scrollTop);
-      } else {
-        gutterByEditor.get(editor).scrollTop = elements.finalPreview.scrollTop;
-      }
-      syncHighlightScroll(editor);
-    });
-    requestAnimationFrame(() => { syncingScroll = false; });
+    // The score preview is a follower. Its visual line height differs from
+    // the editors, so it must not drive the row-edit gutter or the result
+    // editor back to a raw scrollTop position.
   });
   updateLineNumbers(elements.correction, elements.correctionLines);
   updateCorrectionModes();

@@ -88,8 +88,7 @@ assert.deepStrictEqual(CBFCorrectionInput.boundarySymbolEdit("88888", 5, "x"), {
 assert.deepStrictEqual(CBFCorrectionInput.boundarySymbolEdit("88888", 2, "^"), { start: 2, end: 2, replacement: "^", caret: 3 }, "accent inserts at the clicked text boundary");
 assert.deepStrictEqual(CBFCorrectionInput.boundarySymbolEdit("88888", 2, "*"), { start: 2, end: 2, replacement: "*", caret: 3 }, "half-value marker inserts at the clicked text boundary");
 assert.deepStrictEqual(CBFCorrectionInput.boundarySymbolEdit("88888", 2, "|"), { start: 2, end: 2, replacement: "|", caret: 3 }, "bar anchor inserts at the clicked text boundary");
-assert.deepStrictEqual(CBFCorrectionInput.boundarySymbolEdit("88888", 2, ")"), { start: 2, end: 2, replacement: ")", caret: 3 }, "pickup boundary inserts at the clicked text boundary");
-assert.deepStrictEqual(CBFCorrectionInput.boundarySymbolEdit("88888", 2, "/"), { start: 2, end: 2, replacement: "|", caret: 3 }, "slash is an alias for the bar anchor");
+assert.deepStrictEqual(CBFCorrectionInput.boundarySymbolEdit("88888", 2, "/"), { start: 2, end: 2, replacement: "/", caret: 3 }, "pickup boundary inserts at the clicked text boundary");
 assert.deepStrictEqual(CBFCorrectionInput.boundarySymbolEdit("88s888", 3, "s"), { start: 2, end: 3, replacement: "", caret: 2 }, "sync marker toggles off from either side of its boundary");
 assert.strictEqual(CBFCorrectionInput.needsInsertedWhiteNoteDuration("4@44", 2, 4, 0), true, "a new white note may insert its duration before later slots");
 assert.strictEqual(CBFCorrectionInput.needsInsertedWhiteNoteDuration("4@844", 2, 4, 0), false, "a white note with a duration must not add another slot");
@@ -106,7 +105,7 @@ assert.strictEqual(CBFCorrectionInput.normalizeLine("4s44s44", 4), "4s44s44", "v
 assert.strictEqual(CBFCorrectionInput.normalizeLine("88888", 4), "88888", "an extra numeric value must not be deleted while typing");
 assert.strictEqual(CBFCorrectionInput.normalizeLine("^8@4*x", 1), "^8@4*x", "all supported modifiers must remain editable regardless of the automatic count");
 assert.strictEqual(CBFCorrectionInput.normalizeLine("00|26", 4), "00|26", "the explicit measure-head marker must survive normalization");
-assert.strictEqual(CBFCorrectionInput.normalizeLine("2)44", 3), "2)44", "the explicit pickup boundary must survive normalization");
+assert.strictEqual(CBFCorrectionInput.normalizeLine("2/44", 3), "2/44", "the explicit pickup boundary must survive normalization");
 
 const anchoredSource = "[|][C][----]前[D][----][|][E][----]後[F][----][|]";
 const anchored = CBFConverter.renderWithBeatCode(anchoredSource, "00|26", settings);
@@ -142,7 +141,7 @@ assert.strictEqual(CBFCorrectionInput.incrementalCompositionBeatInput("4", "44")
 assert.strictEqual(CBFCorrectionInput.incrementalCompositionBeatInput("44", "444"), "4", "a later cumulative IME update still advances one slot only");
 assert.strictEqual(CBFCorrectionInput.normalizeBoundarySymbolSequence("ｘ＾＊ｓ｜"), "x^*s|", "full-width IME symbols normalize to supported row-edit symbols");
 assert.strictEqual(CBFCorrectionInput.normalizeBoundarySymbolSequence("x^*s|"), "x^*s|", "ASCII boundary symbols remain supported");
-assert.strictEqual(CBFCorrectionInput.normalizeBoundarySymbolSequence("/"), "|", "slash normalizes to the bar-anchor symbol");
+assert.strictEqual(CBFCorrectionInput.normalizeBoundarySymbolSequence("/"), "/", "slash remains the pickup boundary symbol");
 assert.strictEqual(CBFCorrectionInput.normalizeBoundarySymbolSequence("あ"), "", "unrelated IME text is not treated as a row-edit symbol");
 assert.strictEqual(CBFCorrectionInput.normalizeBeatInputSequence("＠ｊ"), "", "a sequence containing unsupported characters is rejected as a unit");
 assert.strictEqual(CBFCorrectionInput.normalizeLine("＠８", 1), "@8", "full-width white-note input survives even when the browser omits input-event character data");

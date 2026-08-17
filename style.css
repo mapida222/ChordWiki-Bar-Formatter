@@ -462,6 +462,7 @@ main { padding: 12px 0 28px; }
 .cw-code-token, .cw-rhythm-token { position: static; display: inline; }
 .cw-upper-token-level-2 { position: relative; top: -1.1em; }
 .cw-rhythm-token { font-weight: 400; letter-spacing: 0; }
+.omit-long-rhythm .cw-rhythm-token-long { visibility: hidden; }
 .cw-segment-has-trailing-upper-bar .cw-chord > .cw-rhythm-token:last-child { margin-right: .3em; }
 .cw-bar-token { position: relative; left: .4em; display: inline-block; }
 .bars-through .cw-bar-token { color: transparent; }
