@@ -480,7 +480,13 @@
     elements.measureCapacityWarning.hidden = false;
     syncResultRowAlignment();
   }
-  function lineCount(text) { return text.length ? text.split(/\r\n|\r|\n/).length : 0; }
+  // A terminal newline separates the last real line from an empty suffix;
+  // that suffix is not a user-visible row and must not enlarge gutters or
+  // scroll synchronization ranges.
+  function lineCount(text) {
+    const value = String(text || "").replace(/(?:\r\n|\r|\n)+$/u, "");
+    return value ? value.split(/\r\n|\r|\n/).length : 0;
+  }
   function updateCount(textarea, target) { target.textContent = `${textarea.value.length}文字 / ${lineCount(textarea.value)}行`; }
   function escapeHtml(text) {
     return text.replace(/[&<>"']/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[character]);
