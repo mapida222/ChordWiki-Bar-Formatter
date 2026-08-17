@@ -606,12 +606,15 @@
     if (restoringPasteScroll) return;
     const computed = getComputedStyle(elements.correction);
     const lineHeight = Number.parseFloat(computed.lineHeight) || 23;
+    // Keep one virtual row below the final real row so selecting the last
+    // correction still reveals the following space without numbering it.
+    const scrollLineCount = Math.max(1, lineCount(elements.correction.value) + 1);
     const nextScrollTop = CBFCorrectionInput.scrollTopForLineMargin(
       elements.correction.scrollTop,
       elements.correction.clientHeight,
       lineHeight,
       lineIndex,
-      lineCount(elements.correction.value),
+      scrollLineCount,
       1,
       Number.parseFloat(computed.paddingTop) || 0,
       2
