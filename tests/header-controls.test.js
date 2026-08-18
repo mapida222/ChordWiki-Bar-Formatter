@@ -27,7 +27,7 @@ assert(html.includes('<button id="correction-refresh-line" type="button"'));
 assert(html.includes("↻ この行を更新"));
 assert(html.includes('<button id="correction-rebuild-all" class="correction-rebuild-button" type="button"'));
 assert(html.includes("↻ 変換後から行修正を復元"));
-assert(html.includes("「?」は自動変換できなかった位置です。その部分の変換後表示を保持します。"));
+assert(html.includes("「?」は自動変換できなかった位置です。手動で変換・調整をしてください。"));
 assert(html.includes('aria-label="この行を更新と行修正を復元の説明"'));
 assert(html.includes("<b>変換後から行修正を復元</b>：変換後の全行から行修正値を推論し直します。"));
 assert(html.includes('id="correction-position" class="correction-position" aria-live="polite" hidden'));

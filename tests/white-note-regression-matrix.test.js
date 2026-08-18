@@ -56,6 +56,8 @@ function replaceWithWhiteNote(line, start, end, duration) {
 
 assert.strictEqual(CBFCorrectionInput.normalizeBeatInputSequence("＠８"), "@8");
 assert.strictEqual(CBFCorrectionInput.normalizeLine("＠８", 1), "@8");
+assert.strictEqual(CBFCorrectionInput.fullWidthCharacters("ｚ＠８"), "ｚ＠８");
+assert.strictEqual(CBFCorrectionInput.fullWidthCharacters("z@8"), "");
 assert.deepStrictEqual(CBFCorrectionInput.clearBeatEdit("@844", 1, 2), { start: 1, end: 2, replacement: "", caret: 1 });
 
 const multipleLines = CBFConverter.convertChordText("[C]a[G]b\n[Am]c[F]d", settings, ["44", "@44"]);

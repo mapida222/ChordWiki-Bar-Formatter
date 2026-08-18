@@ -105,6 +105,15 @@
     return normalized.every(Boolean) ? normalized.join("") : "";
   }
 
+  function fullWidthCharacters(value) {
+    return [...String(value || "")]
+      .filter((character) => {
+        const code = character.codePointAt(0);
+        return (code >= 0xFF01 && code <= 0xFF5E) || code === 0x3000;
+      })
+      .join("");
+  }
+
   function isRecentInputCommit(pendingCharacter, pendingAt, character, now = Date.now()) {
     const age = Number(now) - Number(pendingAt);
     return Boolean(character) && character === pendingCharacter && age >= 0 && age <= 500;
@@ -403,5 +412,5 @@
     }).join("\n");
   }
 
-  window.CBFCorrectionInput = { groups, redistributeForLineBreaks, synchronizeLineBreakLayout, beatCharacters, normalizeBeatInputCharacter, normalizeBeatInputSequence, isRecentInputCommit, incrementalCompositionBeatInput, normalizeBoundarySymbolSequence, singleInsertedBeat, normalizeLine, modifierInsertionAtLineEnd, boundarySymbolEdit, needsInsertedWhiteNoteDuration, smartBeatEdit, slotSelection, nextLineWithBeatSlot, clearBeatEdit, syncopationRemovalEdit, deletionEdit, whiteNoteEdit, nextLineStart, caretAfterLineEdit, scrollTopForLineMargin, overwritePastedRows, overwritePastedLine, appendBeatSlot, migrateLegacyText };
+  window.CBFCorrectionInput = { groups, redistributeForLineBreaks, synchronizeLineBreakLayout, beatCharacters, normalizeBeatInputCharacter, normalizeBeatInputSequence, fullWidthCharacters, isRecentInputCommit, incrementalCompositionBeatInput, normalizeBoundarySymbolSequence, singleInsertedBeat, normalizeLine, modifierInsertionAtLineEnd, boundarySymbolEdit, needsInsertedWhiteNoteDuration, smartBeatEdit, slotSelection, nextLineWithBeatSlot, clearBeatEdit, syncopationRemovalEdit, deletionEdit, whiteNoteEdit, nextLineStart, caretAfterLineEdit, scrollTopForLineMargin, overwritePastedRows, overwritePastedLine, appendBeatSlot, migrateLegacyText };
 }());

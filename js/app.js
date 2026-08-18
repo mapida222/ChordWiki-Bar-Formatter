@@ -2319,7 +2319,13 @@
         linkedLineIndex >= 0 ? linkedLineIndex : 0,
         linkedSlotIndex >= 0 ? linkedSlotIndex : 0
       );
-      notify("行修正で使えない文字は入力できません。", true);
+      const fullWidth = CBFCorrectionInput.fullWidthCharacters(event.data);
+      notify(
+        fullWidth
+          ? `行修正で使えない全角文字「${fullWidth}」は入力できません。半角で入力してください。`
+          : "行修正で使えない文字は入力できません。",
+        true
+      );
       return;
     }
     const caret = elements.correction.selectionStart;
