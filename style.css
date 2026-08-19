@@ -626,18 +626,9 @@ textarea::placeholder { color: var(--muted); opacity: .7; }
 .history-dialog .help-dialog-header { padding: 6px 10px; }
 .history-dialog .help-dialog-header .eyebrow { display: none; }
 .history-dialog .help-dialog-header h2 { font-size: 1rem; }
-.history-dialog .help-close-button { padding: 5px 9px; }
+.history-title-help { margin-left: 3px; vertical-align: middle; }
+.history-title-help .context-help-button { width: 16px; height: 16px; font-size: 10px; }
 .history-header-actions { display: flex; align-items: center; gap: 6px; }
-.history-header-details { position: relative; flex: 0 0 auto; }
-.history-header-details > summary { padding: 5px 8px; border: 1px solid var(--line); border-radius: 4px; color: var(--muted); background: var(--panel); cursor: pointer; font-size: .68rem; font-weight: 800; list-style: none; }
-.history-header-details > summary::-webkit-details-marker { display: none; }
-.history-header-details > summary::after { content: "▼"; margin-left: 5px; font-size: .55rem; }
-.history-header-details[open] > summary { border-color: var(--accent); color: var(--text); background: var(--accent-soft); }
-.history-header-details[open] > summary::after { content: "▲"; }
-.history-header-details > div { position: absolute; z-index: 20; top: calc(100% + 6px); left: 0; width: min(340px, calc(100vw - 32px)); padding: 10px 12px; border: 1px solid var(--line-strong); border-radius: 5px; color: var(--text); background: var(--panel); box-shadow: 0 7px 20px rgba(0, 0, 0, .16); font-size: .72rem; line-height: 1.55; }
-.history-header-details > div strong { display: block; margin-top: 7px; font-size: .74rem; }
-.history-header-details > div strong:first-child { margin-top: 0; }
-.history-header-details > div p { margin: 2px 0 0; color: var(--muted); }
 .help-content { display: grid; justify-items: start; gap: 9px; padding: 10px 12px 14px; font-size: .84rem; line-height: 1.55; }
 .help-content > section, .help-content > details { width: min(100%, 1400px); }
 .help-intro { max-width: 1120px; }
@@ -959,13 +950,6 @@ textarea::placeholder { color: var(--muted); opacity: .7; }
 .history-content { display: flex; flex-direction: column; min-height: 0; padding: 14px 18px 12px; }
 .history-layout { display: grid; flex: 1 1 auto; grid-template-columns: minmax(290px, 350px) minmax(0, 1fr); gap: 14px; min-height: 0; }
 .history-list-panel { min-height: 0; overflow-y: auto; padding-right: 3px; }
-.history-note { margin: 0 0 10px; color: var(--muted); font-size: .76rem; line-height: 1.55; }
-.history-note > summary { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); cursor: pointer; font-weight: 800; list-style: none; }
-.history-note > summary::-webkit-details-marker { display: none; }
-.history-note > summary::before { content: "?"; display: inline-grid; width: 16px; height: 16px; place-items: center; border: 1px solid var(--line-strong); border-radius: 50%; color: var(--muted); font: 800 .64rem/1 var(--sans); }
-.history-note > summary:hover, .history-note[open] > summary { color: var(--text); }
-.history-note[open] > summary::before { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
-.history-note > p { max-width: 58em; margin: 6px 0 0; }
 .history-file-panel { display: grid; flex: 0 0 auto; gap: 9px; margin-bottom: 14px; padding: 11px; border: 1px solid color-mix(in srgb, var(--accent) 48%, var(--line)); border-radius: 6px; background: color-mix(in srgb, var(--accent-soft) 42%, var(--panel)); }
 .history-file-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .history-file-heading > div { display: grid; min-width: 0; gap: 2px; }

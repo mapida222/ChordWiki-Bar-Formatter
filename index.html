@@ -438,20 +438,11 @@
         <header class="help-dialog-header">
           <div>
             <p class="eyebrow">LOCAL HISTORY / 7 DAYS</p>
-            <h2 id="history-title">使用履歴</h2>
+            <h2 id="history-title">使用履歴 <span class="context-help history-title-help"><button class="context-help-button" type="button" aria-label="使用履歴の使い方" aria-expanded="false" aria-controls="help-tip-history-usage">?</button><span id="help-tip-history-usage" class="context-help-popover" role="tooltip" hidden><strong class="context-help-title">使用履歴の使い方</strong>変換後の表示を「履歴に追加」で手動保存、入力停止から1分後、または結果のコピー成功時に自動保存します。履歴はこのブラウザ内に7日間保存されます。履歴を選ぶと変換前・変換後・譜面プレビューを確認できます。「保存時の状態を復元」では、変換前・行修正・設定・変換後・確定譜面を保存時の内容へ戻します。</span></span></h2>
           </div>
-          <details class="history-header-details">
-            <summary>詳細説明</summary>
-            <div>
-              <strong>使用履歴について</strong>
-              <p>履歴はこのブラウザ内に7日間保存されます。履歴を選ぶと変換前・変換後・譜面プレビューを確認できます。</p>
-              <strong>不具合報告について</strong>
-              <p>上の「報告文をコピー」で、入力・行修正・設定・初期出力・変換後をまとめてコピーできます。そのまま報告先へ貼り付けてください。</p>
-            </div>
-          </details>
           <div class="history-header-actions">
-            <button id="history-copy-report" class="history-primary-button" type="button">報告文をコピー</button>
-            <button id="history-close" class="help-close-button" type="button">閉じる</button>
+            <button id="history-copy-report" class="history-primary-button" type="button">不具合報告をコピー</button>
+            <button id="history-close" class="history-secondary-button" type="button">閉じる</button>
           </div>
         </header>
         <div class="history-content">
@@ -473,10 +464,6 @@
           </section>
           <div class="history-layout">
             <section class="history-list-panel" aria-label="使用履歴一覧">
-              <details class="history-note">
-                <summary>使用履歴の使い方</summary>
-                <p>変換後の表示を「履歴に追加」で手動保存、入力停止から1分後、または結果のコピー成功時に自動保存します。「保存時の状態を復元」では、変換前・行修正・設定・変換後・確定譜面を保存時の内容へ戻します。履歴はこのブラウザ内だけに7日間保持されます。</p>
-              </details>
               <div id="history-list" class="history-list"></div>
             </section>
             <section id="history-preview-panel" class="history-preview-panel" aria-labelledby="history-preview-title">

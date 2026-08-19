@@ -57,7 +57,7 @@ const css = fs.readFileSync(path.join(root, "style.css"), "utf8");
 const app = fs.readFileSync(path.join(root, "js", "app.js"), "utf8");
 const entry = fs.readFileSync(path.join(root, "js", "entries", "main.js"), "utf8");
 assert(html.includes('id="history-copy-report"'));
-assert(html.includes('class="history-header-details"'));
+assert(html.includes('history-title-help'));
 assert(html.includes('class="history-file-details"'));
 assert(!html.includes('id="history-export-report"'));
 assert(!html.includes('id="history-import-report"'));
