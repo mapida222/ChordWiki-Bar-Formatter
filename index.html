@@ -449,13 +449,12 @@
                 <h3 id="history-file-title">共有・バックアップ</h3>
                 <p>現在の作業内容を、不具合報告用テキストまたはバックアップ用JSONとして扱えます。</p>
               </div>
-              <span class="history-file-hint">送るならテキスト / 保存するならJSON</span>
+              <span class="context-help history-file-help"><button class="context-help-button" type="button" aria-label="共有・バックアップの説明" aria-expanded="false" aria-controls="help-tip-history-files">?</button><span id="help-tip-history-files" class="context-help-popover" role="tooltip" hidden><strong class="context-help-title">形式の使い分け</strong>不具合報告にはテキストを使ってください。作業状態をあとで復元したいときはJSONを使います。</span></span>
             </div>
             <div class="history-file-groups">
               <section class="history-file-group history-report-group" aria-labelledby="history-report-title">
                 <div>
-                  <strong id="history-report-title">不具合報告用テキスト</strong>
-                  <span>入力・行修正・設定・初期出力・変換後をまとめます。</span>
+                  <strong id="history-report-title">不具合報告用テキスト <span class="context-help"><button class="context-help-button" type="button" aria-label="不具合報告用テキストの説明" aria-expanded="false" aria-controls="help-tip-history-report">?</button><span id="help-tip-history-report" class="context-help-popover" role="tooltip" hidden><strong class="context-help-title">不具合報告用テキスト</strong>入力・行修正・設定・初期出力・変換後を、人に送りやすい文章としてまとめます。</span></span></strong>
                 </div>
                 <div class="history-file-group-actions">
                   <button id="history-copy-report" class="history-primary-button" type="button">報告文をコピー</button>
@@ -466,8 +465,7 @@
               </section>
               <section class="history-file-group" aria-labelledby="history-backup-title">
                 <div>
-                  <strong id="history-backup-title">バックアップ用JSON</strong>
-                  <span>現在の入力・設定・行修正・手動調整を復元できます。</span>
+                  <strong id="history-backup-title">バックアップ用JSON <span class="context-help"><button class="context-help-button" type="button" aria-label="バックアップ用JSONの説明" aria-expanded="false" aria-controls="help-tip-history-backup">?</button><span id="help-tip-history-backup" class="context-help-popover" role="tooltip" hidden><strong class="context-help-title">バックアップ用JSON</strong>入力・設定・行修正・手動調整を含むため、読み込むと現在の作業状態を復元できます。</span></span></strong>
                 </div>
                 <div class="history-file-group-actions">
                   <button id="history-export-backup" class="history-secondary-button" type="button">JSONをエクスポート</button>
@@ -479,7 +477,10 @@
           </section>
           <div class="history-layout">
             <section class="history-list-panel" aria-label="使用履歴一覧">
-              <p class="history-note">04. 変換後の表示を「履歴に追加」で手動保存、入力停止から1分後、または結果のコピー成功時に自動保存します。「保存時の状態を復元」では、変換前・行修正・設定・変換後・確定譜面を保存時の内容へ戻します。履歴はこのブラウザ内だけに7日間保持されます。</p>
+              <details class="history-note">
+                <summary>使用履歴の使い方</summary>
+                <p>変換後の表示を「履歴に追加」で手動保存、入力停止から1分後、または結果のコピー成功時に自動保存します。「保存時の状態を復元」では、変換前・行修正・設定・変換後・確定譜面を保存時の内容へ戻します。履歴はこのブラウザ内だけに7日間保持されます。</p>
+              </details>
               <div id="history-list" class="history-list"></div>
             </section>
             <section id="history-preview-panel" class="history-preview-panel" aria-labelledby="history-preview-title">
@@ -504,7 +505,6 @@
             </section>
           </div>
           <footer class="history-footer">
-            <span class="history-footer-note">ファイル操作は現在の作業内容を対象にします。</span>
             <button id="history-delete-all" class="history-delete-button" type="button">使用履歴を削除</button>
           </footer>
         </div>
