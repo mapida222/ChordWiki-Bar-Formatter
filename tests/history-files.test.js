@@ -40,6 +40,7 @@ assert.strictEqual(backup.format, backupApi.FORMAT);
 assert.strictEqual(backup.version, 1);
 assert.strictEqual(backup.state.inputText, snapshot.inputText);
 assert.deepStrictEqual(backup.state.outputOverrides, snapshot.outputOverrides);
+assert.strictEqual(backupApi.titleForFileName("Sign （ドラマ『オレンジデイズ』主題歌）"), "Sign");
 const parsedBackup = backupApi.parse(JSON.stringify(backup));
 const restored = backupApi.toSnapshot(parsedBackup);
 assert.strictEqual(restored.title, snapshot.title);

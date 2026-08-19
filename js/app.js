@@ -1788,7 +1788,8 @@
     return snapshot;
   }
   function safeFileBaseName(name, fallback) {
-    return String(name || fallback).replace(/[\\/:*?"<>|]/g, "_").slice(0, 80) || fallback;
+    const title = CBFBackupData.titleForFileName(name);
+    return String(title || fallback).replace(/[\\/:*?"<>|]/g, "_").slice(0, 80) || fallback;
   }
   function downloadBackup(snapshot) {
     const backup = CBFBackupData.create(snapshot);
