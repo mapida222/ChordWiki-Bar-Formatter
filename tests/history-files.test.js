@@ -61,6 +61,7 @@ const entry = fs.readFileSync(path.join(root, "js", "entries", "main.js"), "utf8
 assert(html.includes('id="history-copy-report"'));
 assert(html.includes('id="history-feedback"'));
 assert(html.includes('aria-label="報告・要望フォームを開く"'));
+assert(html.includes('aria-label="報告・要望とファイル操作"'));
 assert(html.includes('history-title-help'));
 assert(html.includes('class="history-help-steps"'));
 assert(html.includes("履歴を選ぶ"));
@@ -78,7 +79,7 @@ assert(entry.includes('import "../backup-data.js"'));
 assert(entry.includes('import "../issue-report.js"'));
 assert(entry.indexOf('import "../history.js"') < entry.indexOf('import "../backup-data.js"'));
 assert(entry.indexOf('import "../issue-report.js"') < entry.indexOf('await import("../app.js")'));
-assert(css.includes(".history-header-action"));
+assert(css.includes(".history-footer-actions"));
 assert(app.includes("CBFIssueReport.create(currentFileSnapshot())"));
 assert(app.includes("downloadBackup(currentFileSnapshot())"));
 assert(!app.includes("downloadIssueReport"));
