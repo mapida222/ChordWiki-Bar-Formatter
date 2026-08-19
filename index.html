@@ -443,40 +443,43 @@
           <button id="history-close" class="help-close-button" type="button">閉じる</button>
         </header>
         <div class="history-content">
+          <section class="history-file-panel" aria-labelledby="history-file-title">
+            <div class="history-file-heading">
+              <div>
+                <h3 id="history-file-title">共有・バックアップ</h3>
+                <p>現在の作業内容を、不具合報告用テキストまたはバックアップ用JSONとして扱えます。</p>
+              </div>
+              <span class="history-file-hint">送るならテキスト / 保存するならJSON</span>
+            </div>
+            <div class="history-file-groups">
+              <section class="history-file-group history-report-group" aria-labelledby="history-report-title">
+                <div>
+                  <strong id="history-report-title">不具合報告用テキスト</strong>
+                  <span>入力・行修正・設定・初期出力・変換後をまとめます。</span>
+                </div>
+                <div class="history-file-group-actions">
+                  <button id="history-copy-report" class="history-primary-button" type="button">報告文をコピー</button>
+                  <button id="history-export-report" class="history-secondary-button" type="button">テキストをエクスポート</button>
+                  <button id="history-import-report" class="history-secondary-button" type="button">テキストをインポート</button>
+                  <input id="history-report-file" type="file" accept="text/plain,.txt" hidden>
+                </div>
+              </section>
+              <section class="history-file-group" aria-labelledby="history-backup-title">
+                <div>
+                  <strong id="history-backup-title">バックアップ用JSON</strong>
+                  <span>現在の入力・設定・行修正・手動調整を復元できます。</span>
+                </div>
+                <div class="history-file-group-actions">
+                  <button id="history-export-backup" class="history-secondary-button" type="button">JSONをエクスポート</button>
+                  <button id="history-import-backup" class="history-secondary-button" type="button">JSONをインポート</button>
+                  <input id="history-backup-file" type="file" accept="application/json,.json" hidden>
+                </div>
+              </section>
+            </div>
+          </section>
           <div class="history-layout">
             <section class="history-list-panel" aria-label="使用履歴一覧">
               <p class="history-note">04. 変換後の表示を「履歴に追加」で手動保存、入力停止から1分後、または結果のコピー成功時に自動保存します。「保存時の状態を復元」では、変換前・行修正・設定・変換後・確定譜面を保存時の内容へ戻します。履歴はこのブラウザ内だけに7日間保持されます。</p>
-              <section class="history-file-panel" aria-labelledby="history-file-title">
-                <div class="history-file-heading">
-                  <h3 id="history-file-title">共有・バックアップ</h3>
-                  <p>不具合報告はテキスト、作業状態の保存はJSONを使います。</p>
-                </div>
-                <div class="history-file-groups">
-                  <section class="history-file-group history-report-group" aria-labelledby="history-report-title">
-                    <div>
-                      <strong id="history-report-title">不具合報告用テキスト</strong>
-                      <span>入力・行修正・設定・初期出力・変換後をまとめます。</span>
-                    </div>
-                    <div class="history-file-group-actions">
-                      <button id="history-copy-report" class="history-primary-button" type="button">報告文をコピー</button>
-                      <button id="history-export-report" class="history-secondary-button" type="button">テキストをエクスポート</button>
-                      <button id="history-import-report" class="history-secondary-button" type="button">テキストをインポート</button>
-                      <input id="history-report-file" type="file" accept="text/plain,.txt" hidden>
-                    </div>
-                  </section>
-                  <section class="history-file-group" aria-labelledby="history-backup-title">
-                    <div>
-                      <strong id="history-backup-title">バックアップ用JSON</strong>
-                      <span>現在の入力・設定・行修正・手動調整を復元できます。</span>
-                    </div>
-                    <div class="history-file-group-actions">
-                      <button id="history-export-backup" class="history-secondary-button" type="button">JSONをエクスポート</button>
-                      <button id="history-import-backup" class="history-secondary-button" type="button">JSONをインポート</button>
-                      <input id="history-backup-file" type="file" accept="application/json,.json" hidden>
-                    </div>
-                  </section>
-                </div>
-              </section>
               <div id="history-list" class="history-list"></div>
             </section>
             <section id="history-preview-panel" class="history-preview-panel" aria-labelledby="history-preview-title">

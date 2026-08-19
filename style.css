@@ -941,15 +941,17 @@ textarea::placeholder { color: var(--muted); opacity: .7; }
 .help-content { padding: 10px 12px 14px; font-size: .84rem; line-height: 1.55; }
 .history-dialog { width: min(1220px, calc(100% - 28px)); height: min(88vh, 920px); }
 .history-dialog .help-dialog-frame { display: grid; grid-template-rows: auto minmax(0, 1fr); overflow: hidden; }
-.history-content { display: grid; grid-template-rows: minmax(0, 1fr) auto; min-height: 0; padding: 14px 18px 12px; }
+.history-content { display: grid; grid-template-rows: auto minmax(0, 1fr) auto; min-height: 0; padding: 14px 18px 12px; }
 .history-layout { display: grid; grid-template-columns: minmax(290px, 350px) minmax(0, 1fr); gap: 14px; min-height: 0; }
 .history-list-panel { min-height: 0; overflow-y: auto; padding-right: 3px; }
 .history-note { margin-bottom: 12px; color: var(--muted); font-size: .82rem; line-height: 1.55; }
 .history-file-panel { display: grid; gap: 9px; margin-bottom: 14px; padding: 11px; border: 1px solid color-mix(in srgb, var(--accent) 48%, var(--line)); border-radius: 6px; background: color-mix(in srgb, var(--accent-soft) 42%, var(--panel)); }
-.history-file-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.history-file-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.history-file-heading > div { display: grid; gap: 2px; }
 .history-file-heading h3 { margin: 0; font-size: .82rem; }
 .history-file-heading p { margin: 0; color: var(--muted); font-size: .68rem; }
-.history-file-groups { display: grid; gap: 7px; }
+.history-file-hint { flex: 0 0 auto; color: var(--accent); font-size: .68rem; font-weight: 800; }
+.history-file-groups { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
 .history-file-group { display: grid; gap: 8px; padding: 9px; border: 1px solid var(--line); border-radius: 5px; background: var(--panel); }
 .history-file-group > div:first-child { display: grid; gap: 2px; }
 .history-file-group strong { font-size: .75rem; }
@@ -1158,3 +1160,8 @@ textarea::placeholder { color: var(--muted); opacity: .7; }
   .help-detail-card > summary::after { transition: none; }
 }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+@media (max-width: 700px) {
+  .history-file-heading { align-items: flex-start; flex-direction: column; gap: 4px; }
+  .history-file-hint { font-size: .64rem; }
+  .history-file-groups { grid-template-columns: 1fr; }
+}
