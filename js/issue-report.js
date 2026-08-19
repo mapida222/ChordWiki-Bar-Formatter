@@ -8,7 +8,6 @@
   const FORMAT = "chordwiki-bar-formatter-issue-report";
   const VERSION = 1;
   const HEADER = "ChordWiki Bar Formatter 不具合報告";
-  const SECTIONS = ["設定", "変換前", "行修正", "初期出力", "変換後"];
 
   function text(value) {
     return value == null ? "" : String(value);
@@ -44,66 +43,5 @@
     return `${lines.join("\n\n").replace(/\n*$/, "")}\n`;
   }
 
-  function readSections(source) {
-    const normalized = text(source).replace(/\r\n?/g, "\n");
-    const positions = SECTIONS.map((name) => ({ name, marker: `[${name}]`, index: normalized.indexOf(`[${name}]`) }))
-      .filter((item) => item.index >= 0)
-      .sort((left, right) => left.index - right.index);
-    const result = {};
-    positions.forEach((item, index) => {
-      const contentStart = normalized.indexOf("\n", item.index) + 1;
-      const contentEnd = index + 1 < positions.length ? positions[index + 1].index : normalized.length;
-      result[item.name] = normalized.slice(contentStart, contentEnd).replace(/^\n+|\n+$/g, "");
-    });
-    return result;
-  }
-
-  function parse(source) {
-    const normalized = text(source).replace(/\r\n?/g, "\n");
-    if (!normalized.trim().startsWith(HEADER)) throw new Error("不具合報告用テキストではありません。");
-    const format = normalized.match(/^format:\s*(\S+)\s*$/m)?.[1];
-    const version = Number(normalized.match(/^version:\s*(\d+)\s*$/m)?.[1]);
-    if (format !== FORMAT || version !== VERSION) throw new Error("対応していない不具合報告用テキスト形式です。");
-    const sections = readSections(normalized);
-    let settings = {};
-    try {
-      settings = sections["設定"] ? JSON.parse(sections["設定"]) : {};
-    } catch (_error) {
-      throw new Error("不具合報告の変換設定を読み取れませんでした。");
-    }
-    if (!settings || typeof settings !== "object" || Array.isArray(settings)) {
-      throw new Error("不具合報告の変換設定が不正です。");
-    }
-    if (typeof sections["変換前"] !== "string" || typeof sections["初期出力"] !== "string") {
-      throw new Error("不具合報告に変換前または初期出力がありません。");
-    }
-    return {
-      format: FORMAT,
-      version: VERSION,
-      name: text(normalized.match(/^name:\s*(.*?)\s*$/m)?.[1]).trim() || "名称未設定",
-      settings,
-      input: sections["変換前"],
-      corrections: sections["行修正"] || "",
-      initialOutput: sections["初期出力"],
-      idealOutput: sections["変換後"] || sections["初期出力"]
-    };
-  }
-
-  function toHistorySnapshot(report) {
-    const value = typeof report === "string" ? parse(report) : report;
-    if (!value || value.format !== FORMAT || value.version !== VERSION) {
-      throw new Error("不具合報告用テキストを解釈できませんでした。");
-    }
-    return {
-      title: value.name,
-      inputText: value.input,
-      historyText: value.idealOutput,
-      initialOutputText: value.initialOutput,
-      idealOutputText: value.idealOutput,
-      correctionText: value.corrections,
-      settings: { converter: value.settings }
-    };
-  }
-
-  return { FORMAT, VERSION, HEADER, titleForFileName, create, parse, toHistorySnapshot };
+  return { FORMAT, VERSION, HEADER, titleForFileName, create };
 }));
