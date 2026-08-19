@@ -441,11 +441,7 @@
             <h2 id="history-title">使用履歴 <span class="context-help history-title-help"><button class="context-help-button" type="button" aria-label="使用履歴の使い方" aria-expanded="false" aria-controls="help-tip-history-usage">?</button><span id="help-tip-history-usage" class="context-help-popover" role="tooltip" hidden><strong class="context-help-title">使用履歴の使い方</strong>変換後の表示を「履歴に追加」で手動保存、入力停止から1分後、または結果のコピー成功時に自動保存します。履歴はこのブラウザ内に7日間保存されます。履歴を選ぶと変換前・変換後・譜面プレビューを確認できます。「保存時の状態を復元」では、変換前・行修正・設定・変換後・確定譜面を保存時の内容へ戻します。報告コピーはテキスト、JSON保存・復元は作業状態用です。</span></span></h2>
           </div>
           <div class="history-header-actions">
-            <button id="history-copy-report" class="history-primary-button history-header-action" type="button" title="不具合報告用テキストをコピー">報告コピー</button>
-            <button id="history-export-backup" class="history-secondary-button history-header-action" type="button" title="バックアップ用JSONを保存">JSON保存</button>
-            <button id="history-import-backup" class="history-secondary-button history-header-action" type="button" title="バックアップ用JSONを復元">JSON復元</button>
-            <input id="history-backup-file" type="file" accept="application/json,.json" hidden>
-            <button id="history-close" class="history-secondary-button history-header-action" type="button">閉じる</button>
+            <button id="history-close" class="history-secondary-button" type="button">閉じる</button>
           </div>
         </header>
         <div class="history-content">
@@ -475,6 +471,12 @@
             </section>
           </div>
           <footer class="history-footer">
+            <div class="history-footer-actions" aria-label="ファイル操作">
+              <button id="history-copy-report" class="history-primary-button" type="button" title="不具合報告用テキストをコピー">報告用テキストをコピー</button>
+              <button id="history-import-backup" class="history-secondary-button" type="button" title="バックアップ用JSONを使用履歴へ読み込む">JSONをインポート</button>
+              <button id="history-export-backup" class="history-secondary-button" type="button" title="現在の作業状態をバックアップ用JSONとして保存">JSONをエクスポート</button>
+              <input id="history-backup-file" type="file" accept="application/json,.json" hidden>
+            </div>
             <button id="history-delete-all" class="history-delete-button" type="button">使用履歴を削除</button>
           </footer>
         </div>

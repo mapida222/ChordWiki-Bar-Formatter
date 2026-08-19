@@ -629,7 +629,6 @@ textarea::placeholder { color: var(--muted); opacity: .7; }
 .history-title-help { margin-left: 3px; vertical-align: middle; }
 .history-title-help .context-help-button { width: 16px; height: 16px; font-size: 10px; }
 .history-header-actions { display: flex; align-items: center; gap: 4px; }
-.history-header-action { min-height: 27px; padding: 4px 7px; font-size: .65rem; white-space: nowrap; }
 .help-content { display: grid; justify-items: start; gap: 9px; padding: 10px 12px 14px; font-size: .84rem; line-height: 1.55; }
 .help-content > section, .help-content > details { width: min(100%, 1400px); }
 .help-intro { max-width: 1120px; }
@@ -982,7 +981,9 @@ textarea::placeholder { color: var(--muted); opacity: .7; }
 .history-text-preview .syntax-directive { color: var(--syntax-directive); }
 .history-score-preview { min-height: 0; padding: 18px; }
 .history-preview-empty { margin: 18vh auto 0; color: var(--muted); text-align: center; }
-.history-footer { display: flex; flex: 0 0 auto; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 9px 12px; padding-top: 5px; }
+.history-footer { display: flex; flex: 0 0 auto; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 9px 12px; padding-top: 7px; }
+.history-footer-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+.history-footer-actions .history-primary-button, .history-footer-actions .history-secondary-button { min-height: 27px; padding: 4px 7px; font-size: .65rem; white-space: nowrap; }
 .history-delete-button { padding: 3px 6px; border: 0; border-bottom: 1px solid currentColor; color: var(--muted); background: transparent; cursor: pointer; font-size: .68rem; }
 .history-delete-button:hover { color: var(--danger); }
 .history-delete-button:disabled { color: var(--muted); cursor: default; opacity: .45; }

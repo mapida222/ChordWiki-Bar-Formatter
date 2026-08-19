@@ -2183,21 +2183,13 @@
     try {
       const snapshot = await importBackupFile(file);
       if (!snapshot) return;
-      const current = collectSnapshot();
-      const differs = JSON.stringify(current) !== JSON.stringify({
-        inputText: snapshot.inputText,
-        correctionText: snapshot.correctionText,
-        rowAdoptionModes: snapshot.rowAdoptionModes || [],
-        sourceLineIds: snapshot.sourceLineIds || [],
-        outputOverrides: snapshot.outputOverrides || {},
-        committedOutputText: snapshot.committedOutputText || "",
-        settings: snapshot.settings || {}
-      });
-      if (differs && (elements.input.value.trim() || elements.output.value.trim())
-          && !window.confirm("現在の作業内容をバックアップの状態で上書きします。よろしいですか？")) return;
-      restoreHistoryWorkState(snapshot);
-      closeDialog(elements.historyDialog);
-      notify("バックアップ用JSONから作業状態を復元しました。");
+      const result = historyStore.saveHistory(snapshot);
+      renderHistoryList();
+      const importedButton = elements.historyList.querySelector(".history-item");
+      if (importedButton) importedButton.click();
+      notify(result?.refreshed
+        ? "同じバックアップを更新し、使用履歴の先頭へ移動しました。"
+        : "バックアップを使用履歴へ読み込みました。内容を確認してから復元できます。");
     } catch (error) {
       notify(error?.message || "バックアップ用JSONを読み込めませんでした。", true);
     } finally {

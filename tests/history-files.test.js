@@ -58,7 +58,7 @@ const app = fs.readFileSync(path.join(root, "js", "app.js"), "utf8");
 const entry = fs.readFileSync(path.join(root, "js", "entries", "main.js"), "utf8");
 assert(html.includes('id="history-copy-report"'));
 assert(html.includes('history-title-help'));
-assert(html.includes('history-header-action'));
+assert(html.includes('class="history-footer-actions"'));
 assert(!html.includes('id="history-export-report"'));
 assert(!html.includes('id="history-import-report"'));
 assert(!html.includes('id="history-report-file"'));
@@ -77,5 +77,7 @@ assert(app.includes("downloadBackup(currentFileSnapshot())"));
 assert(!app.includes("downloadIssueReport"));
 assert(!app.includes("importIssueReportFile"));
 assert(app.includes("importBackupFile(file)"));
+assert(app.includes("const result = historyStore.saveHistory(snapshot);"));
+assert(app.includes("内容を確認してから復元できます。"));
 
 console.log("PASS: issue-report text and JSON backup import/export");
