@@ -627,6 +627,17 @@ textarea::placeholder { color: var(--muted); opacity: .7; }
 .history-dialog .help-dialog-header .eyebrow { display: none; }
 .history-dialog .help-dialog-header h2 { font-size: 1rem; }
 .history-dialog .help-close-button { padding: 5px 9px; }
+.history-header-actions { display: flex; align-items: center; gap: 6px; }
+.history-header-details { position: relative; flex: 0 0 auto; }
+.history-header-details > summary { padding: 5px 8px; border: 1px solid var(--line); border-radius: 4px; color: var(--muted); background: var(--panel); cursor: pointer; font-size: .68rem; font-weight: 800; list-style: none; }
+.history-header-details > summary::-webkit-details-marker { display: none; }
+.history-header-details > summary::after { content: "▼"; margin-left: 5px; font-size: .55rem; }
+.history-header-details[open] > summary { border-color: var(--accent); color: var(--text); background: var(--accent-soft); }
+.history-header-details[open] > summary::after { content: "▲"; }
+.history-header-details > div { position: absolute; z-index: 20; top: calc(100% + 6px); left: 0; width: min(340px, calc(100vw - 32px)); padding: 10px 12px; border: 1px solid var(--line-strong); border-radius: 5px; color: var(--text); background: var(--panel); box-shadow: 0 7px 20px rgba(0, 0, 0, .16); font-size: .72rem; line-height: 1.55; }
+.history-header-details > div strong { display: block; margin-top: 7px; font-size: .74rem; }
+.history-header-details > div strong:first-child { margin-top: 0; }
+.history-header-details > div p { margin: 2px 0 0; color: var(--muted); }
 .help-content { display: grid; justify-items: start; gap: 9px; padding: 10px 12px 14px; font-size: .84rem; line-height: 1.55; }
 .help-content > section, .help-content > details { width: min(100%, 1400px); }
 .help-intro { max-width: 1120px; }
@@ -959,14 +970,12 @@ textarea::placeholder { color: var(--muted); opacity: .7; }
 .history-file-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .history-file-heading > div { display: grid; min-width: 0; gap: 2px; }
 .history-file-heading h3 { margin: 0; font-size: .82rem; }
-.history-file-heading p { margin: 0; color: var(--muted); font-size: .68rem; }
-.history-file-help { margin-left: auto; }
-.history-file-groups { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; min-width: 0; }
-.history-file-group { display: grid; min-width: 0; gap: 8px; padding: 9px; border: 1px solid var(--line); border-radius: 5px; background: var(--panel); }
-.history-file-group > div:first-child { display: grid; gap: 2px; }
-.history-file-group strong { display: block; min-width: 0; overflow-wrap: anywhere; font-size: .75rem; }
-.history-file-group > div:first-child > .context-help { display: inline-flex; margin-left: 3px; vertical-align: middle; }
-.history-file-group > div:first-child > .context-help .context-help-button { width: 16px; height: 16px; font-size: 10px; }
+.history-file-details { color: var(--muted); font-size: .68rem; }
+.history-file-details > summary { display: inline-block; color: var(--muted); cursor: pointer; font-weight: 800; list-style: none; }
+.history-file-details > summary::-webkit-details-marker { display: none; }
+.history-file-details > summary::before { content: "＋"; margin-right: 3px; color: var(--accent); }
+.history-file-details[open] > summary::before { content: "－"; }
+.history-file-details p { max-width: 58em; margin: 5px 0 0; color: var(--muted); line-height: 1.5; }
 .history-file-group-actions { display: flex; flex-wrap: wrap; align-items: stretch; gap: 5px; min-width: 0; }
 .history-file-group-actions button { flex: 1 1 110px; min-width: 0; overflow-wrap: anywhere; white-space: normal; line-height: 1.25; }
 .history-primary-button { min-height: 31px; padding: 5px 10px; border: 1px solid var(--accent); border-radius: 4px; color: var(--text); background: var(--accent-soft); cursor: pointer; font-size: .72rem; font-weight: 800; }
@@ -1172,5 +1181,4 @@ textarea::placeholder { color: var(--muted); opacity: .7; }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 @media (max-width: 700px) {
   .history-file-heading { align-items: flex-start; flex-direction: column; gap: 4px; }
-  .history-file-groups { grid-template-columns: 1fr; }
 }

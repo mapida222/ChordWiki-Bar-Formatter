@@ -80,17 +80,14 @@ const targetOption = html.indexOf('<option value="target" selected>指定数だ�
 const minimizeOption = html.indexOf('<option value="minimize">できるだけ省略</option>');
 const allOption = html.indexOf('<option value="all">すべて省略</option>');
 assert(showOption >= 0 && showOption < targetOption && targetOption < minimizeOption && minimizeOption < allOption);
-assert.strictEqual((html.match(/class="context-help-button"/g) || []).length, 8);
-assert.strictEqual((html.match(/class="context-help-title"/g) || []).length, 8);
+assert.strictEqual((html.match(/class="context-help-button"/g) || []).length, 5);
+assert.strictEqual((html.match(/class="context-help-title"/g) || []).length, 5);
 [
   "02. 初期設定",
   "03. 行修正",
   "03. 行修正の操作",
   "04. 変換後：歌詞行のハイフン",
-  "05. 譜面プレビュー",
-  "形式の使い分け",
-  "不具合報告用テキスト",
-  "バックアップ用JSON"
+  "05. 譜面プレビュー"
 ].forEach((title) => assert(html.includes(`class="context-help-title">${title}</strong>`), `${title} help title`));
 assert(css.includes(".context-help-title { display: block;"));
 assert(html.includes("表示方法を選びます。<br>「省略しない」：すべてのハイフンを表示します。"));
