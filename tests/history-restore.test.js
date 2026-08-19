@@ -9,7 +9,8 @@ const html = fs.readFileSync(path.join(root, "index.html"), "utf8");
 const app = fs.readFileSync(path.join(root, "js", "app.js"), "utf8");
 
 assert(html.includes('id="history-restore" class="history-restore-button" type="button" disabled>保存時の状態を復元</button>'));
-assert(html.includes("変換前・行修正・設定・変換後・確定譜面を保存時の内容へ戻します。"));
+assert(html.includes("保存時の状態を復元"));
+assert(html.includes("変換前・行修正・設定・変換後・確定譜面を戻します。"));
 
 const restoreStart = app.indexOf("function restoreHistoryWorkState(entry)");
 const restoreEnd = app.indexOf("function clearHistoryPreview()", restoreStart);

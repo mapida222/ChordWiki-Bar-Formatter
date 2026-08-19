@@ -628,6 +628,15 @@ textarea::placeholder { color: var(--muted); opacity: .7; }
 .history-dialog .help-dialog-header h2 { font-size: 1rem; }
 .history-title-help { margin-left: 3px; vertical-align: middle; }
 .history-title-help .context-help-button { width: 16px; height: 16px; font-size: 10px; }
+.history-help-popover { width: min(370px, calc(100vw - 32px)); padding: 11px 13px 12px; font-size: .73rem; line-height: 1.5; }
+.history-help-popover p { margin: 0; }
+.history-help-lead { margin-bottom: 9px !important; color: var(--muted); }
+.history-help-steps { display: grid; gap: 7px; margin: 0; padding: 9px 10px 9px 28px; border: 1px solid color-mix(in srgb, var(--line) 75%, transparent); border-radius: 4px; background: color-mix(in srgb, var(--panel) 72%, var(--bg)); }
+.history-help-steps li { padding-left: 2px; }
+.history-help-steps li strong, .history-help-steps li span { display: block; }
+.history-help-steps li strong { margin-bottom: 1px; color: var(--text); }
+.history-help-steps li span { color: var(--muted); }
+.history-help-note { margin-top: 9px !important; color: var(--muted); font-size: .68rem; }
 .history-header-actions { display: flex; align-items: center; gap: 4px; }
 .help-content { display: grid; justify-items: start; gap: 9px; padding: 10px 12px 14px; font-size: .84rem; line-height: 1.55; }
 .help-content > section, .help-content > details { width: min(100%, 1400px); }
