@@ -992,6 +992,7 @@ textarea::placeholder { color: var(--muted); opacity: .7; }
 .history-preview-empty { margin: 18vh auto 0; color: var(--muted); text-align: center; }
 .history-footer { display: flex; flex: 0 0 auto; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 9px 12px; padding-top: 7px; }
 .history-footer-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+.history-feedback-button { display: inline-flex; align-items: center; text-decoration: none; }
 .history-footer-actions .history-primary-button, .history-footer-actions .history-secondary-button { min-height: 27px; padding: 4px 7px; font-size: .65rem; white-space: nowrap; }
 .history-delete-button { padding: 3px 6px; border: 0; border-bottom: 1px solid currentColor; color: var(--muted); background: transparent; cursor: pointer; font-size: .68rem; }
 .history-delete-button:hover { color: var(--danger); }

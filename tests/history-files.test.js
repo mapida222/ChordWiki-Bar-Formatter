@@ -59,6 +59,8 @@ const css = fs.readFileSync(path.join(root, "style.css"), "utf8");
 const app = fs.readFileSync(path.join(root, "js", "app.js"), "utf8");
 const entry = fs.readFileSync(path.join(root, "js", "entries", "main.js"), "utf8");
 assert(html.includes('id="history-copy-report"'));
+assert(html.includes('id="history-feedback"'));
+assert(html.includes('aria-label="報告・要望フォームを開く"'));
 assert(html.includes('history-title-help'));
 assert(html.includes('class="history-help-steps"'));
 assert(html.includes("履歴を選ぶ"));
