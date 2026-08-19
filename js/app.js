@@ -9,7 +9,7 @@
     correctionHighlight: $("#correction-highlight"), inputHighlight: $("#input-highlight"), outputHighlight: $("#output-highlight"), finalOutputHighlight: $("#final-output-highlight"), committedOutputHighlight: $("#committed-output-highlight"),
     correctionCount: $("#correction-count"), correctionPosition: $("#correction-position"), correctionUndo: $("#correction-undo"), correctionRedo: $("#correction-redo"), correctionRefreshLine: $("#correction-refresh-line"), correctionRebuildAll: $("#correction-rebuild-all"), inputCount: $("#input-count"), outputCount: $("#output-count"), finalOutputCount: $("#final-output-count"), committedOutputCount: $("#committed-output-count"), committedOutputShell: $("#committed-output-shell"), committedOutputToggle: $("#committed-output-toggle"), openCommittedPreview: $("#open-committed-preview"), openRealtimeEditor: $("#open-realtime-editor"),
     removalTargets: $("#hyphen-removal-targets"), removalLinked: $("#hyphen-removal-linked"), lyricHyphenMode: $("#lyric-hyphen-mode"), removalSummary: $("#removal-summary"), measureCapacityWarning: $("#measure-capacity-warning"), measureCapacityWarningText: $("#measure-capacity-warning-text"), measureCapacityWarningOpen: $("#measure-capacity-warning-open"), measureCapacityWarningDismiss: $("#measure-capacity-warning-dismiss"),
-    statusDetail: $("#status-detail"), toast: $("#toast"), helpDialog: $("#help-dialog"), helpExamplePreview: $("#help-example-preview"), historyDialog: $("#history-dialog"), historyList: $("#history-list"), historyPreviewPanel: $("#history-preview-panel"), historyPreviewTabs: $("#history-preview-tabs"), historyTextPreview: $("#history-text-preview"), historyPreview: $("#history-score-preview"), historyPreviewTitle: $("#history-preview-title"), historyPreviewDate: $("#history-preview-date"), historyRestore: $("#history-restore"), historyExportTest: $("#history-export-test"), historyImportTest: $("#history-import-test"), historyImportFile: $("#history-import-file"), historyDeleteAll: $("#history-delete-all"), keySettingsDialog: $("#key-settings-dialog"), keySettingsList: $("#key-settings-list"), keySettingsPreview: $("#key-settings-score-preview")
+    statusDetail: $("#status-detail"), toast: $("#toast"), helpDialog: $("#help-dialog"), helpExamplePreview: $("#help-example-preview"), historyDialog: $("#history-dialog"), historyList: $("#history-list"), historyPreviewPanel: $("#history-preview-panel"), historyPreviewTabs: $("#history-preview-tabs"), historyTextPreview: $("#history-text-preview"), historyPreview: $("#history-score-preview"), historyPreviewTitle: $("#history-preview-title"), historyPreviewDate: $("#history-preview-date"), historyRestore: $("#history-restore"), historyCopyReport: $("#history-copy-report"), historyExportReport: $("#history-export-report"), historyImportReport: $("#history-import-report"), historyReportFile: $("#history-report-file"), historyExportBackup: $("#history-export-backup"), historyImportBackup: $("#history-import-backup"), historyBackupFile: $("#history-backup-file"), historyDeleteAll: $("#history-delete-all"), keySettingsDialog: $("#key-settings-dialog"), keySettingsList: $("#key-settings-list"), keySettingsPreview: $("#key-settings-score-preview")
   };
   elements.displaySettingsToggle.insertAdjacentElement("afterend", elements.fontPanel);
   const correctionGuideItems = [...document.querySelectorAll(".guide-item")];
@@ -1373,7 +1373,7 @@
       if (result.saved) {
         if (!silent) {
           const message = result.enriched
-            ? "既存の使用履歴へテストデータを追加し、先頭へ移動しました。"
+            ? "既存の使用履歴を更新し、先頭へ移動しました。"
             : result.refreshed
             ? "同じ内容の日時を更新し、使用履歴の先頭へ移動しました。"
             : manual
@@ -1678,8 +1678,6 @@
     elements.historyPreviewTitle.textContent = "履歴を選択してください";
     elements.historyPreviewDate.textContent = "一覧をクリックすると、ここに全体プレビューを表示します。";
     elements.historyRestore.disabled = true;
-    elements.historyExportTest.disabled = true;
-    elements.historyExportTest.title = "";
     elements.historyTextPreview.textContent = "";
     elements.historyTextPreview.hidden = true;
     elements.historyPreview.hidden = false;
@@ -1714,9 +1712,6 @@
     elements.historyPreviewTitle.textContent = entry.title;
     elements.historyPreviewDate.textContent = formatSavedAt(entry.savedAt);
     elements.historyRestore.disabled = false;
-    const canExport = Boolean(entry.inputText && typeof entry.initialOutputText === "string");
-    elements.historyExportTest.disabled = !canExport;
-    elements.historyExportTest.title = canExport ? "" : "この履歴は入力と初期出力を含まない旧形式です";
     elements.historyPreview.classList.toggle("bars-through", Boolean(entry.settings?.finalBarsThrough));
     setHistoryPreviewMode(historyPreviewMode);
   }
@@ -1787,31 +1782,52 @@
     restoreEditorScrollPositions(captureEditorScrollPositions());
   }
   pasteScrollEditors.forEach((editor) => editor.addEventListener("paste", preserveEditorScrollOnPaste));
-  function safeTestDataFileName(name) {
-    const base = CBFTestData.titleForFileName(name).replace(/[\\/:*?"<>|]/g, "_").slice(0, 80);
-    return `${base || "test-data"}.cbf-test.json`;
+  function currentFileSnapshot() {
+    const snapshot = collectHistorySnapshot();
+    snapshot.title = CBFHistoryStore.titleFromText(snapshot.inputText, Date.now());
+    return snapshot;
   }
-  function downloadTestData(entry) {
-    const testData = CBFTestData.create(entry);
-    const blob = new Blob([`${JSON.stringify(testData, null, 2)}\n`], { type: "application/json;charset=utf-8" });
+  function safeFileBaseName(name, fallback) {
+    return String(name || fallback).replace(/[\\/:*?"<>|]/g, "_").slice(0, 80) || fallback;
+  }
+  function downloadIssueReport(snapshot) {
+    const report = CBFIssueReport.create(snapshot);
+    const blob = new Blob([report], { type: "text/plain;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = safeTestDataFileName(testData.name);
+    link.download = `${safeFileBaseName(snapshot.title, "issue-report")}.issue-report.txt`;
     document.body.append(link);
     link.click();
     link.remove();
     setTimeout(() => URL.revokeObjectURL(url), 0);
   }
-  async function importTestDataFile(file) {
+  function downloadBackup(snapshot) {
+    const backup = CBFBackupData.create(snapshot);
+    const blob = new Blob([`${JSON.stringify(backup, null, 2)}\n`], { type: "application/json;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `${safeFileBaseName(snapshot.title, "backup")}.backup.json`;
+    document.body.append(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 0);
+  }
+  async function importIssueReportFile(file) {
     if (!file) return;
     if (file.size > 20 * 1024 * 1024) throw new Error("20MBを超えるファイルは読み込めません。");
-    const testData = CBFTestData.parse(await file.text());
-    const result = historyStore.saveHistory(CBFTestData.toHistorySnapshot(testData));
+    const report = CBFIssueReport.parse(await file.text());
+    const result = historyStore.saveHistory(CBFIssueReport.toHistorySnapshot(report));
     renderHistoryList();
     const importedButton = elements.historyList.querySelector(".history-item");
     if (importedButton) importedButton.click();
     return result;
+  }
+  async function importBackupFile(file) {
+    if (!file) return null;
+    if (file.size > 20 * 1024 * 1024) throw new Error("20MBを超えるファイルは読み込めません。");
+    return CBFBackupData.toSnapshot(CBFBackupData.parse(await file.text()));
   }
   function convert({ refreshCorrections = false, preserveUserEdits = false, changedLineIndices = null, sourceChangedLineIndices = null } = {}) {
     const settings = validatedSettings();
@@ -2167,27 +2183,69 @@
     closeDialog(elements.historyDialog);
     notify("履歴を保存した時の作業状態を復元しました。");
   });
-  elements.historyExportTest.addEventListener("click", () => {
-    if (!selectedHistoryEntry) return;
+  elements.historyCopyReport.addEventListener("click", async () => {
     try {
-      downloadTestData(selectedHistoryEntry);
-      notify("テストデータをローカルへ書き出しました。");
+      await writeClipboard(CBFIssueReport.create(currentFileSnapshot()));
+      notify("不具合報告用テキストをコピーしました。報告先へ貼り付けてください。");
     } catch (error) {
-      notify(error?.message || "テストデータを書き出せませんでした。", true);
+      notify(error?.message || "不具合報告用テキストをコピーできませんでした。", true);
     }
   });
-  elements.historyImportTest.addEventListener("click", () => elements.historyImportFile.click());
-  elements.historyImportFile.addEventListener("change", async () => {
-    const [file] = elements.historyImportFile.files || [];
+  elements.historyExportReport.addEventListener("click", () => {
     try {
-      const result = await importTestDataFile(file);
-      if (file) notify(result?.refreshed
-        ? "同じテストデータの日時を更新し、使用履歴の先頭へ移動しました。"
-        : "テストデータを使用履歴へ読み込みました。");
+      downloadIssueReport(currentFileSnapshot());
+      notify("不具合報告用テキストをエクスポートしました。");
     } catch (error) {
-      notify(error?.message || "テストデータを読み込めませんでした。", true);
+      notify(error?.message || "不具合報告用テキストをエクスポートできませんでした。", true);
+    }
+  });
+  elements.historyImportReport.addEventListener("click", () => elements.historyReportFile.click());
+  elements.historyReportFile.addEventListener("change", async () => {
+    const [file] = elements.historyReportFile.files || [];
+    try {
+      const result = await importIssueReportFile(file);
+      if (file) notify(result?.refreshed
+        ? "同じ不具合報告の日時を更新し、使用履歴の先頭へ移動しました。"
+        : "不具合報告用テキストを使用履歴へ読み込みました。");
+    } catch (error) {
+      notify(error?.message || "不具合報告用テキストを読み込めませんでした。", true);
     } finally {
-      elements.historyImportFile.value = "";
+      elements.historyReportFile.value = "";
+    }
+  });
+  elements.historyExportBackup.addEventListener("click", () => {
+    try {
+      downloadBackup(currentFileSnapshot());
+      notify("バックアップ用JSONをエクスポートしました。");
+    } catch (error) {
+      notify(error?.message || "バックアップ用JSONをエクスポートできませんでした。", true);
+    }
+  });
+  elements.historyImportBackup.addEventListener("click", () => elements.historyBackupFile.click());
+  elements.historyBackupFile.addEventListener("change", async () => {
+    const [file] = elements.historyBackupFile.files || [];
+    try {
+      const snapshot = await importBackupFile(file);
+      if (!snapshot) return;
+      const current = collectSnapshot();
+      const differs = JSON.stringify(current) !== JSON.stringify({
+        inputText: snapshot.inputText,
+        correctionText: snapshot.correctionText,
+        rowAdoptionModes: snapshot.rowAdoptionModes || [],
+        sourceLineIds: snapshot.sourceLineIds || [],
+        outputOverrides: snapshot.outputOverrides || {},
+        committedOutputText: snapshot.committedOutputText || "",
+        settings: snapshot.settings || {}
+      });
+      if (differs && (elements.input.value.trim() || elements.output.value.trim())
+          && !window.confirm("現在の作業内容をバックアップの状態で上書きします。よろしいですか？")) return;
+      restoreHistoryWorkState(snapshot);
+      closeDialog(elements.historyDialog);
+      notify("バックアップ用JSONから作業状態を復元しました。");
+    } catch (error) {
+      notify(error?.message || "バックアップ用JSONを読み込めませんでした。", true);
+    } finally {
+      elements.historyBackupFile.value = "";
     }
   });
   elements.historyDeleteAll.addEventListener("click", () => {
