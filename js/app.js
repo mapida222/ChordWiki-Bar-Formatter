@@ -1797,7 +1797,7 @@
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `${safeFileBaseName(snapshot.title, "backup")}.backup.json`;
+    link.download = `${CBFBackupData.dateForFileName()}_${safeFileBaseName(snapshot.title, "backup")}.backup.json`;
     document.body.append(link);
     link.click();
     link.remove();

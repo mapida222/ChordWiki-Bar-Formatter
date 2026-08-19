@@ -19,6 +19,15 @@
     return (match ? name.slice(0, match.index) : name).trim().replace(/[　\s\-‐–—・／\/]+$/u, "") || "backup";
   }
 
+  function dateForFileName(value = new Date()) {
+    const date = value instanceof Date ? value : new Date(value);
+    if (Number.isNaN(date.getTime())) return "00000000";
+    const year = String(date.getFullYear()).padStart(4, "0");
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}${month}${day}`;
+  }
+
   function create(snapshot) {
     if (!snapshot || typeof snapshot !== "object") throw new Error("保存する作業内容がありません。");
     return {
@@ -93,5 +102,5 @@
     return { title: value.name, ...value.state };
   }
 
-  return { FORMAT, VERSION, titleForFileName, create, validate, parse, toSnapshot };
+  return { FORMAT, VERSION, titleForFileName, dateForFileName, create, validate, parse, toSnapshot };
 }));
