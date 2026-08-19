@@ -628,7 +628,8 @@ textarea::placeholder { color: var(--muted); opacity: .7; }
 .history-dialog .help-dialog-header h2 { font-size: 1rem; }
 .history-title-help { margin-left: 3px; vertical-align: middle; }
 .history-title-help .context-help-button { width: 16px; height: 16px; font-size: 10px; }
-.history-header-actions { display: flex; align-items: center; gap: 6px; }
+.history-header-actions { display: flex; align-items: center; gap: 4px; }
+.history-header-action { min-height: 27px; padding: 4px 7px; font-size: .65rem; white-space: nowrap; }
 .help-content { display: grid; justify-items: start; gap: 9px; padding: 10px 12px 14px; font-size: .84rem; line-height: 1.55; }
 .help-content > section, .help-content > details { width: min(100%, 1400px); }
 .help-intro { max-width: 1120px; }
@@ -950,18 +951,6 @@ textarea::placeholder { color: var(--muted); opacity: .7; }
 .history-content { display: flex; flex-direction: column; min-height: 0; padding: 14px 18px 12px; }
 .history-layout { display: grid; flex: 1 1 auto; grid-template-columns: minmax(290px, 350px) minmax(0, 1fr); gap: 14px; min-height: 0; }
 .history-list-panel { min-height: 0; overflow-y: auto; padding-right: 3px; }
-.history-file-panel { display: grid; flex: 0 0 auto; gap: 9px; margin-bottom: 14px; padding: 11px; border: 1px solid color-mix(in srgb, var(--accent) 48%, var(--line)); border-radius: 6px; background: color-mix(in srgb, var(--accent-soft) 42%, var(--panel)); }
-.history-file-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-.history-file-heading > div { display: grid; min-width: 0; gap: 2px; }
-.history-file-heading h3 { margin: 0; font-size: .82rem; }
-.history-file-details { color: var(--muted); font-size: .68rem; }
-.history-file-details > summary { display: inline-block; color: var(--muted); cursor: pointer; font-weight: 800; list-style: none; }
-.history-file-details > summary::-webkit-details-marker { display: none; }
-.history-file-details > summary::before { content: "＋"; margin-right: 3px; color: var(--accent); }
-.history-file-details[open] > summary::before { content: "－"; }
-.history-file-details p { max-width: 58em; margin: 5px 0 0; color: var(--muted); line-height: 1.5; }
-.history-file-group-actions { display: flex; flex-wrap: wrap; align-items: stretch; gap: 5px; min-width: 0; }
-.history-file-group-actions button { flex: 1 1 110px; min-width: 0; overflow-wrap: anywhere; white-space: normal; line-height: 1.25; }
 .history-primary-button { min-height: 31px; padding: 5px 10px; border: 1px solid var(--accent); border-radius: 4px; color: var(--text); background: var(--accent-soft); cursor: pointer; font-size: .72rem; font-weight: 800; }
 .history-primary-button:hover { background: color-mix(in srgb, var(--accent-soft) 72%, var(--accent)); }
 .history-list { display: grid; gap: 8px; }
@@ -976,7 +965,7 @@ textarea::placeholder { color: var(--muted); opacity: .7; }
 .history-preview-heading > div:first-child { min-width: 0; }
 .history-preview-heading h3 { margin: 0 0 3px; overflow: hidden; font-size: .9rem; text-overflow: ellipsis; white-space: nowrap; }
 .history-preview-heading p { margin: 0; color: var(--muted); font-size: .7rem; }
-.history-preview-actions, .history-file-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 7px; }
+.history-preview-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 7px; }
 .history-restore-button { flex: 0 0 auto; min-height: 31px; padding: 5px 10px; border: 1px solid var(--accent); border-radius: 4px; color: var(--text); background: var(--accent-soft); cursor: pointer; font-size: .75rem; font-weight: 800; }
 .history-restore-button:disabled { border-color: var(--line); color: var(--muted); background: var(--panel); cursor: default; opacity: .65; }
 .history-secondary-button { min-height: 31px; padding: 5px 10px; border: 1px solid var(--line); border-radius: 4px; color: var(--text); background: var(--panel); cursor: pointer; font-size: .72rem; font-weight: 800; }
@@ -1163,6 +1152,3 @@ textarea::placeholder { color: var(--muted); opacity: .7; }
   .help-detail-card > summary::after { transition: none; }
 }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
-@media (max-width: 700px) {
-  .history-file-heading { align-items: flex-start; flex-direction: column; gap: 4px; }
-}
