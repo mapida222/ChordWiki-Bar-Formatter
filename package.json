@@ -7,7 +7,8 @@
     "dev": "vite",
     "test": "node scripts/run-tests.js",
     "build": "vite build --configLoader runner",
-    "preview": "vite preview --configLoader runner"
+    "preview": "vite preview --configLoader runner",
+    "verify": "node scripts/release-gate.js"
   },
   "engines": {
     "node": ">=20.19"

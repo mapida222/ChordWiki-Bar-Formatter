@@ -126,6 +126,10 @@
       // (Synth), names an instrumental part. It is notation, not a lyric.
       if (!musicStarted) value = value.replace(/^(?:[ \t　]*(?:\([^()\r\n]*\)|（[^（）\r\n]*）))+/u, "");
       value = value.replace(ARRANGEMENT_PARENTHESIS_RE, "");
+      // Parenthesized annotations such as (rit...) are not sung text.  Do
+      // not let their contents turn an otherwise rhythm-only source into a
+      // lyric line.  Text outside the parentheses still counts normally.
+      value = value.replace(/[（(][^（）()\r\n]*[）)]/gu, "");
       if (isStandaloneWaveMarker(value)) value = "";
       const content = value
         .replace(/\(\s*\d+\s*\/\s*\d+\s*\)/g, "")
@@ -1316,12 +1320,14 @@
     const manualRhythm = hasHyphens(musicTokens);
     const inlineArrangementNotation = hasInlineArrangementNotation(musicTokens);
     const normalizedMusicTokens = normalizeStandaloneWaveMarkers(musicTokens);
+    const authoredParenthesizedNote = musicTokens.some((token) => token.kind === "text" && /[（(](?!\s*\d+\s*[\/／])[^（）()\r\n]*[）)]/u.test(token.value));
     // Only retain raw mixed spans when the author explicitly starts the line
     // with a bar.  Ordinary lyric lines that merely continue into code-only
     // measures still use the established mixed-measure conversion.
     const mixedAuthoredSource = manualRhythm && musicTokens[0]?.kind === "bar" && hasMixedLyricAndCodeOnlyMeasures(musicTokens);
-    const preserveCompactSource = manualRhythm && !hasMeaningfulLyricText(musicTokens)
-      && (annotation?.preserveCompact || inlineArrangementNotation || /^[ \t　]|[ \t　]$/u.test(line) || /^[ \t　]*(?:\((?!\s*\d+\s*\/)[^()\r\n]*\)|（(?!\s*\d+\s*[\/／])[^（）\r\n]*）)[ \t　]*(?:\[\|\]|\|)/u.test(line));
+    const preserveCompactSource = !hasMeaningfulLyricText(musicTokens)
+      && ((authoredParenthesizedNote && musicTokens.some((token) => token.kind === "bar"))
+        || (manualRhythm && (annotation?.preserveCompact || inlineArrangementNotation || /^[ \t　]|[ \t　]$/u.test(line) || /^[ \t　]*(?:\((?!\s*\d+\s*\/)[^()\r\n]*\)|（(?!\s*\d+\s*[\/／])[^（）\r\n]*）)[ \t　]*(?:\[\|\]|\|)/u.test(line))));
     const result = manualRhythm
       ? formatManualRhythm(moveDelayedRhythmAfterChord(normalizedMusicTokens, settings.measureCapacity), settings)
       : isCodeOnly(normalizedMusicTokens) ? formatChordOnly(normalizedMusicTokens, settings) : formatLyric(normalizedMusicTokens, settings);
@@ -1410,8 +1416,13 @@
     const ranked = [...grouped.values()].sort((left, right) => right.length - left.length || right[0].width - left[0].width);
     const dominant = ranked[0];
     if (ranked[1]?.length === dominant.length) return null;
-    if (dominant.length / candidates.length <= 0.5) return null;
-    if (dominant.length < 2 && !dominant.some((candidate) => candidate.codeOnly)) return null;
+    const coverage = dominant.length / candidates.length;
+    const lineCount = new Set(dominant.map((candidate) => candidate.line)).size;
+    // Settings warnings describe a song-wide format, not a local edit.  For
+    // short songs every analyzed measure must agree; longer songs need a
+    // strong 80% majority spread across at least two source lines.
+    if (dominant.length < 2) return null;
+    if (candidates.length <= 2 ? dominant.length !== candidates.length : coverage < 0.8 || lineCount < 2) return null;
     const detected = dominant[0].width;
     if (detected === configured) return null;
     return {
@@ -1419,40 +1430,42 @@
       detected,
       measureCount: dominant.length,
       candidateCount: candidates.length,
-      percentage: Math.round((dominant.length / candidates.length) * 100),
+      percentage: Math.round(coverage * 100),
       lineNumbers: [...new Set(dominant.map((candidate) => candidate.line))]
     };
   }
 
   function dominantAuthoredValue(values, configured, includeConfigured = false) {
-    const candidates = values.filter((value) => Number.isInteger(value) && value > 0);
+    const candidates = values.filter((candidate) => Number.isInteger(candidate.value) && candidate.value > 0);
     if (candidates.length < 2) return null;
     const grouped = new Map();
-    candidates.forEach((value) => grouped.set(value, (grouped.get(value) || 0) + 1));
+    candidates.forEach((candidate) => grouped.set(candidate.value, (grouped.get(candidate.value) || 0) + 1));
     const ranked = [...grouped.entries()].sort((left, right) => right[1] - left[1] || right[0] - left[0]);
     if (ranked.length > 1 && ranked[0][1] === ranked[1][1]) return null;
     const [detected, count] = ranked[0];
-    if (count / candidates.length <= 0.5 || (!includeConfigured && detected === Number(configured))) return null;
-    return { configured: Number(configured), detected, count, candidateCount: candidates.length, percentage: Math.round(count / candidates.length * 100) };
+    const coverage = count / candidates.length;
+    const lineCount = new Set(candidates.filter((candidate) => candidate.value === detected).map((candidate) => candidate.line)).size;
+    if (count < 2 || (candidates.length <= 2 ? count !== candidates.length : coverage < 0.8 || lineCount < 2) || (!includeConfigured && detected === Number(configured))) return null;
+    return { configured: Number(configured), detected, count, candidateCount: candidates.length, percentage: Math.round(coverage * 100), lineNumbers: [...new Set(candidates.filter((candidate) => candidate.value === detected).map((candidate) => candidate.line))] };
   }
 
   function analyzeAuthoredFormatting(inputText, configuredSettings = {}) {
     const directHyphens = [];
     const spacingGroups = [];
     const authoredHyphenWidth = (token) => /^-+$/u.test(token?.value || "") ? token.value.length : 0;
-    String(inputText || "").split(/\r\n|\r|\n/).forEach((line) => {
+    String(inputText || "").split(/\r\n|\r|\n/).forEach((line, lineIndex) => {
       const tokens = parseTokens(line);
       tokens.forEach((token, index) => {
         if (token.kind === "chord" && !token.value.includes("/") && tokens[index + 1]?.kind === "hyphen") {
           const width = authoredHyphenWidth(tokens[index + 1]);
-          if (width) directHyphens.push(width);
+          if (width) directHyphens.push({ value: width, line: lineIndex + 1 });
         }
         if (token.kind !== "hyphen") return;
         const previous = tokens[index - 1];
         const beforeSeparator = tokens[index - 2];
         if (previous?.kind === "text" && /^[ \t　]+$/u.test(previous.value) && beforeSeparator?.kind === "hyphen" && authoredHyphenWidth(beforeSeparator)) {
           const width = authoredHyphenWidth(token);
-          if (width) spacingGroups.push(width);
+          if (width) spacingGroups.push({ value: width, line: lineIndex + 1 });
         }
       });
     });

@@ -22,6 +22,9 @@ const snapshot = {
 
 const first = store.saveHistory(snapshot);
 if (!first.saved || first.entry.title !== "履歴テスト" || store.list().length !== 1) throw new Error("history save/title failed");
+if (first.entry.sourceLineIds[1] !== "source-music" || first.entry.outputOverrides["source-music"]?.text !== "[C]手動") {
+  throw new Error("manual output override state was not saved");
+}
 currentTime += 60 * 1000;
 const refreshedFirst = store.saveHistory(snapshot);
 if (
@@ -54,6 +57,12 @@ const refreshedConverted = store.saveHistory({
   committedOutputText: "|[C]更新した確定譜面|",
   settings: { converter: { hyphenUnit: 8 }, theme: "dark" }
 });
+if (historyApi.signature(convertedSnapshot) !== historyApi.signature({
+  ...convertedSnapshot,
+  inputText: "入力が異なる",
+  correctionText: "別の補正",
+  settings: { converter: { hyphenUnit: 16 } }
+})) throw new Error("same displayed output must define the same history");
 if (
   !refreshedConverted.saved
   || !refreshedConverted.refreshed
@@ -65,6 +74,9 @@ if (
 ) {
   throw new Error("same converted history text was not moved to the top");
 }
+
+const differentOutput = store.saveHistory({ ...convertedSnapshot, historyText: "{title:別出力}\n[|][D]別結果[|]" });
+if (!differentOutput.saved || store.list().length !== 3) throw new Error("different displayed output must remain separate");
 
 const legacyStorage = new MemoryStorage();
 const legacyStore = historyApi.createStore(legacyStorage, () => currentTime);
@@ -85,6 +97,13 @@ if (
   || enriched.entry.inputText !== "[C]入力"
   || enriched.entry.initialOutputText !== "[|][C][----]入力[|]"
 ) throw new Error("legacy history enrichment failed");
+
+const workStateOnly = { inputText: "[C]同じ入力", correctionText: "4", settings: { converter: { hyphenUnit: 4 } } };
+if (historyApi.signature(workStateOnly) !== historyApi.signature({ ...workStateOnly, historyText: "[|][C]同じ結果[|]" })) {
+  // Once a rendered result exists, it intentionally becomes the identity.
+} else {
+  throw new Error("work-state fallback must remain distinct from output identity");
+}
 
 currentTime += 60 * 1000;
 const testDataSnapshot = {
@@ -107,7 +126,7 @@ if (
 currentTime += 60 * 1000;
 const changed = { ...snapshot, inputText: "タイトルなし" };
 const second = store.saveHistory(changed);
-if (!second.saved || store.list().length !== 4 || second.entry.title === "タイトルなし") throw new Error("changed history/fallback title failed");
+if (!second.saved || store.list().length !== 5 || second.entry.title === "タイトルなし") throw new Error("changed history/fallback title failed");
 
 currentTime += 60 * 1000;
 const movedFirst = store.saveHistory(snapshot);
@@ -115,7 +134,7 @@ if (
   !movedFirst.refreshed
   || store.list()[0].id !== first.entry.id
   || store.list()[0].savedAt !== currentTime
-  || store.list().length !== 4
+  || store.list().length !== 5
 ) throw new Error("same history was not moved to the top");
 
 store.saveCrash(changed);

@@ -9,7 +9,7 @@
     correctionHighlight: $("#correction-highlight"), inputHighlight: $("#input-highlight"), outputHighlight: $("#output-highlight"), finalOutputHighlight: $("#final-output-highlight"), committedOutputHighlight: $("#committed-output-highlight"),
     correctionCount: $("#correction-count"), correctionPosition: $("#correction-position"), correctionUndo: $("#correction-undo"), correctionRedo: $("#correction-redo"), correctionRefreshLine: $("#correction-refresh-line"), correctionRebuildAll: $("#correction-rebuild-all"), inputCount: $("#input-count"), outputCount: $("#output-count"), finalOutputCount: $("#final-output-count"), committedOutputCount: $("#committed-output-count"), committedOutputShell: $("#committed-output-shell"), committedOutputToggle: $("#committed-output-toggle"), openCommittedPreview: $("#open-committed-preview"), openRealtimeEditor: $("#open-realtime-editor"),
     removalTargets: $("#hyphen-removal-targets"), removalLinked: $("#hyphen-removal-linked"), lyricHyphenMode: $("#lyric-hyphen-mode"), removalSummary: $("#removal-summary"), measureCapacityWarning: $("#measure-capacity-warning"), measureCapacityWarningText: $("#measure-capacity-warning-text"), measureCapacityWarningOpen: $("#measure-capacity-warning-open"), measureCapacityWarningDismiss: $("#measure-capacity-warning-dismiss"),
-    statusDetail: $("#status-detail"), toast: $("#toast"), helpDialog: $("#help-dialog"), helpExamplePreview: $("#help-example-preview"), historyDialog: $("#history-dialog"), historyList: $("#history-list"), historyPreviewPanel: $("#history-preview-panel"), historyPreviewTabs: $("#history-preview-tabs"), historyTextPreview: $("#history-text-preview"), historyPreview: $("#history-score-preview"), historyPreviewTitle: $("#history-preview-title"), historyPreviewDate: $("#history-preview-date"), historyRestore: $("#history-restore"), historyExportTest: $("#history-export-test"), historyImportTest: $("#history-import-test"), historyImportFile: $("#history-import-file"), historyDeleteAll: $("#history-delete-all"), keySettingsDialog: $("#key-settings-dialog"), keySettingsList: $("#key-settings-list"), keySettingsPreview: $("#key-settings-score-preview")
+    statusDetail: $("#status-detail"), toast: $("#toast"), helpDialog: $("#help-dialog"), helpExamplePreview: $("#help-example-preview"), historyDialog: $("#history-dialog"), historyList: $("#history-list"), historyPreviewPanel: $("#history-preview-panel"), historyPreviewTabs: $("#history-preview-tabs"), historyTextPreview: $("#history-text-preview"), historyPreview: $("#history-score-preview"), historyPreviewTitle: $("#history-preview-title"), historyPreviewDate: $("#history-preview-date"), historyRestore: $("#history-restore"), historyCopyReport: $("#history-copy-report"), historyExportBackup: $("#history-export-backup"), historyImportBackup: $("#history-import-backup"), historyBackupFile: $("#history-backup-file"), historyDeleteAll: $("#history-delete-all"), keySettingsDialog: $("#key-settings-dialog"), keySettingsList: $("#key-settings-list"), keySettingsPreview: $("#key-settings-score-preview")
   };
   elements.displaySettingsToggle.insertAdjacentElement("afterend", elements.fontPanel);
   const correctionGuideItems = [...document.querySelectorAll(".guide-item")];
@@ -169,11 +169,11 @@
   let historyTimer;
   let crashTimer;
   let suppressActivity = false;
-  let scorePreviewChannel = null;
+  const scoreWindowBridge = CBFScoreWindowState.createBridge(localStorage);
+  const scorePreviewChannel = scoreWindowBridge.channel;
   let selectedHistoryEntry = null;
   let historyPreviewMode = "score";
   let keySectionSettings = [];
-  let scoreWindowRevision = Date.now();
   const FONT_STORAGE_KEY = "chordWikiBarFormatter.editorFont.v1";
   const FONT_SIZE_STORAGE_KEY = "chordWikiBarFormatter.editorFontSize.v1";
   const SCROLL_SYNC_STORAGE_KEY = "chordWikiBarFormatter.scrollSync.v1";
@@ -201,18 +201,12 @@
   const PREVIEW_KEY_SECTIONS_STORAGE_KEY = "chordWikiBarFormatter.previewKeySections.v1";
   const COMMITTED_OUTPUT_STORAGE_KEY = "chordWikiBarFormatter.committedOutput.v1";
   const COMMITTED_DRAFT_STORAGE_KEY = "chordWikiBarFormatter.committedWindowDraft.v1";
-  const SCORE_WINDOW_STATE_KEY = "chordWikiBarFormatter.scoreWindow.v1";
-  const SCORE_WINDOW_CHANNEL = "chordWikiBarFormatter.scoreWindow.channel.v1";
+  const SCORE_WINDOW_STATE_KEY = scoreWindowBridge.stateKey;
   const REMOVAL_LINKED_STORAGE_KEY = "chordWikiBarFormatter.hyphenRemovalLinked.v1";
   const CURRENT_STATE_UPDATED_AT_KEY = "chordWikiBarFormatter.currentStateUpdatedAt.v1";
   const HISTORY_DELAY_MS = 1 * 60 * 1000;
   const CRASH_DELAY_MS = 5 * 60 * 1000;
   const historyStore = CBFHistoryStore.createStore(localStorage);
-  try {
-    if ("BroadcastChannel" in window) scorePreviewChannel = new BroadcastChannel(SCORE_WINDOW_CHANNEL);
-  } catch (_error) {
-    scorePreviewChannel = null;
-  }
   const highlightByEditor = new Map([
     [elements.correction, elements.correctionHighlight],
     [elements.input, elements.inputHighlight],
@@ -480,7 +474,13 @@
     elements.measureCapacityWarning.hidden = false;
     syncResultRowAlignment();
   }
-  function lineCount(text) { return text.length ? text.split(/\r\n|\r|\n/).length : 0; }
+  // A terminal newline separates the last real line from an empty suffix;
+  // that suffix is not a user-visible row and must not enlarge gutters or
+  // scroll synchronization ranges.
+  function lineCount(text) {
+    const value = String(text || "").replace(/(?:\r\n|\r|\n)+$/u, "");
+    return value ? value.split(/\r\n|\r|\n/).length : 0;
+  }
   function updateCount(textarea, target) { target.textContent = `${textarea.value.length}文字 / ${lineCount(textarea.value)}行`; }
   function escapeHtml(text) {
     return text.replace(/[&<>"']/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[character]);
@@ -600,12 +600,15 @@
     if (restoringPasteScroll) return;
     const computed = getComputedStyle(elements.correction);
     const lineHeight = Number.parseFloat(computed.lineHeight) || 23;
+    // Keep one virtual row below the final real row so selecting the last
+    // correction still reveals the following space without numbering it.
+    const scrollLineCount = Math.max(1, lineCount(elements.correction.value) + 1);
     const nextScrollTop = CBFCorrectionInput.scrollTopForLineMargin(
       elements.correction.scrollTop,
       elements.correction.clientHeight,
       lineHeight,
       lineIndex,
-      lineCount(elements.correction.value),
+      scrollLineCount,
       1,
       Number.parseFloat(computed.paddingTop) || 0,
       2
@@ -1190,15 +1193,11 @@
       editorFontSize: elements.fontSizeValue.value,
       scrollSync: scrollSyncEnabled,
       textColoring: elements.textColoring.checked,
-      boldCode: elements.boldCode.checked,
-      updatedAt: scoreWindowRevision
+      boldCode: elements.boldCode.checked
     };
   }
   function publishScoreWindow() {
-    scoreWindowRevision = Math.max(Date.now(), scoreWindowRevision + 1);
-    const payload = scoreWindowPayload();
-    try { localStorage.setItem(SCORE_WINDOW_STATE_KEY, JSON.stringify(payload)); } catch (_error) { /* preview still works locally */ }
-    if (scorePreviewChannel) scorePreviewChannel.postMessage({ type: "score-state", payload });
+    scoreWindowBridge.publish(scoreWindowPayload());
   }
   function renderFinalPreview() {
     elements.finalPreview.classList.toggle("bars-through", elements.finalBarsThrough.checked);
@@ -1364,7 +1363,7 @@
       if (result.saved) {
         if (!silent) {
           const message = result.enriched
-            ? "既存の使用履歴へテストデータを追加し、先頭へ移動しました。"
+            ? "既存の使用履歴を更新し、先頭へ移動しました。"
             : result.refreshed
             ? "同じ内容の日時を更新し、使用履歴の先頭へ移動しました。"
             : manual
@@ -1619,21 +1618,29 @@
       .filter(Boolean);
     return lines.slice(0, 2).join("\n") || "本文の入力はありません";
   }
+  function savedHistoryText(entry) {
+    return typeof entry.historyText === "string" ? entry.historyText : null;
+  }
   function historyPreviewText(entry) {
-    if (typeof entry.historyText === "string") return entry.historyText;
+    const savedText = savedHistoryText(entry);
+    if (savedText !== null) return savedText;
     const state = entry.settings || {};
     const converterCandidate = { ...CBFSettings.defaults(), ...(state.converter || {}) };
     const validated = CBFSettings.validate(converterCandidate);
     const converterSettings = validated.valid ? validated.values : CBFSettings.defaults();
     const rowCorrections = String(entry.correctionText || "").split(/\r\n|\r|\n/);
     const converted = CBFConverter.convertChordText(String(entry.inputText || ""), converterSettings, rowCorrections);
-    return converted.output;
+    const adopted = CBFConverter.restoreSourceAdoptedLines
+      ? CBFConverter.restoreSourceAdoptedLines(converted.output, String(entry.inputText || ""), entry.rowAdoptionModes || [])
+      : converted.output;
+    return CBFOutputOverrides.apply(adopted, entry.sourceLineIds || [], entry.outputOverrides || {});
   }
   function restoreHistoryWorkState(entry) {
     restoreSnapshot(entry);
-    if (typeof entry.historyText === "string") {
+    const savedText = savedHistoryText(entry);
+    if (savedText !== null) {
       const generatedLines = elements.output.value.split(/\r\n|\r|\n/);
-      const restoredText = String(entry.historyText);
+      const restoredText = savedText;
       const restoredLines = restoredText.split(/\r\n|\r|\n/);
       const lineMapping = CBFConverter.alignLineIndices(generatedLines, restoredLines);
       manualOutputLines = new Set();
@@ -1669,8 +1676,6 @@
     elements.historyPreviewTitle.textContent = "履歴を選択してください";
     elements.historyPreviewDate.textContent = "一覧をクリックすると、ここに全体プレビューを表示します。";
     elements.historyRestore.disabled = true;
-    elements.historyExportTest.disabled = true;
-    elements.historyExportTest.title = "";
     elements.historyTextPreview.textContent = "";
     elements.historyTextPreview.hidden = true;
     elements.historyPreview.hidden = false;
@@ -1705,9 +1710,6 @@
     elements.historyPreviewTitle.textContent = entry.title;
     elements.historyPreviewDate.textContent = formatSavedAt(entry.savedAt);
     elements.historyRestore.disabled = false;
-    const canExport = Boolean(entry.inputText && typeof entry.initialOutputText === "string");
-    elements.historyExportTest.disabled = !canExport;
-    elements.historyExportTest.title = canExport ? "" : "この履歴は入力と初期出力を含まない旧形式です";
     elements.historyPreview.classList.toggle("bars-through", Boolean(entry.settings?.finalBarsThrough));
     setHistoryPreviewMode(historyPreviewMode);
   }
@@ -1778,31 +1780,31 @@
     restoreEditorScrollPositions(captureEditorScrollPositions());
   }
   pasteScrollEditors.forEach((editor) => editor.addEventListener("paste", preserveEditorScrollOnPaste));
-  function safeTestDataFileName(name) {
-    const base = CBFTestData.titleForFileName(name).replace(/[\\/:*?"<>|]/g, "_").slice(0, 80);
-    return `${base || "test-data"}.cbf-test.json`;
+  function currentFileSnapshot() {
+    const snapshot = collectHistorySnapshot();
+    snapshot.title = CBFHistoryStore.titleFromText(snapshot.inputText, Date.now());
+    return snapshot;
   }
-  function downloadTestData(entry) {
-    const testData = CBFTestData.create(entry);
-    const blob = new Blob([`${JSON.stringify(testData, null, 2)}\n`], { type: "application/json;charset=utf-8" });
+  function safeFileBaseName(name, fallback) {
+    const title = CBFBackupData.titleForFileName(name);
+    return String(title || fallback).replace(/[\\/:*?"<>|]/g, "_").slice(0, 80) || fallback;
+  }
+  function downloadBackup(snapshot) {
+    const backup = CBFBackupData.create(snapshot);
+    const blob = new Blob([`${JSON.stringify(backup, null, 2)}\n`], { type: "application/json;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = safeTestDataFileName(testData.name);
+    link.download = `${CBFBackupData.dateForFileName()}_${safeFileBaseName(snapshot.title, "backup")}.backup.json`;
     document.body.append(link);
     link.click();
     link.remove();
     setTimeout(() => URL.revokeObjectURL(url), 0);
   }
-  async function importTestDataFile(file) {
-    if (!file) return;
+  async function importBackupFile(file) {
+    if (!file) return null;
     if (file.size > 20 * 1024 * 1024) throw new Error("20MBを超えるファイルは読み込めません。");
-    const testData = CBFTestData.parse(await file.text());
-    const result = historyStore.saveHistory(CBFTestData.toHistorySnapshot(testData));
-    renderHistoryList();
-    const importedButton = elements.historyList.querySelector(".history-item");
-    if (importedButton) importedButton.click();
-    return result;
+    return CBFBackupData.toSnapshot(CBFBackupData.parse(await file.text()));
   }
   function convert({ refreshCorrections = false, preserveUserEdits = false, changedLineIndices = null, sourceChangedLineIndices = null } = {}) {
     const settings = validatedSettings();
@@ -1919,7 +1921,7 @@
       elements.removalTargets.value = event.target.value;
       localStorage.setItem(REMOVAL_STORAGE_KEY, elements.removalTargets.value);
     }
-    if (["setting-shortFractionPrepose", "setting-longBeatLyricPlacement", "setting-showContinuationChord"].includes(event.target.id)) schedulePrioritySettingConversion();
+    if (["setting-hyphenSpacing", "setting-shortFractionPrepose", "setting-longBeatLyricPlacement", "setting-showContinuationChord"].includes(event.target.id)) schedulePrioritySettingConversion();
     else scheduleConversion(true);
     markActivity();
   });
@@ -2080,7 +2082,7 @@
     }
     if (event.data.type !== "score-request" || !event.source) return;
     const targetOrigin = event.origin === "null" ? "*" : event.origin;
-    event.source.postMessage({ type: "score-state", payload: scoreWindowPayload() }, targetOrigin);
+    event.source.postMessage({ type: "score-state", payload: scoreWindowBridge.current(scoreWindowPayload()) }, targetOrigin);
   });
   elements.openScoreWindow?.addEventListener("click", () => {
     publishScoreWindow();
@@ -2158,27 +2160,39 @@
     closeDialog(elements.historyDialog);
     notify("履歴を保存した時の作業状態を復元しました。");
   });
-  elements.historyExportTest.addEventListener("click", () => {
-    if (!selectedHistoryEntry) return;
+  elements.historyCopyReport.addEventListener("click", async () => {
     try {
-      downloadTestData(selectedHistoryEntry);
-      notify("テストデータをローカルへ書き出しました。");
+      await writeClipboard(CBFIssueReport.create(currentFileSnapshot()));
+      notify("不具合報告用テキストをコピーしました。報告先へ貼り付けてください。");
     } catch (error) {
-      notify(error?.message || "テストデータを書き出せませんでした。", true);
+      notify(error?.message || "不具合報告用テキストをコピーできませんでした。", true);
     }
   });
-  elements.historyImportTest.addEventListener("click", () => elements.historyImportFile.click());
-  elements.historyImportFile.addEventListener("change", async () => {
-    const [file] = elements.historyImportFile.files || [];
+  elements.historyExportBackup.addEventListener("click", () => {
     try {
-      const result = await importTestDataFile(file);
-      if (file) notify(result?.refreshed
-        ? "同じテストデータの日時を更新し、使用履歴の先頭へ移動しました。"
-        : "テストデータを使用履歴へ読み込みました。");
+      downloadBackup(currentFileSnapshot());
+      notify("バックアップ用JSONをエクスポートしました。");
     } catch (error) {
-      notify(error?.message || "テストデータを読み込めませんでした。", true);
+      notify(error?.message || "バックアップ用JSONをエクスポートできませんでした。", true);
+    }
+  });
+  elements.historyImportBackup.addEventListener("click", () => elements.historyBackupFile.click());
+  elements.historyBackupFile.addEventListener("change", async () => {
+    const [file] = elements.historyBackupFile.files || [];
+    try {
+      const snapshot = await importBackupFile(file);
+      if (!snapshot) return;
+      const result = historyStore.saveHistory(snapshot);
+      renderHistoryList();
+      const importedButton = elements.historyList.querySelector(".history-item");
+      if (importedButton) importedButton.click();
+      notify(result?.refreshed
+        ? "同じバックアップを更新し、使用履歴の先頭へ移動しました。"
+        : "バックアップを使用履歴へ読み込みました。内容を確認してから復元できます。");
+    } catch (error) {
+      notify(error?.message || "バックアップ用JSONを読み込めませんでした。", true);
     } finally {
-      elements.historyImportFile.value = "";
+      elements.historyBackupFile.value = "";
     }
   });
   elements.historyDeleteAll.addEventListener("click", () => {
@@ -2310,7 +2324,13 @@
         linkedLineIndex >= 0 ? linkedLineIndex : 0,
         linkedSlotIndex >= 0 ? linkedSlotIndex : 0
       );
-      notify("行修正で使えない文字は入力できません。", true);
+      const fullWidth = CBFCorrectionInput.fullWidthCharacters(event.data);
+      notify(
+        fullWidth
+          ? `行修正で使えない全角文字「${fullWidth}」は入力できません。半角で入力してください。`
+          : "行修正で使えない文字は入力できません。",
+        true
+      );
       return;
     }
     const caret = elements.correction.selectionStart;
@@ -2837,6 +2857,7 @@
       const previousLines = [...lastConvertedInputLines];
       const mapping = CBFConverter.alignMusicLineIndices(previousLines, currentLines);
       sourceLineIds = CBFOutputOverrides.remapIds(mapping, sourceLineIds, createSourceLineId);
+      outputOverrides = CBFOutputOverrides.prune(sourceLineIds, outputOverrides);
       syncManualOutputLinesFromOverrides();
       persistOutputLayer();
       const chordCounts = (lines) => lines.map((line) => CBFConverter.parseTokens(line).filter((token) => token.kind === "chord").length);
@@ -2875,6 +2896,12 @@
         const previousIndex = mapping[index];
         if (previousIndex < 0 || line !== previousLines[previousIndex]) changedLines.add(index);
       });
+      changedLines.forEach((index) => {
+        const id = sourceLineIds[index];
+        if (id) delete outputOverrides[id];
+      });
+      syncManualOutputLinesFromOverrides();
+      persistOutputLayer();
       elements.correction.value = remapCorrectionArray(previousCorrectionLines).join("\n");
       inferenceFallbackCorrectionLines = remapCorrectionArray(inferenceFallbackCorrectionLines);
       lastAppliedCorrectionLines = remapCorrectionArray(lastAppliedCorrectionLines);
@@ -2926,9 +2953,13 @@
       const changedLines = new Set();
       currentLines.forEach((line, index) => { if (line !== (lastConvertedInputLines[index] || "")) changedLines.add(index); });
       changedLines.forEach((index) => {
+        const id = sourceLineIds[index];
+        if (id) delete outputOverrides[id];
         const musicStructureChanged = !CBFConverter.sameMusicStructure(lastConvertedInputLines[index] || "", currentLines[index] || "");
         if (musicStructureChanged && rowAdoptionModes[index] !== "source") rowAdoptionModes[index] = "auto";
       });
+      syncManualOutputLinesFromOverrides();
+      persistOutputLayer();
       persistRowAdoptionModes();
       updateCorrectionModes();
       scheduleConversion(false, null, changedLines);

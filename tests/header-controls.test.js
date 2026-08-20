@@ -27,7 +27,7 @@ assert(html.includes('<button id="correction-refresh-line" type="button"'));
 assert(html.includes("↻ この行を更新"));
 assert(html.includes('<button id="correction-rebuild-all" class="correction-rebuild-button" type="button"'));
 assert(html.includes("↻ 変換後から行修正を復元"));
-assert(html.includes("「?」は自動変換できなかった位置です。その部分の変換後表示を保持します。"));
+assert(html.includes("「?」は自動変換できなかった位置です。手動で変換・調整をしてください。"));
 assert(html.includes('aria-label="この行を更新と行修正を復元の説明"'));
 assert(html.includes("<b>変換後から行修正を復元</b>：変換後の全行から行修正値を推論し直します。"));
 assert(html.includes('id="correction-position" class="correction-position" aria-live="polite" hidden'));
@@ -80,14 +80,15 @@ const targetOption = html.indexOf('<option value="target" selected>指定数だ�
 const minimizeOption = html.indexOf('<option value="minimize">できるだけ省略</option>');
 const allOption = html.indexOf('<option value="all">すべて省略</option>');
 assert(showOption >= 0 && showOption < targetOption && targetOption < minimizeOption && minimizeOption < allOption);
-assert.strictEqual((html.match(/class="context-help-button"/g) || []).length, 5);
-assert.strictEqual((html.match(/class="context-help-title"/g) || []).length, 5);
+assert.strictEqual((html.match(/class="context-help-button"/g) || []).length, 6);
+assert.strictEqual((html.match(/class="context-help-title"/g) || []).length, 6);
 [
   "02. 初期設定",
   "03. 行修正",
   "03. 行修正の操作",
   "04. 変換後：歌詞行のハイフン",
-  "05. 譜面プレビュー"
+  "05. 譜面プレビュー",
+  "使用履歴の使い方"
 ].forEach((title) => assert(html.includes(`class="context-help-title">${title}</strong>`), `${title} help title`));
 assert(css.includes(".context-help-title { display: block;"));
 assert(html.includes("表示方法を選びます。<br>「省略しない」：すべてのハイフンを表示します。"));

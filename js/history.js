@@ -17,10 +17,17 @@
     return value;
   }
 
-  function signature(snapshot) {
-    if (snapshot.historyText != null) {
-      return JSON.stringify({ historyText: String(snapshot.historyText) });
-    }
+  // Current history entries contain the displayed result. The existing
+  // product behavior treats an identical displayed result as one history
+  // item, even when its input or settings changed. Keep that signature
+  // stable for compatibility with already-saved history.
+  function outputSignature(historyText) {
+    return JSON.stringify({ historyText: String(historyText) });
+  }
+
+  // Older or test-only entries may not contain a displayed result. They
+  // cannot be compared by output, so use the complete work-state fallback.
+  function workStateSignature(snapshot) {
     return JSON.stringify(stableValue({
       inputText: String(snapshot.inputText || ""),
       correctionText: String(snapshot.correctionText || ""),
@@ -29,6 +36,11 @@
       outputOverrides: snapshot.outputOverrides || {},
       settings: snapshot.settings || {}
     }));
+  }
+
+  function signature(snapshot) {
+    if (snapshot.historyText != null) return outputSignature(snapshot.historyText);
+    return workStateSignature(snapshot);
   }
 
   function titleFromText(text, savedAt) {
@@ -178,5 +190,5 @@
     return { list, prune, saveHistory, saveCrash, getCrash, clearCrash, clearHistory, signature };
   }
 
-  return { createStore, signature, titleFromText, shouldRestoreCrash, HISTORY_KEY, CRASH_KEY, RETENTION_MS };
+  return { createStore, outputSignature, workStateSignature, signature, titleFromText, shouldRestoreCrash, HISTORY_KEY, CRASH_KEY, RETENTION_MS };
 }));

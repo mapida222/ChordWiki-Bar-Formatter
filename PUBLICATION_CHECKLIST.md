@@ -6,8 +6,8 @@
 
 - [x] ブラウザー内で完結し、入力内容を外部送信しないことを確認する。
 - [x] ブラウザー内へ保存するデータをREADMEへ記載する。
-- [x] 公開用のテストコマンドを用意する。
-- [x] 全回帰テストとJavaScript構文検査を成功させる。
+- [x] 公開用のRelease Gate（`npm run verify`）を用意する。
+- [x] 全回帰テスト、JavaScript構文検査、CSP等の静的検査、production buildをRelease Gateで成功させる。
 - [x] 譜面プレビューを`PREVIEW-001`と比較する。
 - [x] OS固有ファイルとローカル作業ファイルをGit対象外にする。
 - [x] 管理IDをGitのコミットメッセージへ含める規則を定める。

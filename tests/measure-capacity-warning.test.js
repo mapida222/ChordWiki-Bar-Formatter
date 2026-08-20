@@ -9,8 +9,19 @@ const analyze = CBFConverter.analyzeAuthoredMeasureCapacity;
 const source = "[C]---- ----|[G]---- ----|";
 assert.deepStrictEqual(analyze(source, 4, "4/4"), { configured: 4, detected: 8, measureCount: 2, candidateCount: 2, percentage: 100, lineNumbers: [1] });
 assert.strictEqual(analyze(source, 8, "4/4"), null);
-assert.strictEqual(analyze("[C]---- ----|[G]---- ----|[F]----|", 4, "4/4").percentage, 67);
-assert.strictEqual(analyze("[C]---- ----|", 4, "4/4").detected, 8);
+assert.strictEqual(analyze("[C]---- ----|[G]---- ----|[F]----|", 4, "4/4"), null, "a single changed line must not trigger a song-wide warning");
+assert.strictEqual(
+  analyze("[C]---- ----|[G]---- ----|\n[Am]---- ----|[F]---- ----|\n[Bm]---- ----|[Em]---- ----|", 4, "4/4").percentage,
+  100,
+  "a matching format across the whole song should trigger a warning"
+);
+assert.strictEqual(
+  analyze("[C]---- ----|[G]---- ----|\n[Am]---- ----|[F]---- ----|\n[Bm]----|[Em]----|", 4, "4/4"),
+  null,
+  "a local outlier in a longer song should not trigger a warning"
+);
+assert.strictEqual(analyze("[C]---- ----|", 4, "4/4"), null, "one authored measure is not enough evidence for a warning");
+assert.strictEqual(analyze("[C]---- ----|\n[G]---- ----|", 4, "4/4").detected, 8);
 assert.strictEqual(analyze("[C]歌詞[G]---- ----|", 4, "4/4"), null);
 assert.strictEqual(analyze("[C]========|", 4, "4/4"), null);
 assert.strictEqual(analyze("{c:3/4拍子}\n[C]---|[F]---|", 4, "4/4"), null);

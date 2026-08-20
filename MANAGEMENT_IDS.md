@@ -99,14 +99,21 @@
 | `PREVIEW-002` | 拍記号に挟まれた縦小節線が直後の拍記号と重ならないよう補正 | 有効 | `js/chordwiki-preview.js`、`style.css`、`tests/preview-layout.test.js` |
 | `PREVIEW-003` | 譜面プレビューの移調では`{key:...}`だけを移調し、`{ci:...}`・`{title:...}`・`{subtitle:...}`などコメント系ディレクティブ内部のコード風文字列は保持 | 有効 | `js/transposer.js`、`tests/transposer.test.js` |
 | `HISTORY-001` | 編集中・コピー成功時の使用履歴保存 | 有効 | `js/app.js`、`index.html`、`tests/history-triggers.test.js` |
-| `HISTORY-002` | 使用履歴のローカルテストデータ入出力 | 有効 | `js/app.js`、`js/test-data.js`、`index.html`、`tests/test-data.test.js` |
+| `HISTORY-002` | 使用履歴のローカルテストデータ入出力 | 廃止 | `js/app.js`、`js/test-data.js`、`index.html`、`tests/test-data.test.js` |
 | `HISTORY-003` | 使用履歴から保存時の作業状態を一括復元 | 有効 | `js/app.js`、`index.html`、`tests/history-restore.test.js` |
+| `HISTORY-004` | 不具合報告用テキストのコピーとバックアップJSONのインポート・エクスポート | 有効 | `js/app.js`、`js/backup-data.js`、`js/issue-report.js`、`index.html`、`style.css`、`tests/history-files.test.js` |
 | `TEST-001` | プロジェクト全体の回帰テスト | 有効 | `tests/*.test.js` |
 | `PROJECT-001` | チャット間で共有する管理ID台帳 | 有効 | `AGENTS.md`、`MANAGEMENT_IDS.md` |
 | `PROJECT-002` | 大規模コード整理と責務分離 | 有効 | `docs/REFACTORING.md`、`js/entries/`、`vite.config.js`、`package.json` |
 | `PROJECT-003` | 変換後の改行・直接編集と行修正のデータフロー調査 | 調査済み | `docs/OUTPUT_EDIT_DATA_FLOW.md`、`js/app.js`、`js/converter.js`、`js/correction-input.js` |
 | `PROJECT-004` | Viteの応答を待ってからブラウザを開くローカル起動バッチ | 有効 | `start-local.bat`、`tests/local-launcher.test.js` |
 | `PROJECT-005` | 安定した変換前行IDを基準に自動生成結果と変換後の手動上書きを別レイヤーで保存・再適用 | 有効 | `js/output-overrides.js`、`js/app.js`、`js/history.js`、`tests/output-overrides.test.js` |
+| `PROJECT-006` | 保存形式の所有範囲・互換性・状態追加時の確認箇所を文書化 | 有効 | `docs/SAVED_DATA_SCHEMA.md`、`README.md`、`AGENTS.md`、`js/history.js`、`js/backup-data.js` |
+| `PROJECT-007` | 確定プレビュー別窓への状態保存・BroadcastChannel通知を専用ブリッジへ分離 | 有効 | `js/score-window-state.js`、`js/app.js`、`tests/score-window-state.test.js` |
+| `PROJECT-008` | 変換回帰fixtureの共有範囲と追加先を整理 | 有効 | `tests/fixtures/converter-common.json`、`tests/fixtures/README.md`、`tests/converter.test.js`、`tests/white-note-regression-matrix.test.js` |
+| `PROJECT-009` | 開発改善の候補評価・実施・検証・停止判断を再利用Skillへ集約 | 有効 | `C:\Users\mapida\.codex\skills\chordwiki-development-orchestrator\SKILL.md`、`AGENTS.md` |
+| `PROJECT-010` | CIとPages公開前にPR／コミット差分のwhitespaceを検査 | 有効 | `.github/workflows/test.yml`、`.github/workflows/pages.yml`、`RELEASE_GATE.md` |
+| `PROJECT-011` | 変更対象から関連テストを先に選ぶ開発ルーティングを定型化 | 完了 | `C:\Users\mapida\.codex\skills\chordwiki-development-orchestrator\SKILL.md` |
 | `PREVIEW-004` | 公式Parser Adapterと旧ChordWiki表示Rendererの再構築 | 有効 | `js/parser/`、`js/renderer/`、`js/chordwiki-preview.js`、`tests/official-parser-integration.test.mjs` |
 | `PREVIEW-005` | リアルタイム編集の保存済み下書きが異なる場合に、上書き・前回内容を保持・キャンセルを選択 | 有効 | `js/app.js`、`js/committed-preview-window.js`、`tests/committed-preview-window.test.js` |
 | `PREVIEW-006` | リアルタイム編集のプレビュー背景ドラッグで縦横スクロール | 有効 | `js/committed-preview-window.js`、`style.css`、`tests/committed-preview-window.test.js` |

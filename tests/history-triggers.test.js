@@ -13,7 +13,9 @@ assert.strictEqual((app.match(/saveCurrentHistory\(false, true\)/g) || []).lengt
 assert(app.includes('$("#copy-output").addEventListener'));
 assert(app.includes('$("#copy-final-output").addEventListener'));
 assert(app.includes('$("#copy-committed-output").addEventListener'));
-assert(html.includes("入力停止から1分後、または結果のコピー成功時に自動保存します。"));
+assert(html.includes("入力停止から1分後"));
+assert(html.includes("コピー成功時"));
+assert(html.includes("自動保存します"));
 assert(!html.includes("入力停止から10分後"));
 
 console.log("PASS: editing-idle and successful-copy history triggers");
