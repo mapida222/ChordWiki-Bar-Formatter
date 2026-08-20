@@ -51,4 +51,3 @@
 - 行ID・override・状態遷移：`tests/output-overrides.test.js`、`tests/output-state-transitions.test.js`、`tests/row-adoption-modes.test.js`
 - 確定プレビュー別窓：`tests/committed-preview-window.test.js`、`tests/committed-resize.test.js`
 - 全体契約：`npm run verify`
-
