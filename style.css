@@ -581,6 +581,15 @@ textarea::placeholder { color: var(--muted); opacity: .7; }
 .layout-toggle-button { min-height: 32px; padding: 5px 10px; border: 1px solid var(--focus); border-radius: 4px; color: var(--text); background: color-mix(in srgb, var(--panel) 88%, var(--focus)); cursor: pointer; font-size: .72rem; font-weight: 800; }
 .layout-toggle-button:hover, .layout-toggle-button:focus-visible { background: color-mix(in srgb, var(--panel) 76%, var(--focus)); outline: 2px solid color-mix(in srgb, var(--focus) 35%, transparent); outline-offset: 1px; }
 .score-window-settings { position: relative; }
+.score-window-help { position: relative; }
+.score-window-help > summary { display: flex; min-height: 32px; padding: 5px 10px; align-items: center; border: 1px solid var(--line); border-radius: 4px; background: var(--panel); cursor: pointer; font-size: .72rem; font-weight: 800; list-style: none; }
+.score-window-help > summary::-webkit-details-marker { display: none; }
+.score-window-help > summary::after { content: "▼"; margin-left: 7px; color: var(--muted); font-size: .62rem; }
+.score-window-help[open] > summary::after { content: "▲"; }
+.score-window-help-panel { position: absolute; z-index: 21; top: calc(100% + 6px); right: 0; width: min(390px, calc(100vw - 20px)); padding: 12px 14px; border: 1px solid var(--line-strong); border-radius: 6px; background: var(--panel); box-shadow: 0 10px 28px rgb(0 0 0 / .22); color: var(--text); font-size: .76rem; line-height: 1.55; }
+.score-window-help-panel strong { display: block; margin-bottom: 5px; }
+.score-window-help-panel ol { margin: 0; padding-left: 1.35em; }
+.score-window-help-panel li + li { margin-top: 3px; }
 .score-window-settings > summary { display: flex; min-height: 32px; padding: 5px 10px; align-items: center; border: 1px solid var(--line); border-radius: 4px; background: var(--panel); cursor: pointer; font-size: .72rem; font-weight: 800; list-style: none; }
 .score-window-settings > summary::-webkit-details-marker { display: none; }
 .score-window-settings > summary::after { content: "▼"; margin-left: 7px; color: var(--muted); font-size: .62rem; }
