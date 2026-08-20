@@ -693,6 +693,9 @@ textarea::placeholder { color: var(--muted); opacity: .7; }
 .help-example-source strong { color: var(--accent); font-size: .76rem; }
 .help-example-source code { color: var(--text); font-family: "BIZ UDPGothic", "Meiryo", sans-serif; font-size: .88rem; font-weight: 800; }
 .help-example-source-note { color: var(--text); font-size: .73rem; line-height: 1.35; opacity: .82; }
+.help-example-source-preview { display: grid; gap: 1px; min-width: 8.6em; padding: 4px 6px; border: 1px solid #8ba84a; border-radius: 3px; color: #15200e; background: #fbfcf7; font-family: "BIZ UDPGothic", "Meiryo", sans-serif; font-size: .76rem; line-height: 1.25; white-space: pre; }
+.help-example-source-preview i { color: #0758cf; font-style: normal; font-weight: 800; }
+.help-example-source-preview > span { font-weight: 500; }
 .help-capability-example { display: grid; grid-template-columns: 5.8em minmax(0, 1.45fr) 3.2em minmax(190px, .75fr); align-items: center; gap: 7px 9px; min-width: 0; }
 .help-rendered-pair, .help-chordpro-pair { display: contents; }
 .help-rendered-pair > :first-child, .help-chordpro-pair > :first-child { display: none; }

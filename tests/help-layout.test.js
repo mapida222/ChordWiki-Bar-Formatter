@@ -211,6 +211,8 @@ assert(css.includes(".help-rendered-pair, .help-chordpro-pair"));
 assert(css.includes(".help-preview-arrow { grid-column: 3; grid-row: 1; display: block; width: 100%; min-height: 3.4em;"));
 assert(css.includes("grid-template-columns: 5.8em minmax(0, 1.45fr) 3.2em minmax(190px, .75fr);"));
 assert(help.includes("変換前の原文："));
+assert(help.includes('class="help-example-source-preview"'));
+assert(help.includes('aria-label="変換前の譜面プレビュー"'));
 assert(help.includes("この入力が、下のように変わります。"));
 assert(!help.includes("<small>例</small>"));
 assert(css.includes("grid-template-columns: 205px minmax(0, 1fr);"));
