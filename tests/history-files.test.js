@@ -46,6 +46,11 @@ const parsedBackup = backupApi.parse(JSON.stringify(backup));
 const restored = backupApi.toSnapshot(parsedBackup);
 assert.strictEqual(restored.title, snapshot.title);
 assert.strictEqual(restored.historyText, snapshot.historyText);
+assert.strictEqual(restored.committedOutputText, snapshot.committedOutputText);
+assert.strictEqual(restored.correctionText, snapshot.correctionText);
+assert.deepStrictEqual(restored.rowAdoptionModes, snapshot.rowAdoptionModes);
+assert.deepStrictEqual(restored.sourceLineIds, snapshot.sourceLineIds);
+assert.deepStrictEqual(restored.outputOverrides, snapshot.outputOverrides);
 assert.deepStrictEqual(restored.settings, snapshot.settings);
 assert.throws(() => backupApi.parse("{"), /JSON/);
 assert.throws(

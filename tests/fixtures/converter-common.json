@@ -1,0 +1,48 @@
+{
+  "settings": {
+    "hyphenUnit": 4,
+    "measureCapacity": 8,
+    "hyphenSpacing": 4,
+    "shortFractionPrepose": 1,
+    "showContinuationChord": 0
+  },
+  "coreCases": [
+    {
+      "name": "plain text",
+      "input": "plain text",
+      "output": "plain text",
+      "corrections": ""
+    },
+    {
+      "name": "title directive",
+      "input": "{title:Test}",
+      "output": "{title:Test}",
+      "corrections": ""
+    },
+    {
+      "name": "one code-only chord",
+      "input": "[C]",
+      "output": "[|][C][----][|]",
+      "corrections": "4"
+    },
+    {
+      "name": "chords with lyrics",
+      "input": "[C]lyrics[G]words",
+      "output": "[|][C][----]lyrics[G][----]words[|]",
+      "corrections": "44"
+    }
+  ],
+  "whiteNoteCases": [
+    { "name": "single chord", "input": "[C]one", "correction": "@8", "whiteNoteCount": 1 },
+    { "name": "first of two", "input": "[C]a[G]b", "correction": "@44", "whiteNoteCount": 1 },
+    { "name": "last of two", "input": "[C]a[G]b", "correction": "4@4", "whiteNoteCount": 1 },
+    { "name": "first of four", "input": "[C]a[D]b[E]c[F]d", "correction": "@4444", "whiteNoteCount": 1 },
+    { "name": "middle of four", "input": "[C]a[D]b[E]c[F]d", "correction": "44@44", "whiteNoteCount": 1 },
+    { "name": "last of four", "input": "[C]a[D]b[E]c[F]d", "correction": "444@4", "whiteNoteCount": 1 },
+    { "name": "slash and no-chord", "input": "[C/E]a[N.C.]b", "correction": "4@4", "whiteNoteCount": 1 },
+    { "name": "long duration", "input": "[C]long", "correction": "@h", "whiteNoteCount": 3 },
+    { "name": "authored white note", "input": "[C][○]", "correction": "@4", "whiteNoteCount": 1 },
+    { "name": "consecutive white notes", "input": "[C]a[G]b", "correction": "@4@4", "whiteNoteCount": 2 },
+    { "name": "explicit measure head", "input": "[C]a[G]b", "correction": "@4|4", "whiteNoteCount": 1 }
+  ]
+}

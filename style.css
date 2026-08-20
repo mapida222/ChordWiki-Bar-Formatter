@@ -358,7 +358,7 @@ main { padding: 12px 0 28px; }
 .output-column-headings span:last-child { justify-items: start; padding-left: 1em; border-left: 1px solid var(--line); }
 .final-card .editor-shell { height: var(--final-editor-height); border-color: var(--accent); }
 .committed-card .editor-shell { height: var(--committed-editor-height); border-color: var(--accent); }
-.committed-card, .direct-edit-notice { display: none; }
+.direct-edit-notice { display: none; }
 .committed-actions { display: flex; align-items: center; min-height: 31px; margin: 0 5px 6px; }
 .committed-primary-actions { display: flex; flex-wrap: wrap; align-content: center; align-items: center; justify-content: flex-start; gap: 6px; }
 .committed-actions .icon-button { align-self: center; }

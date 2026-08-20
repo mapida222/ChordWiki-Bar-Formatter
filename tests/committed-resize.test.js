@@ -12,6 +12,8 @@ const app = fs.readFileSync(path.join(root, "js", "app.js"), "utf8");
 assert(html.includes('data-row="committed" data-column="inverse"'));
 assert(html.includes('aria-label="確定譜面テキスト枠の幅と高さを調整"'));
 assert(css.includes("--committed-editor-height"));
+assert(!css.includes(".committed-card, .direct-edit-notice { display: none; }"));
+assert(css.includes(".direct-edit-notice { display: none; }"));
 assert(css.includes(".committed-card .editor-shell.committed-collapsed + .frame-resize-corner { display: none; }"));
 assert(app.includes('row === "committed"'));
 assert(app.includes("committedHeight:"));

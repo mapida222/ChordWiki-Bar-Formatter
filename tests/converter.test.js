@@ -1,36 +1,24 @@
 "use strict";
 const assert = require("assert");
+const commonFixture = require("./fixtures/converter-common.json");
 global.window = global;
 require("../js/converter.js");
 
-const settings = {
-  hyphenUnit: 4,
-  measureCapacity: 8,
-  hyphenSpacing: 4,
-  shortFractionPrepose: 1,
-  showContinuationChord: 0
-};
+const settings = { ...commonFixture.settings };
 
 assert.strictEqual(CBFConverter.isChordSymbol("E7(9,11)"), true, "comma-separated tensions must be recognized as one chord");
 assert.strictEqual(CBFConverter.isChordSymbol("C7(#9,b13)/E"), true, "comma-separated altered tensions and slash bass must be recognized as one chord");
 assert.strictEqual(CBFConverter.parseTokens("[E7(9,11)]")[0]?.kind, "chord", "a bracketed comma-tension chord must not become lyric text");
 
-const cases = [
-  ["plain text", "plain text"],
-  ["{title:Test}", "{title:Test}"],
-  ["[C]", "[|][C][----][|]", "4"],
-  ["[C][G]", "[|][C][----][G][----][|]", "44"],
-  ["[C][G][Am]", "[|][C][----][G][----][|][Am][----][|]", "444"],
-  ["[C]lyrics[G]words", "[|][C][----]lyrics[G][----]words[|]", "44"]
-];
+const cases = commonFixture.coreCases.map(({ name, input, output, corrections }) => [name, input, output, corrections]);
 
 let failures = 0;
-for (const [input, expected, expectedCorrection = ""] of cases) {
+for (const [name, input, expected, expectedCorrection = ""] of cases) {
   const result = CBFConverter.convertChordText(input, settings, []);
   const actual = result.output;
   if (actual !== expected || result.corrections !== expectedCorrection) {
     failures += 1;
-    console.error(`FAIL\ninput: ${input}\nexpected: ${expected}\nactual: ${actual}\nexpected correction: ${expectedCorrection}\nactual correction: ${result.corrections}`);
+    console.error(`FAIL ${name}\ninput: ${input}\nexpected: ${expected}\nactual: ${actual}\nexpected correction: ${expectedCorrection}\nactual correction: ${result.corrections}`);
   }
 }
 if (failures) process.exitCode = 1;

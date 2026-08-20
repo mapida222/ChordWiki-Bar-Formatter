@@ -169,11 +169,11 @@
   let historyTimer;
   let crashTimer;
   let suppressActivity = false;
-  let scorePreviewChannel = null;
+  const scoreWindowBridge = CBFScoreWindowState.createBridge(localStorage);
+  const scorePreviewChannel = scoreWindowBridge.channel;
   let selectedHistoryEntry = null;
   let historyPreviewMode = "score";
   let keySectionSettings = [];
-  let scoreWindowRevision = Date.now();
   const FONT_STORAGE_KEY = "chordWikiBarFormatter.editorFont.v1";
   const FONT_SIZE_STORAGE_KEY = "chordWikiBarFormatter.editorFontSize.v1";
   const SCROLL_SYNC_STORAGE_KEY = "chordWikiBarFormatter.scrollSync.v1";
@@ -201,18 +201,12 @@
   const PREVIEW_KEY_SECTIONS_STORAGE_KEY = "chordWikiBarFormatter.previewKeySections.v1";
   const COMMITTED_OUTPUT_STORAGE_KEY = "chordWikiBarFormatter.committedOutput.v1";
   const COMMITTED_DRAFT_STORAGE_KEY = "chordWikiBarFormatter.committedWindowDraft.v1";
-  const SCORE_WINDOW_STATE_KEY = "chordWikiBarFormatter.scoreWindow.v1";
-  const SCORE_WINDOW_CHANNEL = "chordWikiBarFormatter.scoreWindow.channel.v1";
+  const SCORE_WINDOW_STATE_KEY = scoreWindowBridge.stateKey;
   const REMOVAL_LINKED_STORAGE_KEY = "chordWikiBarFormatter.hyphenRemovalLinked.v1";
   const CURRENT_STATE_UPDATED_AT_KEY = "chordWikiBarFormatter.currentStateUpdatedAt.v1";
   const HISTORY_DELAY_MS = 1 * 60 * 1000;
   const CRASH_DELAY_MS = 5 * 60 * 1000;
   const historyStore = CBFHistoryStore.createStore(localStorage);
-  try {
-    if ("BroadcastChannel" in window) scorePreviewChannel = new BroadcastChannel(SCORE_WINDOW_CHANNEL);
-  } catch (_error) {
-    scorePreviewChannel = null;
-  }
   const highlightByEditor = new Map([
     [elements.correction, elements.correctionHighlight],
     [elements.input, elements.inputHighlight],
@@ -1199,15 +1193,11 @@
       editorFontSize: elements.fontSizeValue.value,
       scrollSync: scrollSyncEnabled,
       textColoring: elements.textColoring.checked,
-      boldCode: elements.boldCode.checked,
-      updatedAt: scoreWindowRevision
+      boldCode: elements.boldCode.checked
     };
   }
   function publishScoreWindow() {
-    scoreWindowRevision = Math.max(Date.now(), scoreWindowRevision + 1);
-    const payload = scoreWindowPayload();
-    try { localStorage.setItem(SCORE_WINDOW_STATE_KEY, JSON.stringify(payload)); } catch (_error) { /* preview still works locally */ }
-    if (scorePreviewChannel) scorePreviewChannel.postMessage({ type: "score-state", payload });
+    scoreWindowBridge.publish(scoreWindowPayload());
   }
   function renderFinalPreview() {
     elements.finalPreview.classList.toggle("bars-through", elements.finalBarsThrough.checked);
@@ -1628,21 +1618,29 @@
       .filter(Boolean);
     return lines.slice(0, 2).join("\n") || "本文の入力はありません";
   }
+  function savedHistoryText(entry) {
+    return typeof entry.historyText === "string" ? entry.historyText : null;
+  }
   function historyPreviewText(entry) {
-    if (typeof entry.historyText === "string") return entry.historyText;
+    const savedText = savedHistoryText(entry);
+    if (savedText !== null) return savedText;
     const state = entry.settings || {};
     const converterCandidate = { ...CBFSettings.defaults(), ...(state.converter || {}) };
     const validated = CBFSettings.validate(converterCandidate);
     const converterSettings = validated.valid ? validated.values : CBFSettings.defaults();
     const rowCorrections = String(entry.correctionText || "").split(/\r\n|\r|\n/);
     const converted = CBFConverter.convertChordText(String(entry.inputText || ""), converterSettings, rowCorrections);
-    return converted.output;
+    const adopted = CBFConverter.restoreSourceAdoptedLines
+      ? CBFConverter.restoreSourceAdoptedLines(converted.output, String(entry.inputText || ""), entry.rowAdoptionModes || [])
+      : converted.output;
+    return CBFOutputOverrides.apply(adopted, entry.sourceLineIds || [], entry.outputOverrides || {});
   }
   function restoreHistoryWorkState(entry) {
     restoreSnapshot(entry);
-    if (typeof entry.historyText === "string") {
+    const savedText = savedHistoryText(entry);
+    if (savedText !== null) {
       const generatedLines = elements.output.value.split(/\r\n|\r|\n/);
-      const restoredText = String(entry.historyText);
+      const restoredText = savedText;
       const restoredLines = restoredText.split(/\r\n|\r|\n/);
       const lineMapping = CBFConverter.alignLineIndices(generatedLines, restoredLines);
       manualOutputLines = new Set();
@@ -1923,7 +1921,7 @@
       elements.removalTargets.value = event.target.value;
       localStorage.setItem(REMOVAL_STORAGE_KEY, elements.removalTargets.value);
     }
-    if (["setting-shortFractionPrepose", "setting-longBeatLyricPlacement", "setting-showContinuationChord"].includes(event.target.id)) schedulePrioritySettingConversion();
+    if (["setting-hyphenSpacing", "setting-shortFractionPrepose", "setting-longBeatLyricPlacement", "setting-showContinuationChord"].includes(event.target.id)) schedulePrioritySettingConversion();
     else scheduleConversion(true);
     markActivity();
   });
@@ -2084,7 +2082,7 @@
     }
     if (event.data.type !== "score-request" || !event.source) return;
     const targetOrigin = event.origin === "null" ? "*" : event.origin;
-    event.source.postMessage({ type: "score-state", payload: scoreWindowPayload() }, targetOrigin);
+    event.source.postMessage({ type: "score-state", payload: scoreWindowBridge.current(scoreWindowPayload()) }, targetOrigin);
   });
   elements.openScoreWindow?.addEventListener("click", () => {
     publishScoreWindow();
@@ -2859,6 +2857,7 @@
       const previousLines = [...lastConvertedInputLines];
       const mapping = CBFConverter.alignMusicLineIndices(previousLines, currentLines);
       sourceLineIds = CBFOutputOverrides.remapIds(mapping, sourceLineIds, createSourceLineId);
+      outputOverrides = CBFOutputOverrides.prune(sourceLineIds, outputOverrides);
       syncManualOutputLinesFromOverrides();
       persistOutputLayer();
       const chordCounts = (lines) => lines.map((line) => CBFConverter.parseTokens(line).filter((token) => token.kind === "chord").length);
@@ -2897,6 +2896,12 @@
         const previousIndex = mapping[index];
         if (previousIndex < 0 || line !== previousLines[previousIndex]) changedLines.add(index);
       });
+      changedLines.forEach((index) => {
+        const id = sourceLineIds[index];
+        if (id) delete outputOverrides[id];
+      });
+      syncManualOutputLinesFromOverrides();
+      persistOutputLayer();
       elements.correction.value = remapCorrectionArray(previousCorrectionLines).join("\n");
       inferenceFallbackCorrectionLines = remapCorrectionArray(inferenceFallbackCorrectionLines);
       lastAppliedCorrectionLines = remapCorrectionArray(lastAppliedCorrectionLines);
@@ -2948,9 +2953,13 @@
       const changedLines = new Set();
       currentLines.forEach((line, index) => { if (line !== (lastConvertedInputLines[index] || "")) changedLines.add(index); });
       changedLines.forEach((index) => {
+        const id = sourceLineIds[index];
+        if (id) delete outputOverrides[id];
         const musicStructureChanged = !CBFConverter.sameMusicStructure(lastConvertedInputLines[index] || "", currentLines[index] || "");
         if (musicStructureChanged && rowAdoptionModes[index] !== "source") rowAdoptionModes[index] = "auto";
       });
+      syncManualOutputLinesFromOverrides();
+      persistOutputLayer();
       persistRowAdoptionModes();
       updateCorrectionModes();
       scheduleConversion(false, null, changedLines);

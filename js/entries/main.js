@@ -10,6 +10,7 @@ import "../history.js";
 import "../backup-data.js";
 import "../issue-report.js";
 import "../output-overrides.js";
+import "../score-window-state.js";
 import "../parser/formatter-notation.js";
 import "../parser/chordwiki-adapter.js";
 import "../renderer/old-chordwiki-renderer.js";

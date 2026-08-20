@@ -99,5 +99,44 @@
     return new Set(ids.flatMap((id, index) => safe[id] ? [index] : []));
   }
 
-  return { lines, normalizeIds, remapIds, sanitize, capture, apply, overriddenIndices };
+  function prune(ids, overrides) {
+    const knownIds = new Set(ids.filter((id) => typeof id === "string" && id));
+    return Object.fromEntries(Object.entries(sanitize(overrides))
+      .filter(([id]) => knownIds.has(id)));
+  }
+
+  function validateState({
+    lineCount,
+    sourceLineIds: ids,
+    rowAdoptionModes = [],
+    outputOverrides = {},
+    manualOutputLines = [],
+    convertedOutput,
+    outputText,
+    finalOutputText
+  }) {
+    const errors = [];
+    const safeIds = Array.isArray(ids) ? ids : [];
+    const safeModes = Array.isArray(rowAdoptionModes) ? rowAdoptionModes : [];
+    const safeOverrides = sanitize(outputOverrides);
+    const expectedManualLines = overriddenIndices(safeIds, safeOverrides);
+    const actualManualLines = new Set(manualOutputLines instanceof Set ? manualOutputLines : manualOutputLines || []);
+    const allowedModes = new Set(["", "none", "auto", "edit", "source", "recovered", "fixed"]);
+
+    if (safeIds.length !== Number(lineCount)) errors.push("sourceLineIds length does not match input line count");
+    if (safeIds.some((id) => typeof id !== "string" || !id)) errors.push("sourceLineIds contains an empty or non-string ID");
+    if (new Set(safeIds).size !== safeIds.length) errors.push("sourceLineIds contains duplicate IDs");
+    if (safeModes.length > safeIds.length) errors.push("rowAdoptionModes has more entries than sourceLineIds");
+    if (safeModes.some((mode) => !allowedModes.has(mode))) errors.push("rowAdoptionModes contains an unknown mode");
+    if (Object.keys(safeOverrides).some((id) => !safeIds.includes(id))) errors.push("outputOverrides contains an orphan ID");
+    if (actualManualLines.size !== expectedManualLines.size
+      || [...actualManualLines].some((index) => !expectedManualLines.has(index))) {
+      errors.push("manualOutputLines does not match outputOverrides");
+    }
+    if (convertedOutput != null && typeof convertedOutput !== "string") errors.push("convertedOutput is not text");
+    if (outputText != null && finalOutputText != null && outputText !== finalOutputText) errors.push("output and finalOutput differ");
+    return { valid: errors.length === 0, errors };
+  }
+
+  return { lines, normalizeIds, remapIds, sanitize, capture, apply, overriddenIndices, prune, validateState };
 }));

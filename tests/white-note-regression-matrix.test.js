@@ -1,31 +1,14 @@
 "use strict";
 
 const assert = require("assert");
+const commonFixture = require("./fixtures/converter-common.json");
 global.window = global;
 require("../js/converter.js");
 require("../js/correction-input.js");
 
-const settings = {
-  hyphenUnit: 4,
-  measureCapacity: 8,
-  hyphenSpacing: 4,
-  shortFractionPrepose: 1,
-  showContinuationChord: 0
-};
+const settings = { ...commonFixture.settings };
 
-const matrix = [
-  ["single chord", "[C]one", "@8", 1],
-  ["first of two", "[C]a[G]b", "@44", 1],
-  ["last of two", "[C]a[G]b", "4@4", 1],
-  ["first of four", "[C]a[D]b[E]c[F]d", "@4444", 1],
-  ["middle of four", "[C]a[D]b[E]c[F]d", "44@44", 1],
-  ["last of four", "[C]a[D]b[E]c[F]d", "444@4", 1],
-  ["slash and no-chord", "[C/E]a[N.C.]b", "4@4", 1],
-  ["long duration", "[C]long", "@h", 3],
-  ["authored white note", "[C][○]", "@4", 1],
-  ["consecutive white notes", "[C]a[G]b", "@4@4", 2],
-  ["explicit measure head", "[C]a[G]b", "@4|4", 1]
-];
+const matrix = commonFixture.whiteNoteCases.map(({ name, input, correction, whiteNoteCount }) => [name, input, correction, whiteNoteCount]);
 
 matrix.forEach(([label, source, correction, whiteNoteCount]) => {
   const result = CBFConverter.convertChordText(source, settings, [correction]);
