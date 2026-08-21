@@ -144,6 +144,7 @@
 | `HELP-003` | TOPの行修正ヘルプへ`?`の非対応位置保持を追記 | 有効 | `index.html`、`tests/header-controls.test.js` |
 | `HELP-004` | 変換後の直接編集を自動生成と分けて保存し、再変換後も保持する案内を表示 | 有効 | `index.html`、`style.css`、`tests/header-controls.test.js` |
 | `HELP-005` | 変換後の直接編集案内を、改行やふりがな、コードは変換前で編集する推奨文へ簡潔化 | 有効 | `index.html`、`tests/header-controls.test.js` |
+| `HELP-006` | 基本フローの最終段を「確定」操作ではなく、完成した譜面をコピーして投稿する案内へ変更 | 有効 | `index.html`、`tests/help-layout.test.js` |
 
 ## カテゴリ
 
