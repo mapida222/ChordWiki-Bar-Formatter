@@ -177,7 +177,7 @@ assert(!css.includes(".help-conversion-table-wrap { margin-top: 5px; overflow-x:
 assert(css.includes("justify-content: flex-start;"));
 assert(css.includes(".help-example-preview.chordwiki-preview"));
 assert(app.includes("window.ChordWikiPreview.renderInto(elements.helpExamplePreview, HELP_EXAMPLE_PREVIEW_TEXT)"));
-assert(css.includes(".help-flow-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr));"));
+assert(css.includes(".help-flow-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr));"));
 assert(css.includes('background: linear-gradient(135deg, color-mix(in srgb, var(--panel) 84%, var(--step-color))'));
 assert(css.includes('.help-flow-grid li:not(:last-child)::after { content: "➜";'));
 assert(css.includes(".help-flow { max-width: 1400px; }"));
