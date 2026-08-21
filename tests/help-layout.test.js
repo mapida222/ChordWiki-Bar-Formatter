@@ -82,8 +82,8 @@ assert.strictEqual((help.match(/<details[^>]*class="[^"]*help-collapsible[^"]*"/
 assert(!help.includes('class="help-trouble help-collapsible" open'));
 assert(!help.includes('class="help-limitations help-collapsible" open'));
 assert(help.includes("コード譜を貼る"));
-assert(help.includes("曲に合わせて<br>直す"));
-assert(help.includes("見た目を<br>確認する"));
+assert(help.includes("曲に合わせて<br>調整"));
+assert(help.includes("譜面を<br>確認"));
 assert(help.includes("拍子と設定値を<br>確認する"));
 assert(help.includes("完成！<br>コピーして投稿"));
 assert(help.includes("<small>リアルタイムエディター</small>"));
