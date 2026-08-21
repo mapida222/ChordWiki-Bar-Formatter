@@ -23,6 +23,8 @@ assert(readme.includes("![ヘルプ・使い方：ツール概要](docs/images/r
 assert(readme.includes("![基本的な使い方](docs/images/readme-help-basic-flow.png)"));
 assert(readme.includes("![実際の変換例](docs/images/readme-help-example.png)"));
 assert(readme.includes("![詳しい修正方法](docs/images/readme-help-adjust.png)"));
+assert(readme.includes("## できること"));
+assert(readme.indexOf("## できること") < readme.indexOf("## 使い方"));
 assert(readme.includes("## リアルタイムエディター"));
 assert(readme.includes("![リアルタイムエディター](docs/images/readme-realtime-editor.png)"));
 assert(readme.includes("- 編集内容をリアルタイムで譜面へ反映"));
