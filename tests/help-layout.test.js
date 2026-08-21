@@ -86,6 +86,7 @@ assert(help.includes("曲に合わせて<br>直す"));
 assert(help.includes("見た目を<br>確認する"));
 assert(help.includes("拍子と設定値を<br>確認する"));
 assert(help.includes("完成！<br>コピーして投稿"));
+assert(help.includes("<small>リアルタイムエディター</small>"));
 assert(!help.includes("どうやって使い始めますか？"));
 assert(!help.includes("変換結果はどう直しますか？"));
 assert(!help.includes("完成した譜面はどう使いますか？"));
@@ -93,7 +94,7 @@ const basicFlow = help.match(/<ol class="help-flow-grid">([\s\S]*?)<\/ol>/)?.[1]
 assert.strictEqual((basicFlow.match(/<p>/g) || []).length, 5);
 assert(!basicFlow.includes("help-flow-finish"));
 assert.strictEqual((basicFlow.match(/<li>/g) || []).length, 5);
-assert(basicFlow.includes("<small>完成</small>"));
+assert(basicFlow.includes("<small>リアルタイムエディター</small>"));
 assert(basicFlow.includes("本サイトへ投稿します。"));
 assert.strictEqual((help.match(/class="help-io-panel help-io-/g) || []).length, 4);
 assert.strictEqual((help.match(/class="help-io-panel-heading"/g) || []).length, 4);
