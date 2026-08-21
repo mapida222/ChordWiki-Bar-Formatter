@@ -6,12 +6,9 @@ ChordPro形式のコード譜へ、**小節線と音の長さを表す記号を�
 
 **今すぐ使う：** [ChordWiki Bar Formatter](https://mapida222.github.io/ChordWiki-Bar-Formatter/)
 
-| インストール不要 | 入力内容は外部送信なし | 変換から譜面確認までブラウザー内で完結 |
-|---|---|---|
+インストール不要。入力内容は外部送信せず、変換から譜面確認までブラウザー内で完結します。
 
-> [ChordWiki公式サイト](https://ja.chordwiki.org/)　非公式ツールです。
-
-ChordWikiで使われるChordPro形式に対応しています。
+ChordWikiで使われるChordPro形式に対応した非公式ツールです。
 
 ## 目次
 
