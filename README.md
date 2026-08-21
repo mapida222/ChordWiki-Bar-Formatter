@@ -1,16 +1,18 @@
 # ChordWiki Bar Formatter
 
-**今すぐ使う：** [ChordWiki Bar Formatter](https://mapida222.github.io/ChordWiki-Bar-Formatter/)
-
 ChordPro形式のコード譜へ、**小節線と音の長さを表す記号を自動で追加する**ブラウザーツールです。
 
-① コード譜を貼る → ② 自動で整える → ③ 譜面として確認する
+① コード譜を貼る
 
-- インストール不要
-- ブラウザー内で完結
-- ChordWiki非公式ツール
+② 自動で整える
+
+③ 譜面として確認する
 
 ![ヘルプ・使い方：ツール概要](docs/images/readme-help01.png)
+
+インストール不要、ブラウザー使用、ChordWiki非公式ツールです。
+
+**今すぐ使う：** [ChordWiki Bar Formatter](https://mapida222.github.io/ChordWiki-Bar-Formatter/)
 
 ## 目次
 
