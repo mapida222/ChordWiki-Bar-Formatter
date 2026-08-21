@@ -1,14 +1,14 @@
 # ChordWiki Bar Formatter
 
-> コード譜を貼る → 自動で整える → 譜面として確認する
+**今すぐ使う：** [ChordWiki Bar Formatter](https://mapida222.github.io/ChordWiki-Bar-Formatter/)
 
 ChordPro形式のコード譜へ、**小節線と音の長さを表す記号を自動で追加する**ブラウザーツールです。
 
-**今すぐ使う：** [ChordWiki Bar Formatter](https://mapida222.github.io/ChordWiki-Bar-Formatter/)
+① コード譜を貼る → ② 自動で整える → ③ 譜面として確認する
 
-インストール不要。入力内容は外部送信せず、変換から譜面確認までブラウザー内で完結します。
-
-ChordWikiで使われるChordPro形式に対応した非公式ツールです。
+- インストール不要
+- ブラウザー内で完結
+- ChordWiki非公式ツール
 
 ## 目次
 

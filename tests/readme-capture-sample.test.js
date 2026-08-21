@@ -27,7 +27,7 @@ for (const expected of [
 
 assert(captureGuide.includes("管理番号：`PUBLIC-002`"));
 assert(captureGuide.includes("個人情報や実在曲の歌詞を使用せず"));
-assert(readme.includes("ChordWikiで使われるChordPro形式に対応した非公式ツールです。"));
+assert(readme.includes("- ChordWiki非公式ツール"));
 assert(!readme.includes("運営元とは関係ありません"));
 
 console.log("PASS: README capture sample is reproducible and contains no real song lyrics");
