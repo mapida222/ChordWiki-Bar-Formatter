@@ -15,7 +15,7 @@ assert(windowScript.includes('if (!text.value) { try { text.value = localStorage
 assert(windowScript.includes('const keepExistingDraft = new URLSearchParams(window.location.search).get("draft") === "keep";'));
 assert(windowScript.includes('if (!keepExistingDraft) { try { applyState(JSON.parse(localStorage.getItem(STATE_KEY) || "null")); } catch (_error) {} }'));
 const app = fs.readFileSync(path.join(root, "js", "app.js"), "utf8");
-assert(app.includes("リアルタイム編集ページには前回の編集内容があります。"));
+assert(app.includes("リアルタイムエディターには前回の編集内容があります。"));
 assert(app.includes('elements.openRealtimeEditor.href = "committed-preview.html?draft=keep";'));
 assert(app.includes("event.preventDefault();"), "cancel must prevent opening the realtime editor");
 assert(windowScript.includes("// numbers, syntax layer, or score preview. Always perform an initial render.\n  render();"));
@@ -26,10 +26,12 @@ assert(html.includes('committed-window-layout committed-window-stacked'));
 assert(html.includes('href="index.html" aria-label="ChordWiki Bar Formatter トップページへ"'));
 assert(html.includes("リアルタイムエディター｜ChordWiki Bar Formatter"));
 assert(html.includes('<details class="score-window-settings">'));
+assert(windowScript.includes('if (helpPanel?.open && !helpPanel.contains(event.target)) helpPanel.open = false;'), "realtime editor help must close on outside clicks");
+assert(windowScript.includes('if (settingsPanel?.open && !settingsPanel.contains(event.target)) settingsPanel.open = false;'), "realtime editor display settings must close on outside clicks");
 assert(html.includes('<details class="score-window-help">'));
-assert(html.includes('<strong>リアルタイム編集ページの使い方</strong>'));
+assert(html.includes('<strong>リアルタイムエディターの使い方</strong>'));
 assert(html.includes('右の譜面をクリックすると、対応する左の行を確認できます。'));
-assert(html.includes('編集内容はこのブラウザの下書きとして保存され、元の画面にも反映されます。'));
+assert(html.includes('編集内容はこのブラウザの下書きとして保存されます。元の画面の変換前・変換後は自動更新されません。'));
 assert(css.includes('.score-window-help-panel { position: absolute;'));
 assert(css.includes(".score-window-settings-panel { position: absolute;"));
 assert(html.includes('id="committed-line-height"'));
@@ -56,6 +58,11 @@ assert(windowScript.includes("const contentLineTop = paddingTop + activeLine * l
 assert(windowScript.includes('text.style.setProperty("--active-line-top", `${contentLineTop - text.scrollTop}px`);'));
 assert(windowScript.includes("if (previewRow) previewRow.dataset.sourceLine = String(sourceLineIndex);"));
 assert(windowScript.includes('event.target.closest("[data-source-line]")'));
+assert(windowScript.includes("const LINE_NUMBER_TRAILING_ROWS = 2"), "realtime editor line numbers must reserve two visual trailing rows");
+assert(windowScript.includes('class=\"line-number-spacer\"'), "realtime editor line-number padding must not add text rows");
+assert(windowScript.includes('scrollPositionForProgress(element, "top", topProgress)'), "realtime editor must calculate scroll positions from normalized progress");
+assert(windowScript.includes('setScrollProgress(preview, scrollSync.checked ? textTopProgress : previewTopProgress'), "realtime editor startup and rerender must restore proportional preview position");
+assert(windowScript.includes("scrollPositionWasSuppressed"), "realtime editor linked scroll events must not bounce back and forth");
 assert(css.includes("--committed-line-height: 2.75"));
 assert(css.includes(".committed-window-editor-wrap .line-numbers span { height: calc(var(--editor-font-size) * var(--committed-line-height)); }"));
 assert(css.includes(".committed-window-preview { height: 100%; margin: 0; border: 0; border-radius: 0; font-size: var(--editor-font-size) !important; }"));
@@ -67,7 +74,7 @@ assert(windowScript.includes("stackedLineHeight = next; else sideLineHeight = ne
 assert(windowScript.includes("checkboxDefaultsVersion: 1"));
 assert(windowScript.includes("stackedPaneSize, sidePaneSize"));
 assert(windowScript.includes("Math.max(6, Math.min(94"));
-assert(windowScript.includes("requestAnimationFrame(() => setActiveLine(activeLine));"));
+assert(windowScript.includes("requestAnimationFrame(() => {"));
 assert(css.includes(".committed-window-editor.active-line-visible"));
 assert(css.includes('.committed-window-preview > [data-source-line].compare-active'));
 

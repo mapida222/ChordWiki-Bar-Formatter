@@ -95,6 +95,11 @@
 | `LAYOUT-020` | 02初期設定と05譜面プレビューにも03・04同様の右下サイズ変更ハンドルを用意し、スマホでも表示 | 有効 | `index.html`、`style.css`、`tests/frame-edge-resize.test.js`、`tests/mobile-linked-editors.test.js` |
 | `LAYOUT-021` | スマホのリアルタイムエディター見出しを横一行に保ち、操作群は次行へ配置 | 有効 | `style.css`、`tests/mobile-linked-editors.test.js` |
 | `LAYOUT-022` | スマホの右下サイズ変更ハンドルを02初期設定から01変換前へ移動 | 有効 | `style.css`、`tests/mobile-linked-editors.test.js` |
+| `LAYOUT-023` | 通常画面から重複する確定譜面テキスト枠と別画面比較編集リンクを外し、リアルタイム編集ページへ集約 | 有効 | `index.html`、`js/app.js`、`tests/local-editor-layout.test.js` |
+| `LAYOUT-024` | スクロール同期ON/OFFを切り替えても、変換後と行修正の横並びを維持し、OFF時だけ変換前を独立スクロールさせる | 有効 | `js/app.js`、`tests/scroll-sync-progress.test.js` |
+| `LAYOUT-025` | 行番号欄の末尾に表示用の空2行を確保し、変換後テキストへ改行を追加せず下端の行番号ずれを抑える | 有効 | `js/app.js`、`tests/local-editor-layout.test.js` |
+| `LAYOUT-026` | リアルタイムエディターの名称を統一し、起動時・設定変更時・上下左右比較時のスクロールを進捗率で相互同期する | 有効 | `committed-preview.html`、`js/committed-preview-window.js`、`README.md`、`tests/committed-preview-window.test.js` |
+| `LAYOUT-027` | リアルタイムエディターの表示設定を外側クリックまたは表示設定ボタンの再クリックで閉じる | 有効 | `js/committed-preview-window.js`、`tests/committed-preview-window.test.js` |
 | `PREVIEW-001` | 譜面プレビューのベスト条件 | 基準 | `LAYOUT_REFERENCE.md`、`layout-snapshots/2026-07-22-good/`、Gitタグ `preview-layout-best-2026-07-22` |
 | `PREVIEW-002` | 拍記号に挟まれた縦小節線が直後の拍記号と重ならないよう補正 | 有効 | `js/chordwiki-preview.js`、`style.css`、`tests/preview-layout.test.js` |
 | `PREVIEW-003` | 譜面プレビューの移調では`{key:...}`だけを移調し、`{ci:...}`・`{title:...}`・`{subtitle:...}`などコメント系ディレクティブ内部のコード風文字列は保持 | 有効 | `js/transposer.js`、`tests/transposer.test.js` |

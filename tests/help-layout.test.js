@@ -56,7 +56,7 @@ assert(help.includes("白玉</em>"));
 assert(help.includes("シンコペーション(-)</em>"));
 assert(help.includes("シンコペーション(=)</em>"));
 assert(help.includes("リアルタイムプレビュー</strong><span class=\"help-capability-comment\""));
-assert(help.includes("「別画面で開く」も使えます。"));
+assert(help.includes("「リアルタイムエディター」も使えます。"));
 assert(!help.includes('class="help-capability-output"'));
 assert(help.includes("ハイフン食い</em>"));
 assert(help.includes("[|][C][---=]あいう[Am][=]え[----]お[|]"));
