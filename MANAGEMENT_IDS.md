@@ -137,6 +137,7 @@
 | `PUBLIC-009` | Analytics・CSP・AdSense導入余地を監査し、導入条件と配置を記録 | 調査済み | `docs/ADSENSE_READINESS.md`、`index.html`、`privacy.html` |
 | `PUBLIC-011` | Secret Scanning警告に対応して旧CGI参考ファイルを公開対象から除外 | 実施中 | `cgi/wiki.cgi`、`.gitignore`、`docs/ADSENSE_READINESS.md` |
 | `PUBLIC-012` | サイトのヘルプ構成とキャプチャをGitHub READMEの冒頭へ反映し、初見向けの利用手順を整理 | 有効 | `README.md`、`docs/images/readme-help01.png`、`docs/images/readme-help02.png`、`docs/images/readme-help03.png`、`tests/github-publication.test.js` |
+| `PUBLIC-013` | 基本操作・変換例・詳しい修正方法のヘルプキャプチャをREADMEの各節へ配置し、リアルタイムエディターの要点を追加 | 有効 | `README.md`、`docs/images/readme-help-basic-flow.png`、`docs/images/readme-help-example.png`、`docs/images/readme-help-adjust.png`、`tests/github-publication.test.js` |
 | `PUBLIC-010` | 実publisher IDによるGoogle AdSense自動広告コード、CSP許可先、広告プライバシー告知 | 有効 | `index.html`、`privacy.html`、`docs/ADSENSE_READINESS.md`、`tests/public-links.test.js` |
 | `SAMPLE-001` | 入力サンプルの変換前・行修正・設定を固定 | 有効 | `js/app.js`、`docs/README_CAPTURE_SAMPLE.md`、`tests/readme-capture-sample.test.js` |
 | `HELP-001` | 丸い「？」による補足説明 | 有効 | `index.html`、`style.css`、`js/app.js`、`docs/TOOLTIP_HELP_DRAFT.md` |
