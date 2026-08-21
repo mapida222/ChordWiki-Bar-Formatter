@@ -19,8 +19,9 @@ assert(!app.includes("elements.input.scrollTop = 0;"), "pasting must not force t
 assert(app.includes("const suppressedScrollEditors = new WeakMap();"), "programmatic scroll targets must be marked before their scroll events fire");
 assert(app.includes("suppressedPosition.top === editor.scrollTop"), "delayed target events must be matched by their synchronized position");
 assert(app.includes("if (suppressed || syncingScroll || restoringPasteScroll) return;"), "programmatic target scrolls must not start a second sync chain");
-assert(app.includes("suppressNextScrollEvent(other, editor.scrollTop, editor.scrollLeft);"), "linked editor scrolls must suppress their follow-up events");
-assert(app.includes("suppressNextScrollEvent(elements.finalPreview, editor.scrollTop, editor.scrollLeft);"), "source-to-preview sync must suppress the preview follow-up event");
+assert(app.includes("suppressNextScrollEvent(other, nextTop, nextLeft);"), "linked editor scrolls must suppress their follow-up events");
+assert(app.includes("scrollPositionForProgress(other, \"top\", topProgress)"), "linked editors must use proportional vertical positions when their heights differ");
+assert(app.includes("scrollPositionForProgress(elements.finalPreview, \"top\", topProgress)"), "source-to-preview sync must use proportional vertical positions");
 assert(app.includes("suppressedScrollEditors.get(elements.finalPreview)"), "preview follow-up events must not start a correction sync chain");
 assert(app.includes("// The score preview is a follower."), "preview scrolling must not drive the row-edit gutter");
 assert(app.includes("[elements.input, elements.output, elements.correction, elements.finalOutput]"), "source scroll sync must include the linked row-edit group");

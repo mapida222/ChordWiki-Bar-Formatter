@@ -12,6 +12,8 @@
   const preview = document.querySelector("#committed-window-preview");
   const status = document.querySelector("#committed-window-status");
   const layoutToggle = document.querySelector("#committed-layout-toggle");
+  const helpPanel = document.querySelector(".score-window-help");
+  const settingsPanel = document.querySelector(".score-window-settings");
   const width = document.querySelector("#committed-pane-width");
   const fontSize = document.querySelector("#committed-font-size");
   const fontSizeValue = document.querySelector("#committed-font-size-value");
@@ -26,7 +28,6 @@
   const transposeDown = document.querySelector("#committed-transpose-down");
   const transposeUp = document.querySelector("#committed-transpose-up");
   let channel = null;
-  let syncingScroll = false;
   let activeLine = 0;
   let draftUpdatedAt = 0;
   let layoutMode = "stacked";
@@ -34,8 +35,46 @@
   let sideLineHeight = 2.75;
   let stackedPaneSize = 48;
   let sidePaneSize = 48;
+  const LINE_NUMBER_TRAILING_ROWS = 2;
+  const suppressedScrollPositions = new WeakMap();
+  const scrollProgress = (element, axis) => {
+    if (!element) return 0;
+    const current = axis === "left" ? element.scrollLeft : element.scrollTop;
+    const max = axis === "left"
+      ? Math.max(0, element.scrollWidth - element.clientWidth)
+      : Math.max(0, element.scrollHeight - element.clientHeight);
+    return max ? Math.max(0, Math.min(1, current / max)) : 0;
+  };
+  const scrollPositionForProgress = (element, axis, progress) => {
+    if (!element) return 0;
+    const max = axis === "left"
+      ? Math.max(0, element.scrollWidth - element.clientWidth)
+      : Math.max(0, element.scrollHeight - element.clientHeight);
+    return max * Math.max(0, Math.min(1, progress));
+  };
+  const setScrollProgress = (element, topProgress, leftProgress) => {
+    if (!element) return;
+    const top = scrollPositionForProgress(element, "top", topProgress);
+    const left = scrollPositionForProgress(element, "left", leftProgress);
+    if (element.scrollTop === top && element.scrollLeft === left) return;
+    suppressedScrollPositions.set(element, { top, left });
+    element.scrollTop = top;
+    element.scrollLeft = left;
+  };
+  const scrollPositionWasSuppressed = (element) => {
+    const position = suppressedScrollPositions.get(element);
+    const suppressed = position
+      && position.top === element.scrollTop
+      && position.left === element.scrollLeft;
+    if (suppressed) suppressedScrollPositions.delete(element);
+    return suppressed;
+  };
   try { if ("BroadcastChannel" in window) channel = new BroadcastChannel(CHANNEL_NAME); } catch (_error) { channel = null; }
   function render() {
+    const textTopProgress = scrollProgress(text, "top");
+    const textLeftProgress = scrollProgress(text, "left");
+    const previewTopProgress = scrollProgress(preview, "top");
+    const previewLeftProgress = scrollProgress(preview, "left");
     const escape = (value) => value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
     // The editor must remain readable even when a preview-only token cannot
     // be drawn. Render the editable text and its line numbers first.
@@ -48,7 +87,9 @@
       return `${before}<span class="${className}">${escape(token)}</span>`;
     }).join("") + escape(text.value.slice(lastIndex));
     const count = Math.max(1, text.value.split(/\r\n|\r|\n/).length);
-    lines.innerHTML = Array.from({ length: count }, (_, index) => `<span>${index + 1}</span>`).join("");
+    const numbers = Array.from({ length: count }, (_, index) => `<span>${index + 1}</span>`).join("");
+    const trailingRows = Array.from({ length: LINE_NUMBER_TRAILING_ROWS }, () => '<span class="line-number-spacer" aria-hidden="true"></span>').join("");
+    lines.innerHTML = numbers + trailingRows;
     lines.scrollTop = text.scrollTop;
     try {
       const previewText = window.ChordWikiTranspose
@@ -65,6 +106,7 @@
     } catch (_error) {
       preview.textContent = text.value;
     }
+    setScrollProgress(preview, scrollSync.checked ? textTopProgress : previewTopProgress, scrollSync.checked ? textLeftProgress : previewLeftProgress);
     setActiveLine(activeLine);
   }
   function setActiveLine(index) {
@@ -79,7 +121,7 @@
     text.classList.add("active-line-visible");
     text.style.setProperty("--active-line-top", `${contentLineTop - text.scrollTop}px`);
     text.style.setProperty("--active-line-height", `${lineHeight}px`);
-    [...lines.children].forEach((line, lineIndex) => line.classList.toggle("active-line", lineIndex === activeLine));
+    [...lines.querySelectorAll("span:not(.line-number-spacer)")].forEach((line, lineIndex) => line.classList.toggle("active-line", lineIndex === activeLine));
     [...preview.querySelectorAll("[data-source-line]")].forEach((line) => line.classList.toggle("compare-active", Number(line.dataset.sourceLine) === activeLine));
   }
   function applyState(payload) {
@@ -98,15 +140,22 @@
   }
   text.addEventListener("input", publishText);
   ["click", "keyup", "select", "focus"].forEach((eventName) => text.addEventListener(eventName, () => setActiveLine(text.value.slice(0, text.selectionStart).split(/\r\n|\r|\n/).length - 1)));
-  text.addEventListener("scroll", () => { lines.scrollTop = text.scrollTop; setActiveLine(activeLine); });
+  text.addEventListener("scroll", () => {
+    const suppressed = scrollPositionWasSuppressed(text);
+    lines.scrollTop = text.scrollTop;
+    setActiveLine(activeLine);
+    if (suppressed || !scrollSync.checked) return;
+    setScrollProgress(preview, scrollProgress(text, "top"), scrollProgress(text, "left"));
+  });
   text.addEventListener("scroll", () => {
     highlight.style.transform = `translate(${-text.scrollLeft}px, ${-text.scrollTop}px)`;
-    if (syncingScroll || !scrollSync.checked) return;
-    syncingScroll = true; preview.scrollTop = text.scrollTop; preview.scrollLeft = text.scrollLeft; requestAnimationFrame(() => { syncingScroll = false; });
   });
   preview.addEventListener("scroll", () => {
-    if (syncingScroll || !scrollSync.checked) return;
-    syncingScroll = true; text.scrollTop = preview.scrollTop; text.scrollLeft = preview.scrollLeft; lines.scrollTop = text.scrollTop; highlight.style.transform = `translate(${-text.scrollLeft}px, ${-text.scrollTop}px)`; requestAnimationFrame(() => { syncingScroll = false; });
+    const suppressed = scrollPositionWasSuppressed(preview);
+    if (suppressed || !scrollSync.checked) return;
+    setScrollProgress(text, scrollProgress(preview, "top"), scrollProgress(preview, "left"));
+    lines.scrollTop = text.scrollTop;
+    highlight.style.transform = `translate(${-text.scrollLeft}px, ${-text.scrollTop}px)`;
   });
   preview.addEventListener("click", (event) => {
     if (preview.dataset.panned === "true") { preview.dataset.panned = "false"; event.preventDefault(); return; }
@@ -136,6 +185,10 @@
     divider.setAttribute("aria-label", stacked ? "テキストとプレビューの高さを調整" : "テキストとプレビューの幅を調整");
   };
   const applyDisplaySettings = () => {
+    const textTopProgress = scrollProgress(text, "top");
+    const textLeftProgress = scrollProgress(text, "left");
+    const previewTopProgress = scrollProgress(preview, "top");
+    const previewLeftProgress = scrollProgress(preview, "left");
     layout.style.setProperty("--editor-font-size", `${fontSize.value}px`);
     fontSizeValue.textContent = `${fontSize.value}px`;
     document.documentElement.style.setProperty("--editor-font", font.value);
@@ -143,10 +196,18 @@
     document.documentElement.classList.toggle("colorized-editors", textColoring.checked);
     document.documentElement.classList.toggle("bold-chords", boldCode.checked);
     applyLayoutMode();
-    requestAnimationFrame(() => setActiveLine(activeLine));
+    requestAnimationFrame(() => {
+      setScrollProgress(text, textTopProgress, textLeftProgress);
+      setScrollProgress(preview, scrollSync.checked ? textTopProgress : previewTopProgress, scrollSync.checked ? textLeftProgress : previewLeftProgress);
+      setActiveLine(activeLine);
+    });
     updateTransposeButtons();
     try { localStorage.setItem(displayKey, JSON.stringify({ fontSize: fontSize.value, font: font.value, theme: theme.value, textColoring: textColoring.checked, boldCode: boldCode.checked, scrollSync: scrollSync.checked, transpose: transpose.value, layoutMode, layoutPreferenceVersion: 1, checkboxDefaultsVersion: 1, stackedLineHeight, sideLineHeight, stackedPaneSize, sidePaneSize })); } catch (_error) {}
   };
+  document.addEventListener("click", (event) => {
+    if (helpPanel?.open && !helpPanel.contains(event.target)) helpPanel.open = false;
+    if (settingsPanel?.open && !settingsPanel.contains(event.target)) settingsPanel.open = false;
+  });
   [fontSize, font, theme, textColoring, boldCode, scrollSync].forEach((control) => control.addEventListener("input", applyDisplaySettings));
   lineHeight.addEventListener("input", () => {
     const next = Math.max(1.4, Math.min(3.2, Number.parseFloat(lineHeight.value) || 1.65));

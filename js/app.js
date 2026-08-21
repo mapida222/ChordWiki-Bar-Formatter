@@ -714,7 +714,7 @@
   }
   function applyLinkedPosition() {
     gutterByEditor.forEach((gutter) => {
-      gutter.querySelectorAll("span").forEach((line, index) => line.classList.toggle("active-line", index === linkedLineIndex));
+      gutter.querySelectorAll("span:not(.line-number-spacer)").forEach((line, index) => line.classList.toggle("active-line", index === linkedLineIndex));
     });
     elements.correctionGrid?.querySelectorAll(".correction-grid-row").forEach((row, index) => {
       row.classList.toggle("active-row", index === linkedLineIndex);
@@ -792,9 +792,12 @@
     elements.correctionModes.style.setProperty("--correction-mode-scroll-top", `${scrollTop}px`);
     elements.correctionGrid?.style.setProperty("--correction-grid-scroll-top", `${scrollTop}px`);
   }
+  const LINE_NUMBER_TRAILING_ROWS = 2;
   function updateLineNumbers(textarea, gutter) {
     const count = Math.max(1, lineCount(textarea.value));
-    gutter.innerHTML = Array.from({ length: count }, (_, index) => `<span>${index + 1}</span>`).join("");
+    const numbers = Array.from({ length: count }, (_, index) => `<span>${index + 1}</span>`).join("");
+    const trailingRows = Array.from({ length: LINE_NUMBER_TRAILING_ROWS }, () => '<span class="line-number-spacer" aria-hidden="true"></span>').join("");
+    gutter.innerHTML = numbers + trailingRows;
     if (textarea === elements.correction) {
       gutter.scrollTop = 0;
       syncCorrectionModeScroll(textarea.scrollTop);
@@ -3192,7 +3195,7 @@
     notify("譜面プレビューを確定譜面テキストへ保存しました。");
   });
   elements.committedOutputToggle.addEventListener("click", () => setCommittedOutputOpen(elements.committedOutputShell.classList.contains("committed-collapsed")));
-  elements.openCommittedPreview.addEventListener("click", () => publishScoreWindow());
+  if (elements.openCommittedPreview) elements.openCommittedPreview.addEventListener("click", () => publishScoreWindow());
   elements.openRealtimeEditor.addEventListener("click", (event) => {
     // 05 is the editable source. 06 only renders that text as a score, so
     // opening the realtime editor must carry the exact 05 text across.
@@ -3200,7 +3203,7 @@
     let savedDraft = null;
     try { savedDraft = JSON.parse(localStorage.getItem(COMMITTED_DRAFT_STORAGE_KEY) || "null"); } catch (_error) { savedDraft = null; }
     const hasDifferentDraft = Boolean(savedDraft?.text) && savedDraft.text !== currentText;
-    if (hasDifferentDraft && !window.confirm("リアルタイム編集ページには前回の編集内容があります。\n現在の変換結果で上書きして開きますか？\n\n［OK］上書きして開く\n［キャンセル］次の選択へ")) {
+    if (hasDifferentDraft && !window.confirm("リアルタイムエディターには前回の編集内容があります。\n現在の変換結果で上書きして開きますか？\n\n［OK］上書きして開く\n［キャンセル］次の選択へ")) {
       if (!window.confirm("前回の内容を残して開きますか？\n\n［OK］前回の内容を残して開く\n［キャンセル］開くのをやめる")) {
         event.preventDefault();
         return;
@@ -3673,6 +3676,21 @@
     editor.scrollTop = top;
     editor.scrollLeft = left;
   };
+  const scrollProgress = (editor, axis) => {
+    if (!editor) return 0;
+    const current = axis === "left" ? editor.scrollLeft : editor.scrollTop;
+    const max = axis === "left"
+      ? Math.max(0, editor.scrollWidth - editor.clientWidth)
+      : Math.max(0, editor.scrollHeight - editor.clientHeight);
+    return max ? Math.max(0, Math.min(1, current / max)) : 0;
+  };
+  const scrollPositionForProgress = (editor, axis, progress) => {
+    if (!editor) return 0;
+    const max = axis === "left"
+      ? Math.max(0, editor.scrollWidth - editor.clientWidth)
+      : Math.max(0, editor.scrollHeight - editor.clientHeight);
+    return max * Math.max(0, Math.min(1, progress));
+  };
   const scrollEditors = [elements.correction, elements.input, elements.output, elements.finalOutput];
   window.addEventListener("resize", syncCorrectionScrollbarWidth);
   [
@@ -3713,19 +3731,27 @@
           : scrollEditors
         : correctionResultPair.includes(editor) ? correctionResultPair : [editor];
       if (syncTargets.length === 1) return;
+      const topProgress = scrollProgress(editor, "top");
+      const leftProgress = scrollProgress(editor, "left");
       syncingScroll = true;
       syncTargets.forEach((other) => {
-        suppressNextScrollEvent(other, editor.scrollTop, editor.scrollLeft);
+        const nextTop = scrollPositionForProgress(other, "top", topProgress);
+        const nextLeft = scrollPositionForProgress(other, "left", leftProgress);
+        suppressNextScrollEvent(other, nextTop, nextLeft);
         if (other === elements.correction) {
           gutterByEditor.get(other).scrollTop = 0;
-          syncCorrectionModeScroll(editor.scrollTop);
+          syncCorrectionModeScroll(nextTop);
         } else {
-          gutterByEditor.get(other).scrollTop = editor.scrollTop;
+          gutterByEditor.get(other).scrollTop = nextTop;
         }
         syncHighlightScroll(other);
       });
       if (scrollSyncEnabled && elements.finalOutputShell.classList.contains("preview-mode")) {
-        suppressNextScrollEvent(elements.finalPreview, editor.scrollTop, editor.scrollLeft);
+        suppressNextScrollEvent(
+          elements.finalPreview,
+          scrollPositionForProgress(elements.finalPreview, "top", topProgress),
+          scrollPositionForProgress(elements.finalPreview, "left", leftProgress)
+        );
       }
       requestAnimationFrame(() => { syncingScroll = false; });
     });
