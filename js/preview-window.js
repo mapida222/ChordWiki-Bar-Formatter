@@ -24,7 +24,7 @@
     keySections: [],
     barsThrough: false,
     theme: "light",
-    editorFontStack: "Meiryo, sans-serif",
+    editorFontStack: 'Meiryo, "Yu Gothic UI", "MS Gothic", sans-serif',
     editorFontSize: 14
   };
 

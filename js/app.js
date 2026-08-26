@@ -27,6 +27,8 @@
         popover.style.top = "";
         popover.style.left = "";
         popover.style.right = "";
+        popover.style.width = "";
+        popover.style.maxWidth = "";
       }
     }
     button.setAttribute("aria-expanded", "false");
@@ -37,7 +39,10 @@
     if (!button.closest(".setting-help")) return;
     const buttonRect = button.getBoundingClientRect();
     const margin = 8;
-    const width = Math.min(270, window.innerWidth - (margin * 2));
+    popover.style.width = "max-content";
+    popover.style.maxWidth = `calc(100vw - ${margin * 2}px)`;
+    const width = Math.min(popover.scrollWidth, window.innerWidth - (margin * 2));
+    popover.style.width = `${width}px`;
     const left = Math.max(margin, Math.min(window.innerWidth - width - margin, buttonRect.right - width));
     popover.style.position = "fixed";
     popover.style.left = `${left}px`;
@@ -250,7 +255,7 @@
     "[F]編集[G]お疲れ[Csus4]様で[Cadd9]す！（[C]ありが[N.C.]とう！）"
   ].join("\n");
   const INITIAL_CORRECTION = ["", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "88448", "3535", "8@4@4", "", "4444", "4s4@4x", "4/^3^3^2/44", "4*s4*3*3*^24"].join("\n");
-  const INITIAL_SETTINGS = { measureCapacity: 8, hyphenUnit: 4, hyphenSpacing: 4, shortFractionPrepose: 1, longBeatLyricPlacement: 3, singleCharacterHyphens: 0, showContinuationChord: 0 };
+  const INITIAL_SETTINGS = { measureCapacity: 8, hyphenUnit: 4, hyphenSpacing: 4, shortFractionPrepose: 1, longBeatLyricPlacement: 2, singleCharacterHyphens: 0, showContinuationChord: 0 };
   const CUSTOM_PROFILE_NAME_STORAGE_KEY = "chordWikiBarFormatter.customProfileName.v1";
   const RECOMMENDED_VALUES = {
     fourFour: [0, 2, 4, 8, 16, 24, 32],
@@ -261,26 +266,32 @@
     hyphenUnit: (defaultValue) => `コード直後に補うハイフン数です。デフォルト：${defaultValue}。`,
     measureCapacity: (defaultValue) => `1小節分に相当するハイフンの合計数です。デフォルト：${defaultValue}。`,
     hyphenSpacing: () => "長く連続するハイフンを、指定した数ごとに空白で区切ります。0では区切りません。",
-    shortFractionPrepose: () => "コード間の長さに端数ができたとき、歌詞を1文字手前へ移動します。する：歌詞を前へ寄せる（デフォルト）、しない：歌詞位置を変えない。",
-    longBeatLyricPlacement: () => "行修正で長い拍を指定したときの歌詞位置です。前に分ける：歌詞を最初へ、前後に分ける：最初と最後へ、均等に分ける：すべての長さ記号へ、後に分ける：歌詞を最後へ配置します。",
-    singleCharacterHyphens: () => "1文字だけで完結する小節のハイフンです。省略する：歌詞だけを表示（デフォルト）、残す：拍の長さを表示。",
-    showContinuationChord: () => "コードがない小節に直前のコードを引き継ぎます。する：直前のコードを表示、しない：小節線のみ（デフォルト）。"
+    shortFractionPrepose: () => "コード間の長さに端数があるときの、歌詞の位置を選びます。\n　前の拍に寄せる：歌詞を1文字前へ移動（デフォルト）\n　そのまま：歌詞位置を変えない。\n例）前に寄せる：[C][----]あ[B][---]い[|]\n　　そのまま：[C][----]あ[B][---][|]い[|]",
+    longBeatLyricPlacement: () => "行修正で長い拍を指定したときの、歌詞の置き方を選びます。\n通常：歌詞を小節内で均等に配置します。\nゆったり：歌詞をコードの近くにまとめて配置します。",
+    singleCharacterHyphens: () => "1文字だけで完結する小節に、ハイフンを追記するか選びます。\n　ハイフン追記あり：拍の長さを表示\n　ハイフン追記なし：歌詞だけを表示（デフォルト）。\n例）追記あり：[C][----]あ[----][|]\n　　追記なし：[C]あ[|]",
+    showContinuationChord: () => "コードがない小節にもコードを表示する設定です。\n　前のコードを表示：直前のコードを表示\n　小節線だけ表示：コードを表示しない（デフォルト）\n例）表示する：[A]----|[A]----|\n　　表示しない：[A]----|----|"
   };
   function customProfileName() { return localStorage.getItem(CUSTOM_PROFILE_NAME_STORAGE_KEY)?.trim() || "カスタム"; }
   function settingsProfileLabel(profile) {
     return profile === "custom" ? customProfileName() : profile === "sixEight" ? "6/8拍子" : "4/4拍子";
   }
+  function defaultRemovalTargets(values = {}) {
+    const profile = CBFSettings.inferProfileFromValues(values);
+    if (profile === "sixEight") return "3,6";
+    if (profile === "fourFour") return "4,8";
+    return String(values.hyphenUnit ?? CBFSettings.profileDefaults(profile).hyphenUnit);
+  }
   function recommendedValues() { return RECOMMENDED_VALUES[CBFSettings.activeProfile()] || RECOMMENDED_VALUES.custom; }
   const editorFonts = [
-    { value: "browser", label: "ブラウザ標準", stack: 'sans-serif' },
-    { value: "system-ui", label: "system-ui", stack: 'system-ui, sans-serif' },
-    { value: "meiryo", label: "メイリオ / Meiryo", stack: 'Meiryo, sans-serif' },
-    { value: "biz-udp", label: "BIZ UDPゴシック", stack: '"BIZ UDPGothic", sans-serif' },
-    { value: "ms-gothic", label: "MS Gothic", stack: '"MS Gothic", monospace' },
-    { value: "segoe-ui", label: "Segoe UI", stack: '"Segoe UI", sans-serif' },
-    { value: "verdana", label: "Verdana", stack: 'Verdana, sans-serif' },
-    { value: "consolas", label: "Consolas", stack: 'Consolas, monospace' },
-    { value: "courier-new", label: "Courier New", stack: '"Courier New", monospace' }
+    { value: "browser", label: "ブラウザ標準", stack: 'sans-serif, "Yu Gothic UI", Meiryo, "MS Gothic"' },
+    { value: "system-ui", label: "system-ui", stack: 'system-ui, "Yu Gothic UI", Meiryo, "MS Gothic", sans-serif' },
+    { value: "meiryo", label: "メイリオ / Meiryo", stack: 'Meiryo, "Yu Gothic UI", "MS Gothic", sans-serif' },
+    { value: "biz-udp", label: "BIZ UDPゴシック", stack: '"BIZ UDPGothic", "Yu Gothic UI", Meiryo, "MS Gothic", sans-serif' },
+    { value: "ms-gothic", label: "MS Gothic", stack: '"MS Gothic", "Yu Gothic UI", Meiryo, sans-serif' },
+    { value: "segoe-ui", label: "Segoe UI", stack: '"Segoe UI", "Yu Gothic UI", Meiryo, "MS Gothic", sans-serif' },
+    { value: "verdana", label: "Verdana", stack: 'Verdana, "Yu Gothic UI", Meiryo, "MS Gothic", sans-serif' },
+    { value: "consolas", label: "Consolas", stack: 'Consolas, "MS Gothic", "Yu Gothic UI", Meiryo, monospace' },
+    { value: "courier-new", label: "Courier New", stack: '"Courier New", "MS Gothic", "Yu Gothic UI", Meiryo, monospace' }
   ];
 
   function applyTheme(value, save = true) {
@@ -353,7 +364,7 @@
       const recommendations = definition.choices ? "" : `<datalist id="recommended-${definition.key}">${candidates.map((value) => `<option value="${value}"></option>`).join("")}</datalist>`;
       const bounds = definition.choices ? definition.bounds : `${definition.min}～${definition.max}、デフォルト：${profileDefault}`;
       const guide = SETTING_GUIDES[definition.key]?.(profileDefault) || definition.prompt;
-      const guideMarkup = guide.replace(/。(?!$)/gu, "。<br>");
+      const guideMarkup = guide.replace(/。(?![\r\n]|$)/gu, "。<br>").replace(/\r?\n/gu, "<br>");
       const exampleMarkup = definition.examples.map((example) => {
         if (example.endsWith("：")) return `<span class="example-subhead">${example}</span>`;
         const arrowIndex = example.indexOf(" → ");
@@ -366,11 +377,11 @@
         const arrowIndex = example.indexOf(" → ");
         return arrowIndex < 0 ? 0 : [...example.slice(0, arrowIndex)].length;
       })) + 1;
-      field.innerHTML = `<div class="setting-core"><label for="setting-${definition.key}" title="${definition.prompt}"><span class="setting-number">${index + 1}.</span>${definition.label}</label>
+      field.innerHTML = `<div class="setting-core"><label for="setting-${definition.key}" title="${definition.prompt}"><span class="setting-number">${index + 1}.</span>&nbsp;${definition.label}</label>
           ${control}${recommendations}
           <small id="help-${definition.key}" class="setting-bounds">（${bounds}）</small>
           <small id="error-${definition.key}" class="setting-error" aria-live="polite"></small>
-          <span class="setting-help context-help"><button class="context-help-button setting-help-button" type="button" aria-label="${definition.label}の説明" aria-expanded="false" aria-controls="help-popover-${definition.key}">?</button><span id="help-popover-${definition.key}" class="context-help-popover" role="tooltip" hidden><strong class="context-help-title">${definition.label}</strong>${guide}</span></span>
+          <span class="setting-help context-help"><button class="context-help-button setting-help-button" type="button" aria-label="${definition.label}の説明" aria-expanded="false" aria-controls="help-popover-${definition.key}">?</button><span id="help-popover-${definition.key}" class="context-help-popover" role="tooltip" hidden><strong class="context-help-title">${definition.label}</strong>${guideMarkup}</span></span>
         </div>
         <div class="setting-example" style="--setting-example-label-width:${exampleLabelWidth}em"><span class="example-description">${guideMarkup}</span>${exampleMarkup}</div>`;
       (basicKeys.has(definition.key) ? elements.settingsGrid : elements.settingsAdvancedGrid).append(field);
@@ -395,7 +406,7 @@
     renderSettings(values);
     updateSettingsProfileUI();
     if (removalLinked) {
-      elements.removalTargets.value = String(values.hyphenUnit);
+      elements.removalTargets.value = defaultRemovalTargets(values);
       localStorage.setItem(REMOVAL_STORAGE_KEY, elements.removalTargets.value);
     }
     convert({ refreshCorrections: true });
@@ -448,8 +459,8 @@
     formattingDetails.push(measureMismatch
       ? `1小節：${mismatch.detected}ハイフン（${mismatch.percentage}%）`
       : `1小節：${Number(values.measureCapacity)}ハイフン（現状と同じ）`);
-    formattingDetails.push(detail("コード直後", formatting.hyphenUnit, values.hyphenUnit));
-    formattingDetails.push(detail("区切り間隔", formatting.hyphenSpacing, values.hyphenSpacing));
+    formattingDetails.push(detail("コード直後（空白区切り前）", formatting.hyphenUnit, values.hyphenUnit));
+    formattingDetails.push(detail("空白区切り後のグループ", formatting.hyphenSpacing, values.hyphenSpacing));
     if (formattingDetails.length) {
       const actionText = measureMismatch
         ? useSixEightProfile
@@ -1357,7 +1368,7 @@
     };
   }
   function saveCurrentHistory(manual = false, silent = false) {
-    if (!elements.output.value.trim()) {
+    if (!elements.input.value.trim() || !elements.output.value.trim()) {
       if (manual) notify("使用履歴へ追加する変換後テキストがありません。", true);
       return false;
     }
@@ -1442,7 +1453,7 @@
     removalLinked = state.removalLinked !== false;
     elements.removalLinked.checked = removalLinked;
     elements.removalTargets.value = removalLinked
-      ? String(converterSettings.hyphenUnit)
+      ? defaultRemovalTargets(converterSettings)
       : (state.removalTargets ?? String(converterSettings.hyphenUnit));
     elements.lyricHyphenMode.value = ["show", "target", "minimize", "all"].includes(state.lyricHyphenMode)
       ? state.lyricHyphenMode
@@ -1456,22 +1467,9 @@
     updatePreviewTransposeButtons();
     elements.previewTheoretical.checked = Boolean(state.previewTheoretical);
     keySectionSettings = [];
-    applyTheme(state.theme || "light");
-    elements.fontSelect.value = editorFonts.some((font) => font.value === state.editorFont) ? state.editorFont : "meiryo";
-    applyEditorFont(elements.fontSelect.value);
-    updateFontCycleButtons();
-    applyEditorFontSize(state.editorFontSize || 14);
-    elements.scrollSync.checked = state.scrollSync !== false;
-    scrollSyncEnabled = elements.scrollSync.checked;
-    localStorage.setItem(SCROLL_SYNC_STORAGE_KEY, String(scrollSyncEnabled));
-    elements.textColoring.checked = state.textColoring !== false;
-    document.documentElement.classList.toggle("colorized-editors", elements.textColoring.checked);
-    localStorage.setItem(TEXT_COLORING_STORAGE_KEY, String(elements.textColoring.checked));
-    elements.boldCode.checked = state.boldCode !== false;
-    document.documentElement.classList.toggle("bold-chords", elements.boldCode.checked);
-    localStorage.setItem(BOLD_CODE_STORAGE_KEY, String(elements.boldCode.checked));
-    elements.addedBackground.checked = state.addedBackground !== false;
-    localStorage.setItem(ADDED_BACKGROUND_STORAGE_KEY, String(elements.addedBackground.checked));
+    // History restores work data and conversion options, not the current
+    // viewing environment. Keep theme, font, size, scroll sync and editor
+    // display toggles so a day/night workflow is not interrupted.
     showScorePreview();
     persistFeatureSettings();
     localStorage.setItem(INPUT_STORAGE_KEY, elements.input.value);
@@ -1665,6 +1663,8 @@
       elements.finalOutput.value = restoredText;
       outputManuallyEdited = manualOutputLines.size > 0;
       resetOutputAddedOffsets();
+      updateEditorHighlight(elements.output);
+      updateEditorHighlight(elements.finalOutput);
       renderFinalPreview();
       updateCount(elements.output, elements.outputCount);
       updateLineNumbers(elements.output, elements.outputLines);
@@ -1921,7 +1921,7 @@
 
   elements.settingsBody.addEventListener("input", (event) => {
     if (event.target.id === "setting-hyphenUnit" && removalLinked) {
-      elements.removalTargets.value = event.target.value;
+      elements.removalTargets.value = defaultRemovalTargets(rawSettings());
       localStorage.setItem(REMOVAL_STORAGE_KEY, elements.removalTargets.value);
     }
     if (["setting-hyphenSpacing", "setting-shortFractionPrepose", "setting-longBeatLyricPlacement", "setting-showContinuationChord"].includes(event.target.id)) schedulePrioritySettingConversion();
@@ -3153,7 +3153,7 @@
   elements.removalLinked.addEventListener("change", () => {
     removalLinked = elements.removalLinked.checked;
     if (removalLinked) {
-      elements.removalTargets.value = String(rawSettings().hyphenUnit);
+      elements.removalTargets.value = defaultRemovalTargets(rawSettings());
       localStorage.setItem(REMOVAL_STORAGE_KEY, elements.removalTargets.value);
     }
     persistFeatureSettings();
@@ -3245,7 +3245,7 @@
     renderSettings(values);
     updateSettingsProfileUI();
     if (removalLinked) {
-      elements.removalTargets.value = String(values.hyphenUnit);
+      elements.removalTargets.value = defaultRemovalTargets(values);
       localStorage.setItem(REMOVAL_STORAGE_KEY, elements.removalTargets.value);
     }
     convert({ refreshCorrections: true });
@@ -3292,7 +3292,7 @@
       renderSettings(values);
       updateSettingsProfileUI();
       if (removalLinked) {
-        elements.removalTargets.value = String(values.hyphenUnit);
+        elements.removalTargets.value = defaultRemovalTargets(values);
         localStorage.setItem(REMOVAL_STORAGE_KEY, elements.removalTargets.value);
       }
     }
@@ -3648,7 +3648,7 @@
   removalLinked = localStorage.getItem(REMOVAL_LINKED_STORAGE_KEY) !== "false";
   elements.removalLinked.checked = removalLinked;
   elements.removalTargets.value = removalLinked
-    ? String(loadedSettings.hyphenUnit)
+    ? defaultRemovalTargets(loadedSettings)
     : (localStorage.getItem(REMOVAL_STORAGE_KEY) ?? String(loadedSettings.hyphenUnit));
   {
     const savedLyricHyphenMode = localStorage.getItem(LYRIC_HYPHEN_MODE_STORAGE_KEY);

@@ -5,6 +5,12 @@
   const PROFILE_STORAGE_KEY = "chordWikiBarFormatter.settingsProfiles.v1";
   const ACTIVE_PROFILE_KEY = "chordWikiBarFormatter.settingsProfile.v1";
   const PROFILE_KEYS = ["fourFour", "sixEight", "custom"];
+  const LYRIC_PLACEMENT_VALUES = new Set([2, 3]);
+  const normalizeValues = (values = {}) => {
+    const normalized = { ...values };
+    if (!LYRIC_PLACEMENT_VALUES.has(Number(normalized.longBeatLyricPlacement))) normalized.longBeatLyricPlacement = 2;
+    return normalized;
+  };
   const definitions = [
     {
       key: "measureCapacity", label: "1小節の合計ハイフン数", prompt: "1小節分に相当するハイフンの合計数を設定します。", min: 2, max: 32, defaultValue: 8,
@@ -22,28 +28,37 @@
       examples: ["4/4拍子：0 → |[A]--------|[B]---- ----|", "4/4拍子：4 → |[A]---- ----|[B]---- ----|（デフォルト）", "6/8拍子：0 → |[A]------|[B]------|", "6/8拍子：3 → |[A]--- ---|[B]--- ---|（デフォルト）"]
     },
     {
-      key: "showContinuationChord", label: "直前コードの引継ぎ", prompt: "コードがない小節へ直前のコードを引き継ぎます。", min: 0, max: 1, defaultValue: 0,
-      bounds: "しない（小節線のみ・デフォルト）/ する（前コードも表示）",
-      examples: ["しない → |[A]----|----|[B]----|----|（デフォルト）", "する → |[A]----|[A]----|[B]----|[B]----|"],
-      choices: [{ value: 1, label: "する" }, { value: 0, label: "しない" }]
+      key: "showContinuationChord", label: "コードなし小節に前コード", prompt: "コードがない小節に、前のコードを表示するかを選びます。", min: 0, max: 1, defaultValue: 0,
+      bounds: "小節線だけ表示（デフォルト）/ 前のコードを表示",
+      examples: ["小節線だけ表示 → |[A]----|----|[B]----|----|（デフォルト）", "前のコードを表示 → |[A]----|[A]----|[B]----|[B]----|"],
+      choices: [{ value: 0, label: "小節線だけ表示" }, { value: 1, label: "前のコードを表示" }]
     },
     {
-      key: "longBeatLyricPlacement", label: "長い拍の歌詞配置", prompt: "行修正で長い拍を指定したとき、拍の途中へ歌詞を配置する方法を選びます。", min: 0, max: 4, defaultValue: 3,
-      bounds: "前に分ける / 前後に分ける / 均等に分ける / 後に分ける",
-      examples: ["行修正 g（16）のとき：", "前に分ける → [|][A]あいうえおかき[----][----][|][----][----][|]（デフォルト）", "前後に分ける → [|][A][----]あいうえ[----][|][----][----]おかき[|]", "均等に分ける → [|][A][----]あい[----]うえ[|][----]おか[----]き[|]", "後に分ける → [|][A][----][----][|][----][----]あいうえおかき[|]"],
-      choices: [{ value: 3, label: "前に分ける" }, { value: 1, label: "前後に分ける" }, { value: 2, label: "均等に分ける" }, { value: 4, label: "後に分ける" }]
+      key: "longBeatLyricPlacement", label: "長い拍の歌詞配置", prompt: "通常は歌詞を小節内で均等に配置します。ゆったりは歌詞をコードの近くにまとめて配置します。", min: 2, max: 3, defaultValue: 2,
+      bounds: "通常（デフォルト）/ ゆったり",
+      examples: [
+        "【推奨】通常：",
+        "速く、文字数が多い歌詞 → [|][C][----]ヘッドライト[----]追い越して[|][G][----]夜のバイパス[----]駆け抜ける[|]",
+        "【推奨】ゆったり：",
+        "短く、間がある歌詞 → [|][C][----]そっと[----][|][G][----][----][|]",
+        "【非推奨】通常：",
+        "短く、間がある歌詞 → [|][C][----]そっ[----]と[|][G][----][----][|]",
+        "【非推奨】ゆったり：",
+        "速く、文字数が多い歌詞 → [|][C][----]ヘッドライト追い越して[----][|][G][----]夜のバイパス駆け抜ける[----][|]"
+      ],
+      choices: [{ value: 2, label: "通常" }, { value: 3, label: "ゆったり" }]
     },
     {
-      key: "shortFractionPrepose", label: "端数の歌詞前置き", prompt: "コード間の長さに端数ができたとき、歌詞を1文字手前へ移動します。", min: 0, max: 1, defaultValue: 1,
-      bounds: "する（デフォルト）/ しない",
-      examples: ["する → [|][A][----]あ[B][---][C#m7][-]い[|][----][----]う[|]", "しない → [|][A][----]あ[B][---][C#m7][-][|][----]い[----]う[|]"],
-      choices: [{ value: 1, label: "する" }, { value: 0, label: "しない" }]
+      key: "shortFractionPrepose", label: "端数があるときの歌詞位置", prompt: "コード間の長さに端数があるときの、歌詞の位置を選びます。", min: 0, max: 1, defaultValue: 1,
+      bounds: "前の拍に寄せる（デフォルト）/ そのまま",
+      examples: ["前の拍に寄せる → [|][A][----]あ[B][---][C#m7][-]い[|][----][----]う[|]", "そのまま → [|][A][----]あ[B][---][C#m7][-][|][----]い[----]う[|]"],
+      choices: [{ value: 1, label: "前の拍に寄せる" }, { value: 0, label: "そのまま" }]
     },
     {
-      key: "singleCharacterHyphens", label: "1文字歌詞のハイフン有無", prompt: "1文字だけで完結する小節のハイフンを、変換後に省略するか残すかを選びます。", min: 0, max: 1, defaultValue: 0,
-      bounds: "省略する（デフォルト）/ 残す",
-      examples: ["省略する → [|][A]あい[B]うえ[|][C#m7]お　[|]（デフォルト）", "残す → [|][A]あい[B]うえ[|][C#m7][----]お[----][|]"],
-      choices: [{ value: 0, label: "省略する" }, { value: 1, label: "残す" }]
+      key: "singleCharacterHyphens", label: "1文字小節にハイフン追記", prompt: "1文字だけで完結する小節に、ハイフンを追記するかどうかを選びます。", min: 0, max: 1, defaultValue: 0,
+      bounds: "ハイフン追記なし（デフォルト）/ あり",
+      examples: ["ハイフン追記なし → [|][A]あい[B]うえ[|][C#m7]お　[|]（デフォルト）", "ハイフン追記あり → [|][A]あい[B]うえ[|][C#m7][----]お[----][|]"],
+      choices: [{ value: 0, label: "ハイフン追記なし" }, { value: 1, label: "ハイフン追記あり" }]
     }
   ];
 
@@ -60,7 +75,7 @@
 
   function readLegacy() {
     try {
-      return { ...defaults(), ...JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}") };
+      return normalizeValues({ ...defaults(), ...JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}") });
     } catch (_error) {
       return defaults();
     }
@@ -72,10 +87,13 @@
       const parsed = JSON.parse(localStorage.getItem(PROFILE_STORAGE_KEY) || "{}");
       if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) stored = parsed;
     } catch (_error) { /* use migrated/default profiles */ }
+    const normalizedStored = Object.fromEntries(
+      Object.entries(stored).map(([profile, values]) => [profile, normalizeValues(values)])
+    );
     return {
-      ...stored,
-      fourFour: { ...profileDefaults("fourFour"), ...(stored.fourFour || readLegacy()) },
-      sixEight: { ...profileDefaults("sixEight"), ...(stored.sixEight || {}) }
+      ...normalizedStored,
+      fourFour: normalizeValues({ ...profileDefaults("fourFour"), ...(normalizedStored.fourFour || readLegacy()) }),
+      sixEight: normalizeValues({ ...profileDefaults("sixEight"), ...(normalizedStored.sixEight || {}) })
     };
   }
 
@@ -90,7 +108,7 @@
 
   function load(profile = activeProfile()) {
     const profiles = readProfiles();
-    return { ...profileDefaults(profile), ...(profiles[profile] || {}) };
+    return normalizeValues({ ...profileDefaults(profile), ...(profiles[profile] || {}) });
   }
 
   function validate(values) {
@@ -110,7 +128,7 @@
 
   function save(values, profile = activeProfile()) {
     const profiles = readProfiles();
-    profiles[profile] = { ...profileDefaults(profile), ...values };
+    profiles[profile] = normalizeValues({ ...profileDefaults(profile), ...values });
     writeProfiles(profiles);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(values));
     return profiles[profile];
@@ -121,13 +139,13 @@
     const profiles = readProfiles();
     if (!profiles[nextProfile]) {
       profiles[nextProfile] = nextProfile === "custom"
-        ? { ...defaults(), ...(seedValues || {}) }
+        ? normalizeValues({ ...defaults(), ...(seedValues || {}) })
         : profileDefaults(nextProfile);
       writeProfiles(profiles);
     }
     localStorage.setItem(ACTIVE_PROFILE_KEY, nextProfile);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(profiles[nextProfile]));
-    return { ...profiles[nextProfile] };
+    return normalizeValues(profiles[nextProfile]);
   }
 
   function resetActive() {

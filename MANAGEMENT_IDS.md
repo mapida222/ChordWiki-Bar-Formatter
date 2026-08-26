@@ -68,10 +68,14 @@
 | `SETTINGS-002` | 端数歌詞前置きと長い拍の歌詞配置の優先関係 | 調査済み | `js/converter.js`、`tests/long-beat-lyric-distribution.test.js` |
 | `SETTINGS-003` | 変換前で検出した3・6・9・12ハイフンの小節候補を、6/8拍子タブへ切替えて合計ハイフン数へ適用 | 有効 | `js/app.js`、`tests/measure-capacity-warning.test.js` |
 | `SETTINGS-004` | 初期設定を「小節・拍・区切り→コード引継ぎ→歌詞配置」の順で並べ、全項目に具体的な変換例を表示。1文字だけで完結する歌詞小節のハイフンは省略／残すを選択し、歌詞の前後へ分割したハイフンも同じ設定で処理 | 有効 | `js/settings.js`、`js/app.js`、`js/converter.js`、`style.css`、`tests/settings.test.js`、`tests/single-character-hyphen-removal.test.js` |
+| `SETTINGS-005` | 表示フォント切替時に日本語・記号のフォールバックを統一し、ブラウザ標準・MS Gothic等で文字欠けを防止 | 有効 | `js/app.js`、`js/preview-window.js`、`style.css`、`tests/setting-processing.test.js` |
 | `CONVERT-011` | 演奏記号行の`(Key)`などの英字ラベルと単独の`～`を歌詞と誤認せず、手入力のリズム表記を保持。単独の`～`は白玉相当、語中の`～`は歌詞として扱う | 有効 | `js/converter.js`、`tests/arrangement-notation-preservation.test.js` |
 | `CONVERT-012` | 行頭の小節線で区切られた歌詞小節と手入力リズム小節の混在行では、歌詞側のみ`[|]`へ変換し、後半のリズム表記はコンパクト表記のまま保持 | 有効 | `js/converter.js`、`tests/arrangement-notation-preservation.test.js` |
 | `CONVERT-013` | 変換後の`[|]`直後が歌詞文字なら、重なり防止の全角空白を自動挿入。コード`[`・小節線`|`・注記の括弧の前には挿入しない | 有効 | `js/converter.js`、`tests/arrangement-notation-preservation.test.js` |
 | `CONVERT-014` | コードのみ行も1コードの標準ハイフン数を使い、手入力済みの間奏リズムは原文どおり保持 | 有効 | `js/converter.js`、`tests/converter.test.js`、`tests/local-prebranch-regressions.test.js` |
+| `CONVERT-015` | 行修正後の末尾が1小節未満の場合、終端の自動小節線を付けない | 有効 | `js/converter.js`、`tests/converter.test.js` |
+| `CONVERT-016` | 変換前行の文頭・文末空白を変換後も保持 | 有効 | `js/converter.js`、`tests/converter.test.js` |
+| `CONVERT-017` | 1文字歌詞を含む手動リズム小節は、ハイフンを歌詞の前後へ分けて連続表示 | 有効 | `js/converter.js`、`tests/converter.test.js` |
 | `WARNING-001` | 変換前と初期設定の1小節ハイフン数不一致警告 | 有効 | `js/app.js`、`js/converter.js` |
 | `LAYOUT-001` | 行修正枠と変換後枠の入力欄上端を揃える | 有効 | `style.css`、`js/app.js` |
 | `LAYOUT-002` | 確定譜面テキスト枠の右下リサイズとサイズ保存 | 有効 | `index.html`、`style.css`、`js/app.js`、`tests/committed-resize.test.js` |
@@ -100,6 +104,8 @@
 | `LAYOUT-025` | 行番号欄の末尾に表示用の空2行を確保し、変換後テキストへ改行を追加せず下端の行番号ずれを抑える | 有効 | `js/app.js`、`tests/local-editor-layout.test.js` |
 | `LAYOUT-026` | リアルタイムエディターの名称を統一し、起動時・設定変更時・上下左右比較時のスクロールを進捗率で相互同期する | 有効 | `committed-preview.html`、`js/committed-preview-window.js`、`README.md`、`tests/committed-preview-window.test.js` |
 | `LAYOUT-027` | リアルタイムエディターの表示設定を外側クリックまたは表示設定ボタンの再クリックで閉じる | 有効 | `js/committed-preview-window.js`、`tests/committed-preview-window.test.js` |
+| `LAYOUT-028` | 青いコード文字の太字ストロークを無効化し、二重表示に見える描画を防止 | 有効 | `style.css`、`tests/setting-processing.test.js` |
+| `LAYOUT-029` | 色付け用レイヤーとtextareaの同時描画を防ぎ、青いコードの二重表示を防止 | 有効 | `style.css`、`tests/setting-processing.test.js` |
 | `PREVIEW-001` | 譜面プレビューのベスト条件 | 基準 | `LAYOUT_REFERENCE.md`、`layout-snapshots/2026-07-22-good/`、Gitタグ `preview-layout-best-2026-07-22` |
 | `PREVIEW-002` | 拍記号に挟まれた縦小節線が直後の拍記号と重ならないよう補正 | 有効 | `js/chordwiki-preview.js`、`style.css`、`tests/preview-layout.test.js` |
 | `PREVIEW-003` | 譜面プレビューの移調では`{key:...}`だけを移調し、`{ci:...}`・`{title:...}`・`{subtitle:...}`などコメント系ディレクティブ内部のコード風文字列は保持 | 有効 | `js/transposer.js`、`tests/transposer.test.js` |
@@ -119,6 +125,7 @@
 | `PROJECT-009` | 開発改善の候補評価・実施・検証・停止判断を再利用Skillへ集約 | 有効 | `C:\Users\mapida\.codex\skills\chordwiki-development-orchestrator\SKILL.md`、`AGENTS.md` |
 | `PROJECT-010` | CIとPages公開前にPR／コミット差分のwhitespaceを検査 | 有効 | `.github/workflows/test.yml`、`.github/workflows/pages.yml`、`RELEASE_GATE.md` |
 | `PROJECT-011` | 変更対象から関連テストを先に選ぶ開発ルーティングを定型化 | 完了 | `C:\Users\mapida\.codex\skills\chordwiki-development-orchestrator\SKILL.md` |
+| `PROJECT-012` | フォーマッターのChordWiki表示を別UIへ埋め込むためのPayload・DOM・postMessage API | 有効 | `js/chordwiki-embed.js`、`docs/EMBED_API.md`、`tests/embed-api.test.js` |
 | `PREVIEW-004` | 公式Parser Adapterと旧ChordWiki表示Rendererの再構築 | 有効 | `js/parser/`、`js/renderer/`、`js/chordwiki-preview.js`、`tests/official-parser-integration.test.mjs` |
 | `PREVIEW-005` | リアルタイム編集の保存済み下書きが異なる場合に、上書き・前回内容を保持・キャンセルを選択 | 有効 | `js/app.js`、`js/committed-preview-window.js`、`tests/committed-preview-window.test.js` |
 | `PREVIEW-006` | リアルタイム編集のプレビュー背景ドラッグで縦横スクロール | 有効 | `js/committed-preview-window.js`、`style.css`、`tests/committed-preview-window.test.js` |

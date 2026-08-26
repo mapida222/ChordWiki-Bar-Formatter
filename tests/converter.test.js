@@ -45,6 +45,20 @@ longBeatSpacingPatterns.forEach(([code, input, expected]) => {
     console.error(`FAIL long-beat spacing ${code}\nexpected: ${expected}\nactual: ${actual}`);
   }
 });
+const splitBeatLyricSettings = { ...settings, longBeatLyricPlacement: 1 };
+const splitBeatLyricPatterns = [
+  ["35", "[C]あいう[D]えお", "[|][C][---]あいう[D][-]え[----]お[|]"],
+  ["53", "[C]あいうえ[D]お", "[|][C][----]あいう[-]え[D][---]お[|]"],
+  ["332", "[C]あい[D]うえ[Em]お", "[|][C][---]あい[D][---]うえ[Em][--]お[|]"],
+  ["349", "[C]あい[D]うえ[Em]お", "[|][C][---]あい[D][-]う[---]え[Em][-]お[|][----][----][|]"]
+];
+splitBeatLyricPatterns.forEach(([code, input, expected]) => {
+  const actual = CBFConverter.convertChordText(input, splitBeatLyricSettings, [code]).output;
+  if (actual !== expected) {
+    failures += 1;
+    console.error(`FAIL split beat lyric placement ${code}\nexpected: ${expected}\nactual: ${actual}`);
+  }
+});
 const fractionalLyricPatterns = [
   ["accent-free one-beat fraction", "35", settings, "になる", "[|][G][---]闇[D][-]に[----]なる[|]"],
   ["two-beat fraction with two accents", "^2^^6", settings, "になる", "[|][G][>-]闇[D][>>]に[----]なる[|]"],
@@ -186,7 +200,7 @@ const manualRhythmLyrics = CBFConverter.convertChordText(
 const manualRhythmLyricsExpected = [
   "[|][G][----] [----][|][G][----] [----][|][G][----] [----][|][D][>---] [----][|]",
   "[|][G]たとえ[D/F#]ば　[|][Em]どうにか[Bm]して　君[|][C]の中　あ[D]あ　入ってい[|][G]って　[D][----][|]",
-  "[|][G]その瞳(め)か[D/F#]ら僕[|][Em]をのぞ[Bm]いたら　いろ[|][C]んなこ[D]とちょっとはわかるか[|][Esus4]も[----] [----][|]"
+  "[|][G]その瞳(め)か[D/F#]ら僕[|][Em]をのぞ[Bm]いたら　いろ[|][C]んなこ[D]とちょっとはわかるか[|][Esus4][----]も[----][|]"
 ].join("\n");
 if (manualRhythmLyrics.output !== manualRhythmLyricsExpected) {
   failures += 1;
@@ -365,6 +379,29 @@ if (noBarBeforeFinalChord.output !== "[|][C][----][D][----][(G)][----]" || noLea
   failures += 1;
   console.error(`FAIL no-bar modifier\nfinal chord: ${noBarBeforeFinalChord.output}\nleading chord: ${noLeadingBar.output}`);
 }
+const incompleteCorrectionTail = CBFConverter.convertChordText(
+  "[|][B]咲かない[Db]花があ[|][Gb]る　[|]",
+  settings,
+  ["444"]
+);
+if (incompleteCorrectionTail.output !== "[|][B][----]咲かない[Db][----]花があ[|][Gb][----]る　") {
+  failures += 1;
+  console.error(`FAIL incomplete correction tail must not gain a trailing bar\nactual: ${incompleteCorrectionTail.output}`);
+}
+const preservedOuterWhitespace = CBFConverter.convertChordText("　 [C]あ[|]  ", settings, ["4"]);
+if (preservedOuterWhitespace.output !== "　 [|][C][----]あ  [|]  ") {
+  failures += 1;
+  console.error(`FAIL source outer whitespace must survive conversion\nactual: ${preservedOuterWhitespace.output}`);
+}
+const oneCharacterManualRhythm = CBFConverter.convertChordText(
+  "僕(ぼ[F#m7]く)のもの[F#m7]さ　君(き[F#m7/B]み)を忘[F#m7/B]れな[|][E]い---- ----|[E]---- ----|",
+  settings,
+  []
+);
+if (oneCharacterManualRhythm.output !== "僕(ぼ[|][F#m7]く)のもの[F#m7]さ　君(き[|][F#m7/B]み)を忘[F#m7/B]れな[|][E][----]い[----][|][E][----][----][|]") {
+  failures += 1;
+  console.error(`FAIL one-character manual rhythm must keep full adjacent hyphens\nactual: ${oneCharacterManualRhythm.output}`);
+}
 const parenthesizedFinalChord = CBFConverter.convertChordText("[|][(Gadd9)]す　[|]", settings, ["4"]);
 const parenthesizedFinalCompleted = CBFConverter.renderCompletedOutput(parenthesizedFinalChord.output, [4], settings.hyphenSpacing);
 if (parenthesizedFinalChord.output !== "[|][(Gadd9)][----]す" || parenthesizedFinalCompleted.output !== "[|][(Gadd9)]す") {
@@ -388,7 +425,7 @@ if (manualIntroLine.output !== "[|][Bm7][----][F#m7][----][|][GM7][----][D][----
 }
 const xModifierLyrics = "[Am7]み)の気持[Bm7]ち知るま[C]で";
 const xModifierCases = [
-  ["444", "[|][Am7]み)の気持[Bm7]ち知るま[|][C][----]で[|]"],
+  ["444", "[|][Am7]み)の気持[Bm7]ち知るま[|][C]で"],
   ["444x", "[|][Am7]み)の気持[Bm7]ち知るま[|][C]で"],
   ["44x4", "[|][Am7][----]み)の気持[Bm7][----]ち知るま[C][----]で[|]"]
 ];
@@ -636,7 +673,7 @@ const correctionAfterManualChordInsertion = CBFConverter.convertChordText(
   ["444"],
   ["[|][G]手動[C]追加[D]歌詞[|]"]
 );
-if (correctionAfterManualChordInsertion.output !== "[|][G][----]手動[C][----]追加[|][D][----]歌詞[|]" || correctionAfterManualChordInsertion.warnings.some((warning) => warning.includes("行修正エラー"))) {
+if (correctionAfterManualChordInsertion.output !== "[|][G][----]手動[C][----]追加[|][D][----]歌詞" || correctionAfterManualChordInsertion.warnings.some((warning) => warning.includes("行修正エラー"))) {
   failures += 1;
   console.error(`FAIL row correction must support a chord inserted in the direct output\nactual: ${correctionAfterManualChordInsertion.output}\nwarnings: ${correctionAfterManualChordInsertion.warnings.join(" / ")}`);
 }
