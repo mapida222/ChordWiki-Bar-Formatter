@@ -7,7 +7,7 @@
   --syntax-chord: #120EFD; --syntax-key: #d7193f; --syntax-directive: #287300;
   --mono: "Cascadia Code", "Yu Gothic UI", "Noto Sans Mono CJK JP", Consolas, monospace;
   --sans: Inter, "Yu Gothic UI", "Hiragino Kaku Gothic ProN", sans-serif;
-  --editor-font: Meiryo, "Yu Gothic", "Hiragino Kaku Gothic ProN", sans-serif;
+  --editor-font: Meiryo, "Yu Gothic UI", "MS Gothic", sans-serif;
   --editor-font-size: 14px;
 }
 :root[data-theme="dark"] {
@@ -63,7 +63,7 @@ main { padding: 12px 0 28px; }
 .settings-panel.settings-compact .setting-bounds, .settings-panel.settings-compact .setting-error, .settings-panel.settings-compact .setting-example { display: none; }
 .settings-panel.settings-compact .setting-help { grid-column: 3; grid-row: 1; display: inline-grid; place-items: center; }
 .settings-panel.settings-compact .setting-help-button { width: 20px; height: 20px; }
-.settings-panel.settings-compact .setting-help .context-help-popover { top: calc(100% + 5px); right: 0; left: auto; width: min(270px, calc(100vw - 30px)); font-size: .72rem; }
+.settings-panel.settings-compact .setting-help .context-help-popover { top: calc(100% + 5px); right: 0; left: auto; width: max-content; max-width: calc(100vw - 30px); font-size: .72rem; }
 .settings-panel.settings-compact .setting-example .example-description { display: block; width: 100%; margin: 0 0 4px; color: var(--muted); font-family: var(--sans); font-size: .72rem; line-height: 1.35; white-space: normal; word-break: keep-all; line-break: strict; overflow-wrap: normal; }
 .settings-panel.settings-compact .settings-advanced { margin-top: 5px; border-top: 1px solid var(--line); }
 .settings-panel.settings-compact .settings-advanced > summary { padding: 5px 2px 3px; color: var(--muted); cursor: pointer; font-size: .72rem; font-weight: 800; list-style: none; }
@@ -108,7 +108,8 @@ main { padding: 12px 0 28px; }
 .context-help { position: relative; display: inline-flex; align-items: center; flex: 0 0 auto; color: var(--text); font: 700 11px/1 var(--sans); letter-spacing: 0; white-space: normal; }
 .context-help-button { display: inline-grid; width: 18px; height: 18px; padding: 0; place-items: center; border: 1px solid var(--line-strong); border-radius: 50%; color: var(--muted); background: var(--panel); font: 800 11px/1 var(--sans); cursor: help; }
 .context-help-button:hover, .context-help-button:focus-visible, .context-help-button[aria-expanded="true"] { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); outline: none; }
-.context-help-popover { position: absolute; z-index: 40; top: calc(100% + 7px); left: 0; width: min(300px, calc(100vw - 32px)); padding: 9px 11px; border: 1px solid var(--line-strong); border-radius: 5px; color: var(--text); background: var(--panel); box-shadow: 0 7px 20px rgba(0, 0, 0, .16); font: 500 .74rem/1.65 var(--sans); letter-spacing: 0; text-align: left; white-space: normal; }
+.context-help-popover { position: absolute; z-index: 40; top: calc(100% + 7px); left: 0; width: max-content; max-width: calc(100vw - 16px); box-sizing: border-box; padding: 10px 13px; border: 1px solid var(--line-strong); border-radius: 5px; color: var(--text); background: var(--panel); box-shadow: 0 7px 20px rgba(0, 0, 0, .16); font: 500 .74rem/1.55 var(--sans); letter-spacing: 0; text-align: left; white-space: normal; overflow-wrap: normal; word-break: keep-all; }
+.setting-help .context-help-popover { white-space: nowrap; }
 .context-help-title { display: block; margin: 0 0 4px; color: var(--text); font-size: .78rem; font-weight: 800; line-height: 1.4; }
 .context-help-popover[hidden] { display: none; }
 .settings-grid { display: grid; grid-template-columns: 1fr; gap: 5px; align-items: stretch; }
@@ -517,12 +518,16 @@ textarea { display: block; width: 100%; height: 100%; min-height: 0; resize: non
 #input-text::-webkit-scrollbar-thumb:horizontal, #output-text::-webkit-scrollbar-thumb:horizontal, #final-output-text::-webkit-scrollbar-thumb:horizontal, #committed-output-text::-webkit-scrollbar-thumb:horizontal, #final-score-preview::-webkit-scrollbar-thumb:horizontal { border: 2px solid var(--panel); border-radius: 6px; background: color-mix(in srgb, var(--line-strong) 88%, var(--accent)); }
 .correction-card .editor-text-layer textarea { caret-color: transparent !important; }
 .editor-highlight { position: absolute; top: 0; left: 0; z-index: 0; width: max-content; min-width: 100%; min-height: 100%; margin: 0; padding: 14px; color: var(--text); background: transparent; font-family: var(--editor-font); font-size: var(--editor-font-size); font-weight: 400; line-height: 1.65; font-variant-ligatures: none; tab-size: 4; white-space: pre; pointer-events: none; }
+.editor-text-layer .editor-highlight { visibility: hidden; }
+.colorized-editors .editor-text-layer .editor-highlight,
+.editor-text-layer.diff-visible .editor-highlight,
+.editor-text-layer.linked-position-visible .editor-highlight { visibility: visible; }
 .editor-highlight.active-line-visible { background-image: linear-gradient(color-mix(in srgb, var(--focus) 14%, transparent), color-mix(in srgb, var(--focus) 14%, transparent)); background-repeat: no-repeat; background-position: 0 var(--active-line-top, 0); background-size: 100% var(--active-line-height, 1.65em); }
 .colorized-editors .editor-text-layer textarea { color: transparent; caret-color: var(--text); background: transparent; }
 .editor-text-layer textarea::selection { color: var(--text); background: color-mix(in srgb, var(--focus) 32%, transparent); }
 .editor-highlight .syntax-bracket { color: var(--syntax-chord); }
 .editor-highlight .syntax-chord { color: var(--syntax-chord); }
-.bold-chords .editor-highlight .syntax-chord { font-weight: 400; -webkit-text-stroke: .35px currentColor; }
+.bold-chords .editor-highlight .syntax-chord { font-weight: 400; -webkit-text-stroke: 0; }
 .editor-highlight .syntax-key { color: var(--syntax-key); }
 .editor-highlight .syntax-directive { color: var(--syntax-directive); }
 .editor-highlight .active-character { color: var(--text); background: color-mix(in srgb, var(--focus) 34%, transparent); box-shadow: inset 0 -2px 0 var(--focus); }

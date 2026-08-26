@@ -10,6 +10,20 @@ const app = fs.readFileSync(path.join(__dirname, "..", "js", "app.js"), "utf8");
 assert(app.includes('"setting-hyphenSpacing", "setting-shortFractionPrepose"'));
 assert(app.includes("schedulePrioritySettingConversion();"));
 
+// 選択フォント単体で日本語・記号の代替字形を失わない共通フォールバックを維持する。
+[
+  'stack: \'sans-serif, "Yu Gothic UI", Meiryo, "MS Gothic"\'',
+  'stack: \'"MS Gothic", "Yu Gothic UI", Meiryo, sans-serif\'',
+  'stack: \'Consolas, "MS Gothic", "Yu Gothic UI", Meiryo, monospace\''
+].forEach((stack) => assert(app.includes(stack), `フォントフォールバックが不足しています: ${stack}`));
+
+// 青いコード文字だけを太らせるストロークは、二重表示に見えるため使わない。
+const css = fs.readFileSync(path.join(__dirname, "..", "style.css"), "utf8");
+assert(css.includes(".bold-chords .editor-highlight .syntax-chord { font-weight: 400; -webkit-text-stroke: 0; }"));
+assert(!css.includes(".bold-chords .editor-highlight .syntax-chord { font-weight: 400; -webkit-text-stroke: .35px"));
+assert(css.includes(".editor-text-layer .editor-highlight { visibility: hidden; }"));
+assert(css.includes(".colorized-editors .editor-text-layer .editor-highlight,") && css.includes(".editor-text-layer.diff-visible .editor-highlight,"));
+
 // 表示設定は変換イベントへ接続せず、必要な表示・保存処理だけを行う。
 [
   'elements.theme.addEventListener("change", () => { applyTheme(elements.theme.value); publishScoreWindow(); markActivity(); });',

@@ -24,13 +24,13 @@ assert.strictEqual(
 
 const unchanged = CBFConverter.convertChordText(
   source,
-  { ...settings, longBeatLyricPlacement: 0 },
+  { ...settings, longBeatLyricPlacement: -1 },
   ["cccc"]
 );
 assert.strictEqual(
   unchanged.output,
   "長（な[|][Fm][---][---][|][---][---]が）い旅（た[|][Bb][---][---][|][---][---]び）の途中　君[|][DbM7][---][---][|][---][---]に出逢い　うつ[|][Eb][---][---][|][---][---]ろう景色[|]",
-  "legacy mode should leave lyrics after the duration markers"
+  "disabled mode should leave lyrics after the duration markers"
 );
 
 const uniform = CBFConverter.convertChordText(
@@ -99,10 +99,81 @@ assert.notStrictEqual(
   longPlacementWithPrepose,
   CBFConverter.convertChordText(
     overlappingSettingsSource,
-    { ...settings, measureCapacity: 8, hyphenSpacing: 4, shortFractionPrepose: 1, longBeatLyricPlacement: 0 },
+    { ...settings, measureCapacity: 8, hyphenSpacing: 4, shortFractionPrepose: 1, longBeatLyricPlacement: -1 },
     ["6c"]
   ).output,
   "fractional prepose remains active when long-beat placement is disabled"
+);
+const automaticShortBeat = CBFConverter.convertChordText(
+  "[E]けて[C#m/F]みたい[F#m]の",
+  { ...settings, measureCapacity: 8, hyphenSpacing: 4, longBeatLyricPlacement: 0 },
+  ["349"]
+).output;
+assert.ok(automaticShortBeat.includes("[E][---]けて[C#m/F][-]み[---]たい[F#m][-]の"), "automatic mode should split a normal four-beat lyric span");
+const automaticLongBeat = CBFConverter.convertChordText(
+  source,
+  { ...settings, longBeatLyricPlacement: 0 },
+  ["cccc"]
+).output;
+const explicitFrontLongBeat = CBFConverter.convertChordText(
+  source,
+  { ...settings, longBeatLyricPlacement: 3 },
+  ["cccc"]
+).output;
+assert.strictEqual(automaticLongBeat, explicitFrontLongBeat, "automatic mode should keep long-ballad lyrics at the front");
+
+const chordMustLeadLyricWithRhythm = CBFConverter.convertChordText(
+  "[C]眠れないまま朝を待って",
+  { ...settings, measureCapacity: 8, hyphenSpacing: 4, longBeatLyricPlacement: 0 },
+  ["88"]
+).output;
+assert.ok(
+  !/\[C\][^\[\]|]+\[----\]/u.test(chordMustLeadLyricWithRhythm),
+  "a chord must not be followed by lyric text before its rhythm hyphens"
+);
+
+const twoMeasurePatternA = CBFConverter.convertChordText(
+  "[C]そっと[G]",
+  { ...settings, measureCapacity: 8, hyphenSpacing: 4, longBeatLyricPlacement: 3 },
+  ["88"]
+).output;
+assert.strictEqual(
+  twoMeasurePatternA,
+  "[|][C][----]そっと[----][|][G][----][----][|]",
+  "pattern A should keep a short poetic lyric together and leave the second measure empty"
+);
+
+const twoMeasurePatternB = CBFConverter.convertChordText(
+  "[C]ヘッドライト追い越して[G]夜のバイパス駆け抜ける",
+  { ...settings, measureCapacity: 8, hyphenSpacing: 4, longBeatLyricPlacement: 2 },
+  ["88"]
+).output;
+assert.strictEqual(
+  twoMeasurePatternB,
+  "[|][C][----]ヘッドライト[----]追い越して[|][G][----]夜のバイパス[----]駆け抜ける[|]",
+  "pattern B should distribute a dense rap lyric across the four visible positions"
+);
+
+const sixEightNormal = CBFConverter.convertChordText(
+  "[C]ヘッドライト追い越して[G]夜のバイパス駆け抜ける",
+  { ...settings, hyphenUnit: 3, measureCapacity: 6, hyphenSpacing: 3, longBeatLyricPlacement: 2 },
+  ["66"]
+).output;
+assert.strictEqual(
+  sixEightNormal,
+  "[|][C][---]ヘッドライト[---]追い越して[|][G][---]夜のバイパス[---]駆け抜ける[|]",
+  "normal placement should evenly distribute lyrics in 6/8 too"
+);
+
+const sixEightRelaxed = CBFConverter.convertChordText(
+  "[C]そっと[G]",
+  { ...settings, hyphenUnit: 3, measureCapacity: 6, hyphenSpacing: 3, longBeatLyricPlacement: 3 },
+  ["66"]
+).output;
+assert.strictEqual(
+  sixEightRelaxed,
+  "[|][C][---]そっと[---][|][G][---][---][|]",
+  "relaxed placement should keep a short lyric near its chord in 6/8 too"
 );
 
 console.log("PASS: ROW-007 selectable long-beat lyric placement");
