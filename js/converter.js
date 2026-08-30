@@ -627,6 +627,7 @@
       && unit.width === Number(settings.hyphenUnit)
       && unit.width === spacing
       && unit.width >= 2
+      && position > 0
       && characters.length >= 2;
     if (forcedSpacingSplit) markerCount = 2;
     if (markerCount < 2) return null;
@@ -1433,7 +1434,7 @@
     }, 0);
   }
 
-  function analyzeAuthoredMeasureCapacity(inputText, configuredCapacity, targetMeter = "") {
+  function analyzeAuthoredMeasureCapacity(inputText, configuredCapacity, targetMeter = "", includeMatching = false) {
     const configured = Number(configuredCapacity);
     if (!Number.isFinite(configured) || configured <= 0) return null;
     const candidates = [];
@@ -1490,7 +1491,7 @@
     if (dominant.length < 2) return null;
     if (candidates.length <= 2 ? dominant.length !== candidates.length : coverage < 0.8 || lineCount < 2) return null;
     const detected = dominant[0].width;
-    if (detected === configured) return null;
+    if (detected === configured && !includeMatching) return null;
     return {
       configured,
       detected,
@@ -1516,11 +1517,22 @@
   }
 
   function analyzeAuthoredFormatting(inputText, configuredSettings = {}) {
+    const chordIntervals = [];
     const directHyphens = [];
     const spacingGroups = [];
     const authoredHyphenWidth = (token) => /^-+$/u.test(token?.value || "") ? token.value.length : 0;
     String(inputText || "").split(/\r\n|\r|\n/).forEach((line, lineIndex) => {
       const tokens = parseTokens(line);
+      const chordIndices = tokens.map((token, index) => token.kind === "chord" ? index : -1).filter((index) => index >= 0);
+      const hasExpressiveRhythm = /[=>≧]/u.test(line);
+      for (let chordIndex = 0; chordIndex + 1 < chordIndices.length; chordIndex += 1) {
+        const start = chordIndices[chordIndex];
+        const end = chordIndices[chordIndex + 1];
+        const between = tokens.slice(start + 1, end);
+        if (hasExpressiveRhythm || between.some((token) => token.kind === "hyphen" && !authoredHyphenWidth(token))) continue;
+        const width = between.reduce((sum, token) => sum + authoredHyphenWidth(token), 0);
+        if (width) chordIntervals.push({ value: width, line: lineIndex + 1 });
+      }
       tokens.forEach((token, index) => {
         if (token.kind === "chord" && !token.value.includes("/") && tokens[index + 1]?.kind === "hyphen") {
           const width = authoredHyphenWidth(tokens[index + 1]);
@@ -1535,8 +1547,12 @@
         }
       });
     });
+    const intervalDetection = dominantAuthoredValue(chordIntervals, configuredSettings.hyphenUnit, true);
     return {
-      hyphenUnit: dominantAuthoredValue(directHyphens, configuredSettings.hyphenUnit, true),
+      // Prefer complete code-to-next-code intervals.  Keep the old immediate
+      // post-chord detector as a compatibility fallback for rhythm-heavy rows
+      // where no reliable interval can be established.
+      hyphenUnit: intervalDetection || dominantAuthoredValue(directHyphens, configuredSettings.hyphenUnit, true),
       hyphenSpacing: dominantAuthoredValue(spacingGroups, configuredSettings.hyphenSpacing, true)
     };
   }

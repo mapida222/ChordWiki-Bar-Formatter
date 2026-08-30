@@ -11,7 +11,7 @@ const html = fs.readFileSync(path.join(root, "index.html"), "utf8");
 const entry = fs.readFileSync(path.join(root, "js", "entries", "main.js"), "utf8");
 
 assert(html.includes('id="display-settings-shell" class="display-settings-shell display-collapsed"'), "01 must render collapsed before JavaScript starts");
-assert(html.includes('id="settings-panel" class="settings-panel settings-compact settings-examples-closed"'), "02 must render open by default");
+assert(html.includes('id="settings-panel" class="settings-panel settings-compact"'), "02 must render open with usage examples by default");
 assert(html.includes('id="settings-toggle" class="text-button" type="button" aria-expanded="true"'), "02 must expose its settings by default");
 assert(html.includes('id="settings-example-toggle" class="text-button settings-example-toggle" type="button" aria-expanded="false">説明・使用例▼'), "the explanation toggle must be visible while settings are open");
 assert(app.includes('setDisplaySettingsOpen(savedDisplayPanel === "true", false);'), "01 must stay collapsed when no preference has been saved");
