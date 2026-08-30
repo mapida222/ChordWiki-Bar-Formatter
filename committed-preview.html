@@ -44,6 +44,16 @@
       </details>
     </div>
   </header>
+  <dialog id="committed-replace-dialog" class="committed-replace-dialog" aria-labelledby="committed-replace-title">
+    <form method="dialog" class="committed-replace-dialog-content">
+      <h2 id="committed-replace-title">編集内容を上書きしますか？</h2>
+      <p>現在の変換結果で、表示中の前回の編集内容を置き換えます。</p>
+      <div class="committed-replace-actions">
+        <button value="yes" type="submit">はい</button>
+        <button value="cancel" type="submit">キャンセル</button>
+      </div>
+    </form>
+  </dialog>
   <main class="score-window-main committed-window-layout committed-window-stacked" id="committed-window-layout">
     <section class="committed-window-pane committed-window-editor-pane"><div class="committed-window-pane-title">編集テキスト</div><div class="committed-window-editor-wrap"><div id="committed-window-lines" class="line-numbers" aria-hidden="true"></div><div class="editor-text-layer"><pre id="committed-window-highlight" class="editor-highlight" aria-hidden="true"></pre><textarea id="committed-window-text" class="committed-window-editor" wrap="off" spellcheck="false" aria-label="編集テキスト"></textarea></div></div></section>
     <div id="committed-window-divider" class="committed-window-divider" role="separator" aria-label="テキストとプレビューの高さを調整" aria-orientation="horizontal" tabindex="0"></div>

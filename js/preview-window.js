@@ -40,7 +40,7 @@
     return {
       ...state,
       ...candidate,
-      transpose: Math.max(-12, Math.min(12, Number(candidate.transpose) || 0)),
+      transpose: Math.max(ChordWikiTranspose.transposeMin, Math.min(ChordWikiTranspose.transposeMax, Number(candidate.transpose) || 0)),
       spelling: ["preserve", "sharp", "flat"].includes(candidate.spelling) ? candidate.spelling : "preserve",
       theoretical: Boolean(candidate.theoretical),
       doubleSharp: candidate.doubleSharp === "x" ? "x" : "##",
@@ -55,13 +55,15 @@
   }
 
   function updateTransposeButtons() {
-    const amount = Number(transpose.value) || 0;
-    transposeDown.disabled = amount <= -12;
-    transposeUp.disabled = amount >= 12;
+    transposeDown.disabled = false;
+    transposeUp.disabled = false;
   }
 
   function stepTranspose(direction) {
-    transpose.value = String(Math.max(-12, Math.min(12, (Number(transpose.value) || 0) + direction)));
+    const current = Number(transpose.value) || 0;
+    const min = ChordWikiTranspose.transposeMin;
+    const max = ChordWikiTranspose.transposeMax;
+    transpose.value = String(direction < 0 && current <= min ? max : direction > 0 && current >= max ? min : current + direction);
     transpose.dispatchEvent(new Event("change", { bubbles: true }));
     (direction < 0 ? transposeDown : transposeUp).focus();
   }
