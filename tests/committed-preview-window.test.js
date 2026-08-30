@@ -13,15 +13,18 @@ const entry = fs.readFileSync(path.join(root, "js", "entries", "committed-previe
 
 assert(windowScript.includes('if (!text.value) { try { text.value = localStorage.getItem(TEXT_KEY) || ""; } catch (_error) {} }\n  // A saved draft'));
 assert(windowScript.includes('const keepExistingDraft = new URLSearchParams(window.location.search).get("draft") === "keep";'));
-assert(windowScript.includes('if (!keepExistingDraft) { try { applyState(JSON.parse(localStorage.getItem(STATE_KEY) || "null")); } catch (_error) {} }'));
+assert(windowScript.includes('if (!keepExistingDraft && !pendingReplace) { try { applyState(JSON.parse(localStorage.getItem(STATE_KEY) || "null")); } catch (_error) {} }'));
 const app = fs.readFileSync(path.join(root, "js", "app.js"), "utf8");
-assert(app.includes("リアルタイムエディターには前回の編集内容があります。"));
-assert(app.includes('elements.openRealtimeEditor.href = "committed-preview.html?draft=keep";'));
+assert(app.includes('elements.openRealtimeEditor.href = "committed-preview.html?pending=replace";'));
 assert(app.includes("event.preventDefault();"), "cancel must prevent opening the realtime editor");
+assert(windowScript.includes('const pendingReplace = new URLSearchParams(window.location.search).get("pending") === "replace";'));
+assert(windowScript.includes('id="committed-replace-dialog"') === false && html.includes('id="committed-replace-dialog"'), "replacement choice must be shown inside the realtime editor");
+assert(windowScript.includes('replaceDialog.returnValue === "yes"') && windowScript.includes("history.replaceState"), "cancel must leave the old draft and close the one-shot replacement prompt");
 assert(windowScript.includes("// numbers, syntax layer, or score preview. Always perform an initial render.\n  render();"));
 assert(html.includes('type="module" src="/js/entries/committed-preview.js"'));
 assert(entry.includes('await import("../committed-preview-window.js")'));
 assert(html.includes('id="committed-layout-toggle"'));
+assert(!html.includes('id="realtime-draft-dialog"'), "realtime draft choice belongs to the main page, not the editor window");
 assert(html.includes('committed-window-layout committed-window-stacked'));
 assert(html.includes('href="index.html" aria-label="ChordWiki Bar Formatter トップページへ"'));
 assert(html.includes("リアルタイムエディター｜ChordWiki Bar Formatter"));

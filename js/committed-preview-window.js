@@ -5,6 +5,7 @@
   const TEXT_KEY = "chordWikiBarFormatter.committedOutput.v1";
   const DRAFT_KEY = "chordWikiBarFormatter.committedWindowDraft.v1";
   const keepExistingDraft = new URLSearchParams(window.location.search).get("draft") === "keep";
+  const pendingReplace = new URLSearchParams(window.location.search).get("pending") === "replace";
   const layout = document.querySelector("#committed-window-layout");
   const text = document.querySelector("#committed-window-text");
   const lines = document.querySelector("#committed-window-lines");
@@ -27,9 +28,11 @@
   const transpose = document.querySelector("#committed-transpose");
   const transposeDown = document.querySelector("#committed-transpose-down");
   const transposeUp = document.querySelector("#committed-transpose-up");
+  const replaceDialog = document.querySelector("#committed-replace-dialog");
   let channel = null;
   let activeLine = 0;
   let draftUpdatedAt = 0;
+  let loadedDraftText = "";
   let layoutMode = "stacked";
   let stackedLineHeight = 1.65;
   let sideLineHeight = 2.75;
@@ -166,9 +169,8 @@
   const displayKey = "chordWikiBarFormatter.committedWindowDisplay.v1";
   window.ChordWikiTranspose?.fillTransposeSelect(transpose);
   function updateTransposeButtons() {
-    const amount = Number(transpose.value) || 0;
-    transposeDown.disabled = amount <= -12;
-    transposeUp.disabled = amount >= 12;
+    transposeDown.disabled = false;
+    transposeUp.disabled = false;
   }
   const applyLayoutMode = () => {
     const stacked = layoutMode === "stacked";
@@ -217,7 +219,10 @@
   layoutToggle.addEventListener("click", () => { layoutMode = layoutMode === "side" ? "stacked" : "side"; applyDisplaySettings(); });
   transpose.addEventListener("change", () => { applyDisplaySettings(); render(); });
   const stepTranspose = (delta) => {
-    transpose.value = String(Math.max(-12, Math.min(12, (Number(transpose.value) || 0) + delta)));
+    const current = Number(transpose.value) || 0;
+    const min = window.ChordWikiTranspose.transposeMin;
+    const max = window.ChordWikiTranspose.transposeMax;
+    transpose.value = String(delta < 0 && current <= min ? max : delta > 0 && current >= max ? min : current + delta);
     applyDisplaySettings();
     render();
   };
@@ -266,12 +271,22 @@
   });
   if (channel) channel.addEventListener("message", (event) => { if (event.data?.type === "score-state") applyState(event.data.payload); });
   window.addEventListener("storage", (event) => { if (event.key === STATE_KEY && event.newValue) { try { applyState(JSON.parse(event.newValue)); } catch (_error) {} } if (event.key === TEXT_KEY && event.newValue !== text.value) { text.value = event.newValue; render(); } });
-  try { const saved = JSON.parse(localStorage.getItem(displayKey) || "null"); if (saved) { fontSize.value = saved.fontSize || fontSize.value; font.value = saved.font || font.value; theme.value = saved.theme === "dark-gray" ? "dark" : saved.theme || theme.value; transpose.value = String(Math.max(-12, Math.min(12, Number(saved.transpose) || 0))); const savedCheckboxDefaults = saved.checkboxDefaultsVersion === 1; textColoring.checked = savedCheckboxDefaults ? saved.textColoring !== false : true; boldCode.checked = savedCheckboxDefaults ? saved.boldCode !== false : true; scrollSync.checked = savedCheckboxDefaults ? saved.scrollSync !== false : true; layoutMode = saved.layoutPreferenceVersion === 1 && saved.layoutMode === "side" ? "side" : "stacked"; stackedLineHeight = Math.max(1.4, Math.min(3.2, Number.parseFloat(saved.stackedLineHeight) || 1.65)); sideLineHeight = Math.max(1.4, Math.min(3.2, Number.parseFloat(saved.sideLineHeight) || 2.75)); stackedPaneSize = Math.max(6, Math.min(94, Number.parseFloat(saved.stackedPaneSize) || 48)); sidePaneSize = Math.max(6, Math.min(94, Number.parseFloat(saved.sidePaneSize) || 48)); } } catch (_error) {}
+  try { const saved = JSON.parse(localStorage.getItem(displayKey) || "null"); if (saved) { fontSize.value = saved.fontSize || fontSize.value; font.value = saved.font || font.value; theme.value = saved.theme === "dark-gray" ? "dark" : saved.theme || theme.value; transpose.value = String(Math.max(window.ChordWikiTranspose.transposeMin, Math.min(window.ChordWikiTranspose.transposeMax, Number(saved.transpose) || 0))); const savedCheckboxDefaults = saved.checkboxDefaultsVersion === 1; textColoring.checked = savedCheckboxDefaults ? saved.textColoring !== false : true; boldCode.checked = savedCheckboxDefaults ? saved.boldCode !== false : true; scrollSync.checked = savedCheckboxDefaults ? saved.scrollSync !== false : true; layoutMode = saved.layoutPreferenceVersion === 1 && saved.layoutMode === "side" ? "side" : "stacked"; stackedLineHeight = Math.max(1.4, Math.min(3.2, Number.parseFloat(saved.stackedLineHeight) || 1.65)); sideLineHeight = Math.max(1.4, Math.min(3.2, Number.parseFloat(saved.sideLineHeight) || 2.75)); stackedPaneSize = Math.max(6, Math.min(94, Number.parseFloat(saved.stackedPaneSize) || 48)); sidePaneSize = Math.max(6, Math.min(94, Number.parseFloat(saved.sidePaneSize) || 48)); } } catch (_error) {}
   applyDisplaySettings();
-  try { const draft = JSON.parse(localStorage.getItem(DRAFT_KEY) || "null"); if (draft?.text) { text.value = draft.text; draftUpdatedAt = Number(draft.updatedAt) || 0; } } catch (_error) {}
-  if (!keepExistingDraft) { try { applyState(JSON.parse(localStorage.getItem(STATE_KEY) || "null")); } catch (_error) {} }
+  try { const draft = JSON.parse(localStorage.getItem(DRAFT_KEY) || "null"); if (draft?.text) { loadedDraftText = draft.text; text.value = draft.text; draftUpdatedAt = Number(draft.updatedAt) || 0; } } catch (_error) {}
+  if (!keepExistingDraft && !pendingReplace) { try { applyState(JSON.parse(localStorage.getItem(STATE_KEY) || "null")); } catch (_error) {} }
   if (!text.value) { try { text.value = localStorage.getItem(TEXT_KEY) || ""; } catch (_error) {} }
   // A saved draft can already fill the textarea without producing the line
   // numbers, syntax layer, or score preview. Always perform an initial render.
   render();
+  if (pendingReplace && loadedDraftText && loadedDraftText !== (localStorage.getItem(TEXT_KEY) || "")) {
+    replaceDialog.showModal();
+    replaceDialog.addEventListener("close", () => {
+      if (replaceDialog.returnValue === "yes") {
+        text.value = localStorage.getItem(TEXT_KEY) || "";
+        publishText();
+      }
+      history.replaceState(null, "", window.location.pathname);
+    }, { once: true });
+  }
 }());

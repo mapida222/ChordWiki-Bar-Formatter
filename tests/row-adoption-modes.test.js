@@ -63,6 +63,7 @@ assert(css.includes('--correction-row-scroll-top: 0px') && css.includes('.correc
 assert(app.includes('syncCorrectionModeScroll(textarea.scrollTop);'), "row-edit grid and columns must follow the correction textarea scroll position");
 assert(app.includes('gutterByEditor.get(other).scrollTop = 0;'), "row-edit line numbers must stay in the shared row layer");
 assert(app.includes('elements.correctionGrid.style.setProperty("--correction-grid-scroll-top", `${editor.scrollTop}px`);'), "row-edit grid must receive the correction scroll offset");
+assert(app.includes('correction-grid-spacer') && app.includes('correction-mode-spacer'), "row-edit side columns must reserve the same trailing visual rows as the line numbers");
 assert(css.includes('.correction-card .line-numbers { text-align: center; }'));
 assert(css.includes('grid-template-columns: max-content minmax(0, 1fr) var(--correction-mode-width) var(--correction-scrollbar-width);'));
 assert(css.includes('.correction-card .editor-text-layer textarea, .correction-card .editor-highlight { padding-right: calc(var(--correction-mode-width) + var(--correction-scrollbar-width)); text-align: left; }'));

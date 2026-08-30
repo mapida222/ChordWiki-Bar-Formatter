@@ -302,7 +302,7 @@
 
   function fillTransposeSelect(select) {
     if (!select || select.options.length) return;
-    for (let amount = -12; amount <= 12; amount += 1) {
+    for (let amount = -5; amount <= 6; amount += 1) {
       const option = document.createElement("option");
       option.value = String(amount);
       option.textContent = amount === 0 ? "移調なし" : amount > 0 ? `+${amount}` : String(amount);
@@ -310,5 +310,5 @@
     }
   }
 
-  return { transposeText, transposeChordToken, transposeNote, transposeKeyToken, analyzeKeySections, estimateKeys, fillTransposeSelect, applyKeyTransition };
+  return { transposeText, transposeChordToken, transposeNote, transposeKeyToken, analyzeKeySections, estimateKeys, fillTransposeSelect, applyKeyTransition, transposeMin: -5, transposeMax: 6 };
 }));
