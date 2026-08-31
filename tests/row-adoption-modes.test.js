@@ -70,6 +70,7 @@ assert(css.includes('.correction-card .editor-text-layer textarea, .correction-c
 assert(css.includes('.correction-modes { z-index: 2; grid-column: 3;'));
 assert(css.includes('button.correction-mode-row[data-mode="fixed"]'));
 assert(app.includes('const ROW_MODE_LABELS = { auto: "自動", edit: "修正", source: "固定", recovered: "固定", fixed: "固定" };'));
+assert(app.includes('convert({ changedLineIndices: new Set([index]), suppressMeasureCapacityWarning: true });'), "row mode clicks must not reopen the whole-measure warning");
 assert(app.includes('const directlyEdited = mode === "edit" && manualOutputLines.has(index);'));
 assert(app.includes('if (musicStructureChanged && rowAdoptionModes[index] !== "source") rowAdoptionModes[index] = "auto";'));
 assert(app.includes("syncManualOutputLinesFromOverrides();"), "manual result ownership must come from the stable override layer");
