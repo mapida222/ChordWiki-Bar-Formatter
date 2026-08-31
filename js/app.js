@@ -879,7 +879,7 @@
     if (mode !== "edit") removeOutputOverride(index);
     persistRowAdoptionModes();
     updateCorrectionModes();
-    convert({ changedLineIndices: new Set([index]) });
+    convert({ changedLineIndices: new Set([index]), suppressMeasureCapacityWarning: true });
     markActivity();
   }
   elements.correctionModes?.addEventListener("click", (event) => {
@@ -1809,7 +1809,7 @@
     if (file.size > 20 * 1024 * 1024) throw new Error("20MBを超えるファイルは読み込めません。");
     return CBFBackupData.toSnapshot(CBFBackupData.parse(await file.text()));
   }
-  function convert({ refreshCorrections = false, preserveUserEdits = false, changedLineIndices = null, sourceChangedLineIndices = null } = {}) {
+  function convert({ refreshCorrections = false, preserveUserEdits = false, changedLineIndices = null, sourceChangedLineIndices = null, suppressMeasureCapacityWarning = false } = {}) {
     const settings = validatedSettings();
     if (!settings.valid) {
       updateMeasureCapacityWarning();
@@ -1842,7 +1842,13 @@
       renderSupport("入力内容はリアルタイムで右側へ反映されます。");
       return;
     }
-    updateMeasureCapacityWarning(settings.values);
+    if (suppressMeasureCapacityWarning) {
+      elements.measureCapacityWarning.hidden = true;
+      elements.measureCapacityWarningText.textContent = "";
+      syncResultRowAlignment();
+    } else {
+      updateMeasureCapacityWarning(settings.values);
+    }
     const sourceChanged = new Set(sourceChangedLineIndices || []);
     const currentInputLines = elements.input.value.split(/\r\n|\r|\n/);
     const currentCorrectionLines = elements.correction.value.split(/\r\n|\r|\n/);
