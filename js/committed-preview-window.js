@@ -5,13 +5,21 @@
   const TEXT_KEY = "chordWikiBarFormatter.committedOutput.v1";
   const DRAFT_KEY = "chordWikiBarFormatter.committedWindowDraft.v1";
   const keepExistingDraft = new URLSearchParams(window.location.search).get("draft") === "keep";
+  const pendingReplace = new URLSearchParams(window.location.search).get("pending") === "replace";
   const layout = document.querySelector("#committed-window-layout");
   const text = document.querySelector("#committed-window-text");
   const lines = document.querySelector("#committed-window-lines");
   const highlight = document.querySelector("#committed-window-highlight");
   const preview = document.querySelector("#committed-window-preview");
+  const previewPane = document.querySelector(".committed-window-preview-pane");
+  const previewTitle = previewPane.querySelector(".committed-window-pane-title");
+  const previewModeStatus = document.querySelector("#committed-preview-mode-status");
   const status = document.querySelector("#committed-window-status");
   const layoutToggle = document.querySelector("#committed-layout-toggle");
+  const positionToggle = document.querySelector("#committed-position-toggle");
+  const editorPane = document.querySelector(".committed-window-editor-pane");
+  const positionHelp = document.querySelector("#committed-position-help");
+  const positionSymbols = document.querySelector("#committed-position-symbols");
   const helpPanel = document.querySelector(".score-window-help");
   const settingsPanel = document.querySelector(".score-window-settings");
   const width = document.querySelector("#committed-pane-width");
@@ -27,16 +35,77 @@
   const transpose = document.querySelector("#committed-transpose");
   const transposeDown = document.querySelector("#committed-transpose-down");
   const transposeUp = document.querySelector("#committed-transpose-up");
+  const replaceDialog = document.querySelector("#committed-replace-dialog");
   let channel = null;
   let activeLine = 0;
   let draftUpdatedAt = 0;
+  let loadedDraftText = "";
   let layoutMode = "stacked";
+  let positionAdjustMode = false;
+  let includePositionSymbols = false;
+  let activeChordStart = -1;
+  let positionSpaceKeyDown = false;
+  const positionUndoStack = [];
   let stackedLineHeight = 1.65;
   let sideLineHeight = 2.75;
   let stackedPaneSize = 48;
   let sidePaneSize = 48;
   const LINE_NUMBER_TRAILING_ROWS = 2;
   const suppressedScrollPositions = new WeakMap();
+  const chordTokenPattern = /\[\[([^\[\]\r\n]*)\]\]|\[([^\[\]\r\n]*)\]/g;
+  const directiveTokenPattern = /\{[^{}\r\n]*\}/g;
+  const chordRanges = (source, includeSymbols = false) => {
+    const value = String(source || "");
+    const ranges = [];
+    let match;
+    while ((match = chordTokenPattern.exec(value))) {
+      const token = match[1] !== undefined ? match[1] : match[2];
+      if (!includeSymbols && (token === "|" || window.ChordWikiPreview?.isRhythmToken?.(token))) continue;
+      const lineStart = Math.max(value.lastIndexOf("\n", match.index - 1), value.lastIndexOf("\r", match.index - 1)) + 1;
+      ranges.push({ start: match.index, end: match.index + match[0].length, lineIndex: value.slice(0, match.index).split(/\r\n|\r|\n/).length - 1, column: match.index - lineStart, token: match[0] });
+    }
+    chordTokenPattern.lastIndex = 0;
+    return ranges;
+  };
+  const activeChordRange = () => chordRanges(text.value, includePositionSymbols).find((range) => range.start === activeChordStart) || null;
+  const movementRanges = (source) => {
+    const value = String(source || "");
+    const ranges = chordRanges(value, true);
+    let match;
+    while ((match = directiveTokenPattern.exec(value))) {
+      const lineStart = Math.max(value.lastIndexOf("\n", match.index - 1), value.lastIndexOf("\r", match.index - 1)) + 1;
+      ranges.push({ start: match.index, end: match.index + match[0].length, lineIndex: value.slice(0, match.index).split(/\r\n|\r|\n/).length - 1, column: match.index - lineStart, token: match[0] });
+    }
+    directiveTokenPattern.lastIndex = 0;
+    return ranges.sort((left, right) => left.start - right.start);
+  };
+  const chordAtPosition = (position, allowNearby = true) => {
+    const ranges = chordRanges(text.value, includePositionSymbols);
+    const atStart = ranges.find((range) => position === range.start);
+    if (atStart) return atStart;
+    const inside = ranges.find((range) => position >= range.start && position < range.end);
+    if (inside || !allowNearby) return inside || null;
+    return ranges.find((range) => Math.min(Math.abs(position - range.start), Math.abs(position - range.end)) <= 1) || null;
+  };
+  const setActiveChord = (range, { focus = true } = {}) => {
+    if (!range) return false;
+    activeChordStart = range.start;
+    text.setSelectionRange(range.start, range.end);
+    setActiveLine(range.lineIndex);
+    if (focus) text.focus();
+    else text.blur();
+    render();
+    return true;
+  };
+  const selectRelativeChord = (direction) => {
+    const ranges = chordRanges(text.value, includePositionSymbols);
+    if (!ranges.length) return false;
+    const currentIndex = ranges.findIndex((range) => range.start === activeChordStart);
+    const nextIndex = currentIndex < 0
+      ? (direction > 0 ? 0 : ranges.length - 1)
+      : (currentIndex + direction + ranges.length) % ranges.length;
+    return setActiveChord(ranges[nextIndex], { focus: false });
+  };
   const scrollProgress = (element, axis) => {
     if (!element) return 0;
     const current = axis === "left" ? element.scrollLeft : element.scrollTop;
@@ -78,11 +147,14 @@
     const escape = (value) => value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
     // The editor must remain readable even when a preview-only token cannot
     // be drawn. Render the editable text and its line numbers first.
-    const tokenPattern = /(\{[^{}\r\n]*\}|\[[^\[\]\r\n]*\]|\|)/g;
+    const tokenPattern = /(\{[^{}\r\n]*\}|\[\[[^\[\]\r\n]*\]\]|\[[^\[\]\r\n]*\]|\|)/g;
+    const selectedChord = positionAdjustMode ? activeChordRange() : null;
     let lastIndex = 0;
     highlight.innerHTML = [...text.value.matchAll(tokenPattern)].map((match) => {
       const token = match[0]; const inner = token.slice(1, -1);
-      const className = token === "|" || (token.startsWith("[") && (inner === "|" || /^[\s\-=>≧○]+$/.test(inner))) ? "syntax-bracket" : /^\{\s*key\s*:/i.test(token) ? "syntax-key" : token.startsWith("{") ? "syntax-directive" : "syntax-chord";
+      const isSelectedChord = selectedChord && match.index === selectedChord.start;
+      const syntaxClass = token === "|" || (token.startsWith("[") && (inner === "|" || /^[\s\-=>≧○]+$/.test(inner))) ? "syntax-bracket" : /^\{\s*key\s*:/i.test(token) ? "syntax-key" : token.startsWith("{") ? "syntax-directive" : "syntax-chord";
+      const className = `${syntaxClass}${isSelectedChord ? " position-adjust-active" : ""}`;
       const before = escape(text.value.slice(lastIndex, match.index)); lastIndex = match.index + token.length;
       return `${before}<span class="${className}">${escape(token)}</span>`;
     }).join("") + escape(text.value.slice(lastIndex));
@@ -106,6 +178,7 @@
     } catch (_error) {
       preview.textContent = text.value;
     }
+    preview.classList.toggle("position-adjust-active", positionAdjustMode);
     setScrollProgress(preview, scrollSync.checked ? textTopProgress : previewTopProgress, scrollSync.checked ? textLeftProgress : previewLeftProgress);
     setActiveLine(activeLine);
   }
@@ -138,8 +211,261 @@
     try { if (window.opener && !window.opener.closed) window.opener.postMessage(payload, window.location.origin === "null" ? "*" : window.location.origin); } catch (_error) { /* ignore */ }
     render(); status.textContent = "譜面プレビューへリアルタイムで反映しました。";
   }
-  text.addEventListener("input", publishText);
+  const positionStatus = () => {
+    status.textContent = positionAdjustMode
+      ? "コード位置調整モード中：矢印で移動、Spaceで次、Shift+Spaceで前のコードを選択。"
+      : "テキストと譜面プレビューを比較しながら編集できます。";
+  };
+  const lineRanges = (source) => {
+    const value = String(source || "");
+    const result = [];
+    let start = 0;
+    for (const match of value.matchAll(/\r\n|\r|\n/g)) {
+      result.push({ start, end: match.index });
+      start = match.index + match[0].length;
+    }
+    result.push({ start, end: value.length });
+    return result;
+  };
+  const previousCodePointStart = (source, index) => {
+    if (index <= 0) return 0;
+    const codePoint = source.codePointAt(index - 1);
+    return index - (codePoint > 0xffff ? 2 : 1);
+  };
+  const nextCodePointEnd = (source, index) => {
+    if (index >= source.length) return source.length;
+    const codePoint = source.codePointAt(index);
+    return index + (codePoint > 0xffff ? 2 : 1);
+  };
+  const finishPositionEdit = (range) => {
+    if (!range) return false;
+    activeChordStart = range.start;
+    text.setSelectionRange(range.start, range.end);
+    setActiveLine(range.lineIndex);
+    publishText();
+    positionStatus();
+    return true;
+  };
+  const rememberPositionEdit = () => {
+    positionUndoStack.push({ value: text.value, selectionStart: text.selectionStart, selectionEnd: text.selectionEnd, activeChordStart });
+    if (positionUndoStack.length > 100) positionUndoStack.shift();
+  };
+  const undoPositionEdit = () => {
+    const previous = positionUndoStack.pop();
+    if (!previous) return false;
+    text.value = previous.value;
+    activeChordStart = previous.activeChordStart;
+    text.setSelectionRange(previous.selectionStart, previous.selectionEnd);
+    render();
+    publishText();
+    text.blur();
+    positionStatus();
+    return true;
+  };
+  const moveActiveChord = (direction) => {
+    const range = activeChordRange() || chordAtPosition(text.selectionStart);
+    if (!range) return false;
+    const positionTokens = movementRanges(text.value);
+    if (direction === "left") {
+      const previousToken = positionTokens.find((token) => token.end === range.start);
+      if (previousToken) {
+        rememberPositionEdit();
+        text.setRangeText(`${range.token}${previousToken.token}`, previousToken.start, range.end, "select");
+        return finishPositionEdit({ ...range, start: previousToken.start, end: previousToken.start + range.token.length });
+      }
+      if (range.start <= 0) return false;
+      const previousStart = previousCodePointStart(text.value, range.start);
+      const previousText = text.value.slice(previousStart, range.start);
+      if (!previousText || /\r|\n/u.test(previousText)) return false;
+      rememberPositionEdit();
+      text.setRangeText(`${range.token}${previousText}`, previousStart, range.end, "select");
+      return finishPositionEdit({ ...range, start: previousStart, end: previousStart + range.token.length });
+    }
+    if (direction === "right") {
+      const nextToken = positionTokens.find((token) => token.start === range.end);
+      if (nextToken) {
+        rememberPositionEdit();
+        text.setRangeText(`${nextToken.token}${range.token}`, range.start, nextToken.end, "select");
+        return finishPositionEdit({ ...range, start: range.start + nextToken.token.length, end: range.start + nextToken.token.length + range.token.length });
+      }
+      if (range.end >= text.value.length) return false;
+      const nextEnd = nextCodePointEnd(text.value, range.end);
+      const nextText = text.value.slice(range.end, nextEnd);
+      if (!nextText || /\r|\n/u.test(nextText)) return false;
+      rememberPositionEdit();
+      text.setRangeText(`${nextText}${range.token}`, range.start, nextEnd, "select");
+      return finishPositionEdit({ ...range, start: range.start + nextText.length, end: range.start + nextText.length + range.token.length });
+    }
+    const sourceLines = lineRanges(text.value);
+    const targetLineIndex = range.lineIndex + (direction === "up" ? -1 : 1);
+    const targetLine = sourceLines[targetLineIndex];
+    if (!targetLine) return false;
+    const token = range.token;
+    rememberPositionEdit();
+    text.setRangeText("", range.start, range.end, "preserve");
+    const targetStart = targetLine.start - (targetLineIndex > range.lineIndex ? token.length : 0);
+    const targetLength = targetLine.end - targetLine.start;
+    const insertAt = targetStart + Math.min(range.column, targetLength);
+    text.setRangeText(token, insertAt, insertAt, "preserve");
+    const nextLine = targetLineIndex;
+    return finishPositionEdit({ start: insertAt, end: insertAt + token.length, lineIndex: nextLine, column: Math.min(range.column, targetLength), token });
+  };
+  const isPositionSpace = (event) => event.code === "Space" || event.key === " " || event.key === "　" || event.key === "Spacebar";
+  const handlePositionSpace = (event) => {
+    if (!positionAdjustMode || !isPositionSpace(event) || event.ctrlKey || event.metaKey || event.altKey) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    if (event.type === "keyup") {
+      positionSpaceKeyDown = false;
+      return;
+    }
+    if (event.type === "keypress" && positionSpaceKeyDown) return;
+    positionSpaceKeyDown = true;
+    selectRelativeChord(event.shiftKey ? -1 : 1);
+    positionStatus();
+  };
+  const handlePositionBeforeInput = (event) => {
+    if (!positionAdjustMode || ["historyUndo", "historyRedo"].includes(event.inputType)) return;
+    if (event.data === " " || event.data === "　") {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      selectRelativeChord(event.shiftKey ? -1 : 1);
+      positionStatus();
+      return;
+    }
+    event.preventDefault();
+    event.stopImmediatePropagation();
+  };
+  const handlePositionUndo = (event) => {
+    if (!positionAdjustMode || !(event.ctrlKey || event.metaKey) || event.altKey || event.key.toLowerCase() !== "z") return;
+    event.preventDefault();
+    event.stopPropagation();
+    undoPositionEdit();
+  };
+  const handlePositionClipboard = (event) => {
+    if (!positionAdjustMode || !(event.ctrlKey || event.metaKey) || event.altKey) return;
+    const key = event.key.toLowerCase();
+    if (key === "a") {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      text.setSelectionRange(0, text.value.length);
+      return;
+    }
+    if (key !== "c") return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    const start = Math.min(text.selectionStart, text.selectionEnd);
+    const end = Math.max(text.selectionStart, text.selectionEnd);
+    const copied = text.value.slice(start, end);
+    try { navigator.clipboard?.writeText(copied); } catch (_error) { /* clipboard permission is optional */ }
+  };
+  const handlePositionNavigation = (event) => {
+    if (!positionAdjustMode) return;
+    const direction = { ArrowLeft: "left", ArrowRight: "right", ArrowUp: "up", ArrowDown: "down" }[event.key];
+    if (direction && !event.ctrlKey && !event.metaKey && !event.altKey) {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      moveActiveChord(direction);
+      return;
+    }
+    if (event.key === "Escape") {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      setPositionMode(false);
+      return;
+    }
+    if ((event.ctrlKey || event.metaKey) && ["a", "c", "z"].includes(event.key.toLowerCase())) return;
+    if (["Tab", "Shift", "Control", "Alt", "Meta"].includes(event.key)) return;
+    if (isPositionSpace(event)) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+  };
+  const syncPreviewHeaderHeight = () => {
+    if (!positionAdjustMode) {
+      previewTitle.style.removeProperty("height");
+      return;
+    }
+    const editorTitle = editorPane.querySelector(".committed-window-pane-title");
+    previewTitle.style.height = `${editorTitle.getBoundingClientRect().height}px`;
+  };
+  document.addEventListener("keydown", handlePositionSpace, true);
+  document.addEventListener("keypress", handlePositionSpace, true);
+  document.addEventListener("keyup", handlePositionSpace, true);
+  document.addEventListener("beforeinput", handlePositionBeforeInput, true);
+  document.addEventListener("keydown", handlePositionClipboard, true);
+  document.addEventListener("keydown", handlePositionNavigation, true);
+  document.addEventListener("keydown", handlePositionUndo, true);
+  window.addEventListener("resize", syncPreviewHeaderHeight);
+  const setPositionMode = (enabled) => {
+    if (enabled) {
+      const range = chordAtPosition(text.selectionStart) || chordRanges(text.value, includePositionSymbols)[0];
+      if (!range) {
+        status.textContent = "コードを含むテキストでコード位置調整を使用できます。";
+        return;
+      }
+      positionAdjustMode = true;
+      positionSpaceKeyDown = false;
+      positionUndoStack.length = 0;
+      text.readOnly = true;
+      positionToggle.textContent = "● コード位置調整モード中";
+      positionToggle.setAttribute("aria-pressed", "true");
+      positionToggle.title = "コード位置調整モードを終了";
+      editorPane.classList.add("position-adjust-active");
+      previewPane.classList.add("position-adjust-active");
+      positionHelp.hidden = false;
+      previewModeStatus.hidden = false;
+      syncPreviewHeaderHeight();
+      preview.classList.add("position-adjust-active");
+      setActiveChord(range, { focus: false });
+      positionStatus();
+      return;
+    }
+    positionAdjustMode = false;
+    positionSpaceKeyDown = false;
+    positionUndoStack.length = 0;
+    activeChordStart = -1;
+    text.readOnly = false;
+    positionToggle.textContent = "コード位置調整モード";
+    positionToggle.setAttribute("aria-pressed", "false");
+    positionToggle.title = "コードを選択して矢印キーで位置を調整";
+    editorPane.classList.remove("position-adjust-active");
+    previewPane.classList.remove("position-adjust-active");
+    positionHelp.hidden = true;
+    previewModeStatus.hidden = true;
+    syncPreviewHeaderHeight();
+    preview.classList.remove("position-adjust-active");
+    render();
+    positionStatus();
+  };
+  text.addEventListener("beforeinput", (event) => {
+    if (positionAdjustMode && !["historyUndo", "historyRedo"].includes(event.inputType)) event.preventDefault();
+  });
+  text.addEventListener("input", () => {
+    if (positionAdjustMode) activeChordStart = chordAtPosition(text.selectionStart)?.start ?? -1;
+    publishText();
+    if (positionAdjustMode) positionStatus();
+  });
   ["click", "keyup", "select", "focus"].forEach((eventName) => text.addEventListener(eventName, () => setActiveLine(text.value.slice(0, text.selectionStart).split(/\r\n|\r|\n/).length - 1)));
+  text.addEventListener("focus", () => {
+    if (positionAdjustMode) text.blur();
+  });
+  text.addEventListener("click", () => {
+    if (!positionAdjustMode) return;
+    const range = chordAtPosition(text.selectionStart);
+    if (range) setActiveChord(range, { focus: false });
+    else text.blur();
+  });
+  text.addEventListener("keydown", (event) => {
+    if (positionAdjustMode) return;
+    if (event.key === "Escape") text.blur();
+  });
+  positionToggle.addEventListener("click", () => setPositionMode(!positionAdjustMode));
+  positionSymbols.addEventListener("change", () => {
+    includePositionSymbols = positionSymbols.checked;
+    if (positionAdjustMode && !activeChordRange()) selectRelativeChord(1);
+    render();
+    if (positionAdjustMode) positionStatus();
+  });
   text.addEventListener("scroll", () => {
     const suppressed = scrollPositionWasSuppressed(text);
     lines.scrollTop = text.scrollTop;
@@ -159,6 +485,24 @@
   });
   preview.addEventListener("click", (event) => {
     if (preview.dataset.panned === "true") { preview.dataset.panned = "false"; event.preventDefault(); return; }
+    const tokenSelector = includePositionSymbols
+      ? ".cw-code-token, .cw-rhythm-token, .cw-bar-token, .cw-boundary"
+      : ".cw-code-token";
+    const clickedToken = event.target.closest?.(tokenSelector);
+    if (positionAdjustMode && clickedToken) {
+      const row = clickedToken.closest("[data-source-line]");
+      if (row) {
+        const sourceLineIndex = Number(row.dataset.sourceLine);
+        const tokenIndex = [...row.querySelectorAll(tokenSelector)].indexOf(clickedToken);
+        const sourceRange = chordRanges(text.value, includePositionSymbols).filter((range) => range.lineIndex === sourceLineIndex)[tokenIndex];
+        if (sourceRange) {
+          event.preventDefault();
+          setActiveChord(sourceRange, { focus: false });
+          positionStatus();
+          return;
+        }
+      }
+    }
     const line = event.target.closest("[data-source-line]");
     if (!line) return;
     setActiveLine(Number(line.dataset.sourceLine));
@@ -166,9 +510,8 @@
   const displayKey = "chordWikiBarFormatter.committedWindowDisplay.v1";
   window.ChordWikiTranspose?.fillTransposeSelect(transpose);
   function updateTransposeButtons() {
-    const amount = Number(transpose.value) || 0;
-    transposeDown.disabled = amount <= -12;
-    transposeUp.disabled = amount >= 12;
+    transposeDown.disabled = false;
+    transposeUp.disabled = false;
   }
   const applyLayoutMode = () => {
     const stacked = layoutMode === "stacked";
@@ -217,7 +560,10 @@
   layoutToggle.addEventListener("click", () => { layoutMode = layoutMode === "side" ? "stacked" : "side"; applyDisplaySettings(); });
   transpose.addEventListener("change", () => { applyDisplaySettings(); render(); });
   const stepTranspose = (delta) => {
-    transpose.value = String(Math.max(-12, Math.min(12, (Number(transpose.value) || 0) + delta)));
+    const current = Number(transpose.value) || 0;
+    const min = window.ChordWikiTranspose.transposeMin;
+    const max = window.ChordWikiTranspose.transposeMax;
+    transpose.value = String(delta < 0 && current <= min ? max : delta > 0 && current >= max ? min : current + delta);
     applyDisplaySettings();
     render();
   };
@@ -266,12 +612,22 @@
   });
   if (channel) channel.addEventListener("message", (event) => { if (event.data?.type === "score-state") applyState(event.data.payload); });
   window.addEventListener("storage", (event) => { if (event.key === STATE_KEY && event.newValue) { try { applyState(JSON.parse(event.newValue)); } catch (_error) {} } if (event.key === TEXT_KEY && event.newValue !== text.value) { text.value = event.newValue; render(); } });
-  try { const saved = JSON.parse(localStorage.getItem(displayKey) || "null"); if (saved) { fontSize.value = saved.fontSize || fontSize.value; font.value = saved.font || font.value; theme.value = saved.theme === "dark-gray" ? "dark" : saved.theme || theme.value; transpose.value = String(Math.max(-12, Math.min(12, Number(saved.transpose) || 0))); const savedCheckboxDefaults = saved.checkboxDefaultsVersion === 1; textColoring.checked = savedCheckboxDefaults ? saved.textColoring !== false : true; boldCode.checked = savedCheckboxDefaults ? saved.boldCode !== false : true; scrollSync.checked = savedCheckboxDefaults ? saved.scrollSync !== false : true; layoutMode = saved.layoutPreferenceVersion === 1 && saved.layoutMode === "side" ? "side" : "stacked"; stackedLineHeight = Math.max(1.4, Math.min(3.2, Number.parseFloat(saved.stackedLineHeight) || 1.65)); sideLineHeight = Math.max(1.4, Math.min(3.2, Number.parseFloat(saved.sideLineHeight) || 2.75)); stackedPaneSize = Math.max(6, Math.min(94, Number.parseFloat(saved.stackedPaneSize) || 48)); sidePaneSize = Math.max(6, Math.min(94, Number.parseFloat(saved.sidePaneSize) || 48)); } } catch (_error) {}
+  try { const saved = JSON.parse(localStorage.getItem(displayKey) || "null"); if (saved) { fontSize.value = saved.fontSize || fontSize.value; font.value = saved.font || font.value; theme.value = saved.theme === "dark-gray" ? "dark" : saved.theme || theme.value; transpose.value = String(Math.max(window.ChordWikiTranspose.transposeMin, Math.min(window.ChordWikiTranspose.transposeMax, Number(saved.transpose) || 0))); const savedCheckboxDefaults = saved.checkboxDefaultsVersion === 1; textColoring.checked = savedCheckboxDefaults ? saved.textColoring !== false : true; boldCode.checked = savedCheckboxDefaults ? saved.boldCode !== false : true; scrollSync.checked = savedCheckboxDefaults ? saved.scrollSync !== false : true; layoutMode = saved.layoutPreferenceVersion === 1 && saved.layoutMode === "side" ? "side" : "stacked"; stackedLineHeight = Math.max(1.4, Math.min(3.2, Number.parseFloat(saved.stackedLineHeight) || 1.65)); sideLineHeight = Math.max(1.4, Math.min(3.2, Number.parseFloat(saved.sideLineHeight) || 2.75)); stackedPaneSize = Math.max(6, Math.min(94, Number.parseFloat(saved.stackedPaneSize) || 48)); sidePaneSize = Math.max(6, Math.min(94, Number.parseFloat(saved.sidePaneSize) || 48)); } } catch (_error) {}
   applyDisplaySettings();
-  try { const draft = JSON.parse(localStorage.getItem(DRAFT_KEY) || "null"); if (draft?.text) { text.value = draft.text; draftUpdatedAt = Number(draft.updatedAt) || 0; } } catch (_error) {}
-  if (!keepExistingDraft) { try { applyState(JSON.parse(localStorage.getItem(STATE_KEY) || "null")); } catch (_error) {} }
+  try { const draft = JSON.parse(localStorage.getItem(DRAFT_KEY) || "null"); if (draft?.text) { loadedDraftText = draft.text; text.value = draft.text; draftUpdatedAt = Number(draft.updatedAt) || 0; } } catch (_error) {}
+  if (!keepExistingDraft && !pendingReplace) { try { applyState(JSON.parse(localStorage.getItem(STATE_KEY) || "null")); } catch (_error) {} }
   if (!text.value) { try { text.value = localStorage.getItem(TEXT_KEY) || ""; } catch (_error) {} }
   // A saved draft can already fill the textarea without producing the line
   // numbers, syntax layer, or score preview. Always perform an initial render.
   render();
+  if (pendingReplace && loadedDraftText && loadedDraftText !== (localStorage.getItem(TEXT_KEY) || "")) {
+    replaceDialog.showModal();
+    replaceDialog.addEventListener("close", () => {
+      if (replaceDialog.returnValue === "yes") {
+        text.value = localStorage.getItem(TEXT_KEY) || "";
+        publishText();
+      }
+      history.replaceState(null, "", window.location.pathname);
+    }, { once: true });
+  }
 }());

@@ -15,7 +15,7 @@
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4561699699325989" crossorigin="anonymous"></script>
   <title>ChordWiki Bar Formatter ～演奏しやすいリズム付きコード譜へ～</title>
   <link rel="icon" type="image/png" href="logo/260810_favicon_touka.png">
-  <link rel="stylesheet" href="style.css?v=20260826-001">
+  <link rel="stylesheet" href="style.css?v=20260831-008">
   <link rel="stylesheet" href="style-row-edit-test.css?v=20260801-3">
 </head>
 <body>
@@ -25,16 +25,21 @@
       <h1 class="app-logo"><a href="https://mapida222.github.io/ChordWiki-Bar-Formatter/" aria-label="ChordWiki Bar Formatter トップページ"><img src="logo/260810_chordwiki_logo.png" alt="ChordWiki Bar Formatter"></a></h1>
     </div>
     <div class="header-actions">
-      <button id="history-save" class="help-open-button" type="button" title="04. 変換後の表示を保存">履歴に追加</button>
-      <button id="history-open" class="help-open-button" type="button">使用履歴</button>
-      <button id="help-open" class="help-open-button" type="button">ヘルプ・使い方</button>
-      <button id="display-settings-toggle" class="help-open-button display-settings-trigger" type="button" aria-expanded="false" aria-controls="display-settings-shell">表示設定▼</button>
+      <div class="header-realtime-row">
+        <a id="header-realtime-editor" class="help-open-button" href="committed-preview.html" target="_blank" rel="opener">リアルタイムエディター</a>
+      </div>
+      <div class="header-secondary-actions">
+        <button id="history-save" class="help-open-button" type="button" title="04. 変換後の表示を保存">履歴に追加</button>
+        <button id="history-open" class="help-open-button" type="button">使用履歴</button>
+        <button id="help-open" class="help-open-button" type="button">ヘルプ・使い方</button>
+        <button id="display-settings-toggle" class="help-open-button display-settings-trigger" type="button" aria-expanded="false" aria-controls="display-settings-shell">表示設定▼</button>
+      </div>
     </div>
   </header>
 
   <main>
     <section class="workspace" aria-label="コード譜変換エリア">
-      <section id="settings-panel" class="settings-panel settings-compact settings-examples-closed" aria-labelledby="settings-title">
+      <section id="settings-panel" class="settings-panel settings-compact" aria-labelledby="settings-title">
         <div class="editor-heading settings-panel-heading">
           <div class="settings-heading-copy">
             <h2 id="settings-title" class="compact-editor-title">02. 初期設定 <span>/ SETTINGS</span></h2>

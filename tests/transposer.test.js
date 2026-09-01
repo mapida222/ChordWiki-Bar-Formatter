@@ -2,6 +2,9 @@
 const assert = require("assert");
 const transposer = require("../js/transposer.js");
 
+assert.strictEqual(transposer.transposeMin, -5, "transpose controls omit the duplicate -6 tritone endpoint");
+assert.strictEqual(transposer.transposeMax, 6, "transpose controls keep the positive tritone endpoint");
+
 assert.strictEqual(transposer.transposeChordToken("C", 1, "sharp"), "C#");
 assert.strictEqual(transposer.transposeChordToken("C", 1, "flat"), "Db");
 assert.strictEqual(transposer.transposeChordToken("F#m7-5", 1, "sharp"), "Gm7-5");

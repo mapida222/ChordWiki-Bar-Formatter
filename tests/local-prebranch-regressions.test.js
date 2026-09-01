@@ -34,6 +34,27 @@ assert.strictEqual(
   "a backslash typed as a measure boundary must retain its parser meaning"
 );
 
+const whiteNoteDurationWithFullBeatLyric = CBFConverter.convertChordText(
+  "[Gsus4]ハイフン数を[G]合わせます　[G#dim]",
+  base,
+  [CBFCorrectionInput.normalizeLine("8\\@4@4", 0)]
+);
+const anchoredFullBeatLyric = CBFConverter.convertChordText(
+  "[Gsus4]ハイフン数を[G]合わせます　[G#dim]",
+  base,
+  [CBFCorrectionInput.normalizeLine("8\\44", 0)]
+);
+assert.strictEqual(
+  anchoredFullBeatLyric.output,
+  "[Gsus4][----]ハイフン数を[----][|][G][----]合わせます　[G#dim][----][|]",
+  "an anchored full four-beat correction must not split its lyric as a 1+3 fraction"
+);
+assert.strictEqual(
+  whiteNoteDurationWithFullBeatLyric.output,
+  "[Gsus4][----]ハイフン数を[----][|][G][○][----]合わせます　[G#dim][○][----][|]",
+  "a white-note correction at an anchored full beat must keep its lyric together"
+);
+
 assert.strictEqual(
   CBFConverter.convertChordText("[C]", base, ["@a"]).output,
   "[|][C][○][----][----][|][○][--][|]",

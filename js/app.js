@@ -155,7 +155,7 @@
   let mobileLastLinkedLine = -1;
   let keyPreviewTargets = [];
   let settingsMode = "compact";
-  let settingsExamplesOpen = false;
+  let settingsExamplesOpen = true;
   let convertedOutput = "";
   let outputManuallyEdited = false;
   let outputHighlightValue = "";
@@ -329,14 +329,16 @@
     elements.previewSpellingMain.value = elements.previewSpelling.value;
   }
   function updatePreviewTransposeButtons() {
-    const amount = Number(elements.previewTranspose.value) || 0;
-    elements.previewTransposeDown.disabled = amount <= -12;
-    elements.previewTransposeUp.disabled = amount >= 12;
-    elements.previewTransposeMainDown.disabled = amount <= -12;
-    elements.previewTransposeMainUp.disabled = amount >= 12;
+    elements.previewTransposeDown.disabled = false;
+    elements.previewTransposeUp.disabled = false;
+    elements.previewTransposeMainDown.disabled = false;
+    elements.previewTransposeMainUp.disabled = false;
   }
   function stepPreviewTranspose(direction, focusButton) {
-    const amount = Math.max(-12, Math.min(12, (Number(elements.previewTranspose.value) || 0) + direction));
+    const current = Number(elements.previewTranspose.value) || 0;
+    const min = window.ChordWikiTranspose.transposeMin;
+    const max = window.ChordWikiTranspose.transposeMax;
+    const amount = direction < 0 && current <= min ? max : direction > 0 && current >= max ? min : current + direction;
     elements.previewTranspose.value = String(amount);
     elements.previewTranspose.dispatchEvent(new Event("change", { bubbles: true }));
     focusButton.focus();
@@ -432,9 +434,10 @@
       syncResultRowAlignment();
       return;
     }
-    const measureMismatch = CBFConverter.analyzeAuthoredMeasureCapacity(elements.input.value, values.measureCapacity);
+    const measureDetails = CBFConverter.analyzeAuthoredMeasureCapacity(elements.input.value, values.measureCapacity, "", true);
+    const measureMismatch = measureDetails && measureDetails.detected !== Number(values.measureCapacity) ? measureDetails : null;
     const formatting = CBFConverter.analyzeAuthoredFormatting(elements.input.value, values);
-    const mismatch = measureMismatch || { detected: 0, percentage: 0 };
+    const mismatch = measureMismatch || measureDetails || { detected: 0, percentage: 0 };
     const hyphenUnitMismatch = formatting.hyphenUnit && formatting.hyphenUnit.detected !== Number(values.hyphenUnit);
     const hyphenSpacingMismatch = formatting.hyphenSpacing && formatting.hyphenSpacing.detected !== Number(values.hyphenSpacing);
     if (!measureMismatch && !hyphenUnitMismatch && !hyphenSpacingMismatch) {
@@ -452,14 +455,18 @@
     const formattingDetails = [];
     const detail = (label, result, configured) => {
       const detected = result?.detected ?? Number(configured);
-      const percentage = result ? `（${result.percentage}%）` : "（現状と同じ）";
-      const same = result && detected === Number(configured) ? "（現状と同じ）" : "";
-      return `${label}：${detected}ハイフン${percentage}${same}`;
+      const same = result && detected === Number(configured);
+      const evidence = result
+        ? `${result.percentage}%${Number.isInteger(result.count) && Number.isInteger(result.candidateCount) ? `、${result.count}/${result.candidateCount}` : ""}${same ? "、現状と同じ" : ""}`
+        : "現状と同じ";
+      return `${label}：${detected}ハイフン（${evidence}）`;
     };
-    formattingDetails.push(measureMismatch
-      ? `1小節：${mismatch.detected}ハイフン（${mismatch.percentage}%）`
-      : `1小節：${Number(values.measureCapacity)}ハイフン（現状と同じ）`);
-    formattingDetails.push(detail("コード直後（空白区切り前）", formatting.hyphenUnit, values.hyphenUnit));
+    const measureSame = measureDetails && measureDetails.detected === Number(values.measureCapacity);
+    const measureEvidence = measureDetails
+      ? `${measureDetails.percentage}%${Number.isInteger(measureDetails.measureCount) && Number.isInteger(measureDetails.candidateCount) ? `、${measureDetails.measureCount}/${measureDetails.candidateCount}` : ""}${measureSame ? "、現状と同じ" : ""}`
+      : "現状と同じ";
+    formattingDetails.push(`1小節：${measureDetails?.detected ?? Number(values.measureCapacity)}ハイフン（${measureEvidence}）`);
+    formattingDetails.push(detail("コード間のハイフン数", formatting.hyphenUnit, values.hyphenUnit));
     formattingDetails.push(detail("空白区切り後のグループ", formatting.hyphenSpacing, values.hyphenSpacing));
     if (formattingDetails.length) {
       const actionText = measureMismatch
@@ -611,19 +618,9 @@
     if (restoringPasteScroll) return;
     const computed = getComputedStyle(elements.correction);
     const lineHeight = Number.parseFloat(computed.lineHeight) || 23;
-    // Keep one virtual row below the final real row so selecting the last
-    // correction still reveals the following space without numbering it.
-    const scrollLineCount = Math.max(1, lineCount(elements.correction.value) + 1);
-    const nextScrollTop = CBFCorrectionInput.scrollTopForLineMargin(
-      elements.correction.scrollTop,
-      elements.correction.clientHeight,
-      lineHeight,
-      lineIndex,
-      scrollLineCount,
-      1,
-      Number.parseFloat(computed.paddingTop) || 0,
-      2
-    );
+    const paddingTop = Number.parseFloat(computed.paddingTop) || 0;
+    const lineTop = paddingTop + Math.max(0, lineIndex) * lineHeight;
+    const nextScrollTop = Math.max(0, lineTop - (elements.correction.clientHeight - lineHeight) / 2);
     if (nextScrollTop !== elements.correction.scrollTop) elements.correction.scrollTop = nextScrollTop;
   }
   function keepMobileLinkedLineInView(lineIndex) {
@@ -665,6 +662,10 @@
     }
     keepCorrectionLineInView(resolvedLine);
     applyLinkedPosition();
+    if (!window.matchMedia("(max-width: 699px)").matches) {
+      keepOutputLineInView();
+      keepPreviewLineInView();
+    }
   }
   function moveCorrectionSlot(key) {
     const lines = elements.correction.value.split(/\r\n|\r|\n/);
@@ -723,6 +724,31 @@
     const slot = slots[resolvedIndex];
     elements.correctionPosition.textContent = `${linkedLineIndex + 1}行目｜${resolvedIndex + 1}番目 ${correctionTargetAt(linkedLineIndex, resolvedIndex)}｜${slot.character}＝${correctionBeatLabel(slot.character)}`;
   }
+  function applyPreviewActiveLine() {
+    elements.finalPreview?.querySelectorAll("[data-source-line]").forEach((line) => {
+      line.classList.toggle("compare-active", Number(line.dataset.sourceLine) === linkedLineIndex);
+    });
+  }
+  function keepPreviewLineInView() {
+    if (window.matchMedia("(max-width: 699px)").matches || linkedLineIndex < 0) return;
+    const active = elements.finalPreview?.querySelector(`[data-source-line="${linkedLineIndex}"]`);
+    if (!active) return;
+    const preview = elements.finalPreview;
+    const lineTop = active.offsetTop;
+    const lineHeight = active.offsetHeight || Number.parseFloat(getComputedStyle(preview).lineHeight) || 23;
+    const nextScrollTop = Math.max(0, lineTop - (preview.clientHeight - lineHeight) / 2);
+    if (nextScrollTop !== preview.scrollTop) preview.scrollTop = nextScrollTop;
+  }
+  function keepOutputLineInView() {
+    if (window.matchMedia("(max-width: 699px)").matches || linkedLineIndex < 0) return;
+    const textarea = elements.output;
+    const computed = getComputedStyle(textarea);
+    const lineHeight = Number.parseFloat(computed.lineHeight) || 23;
+    const paddingTop = Number.parseFloat(computed.paddingTop) || 0;
+    const lineTop = paddingTop + linkedLineIndex * lineHeight;
+    const nextScrollTop = Math.max(0, lineTop - (textarea.clientHeight - lineHeight) / 2);
+    if (nextScrollTop !== textarea.scrollTop) textarea.scrollTop = nextScrollTop;
+  }
   function applyLinkedPosition() {
     gutterByEditor.forEach((gutter) => {
       gutter.querySelectorAll("span:not(.line-number-spacer)").forEach((line, index) => line.classList.toggle("active-line", index === linkedLineIndex));
@@ -743,6 +769,7 @@
     });
     updateEditorHighlight(elements.correction, correctionOffsetAt(linkedLineIndex, linkedSlotIndex));
     updateEditorHighlight(elements.output, -1, outputCodeOffsetAt(linkedLineIndex, linkedSlotIndex));
+    applyPreviewActiveLine();
     updateCorrectionPosition();
   }
   function updateActivePosition(textarea, _gutter, activate = false, eventType = "") {
@@ -775,7 +802,14 @@
     }
     if (activate && textarea === elements.correction) keepCorrectionLineInView(linkedLineIndex);
     applyLinkedPosition();
-    if (activate) keepMobileLinkedLineInView(linkedLineIndex);
+    if (activate) {
+      keepMobileLinkedLineInView(linkedLineIndex);
+      if (!window.matchMedia("(max-width: 699px)").matches) {
+        keepCorrectionLineInView(linkedLineIndex);
+        keepOutputLineInView();
+        keepPreviewLineInView();
+      }
+    }
   }
   function updateEditorHighlight(
     textarea,
@@ -817,7 +851,10 @@
     }
     if (textarea === elements.correction && elements.correctionGrid) {
       syncCorrectionScrollbarWidth();
-      elements.correctionGrid.innerHTML = Array.from({ length: count }, () => '<span></span><span></span>').map((cells) => `<div class="correction-grid-row">${cells}</div>`).join("");
+      const rows = Array.from({ length: count }, () => '<span></span><span></span>')
+        .map((cells) => `<div class="correction-grid-row">${cells}</div>`);
+      const trailingRows = Array.from({ length: LINE_NUMBER_TRAILING_ROWS }, () => '<div class="correction-grid-row correction-grid-spacer" aria-hidden="true"><span></span><span></span></div>');
+      elements.correctionGrid.innerHTML = rows.concat(trailingRows).join("");
     }
     updateEditorHighlight(textarea);
     applyLinkedPosition();
@@ -859,7 +896,7 @@
   function updateCorrectionModes() {
     if (!elements.correctionModes) return;
     const count = Math.max(1, lineCount(elements.correction.value));
-    elements.correctionModes.innerHTML = Array.from({ length: count }, (_, index) => {
+    const rows = Array.from({ length: count }, (_, index) => {
       const state = correctionDisplayStates[index] || "none";
       if (state === "none" && !(correctionSlotCounts[index] > 0)) return '<span class="correction-mode-row" aria-hidden="true"></span>';
       const mode = effectiveRowMode(index);
@@ -870,7 +907,9 @@
       const next = mode === "auto" ? "修正" : mode === "edit" ? "固定" : mode === "source" ? "自動" : "修正";
       const detail = directlyEdited ? "変換後を直接編集した内容を保持中。行修正を変更すると修正へ切り替わります" : mode === "recovered" ? "復元した行修正値を表示中。変更するまで変換後を保持します" : mode === "fixed" ? "非対応の表記を保持中。行修正では上書きしません" : `${label}を採用中`;
       return `<button type="button" class="correction-mode-row" data-line="${index}" data-mode="${displayMode}" aria-label="${index + 1}行目：${detail}。押すと${next}へ切替" title="${detail}（押すと${next}）">${label}</button>`;
-    }).join("");
+    });
+    const trailingRows = Array.from({ length: LINE_NUMBER_TRAILING_ROWS }, () => '<span class="correction-mode-row correction-mode-spacer" aria-hidden="true"></span>');
+    elements.correctionModes.innerHTML = rows.concat(trailingRows).join("");
     syncCorrectionModeScroll();
   }
   function setRowAdoptionMode(index, mode) {
@@ -1219,7 +1258,18 @@
     // result. The score preview must not hide every `----` token by CSS,
     // because split rhythms such as 35/53/335 are intentionally retained.
     elements.finalPreview.classList.remove("omit-long-rhythm");
-    if (window.ChordWikiPreview) window.ChordWikiPreview.renderInto(elements.finalPreview, transposedPreviewText());
+    if (window.ChordWikiPreview) {
+      const previewText = transposedPreviewText();
+      window.ChordWikiPreview.renderInto(elements.finalPreview, previewText);
+      const previewRows = [...elements.finalPreview.children];
+      let previewRowIndex = 0;
+      previewText.split(/\r\n|\r|\n/).forEach((sourceLine, sourceLineIndex) => {
+        if (/^\s*#/.test(sourceLine)) return;
+        const previewRow = previewRows[previewRowIndex++];
+        if (previewRow) previewRow.dataset.sourceLine = String(sourceLineIndex);
+      });
+    }
+    applyPreviewActiveLine();
     publishScoreWindow();
   }
   function showScorePreview() {
@@ -1461,7 +1511,7 @@
     updateLyricHyphenControls();
     elements.plainEditBars.checked = Boolean(state.plainEditBars);
     elements.finalBarsThrough.checked = Boolean(state.finalBarsThrough);
-    elements.previewTranspose.value = String(Math.max(-12, Math.min(12, Number(state.previewTranspose) || 0)));
+    elements.previewTranspose.value = String(Math.max(window.ChordWikiTranspose.transposeMin, Math.min(window.ChordWikiTranspose.transposeMax, Number(state.previewTranspose) || 0)));
     elements.previewSpelling.value = ["preserve", "sharp", "flat"].includes(state.previewSpelling) ? state.previewSpelling : "preserve";
     syncPreviewControlMirrors();
     updatePreviewTransposeButtons();
@@ -2042,7 +2092,7 @@
   elements.previewTheoretical.addEventListener("change", refreshGlobalKeySettings);
   function applyScoreWindowControls(payload) {
     if (!payload || payload.source !== "score-window") return;
-    elements.previewTranspose.value = String(Math.max(-12, Math.min(12, Number(payload.transpose) || 0)));
+    elements.previewTranspose.value = String(Math.max(window.ChordWikiTranspose.transposeMin, Math.min(window.ChordWikiTranspose.transposeMax, Number(payload.transpose) || 0)));
     elements.previewSpelling.value = ["preserve", "sharp", "flat"].includes(payload.spelling) ? payload.spelling : "preserve";
     syncPreviewControlMirrors();
     updatePreviewTransposeButtons();
@@ -3202,19 +3252,21 @@
   });
   elements.committedOutputToggle.addEventListener("click", () => setCommittedOutputOpen(elements.committedOutputShell.classList.contains("committed-collapsed")));
   if (elements.openCommittedPreview) elements.openCommittedPreview.addEventListener("click", () => publishScoreWindow());
+  let openingRealtimeEditor = false;
   elements.openRealtimeEditor.addEventListener("click", (event) => {
+    if (openingRealtimeEditor) { openingRealtimeEditor = false; return; }
     // 05 is the editable source. 06 only renders that text as a score, so
     // opening the realtime editor must carry the exact 05 text across.
     const currentText = elements.output.value;
     let savedDraft = null;
     try { savedDraft = JSON.parse(localStorage.getItem(COMMITTED_DRAFT_STORAGE_KEY) || "null"); } catch (_error) { savedDraft = null; }
     const hasDifferentDraft = Boolean(savedDraft?.text) && savedDraft.text !== currentText;
-    if (hasDifferentDraft && !window.confirm("リアルタイムエディターには前回の編集内容があります。\n現在の変換結果で上書きして開きますか？\n\n［OK］上書きして開く\n［キャンセル］次の選択へ")) {
-      if (!window.confirm("前回の内容を残して開きますか？\n\n［OK］前回の内容を残して開く\n［キャンセル］開くのをやめる")) {
-        event.preventDefault();
-        return;
-      }
-      elements.openRealtimeEditor.href = "committed-preview.html?draft=keep";
+    if (hasDifferentDraft) {
+      event.preventDefault();
+      localStorage.setItem(COMMITTED_OUTPUT_STORAGE_KEY, currentText);
+      elements.openRealtimeEditor.href = "committed-preview.html?pending=replace";
+      openingRealtimeEditor = true;
+      elements.openRealtimeEditor.click();
       setTimeout(() => { elements.openRealtimeEditor.href = "committed-preview.html"; }, 0);
       return;
     }
@@ -3640,7 +3692,7 @@
   elements.addedBackground.checked = localStorage.getItem(ADDED_BACKGROUND_STORAGE_KEY) !== "false";
   elements.plainEditBars.checked = localStorage.getItem(PLAIN_EDIT_BARS_STORAGE_KEY) === "true";
   elements.finalBarsThrough.checked = localStorage.getItem(FINAL_BARS_THROUGH_STORAGE_KEY) === "true";
-  elements.previewTranspose.value = String(Math.max(-12, Math.min(12, Number(localStorage.getItem(PREVIEW_TRANSPOSE_STORAGE_KEY)) || 0)));
+  elements.previewTranspose.value = String(Math.max(window.ChordWikiTranspose.transposeMin, Math.min(window.ChordWikiTranspose.transposeMax, Number(localStorage.getItem(PREVIEW_TRANSPOSE_STORAGE_KEY)) || 0)));
   const savedPreviewSpelling = localStorage.getItem(PREVIEW_SPELLING_STORAGE_KEY) || "preserve";
   elements.previewSpelling.value = ["preserve", "sharp", "flat"].includes(savedPreviewSpelling) ? savedPreviewSpelling : "preserve";
   syncPreviewControlMirrors();
