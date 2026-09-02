@@ -196,6 +196,7 @@
   const CORRECTION_SYNTAX_VERSION_KEY = "chordWikiBarFormatter.correctionSyntaxVersion";
   const LAYOUT_STORAGE_KEY = "chordWikiBarFormatter.editorLayout.v3";
   const DISPLAY_PANEL_STORAGE_KEY = "chordWikiBarFormatter.displayPanelOpen.v4";
+  const SETTINGS_EXAMPLES_OPEN_STORAGE_KEY = "chordWikiBarFormatter.settingsExamplesOpen.v1";
   const THEME_STORAGE_KEY = "chordWikiBarFormatter.theme.v1";
   const PLAIN_EDIT_BARS_STORAGE_KEY = "chordWikiBarFormatter.plainEditBars.v1";
   const FINAL_BARS_THROUGH_STORAGE_KEY = "chordWikiBarFormatter.finalBarsThrough.v1";
@@ -3323,11 +3324,12 @@
     elements.settingsExampleToggle.hidden = settingsMode === "closed";
     positionSettingsPanel();
   }
-  function setSettingsExamplesOpen(open) {
+  function setSettingsExamplesOpen(open, save = true) {
     settingsExamplesOpen = Boolean(open);
     elements.settingsPanel.classList.toggle("settings-examples-closed", !settingsExamplesOpen);
     elements.settingsExampleToggle.setAttribute("aria-expanded", String(settingsExamplesOpen));
     elements.settingsExampleToggle.textContent = "説明・使用例▼";
+    if (save) localStorage.setItem(SETTINGS_EXAMPLES_OPEN_STORAGE_KEY, String(settingsExamplesOpen));
     positionSettingsPanel();
     syncResultRowAlignment();
   }
@@ -3718,6 +3720,10 @@
   {
     const savedDisplayPanel = localStorage.getItem(DISPLAY_PANEL_STORAGE_KEY);
     setDisplaySettingsOpen(savedDisplayPanel === "true", false);
+  }
+  {
+    const savedSettingsExamples = localStorage.getItem(SETTINGS_EXAMPLES_OPEN_STORAGE_KEY);
+    setSettingsExamplesOpen(savedSettingsExamples === null ? true : savedSettingsExamples === "true", false);
   }
   restoreLayout();
   renderSettings(loadedSettings);

@@ -17,6 +17,9 @@ assert(html.includes('id="settings-example-toggle" class="text-button settings-e
 assert(app.includes('setDisplaySettingsOpen(savedDisplayPanel === "true", false);'), "01 must stay collapsed when no preference has been saved");
 assert(app.includes('const LAYOUT_STORAGE_KEY = "chordWikiBarFormatter.editorLayout.v3";'), "the wider layout must not inherit incompatible saved dimensions");
 assert(app.includes('const DISPLAY_PANEL_STORAGE_KEY = "chordWikiBarFormatter.displayPanelOpen.v4";'), "the display popover must start collapsed once after moving into the 02 heading");
+assert(app.includes('const SETTINGS_EXAMPLES_OPEN_STORAGE_KEY = "chordWikiBarFormatter.settingsExamplesOpen.v1";'), "the settings examples need a dedicated persisted preference");
+assert(app.includes('setSettingsExamplesOpen(savedSettingsExamples === null ? true : savedSettingsExamples === "true", false);'), "the settings examples preference must be restored without rewriting it during startup");
+assert(app.includes('if (save) localStorage.setItem(SETTINGS_EXAMPLES_OPEN_STORAGE_KEY, String(settingsExamplesOpen));'), "the settings examples preference must be saved when toggled");
 assert(app.includes('setDisplaySettingsOpen(false);') && app.includes('setSettingsMode("compact");'), "layout reset must restore the settings panel to its default open state");
 assert(app.includes('setSettingsExamplesOpen(true);'), "layout reset must reopen compact usage examples");
 assert(css.includes("--top-editor-height: clamp(210px, 24vh, 230px)"), "the source editor must use the compact default height");
