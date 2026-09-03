@@ -23,7 +23,7 @@ body { margin: 0; min-width: 320px; min-height: 100vh; color: var(--text); backg
 button, input, textarea { font: inherit; }
 button { color: inherit; }
 .app-header, main { width: calc(100% - 28px); max-width: none; margin-inline: auto; }
-.app-header { display: flex; align-items: flex-end; justify-content: space-between; gap: 18px; padding: 22px 0 14px; border-bottom: 1px solid var(--line); }
+.app-header { display: flex; align-items: flex-end; justify-content: space-between; gap: 18px; min-width: 0; padding: 22px 0 14px; border-bottom: 1px solid var(--line); }
 h1, h2, p { margin-top: 0; }
 h1 { margin-bottom: 3px; font-size: clamp(1.45rem, 2.8vw, 2.35rem); line-height: 1; letter-spacing: -.04em; }
 .app-logo { width: min(496px, 57.6vw); margin: 0; line-height: 0; }
@@ -31,14 +31,16 @@ h1 { margin-bottom: 3px; font-size: clamp(1.45rem, 2.8vw, 2.35rem); line-height:
 .app-logo img { display: block; width: 100%; height: auto; }
 h2 { margin-bottom: 0; font-size: .96rem; }
 .eyebrow, .section-kicker { margin-bottom: 5px; color: var(--accent); font: 700 .63rem/1 var(--mono); letter-spacing: .13em; }
-.app-header .eyebrow { margin-bottom: 2px; padding-left: 0.5em; color: var(--muted); font: 400 clamp(.92rem, 1.4vw, 1.08rem)/1.4 var(--sans); letter-spacing: .015em; }
+.app-header > div:first-child { min-width: 0; flex: 1 1 0; }
+.app-header .eyebrow { width: max-content; max-width: 100%; margin-bottom: 2px; padding-left: 0.5em; overflow: hidden; color: var(--muted); font: 400 clamp(.78rem, 1.4vw, 1.08rem)/1.4 var(--sans); letter-spacing: .015em; text-overflow: ellipsis; white-space: nowrap; }
 .subtitle { margin-bottom: 0; color: var(--muted); font-size: .8rem; }
 .privacy-badge { flex: 0 0 auto; padding: 7px 10px; border: 1px solid var(--line); border-radius: 999px; color: var(--muted); font-size: .7rem; }
 .privacy-badge span { color: var(--accent); margin-right: 5px; }
-.header-actions { position: relative; display: flex; flex-direction: column; align-items: flex-end; gap: 9px; }
-.header-realtime-row, .header-secondary-actions { display: flex; align-items: center; justify-content: flex-end; gap: 9px; }
+.header-actions { position: relative; display: flex; min-width: 0; flex: 0 1 auto; flex-direction: column; align-items: flex-end; gap: 9px; }
+.header-realtime-row, .header-secondary-actions { display: flex; align-items: center; justify-content: flex-end; gap: 9px; min-width: 0; }
 .header-realtime-row .help-open-button { min-width: 190px; text-align: center; text-decoration: none; background: color-mix(in srgb, var(--panel) 96%, var(--accent)); }
 .help-open-button, .help-close-button { padding: 7px 11px; border: 1px solid var(--line); border-radius: 4px; color: var(--text); background: var(--panel); cursor: pointer; font-weight: 800; }
+.header-secondary-actions .help-open-button { display: inline-flex; flex: 1 1 auto; align-items: center; justify-content: center; min-height: 29px; min-width: 0; padding-inline: 8px; padding-block: 0; font-size: clamp(.7rem, 1vw, .88rem); line-height: 28px; text-align: center; white-space: normal; }
 .help-open-button:hover, .help-close-button:hover { border-color: var(--accent); background: var(--accent-soft); }
 main { padding: 12px 0 28px; }
 .settings-panel { position: relative; z-index: 30; grid-column: 1; grid-row: 1; align-self: start; overflow: visible; min-width: 0; height: 78px; margin: 0; }

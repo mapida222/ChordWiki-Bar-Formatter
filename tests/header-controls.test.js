@@ -114,7 +114,7 @@ assert(html.includes('id="header-realtime-editor" class="help-open-button" href=
 assert(html.includes('>リアルタイムエディター</a>'));
 assert(html.includes('<div class="header-realtime-row">'));
 assert(html.includes('<div class="header-secondary-actions">'));
-assert(css.includes(".header-actions { position: relative; display: flex; flex-direction: column;"));
+assert(css.includes(".header-actions { position: relative;") && css.includes("flex-direction: column;"));
 assert(css.includes(".header-realtime-row, .header-secondary-actions { display: flex;"));
 assert(css.includes(".header-realtime-row .help-open-button { min-width: 190px; text-align: center; text-decoration: none; background: color-mix(in srgb, var(--panel) 96%, var(--accent)); }"));
 assert(html.includes('id="display-settings-toggle" class="help-open-button display-settings-trigger"'));
