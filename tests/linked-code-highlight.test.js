@@ -19,7 +19,7 @@ assert(css.includes(".editor-highlight .linked-code-target .generated-token"), "
 assert(app.includes("previewRow.dataset.sourceLine = String(sourceLineIndex);"), "the score preview must retain the source line mapping");
 assert(app.includes('line.classList.toggle("compare-active", Number(line.dataset.sourceLine) === linkedLineIndex)'), "the score preview must highlight the linked current line");
 assert(app.includes("keepPreviewLineInView();"), "the score preview must follow the linked current line");
-assert(html.includes("style.css?v=20260831-008"), "the browser must load the current linked-code highlight style");
+assert(html.includes("style.css?v=20260903-005"), "the browser must load the current linked-code highlight style");
 assert(html.includes('type="module" src="/js/entries/main.js"'), "the browser must load the module entry");
 assert(entry.includes('await import("../app.js")'), "the browser must load the current linked-code mapping");
 

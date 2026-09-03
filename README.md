@@ -1,4 +1,4 @@
-# ChordWiki Bar Formatter
+# ChordWiki Bar Formatter (コバッター)
 
 ChordPro形式のコード譜へ、**小節線と音の長さを表す記号を自動で追加する**ブラウザーツールです。
 
