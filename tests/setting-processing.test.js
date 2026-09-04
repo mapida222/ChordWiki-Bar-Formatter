@@ -17,10 +17,12 @@ assert(app.includes("schedulePrioritySettingConversion();"));
   'stack: \'Consolas, "MS Gothic", "Yu Gothic UI", Meiryo, monospace\''
 ].forEach((stack) => assert(app.includes(stack), `フォントフォールバックが不足しています: ${stack}`));
 
-// 青いコード文字だけを太らせるストロークは、二重表示に見えるため使わない。
+// 太字コードは、色付けON/OFFのどちらでもコードだけを太字で描画する。
 const css = fs.readFileSync(path.join(__dirname, "..", "style.css"), "utf8");
-assert(css.includes(".bold-chords .editor-highlight .syntax-chord { font-weight: 400; -webkit-text-stroke: 0; }"));
-assert(!css.includes(".bold-chords .editor-highlight .syntax-chord { font-weight: 400; -webkit-text-stroke: .35px"));
+assert(css.includes(".bold-chords .editor-text-layer .editor-highlight { visibility: visible; }"));
+assert(css.includes(".bold-chords .editor-text-layer textarea { color: transparent; caret-color: var(--text); background: transparent; }"));
+assert(css.includes(".bold-chords .editor-highlight .syntax-chord { font-weight: 700; -webkit-text-stroke: 0; }"));
+assert(!css.includes(".bold-chords .editor-highlight .syntax-chord { font-weight: 400;"));
 assert(css.includes(".editor-text-layer .editor-highlight { visibility: hidden; }"));
 assert(css.includes(".colorized-editors .editor-text-layer .editor-highlight,") && css.includes(".editor-text-layer.diff-visible .editor-highlight,"));
 
