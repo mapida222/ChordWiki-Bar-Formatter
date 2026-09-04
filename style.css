@@ -531,7 +531,9 @@ textarea { display: block; width: 100%; height: 100%; min-height: 0; resize: non
 .editor-text-layer textarea::selection { color: var(--text); background: color-mix(in srgb, var(--focus) 32%, transparent); }
 .editor-highlight .syntax-bracket { color: var(--syntax-chord); }
 .editor-highlight .syntax-chord { color: var(--syntax-chord); }
-.bold-chords .editor-highlight .syntax-chord { font-weight: 400; -webkit-text-stroke: 0; }
+.bold-chords .editor-text-layer .editor-highlight { visibility: visible; }
+.bold-chords .editor-text-layer textarea { color: transparent; caret-color: var(--text); background: transparent; }
+.bold-chords .editor-highlight .syntax-chord { font-weight: 700; -webkit-text-stroke: 0; }
 .editor-highlight .syntax-key { color: var(--syntax-key); }
 .editor-highlight .syntax-directive { color: var(--syntax-directive); }
 .editor-highlight .active-character { color: var(--text); background: color-mix(in srgb, var(--focus) 34%, transparent); box-shadow: inset 0 -2px 0 var(--focus); }
