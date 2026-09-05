@@ -98,7 +98,7 @@ assert(windowScript.includes('preview.setPointerCapture(event.pointerId);'));
 assert(css.includes('.committed-window-preview.is-panning { cursor: grabbing; user-select: none; }'));
 assert(css.includes('.committed-window-preview { cursor: grab; touch-action: none; }'), "touch drag must stay available for two-axis preview panning");
 assert(html.includes('id="committed-font-size-value"'));
-assert(html.includes('id="committed-spelling"') && html.includes('<option value="preserve">元表記</option>') && html.includes('<option value="sharp">#表示</option>') && html.includes('<option value="flat">♭表記</option>'), "realtime editor must expose the same note-name spelling choices as the score preview");
+assert(html.includes('id="committed-spelling"') && html.includes('<option value="sharp">#表記</option><option value="preserve">元表記</option><option value="flat">♭表記</option>'), "realtime editor must expose the shared note-name spelling choices in the standard order");
 assert(html.indexOf('id="committed-transpose-up"') < html.indexOf('id="committed-spelling"') && html.indexOf('id="committed-spelling"') < html.indexOf('id="committed-layout-toggle"'), "realtime note-name spelling must sit immediately to the right of transpose controls");
 assert(html.includes('<span>移調</span><span class="committed-transpose-stepper">') && html.includes('aria-label="プレビューを半音下げる">▼') && html.includes('aria-label="プレビューを半音上げる">▲'), "realtime transpose and note-name controls must stay inline without opening a side settings panel");
 assert(css.includes('.committed-transpose-control, .committed-spelling-control { display: flex;') && css.includes('.committed-transpose-stepper { display: grid;'), "realtime transpose and spelling controls must use the compact inline toolbar layout");
