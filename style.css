@@ -606,11 +606,14 @@ textarea::placeholder { color: var(--muted); opacity: .7; }
 .score-window-heading-copy { min-width: 145px; }
 .score-window-heading h1 { margin: 0; font-size: clamp(.96rem, 1.5vw, 1.18rem); letter-spacing: -.02em; }
 .score-window-status { margin: 4px 0 0; color: var(--muted); font-size: .67rem; }
-.score-window-controls { display: flex; align-items: center; justify-content: flex-end; gap: 6px; }
-.committed-transpose-control { display: grid; grid-template-columns: minmax(88px, 118px) 28px 28px; align-items: center; overflow: hidden; min-height: 32px; border: 1px solid var(--line); border-radius: 4px; background: var(--panel); font-size: .7rem; font-weight: 800; }
-.committed-transpose-control select, .committed-transpose-control button { height: 30px; border: 0; border-left: 1px solid var(--line); color: var(--text); background: var(--panel); }
-.committed-transpose-control button { cursor: pointer; font-size: .9rem; }
+.score-window-controls { display: flex; align-items: center; justify-content: flex-end; gap: 8px; }
+.committed-transpose-control, .committed-spelling-control { display: flex; align-items: center; gap: 5px; min-height: 32px; color: var(--text); font-size: .72rem; font-weight: 800; white-space: nowrap; }
+.committed-transpose-stepper { display: grid; grid-template-columns: minmax(88px, 118px) 28px 28px; align-items: center; overflow: hidden; min-height: 32px; border: 1px solid var(--line); border-radius: 4px; background: var(--panel); }
+.committed-transpose-stepper select, .committed-transpose-stepper button { height: 30px; border: 0; border-left: 1px solid var(--line); color: var(--text); background: var(--panel); }
+.committed-transpose-stepper select { border-left: 0; }
+.committed-transpose-stepper button { cursor: pointer; font-size: .78rem; }
 .committed-transpose-control button:disabled { color: var(--muted); cursor: default; opacity: .5; }
+.committed-spelling-control select { min-height: 32px; padding: 5px 22px 5px 8px; border: 1px solid var(--line); border-radius: 4px; color: var(--text); background: var(--panel); font-size: .72rem; }
 .layout-toggle-button { min-height: 32px; padding: 5px 10px; border: 1px solid var(--focus); border-radius: 4px; color: var(--text); background: color-mix(in srgb, var(--panel) 88%, var(--focus)); cursor: pointer; font-size: .72rem; font-weight: 800; }
 .layout-toggle-button:hover, .layout-toggle-button:focus-visible { background: color-mix(in srgb, var(--panel) 76%, var(--focus)); outline: 2px solid color-mix(in srgb, var(--focus) 35%, transparent); outline-offset: 1px; }
 .position-adjust-toggle { min-height: 32px; padding: 5px 10px; border: 1px solid var(--accent); border-radius: 4px; color: var(--text); background: color-mix(in srgb, var(--panel) 88%, var(--accent)); cursor: pointer; font-size: .72rem; font-weight: 800; white-space: nowrap; }
