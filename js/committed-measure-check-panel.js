@@ -261,6 +261,7 @@
 
   function renderMeterCandidates(checker, result) {
     if (!meterSection || !meterSummary || !meterResults) return;
+    const defaultMeter = currentDefaultMeter();
     const candidates = (result.meterCandidates || []).filter((candidate) => !storedMeterOverrides.get(String(output.value || ""))?.some((override) => override.key === meterCandidateKey(candidate)) && !dismissedMeterCandidates.has(meterCandidateKey(candidate)));
     meterSection.hidden = candidates.length === 0;
     meterResults.replaceChildren();
@@ -291,11 +292,11 @@
       actions.className = "measure-check-recommendation-actions";
       const assume = document.createElement("button");
       assume.type = "button";
-      assume.textContent = "4/4として保管";
+      assume.textContent = `${defaultMeter}として保管`;
       assume.addEventListener("click", () => {
         const source = String(output.value || "");
         const overrides = storedMeterOverrides.get(source) || [];
-        overrides.push({ key: meterCandidateKey(candidate), scope: candidate.scope, line: candidate.line, measure: candidate.measure, meter: "4/4" });
+        overrides.push({ key: meterCandidateKey(candidate), scope: candidate.scope, line: candidate.line, measure: candidate.measure, meter: defaultMeter });
         storedMeterOverrides.set(source, overrides);
         render(true);
       });

@@ -21,7 +21,7 @@ assert(windowScript.includes('const pendingReplace = new URLSearchParams(window.
 assert(windowScript.includes('id="committed-replace-dialog"') === false && html.includes('id="committed-replace-dialog"'), "replacement choice must be shown inside the realtime editor");
 assert(windowScript.includes('replaceDialog.returnValue === "yes"') && windowScript.includes("history.replaceState"), "cancel must leave the old draft and close the one-shot replacement prompt");
 assert(windowScript.includes("// numbers, syntax layer, or score preview. Always perform an initial render.\n  render();"));
-assert(html.includes('type="module" src="/js/entries/committed-preview.js?v=20260905-013"'));
+assert(html.includes('type="module" src="/js/entries/committed-preview.js?v=20260906-002"'));
 assert(html.includes('style.css?v=20260905-011'));
 assert(css.includes('.committed-window-editor, .committed-window-editor-wrap .editor-highlight { padding: 10px; }'), "realtime editor text and highlight layers must share mobile padding");
 assert(css.includes('font-variant-ligatures: none;'), "realtime editor text and highlight layers must use the same glyph shaping");
