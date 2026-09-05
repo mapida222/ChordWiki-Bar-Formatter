@@ -12,7 +12,22 @@
   const recommendationSummary = document.querySelector("#committed-measure-check-recommendation-summary");
   const applyRecommendationButton = document.querySelector("#committed-measure-check-apply");
   const rejectRecommendationButton = document.querySelector("#committed-measure-check-reject");
+  const meterSection = document.querySelector("#committed-measure-check-meter");
+  const meterSummary = document.querySelector("#committed-measure-check-meter-summary");
+  const meterResults = document.querySelector("#committed-measure-check-meter-results");
   let rejectedSource = null;
+  let lastOutputValue = String(output.value || "");
+  const storedMeterOverrides = new Map();
+  const appliedMeterProposals = new Map();
+  const DISMISSED_METER_STORAGE_KEY = "CBF_MEASURE_CHECK_DISMISSED_METERS_V1";
+  const dismissedMeterCandidates = new Set((() => {
+    try {
+      const stored = JSON.parse(window.localStorage.getItem(DISMISSED_METER_STORAGE_KEY) || "[]");
+      return Array.isArray(stored) ? stored : [];
+    } catch (_error) {
+      return [];
+    }
+  })());
 
   if (!output || !button || !panel || !summary || !results) return;
 
@@ -206,6 +221,106 @@
     requestAnimationFrame(() => render(true));
   }
 
+  function meterCandidateKey(candidate) {
+    return JSON.stringify([
+      candidate.kind || "missing",
+      candidate.scope,
+      candidate.line,
+      candidate.measure || "all",
+      candidate.meter?.text || "",
+      String(candidate.lineText || "").replace(/\r/gu, "").trim()
+    ]);
+  }
+
+  function saveDismissedMeterCandidates() {
+    try {
+      window.localStorage.setItem(DISMISSED_METER_STORAGE_KEY, JSON.stringify([...dismissedMeterCandidates]));
+    } catch (_error) {
+      // localStorageが使えない環境でも、現在のタブ内の抑制は維持する。
+    }
+  }
+
+  function rememberAppliedMeterProposal(candidate, proposal) {
+    appliedMeterProposals.set(meterCandidateKey(candidate), { after: proposal.after, insertion: proposal.insertion });
+  }
+
+  function currentMeterOverrides() {
+    return storedMeterOverrides.get(String(output.value || "")) || [];
+  }
+
+  function focusMeterCandidate(candidate) {
+    focusIssue({ line: candidate.line });
+  }
+
+  function renderMeterCandidates(checker, result) {
+    if (!meterSection || !meterSummary || !meterResults) return;
+    const candidates = (result.meterCandidates || []).filter((candidate) => !storedMeterOverrides.get(String(output.value || ""))?.some((override) => override.key === meterCandidateKey(candidate)) && !dismissedMeterCandidates.has(meterCandidateKey(candidate)));
+    meterSection.hidden = candidates.length === 0;
+    meterResults.replaceChildren();
+    if (!candidates.length) return;
+    const hasTransition = candidates.some((candidate) => candidate.kind === "restore" || candidate.kind === "promote");
+    meterSummary.textContent = hasTransition
+      ? "拍子の切り替え候補があります。区間としてまとめるか、戻りを明示するかを選んでください。入力欄は選択するまで変更しません。"
+      : "拍子指定がない箇所があります。書き忘れか変拍子かを選んでください。入力欄は「付加」を選ぶまで変更しません。";
+    candidates.forEach((candidate) => {
+      const proposal = checker.proposeMeterAnnotation?.(output.value, candidate);
+      if (!proposal) return;
+      const card = document.createElement("article");
+      card.className = "measure-check-meter-card";
+      const title = document.createElement("div");
+      title.className = "measure-check-meter-card-title";
+      const location = candidate.scope === "line"
+        ? `${candidate.line}行目・行全体`
+        : `${candidate.line}行目・${candidate.measure}小節目`;
+      title.textContent = candidate.kind === "restore"
+        ? `${location}：${candidate.meter.text}へ戻ることを明示（適用範囲：${candidate.scopeLabel}）`
+        : candidate.kind === "promote"
+          ? `${location}：${candidate.meter.text}の区間としてまとめる（適用範囲：${candidate.scopeLabel}）`
+          : `${location}：推定 ${candidate.meter.text}（適用範囲：${candidate.scopeLabel}）`;
+      const comparison = document.createElement("div");
+      comparison.className = "measure-check-meter-comparison measure-check-recommendation-comparison";
+      renderProposalComparison(comparison, proposal);
+      const actions = document.createElement("div");
+      actions.className = "measure-check-recommendation-actions";
+      const assume = document.createElement("button");
+      assume.type = "button";
+      assume.textContent = "4/4として保管";
+      assume.addEventListener("click", () => {
+        const source = String(output.value || "");
+        const overrides = storedMeterOverrides.get(source) || [];
+        overrides.push({ key: meterCandidateKey(candidate), scope: candidate.scope, line: candidate.line, measure: candidate.measure, meter: "4/4" });
+        storedMeterOverrides.set(source, overrides);
+        render(true);
+      });
+      const apply = document.createElement("button");
+      apply.type = "button";
+      apply.textContent = candidate.kind === "restore"
+        ? `${candidate.meter.text}を付加`
+        : candidate.kind === "promote"
+          ? `{ci:${candidate.meter.text}拍子}を追加`
+          : `推定${candidate.meter.text}を付加`;
+      apply.addEventListener("click", () => {
+        rememberAppliedMeterProposal(candidate, proposal);
+        applyText(proposal.after);
+      });
+      const manual = document.createElement("button");
+      manual.type = "button";
+      manual.textContent = "手動で確認";
+      manual.addEventListener("click", () => focusMeterCandidate(candidate));
+      const dismiss = document.createElement("button");
+      dismiss.type = "button";
+      dismiss.textContent = "追加しない（再提案しない）";
+      dismiss.addEventListener("click", () => {
+        dismissedMeterCandidates.add(meterCandidateKey(candidate));
+        saveDismissedMeterCandidates();
+        render(true);
+      });
+      actions.append(assume, apply, manual, dismiss);
+      card.append(title, comparison, actions);
+      meterResults.append(card);
+    });
+  }
+
   function applyBeatSuggestion(issue) {
     const suggestion = getBeatSuggestion(window.CBFMeasureCheck, issue);
     const start = Number(issue?.measureStart);
@@ -255,7 +370,7 @@
 
   function render(open = true) {
     const checker = window.CBFMeasureCheck;
-    const result = checker?.validate(output.value);
+    const result = checker?.validate(output.value, { meterOverrides: currentMeterOverrides() });
     const proposal = checker?.proposeSixteenthAccentNotation?.(output.value);
     if (!result) return;
 
@@ -317,6 +432,8 @@
       }
     }));
 
+    renderMeterCandidates(checker, result);
+
     if (!result.issues.length && result.noBeatMeasureCount) {
       const item = document.createElement("li");
       item.className = "measure-check-result measure-check-result-note";
@@ -357,6 +474,17 @@
   });
   output.addEventListener("input", () => {
     rejectedSource = null;
+    const nextOutputValue = String(output.value || "");
+    let dismissedAfterDeletion = false;
+    appliedMeterProposals.forEach((record, key) => {
+      if (lastOutputValue === record.after && !nextOutputValue.includes(record.insertion)) {
+        dismissedMeterCandidates.add(key);
+        dismissedAfterDeletion = true;
+      }
+    });
+    if (dismissedAfterDeletion) saveDismissedMeterCandidates();
+    lastOutputValue = nextOutputValue;
+    storedMeterOverrides.delete(nextOutputValue);
     if (!panel.hidden) render(true);
   });
   expandAllButton?.addEventListener("click", () => {

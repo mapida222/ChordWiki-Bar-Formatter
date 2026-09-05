@@ -102,6 +102,205 @@
     return `${Number.isInteger(value) ? value : value.toFixed(1)}拍分`;
   }
 
+  function parseMeterText(value) {
+    const raw = String(value || "").replace(/／/gu, "/");
+    const match = raw.match(/(\d+)\s*\/\s*(\d+)/u);
+    if (!match) return null;
+    const numerator = Number(match[1]);
+    const denominator = Number(match[2]);
+    if (!Number.isInteger(numerator) || numerator < 1 || !Number.isInteger(denominator) || denominator < 1) return null;
+    const groupingMatch = raw.match(/\(\s*(\d+(?:\s*\+\s*\d+)*)\s*\)/u);
+    const grouping = groupingMatch ? groupingMatch[1].split("+").map((value) => Number(value.trim())) : null;
+    const groupingValid = !grouping || grouping.length < 2 || grouping.every((value) => Number.isInteger(value) && value > 0) && grouping.reduce((sum, value) => sum + value, 0) === numerator;
+    return {
+      numerator,
+      denominator,
+      text: `${numerator}/${denominator}`,
+      raw,
+      grouping: groupingValid ? grouping : null,
+      groupingText: groupingValid && grouping ? grouping.join("+") : "",
+      // リズム記号の内部単位を8分音符基準へ正規化する。
+      capacity: numerator * 8 / denominator
+    };
+  }
+
+  function parseDirectiveMeter(line) {
+    const source = String(line || "");
+    if (!/^\s*\{\s*c(?:i)?\s*:/iu.test(source)) return null;
+    const meter = parseMeterText(source);
+    return meter ? { ...meter, scope: "line", sourceKind: "directive" } : null;
+  }
+
+  function parseInlineMeter(source) {
+    const text = String(source || "");
+    const match = text.match(/^\s*(?:\|\s*)?(\(\s*\d+\s*[\/／]\s*\d+[^)]*\)|\{\s*ci?\s*:\s*[^}]+\})/iu);
+    if (!match) return null;
+    const meter = parseMeterText(match[1]);
+    return meter ? { ...meter, scope: "measure", sourceKind: "inline", rawAnnotation: match[1] } : null;
+  }
+
+  function inferredMeterForBeats(beats) {
+    const value = Number(beats);
+    if (!Number.isFinite(value) || value <= 0 || !Number.isInteger(value)) return null;
+    if (value === 8) return parseMeterText("4/4");
+    return parseMeterText(`${value}/8`);
+  }
+
+  function applyInlineMeterRuns(measures) {
+    const runs = [];
+    let active = null;
+    const finish = () => {
+      if (!active) return;
+      runs.push(active);
+      active = null;
+    };
+    measures.filter((measure) => measure.beats !== null).forEach((measure) => {
+      if (measure.inlineMeter) {
+        finish();
+        active = {
+          meter: measure.inlineMeter,
+          inheritedMeter: measure.inheritedMeter,
+          measures: [measure],
+          startLine: measure.line
+        };
+        return;
+      }
+      if (!active) return;
+      if (measure.beats === active.meter.capacity) {
+        measure.meter = { ...active.meter, sourceKind: "inline-region", scope: "measure" };
+        measure.meterScope = "inline-region";
+        active.measures.push(measure);
+        return;
+      }
+      finish();
+    });
+    finish();
+    return runs;
+  }
+
+  function buildMeterCandidates(measures, rhythmMeasures, meterRuns = []) {
+    const unmetered = rhythmMeasures.filter((measure) => !measure.meter);
+    const byLine = new Map();
+    unmetered.forEach((measure) => {
+      if (!byLine.has(measure.line)) byLine.set(measure.line, []);
+      byLine.get(measure.line).push(measure);
+    });
+    const candidates = [];
+    meterRuns.forEach((run) => {
+      const first = run.measures[0];
+      const last = run.measures[run.measures.length - 1];
+      const next = rhythmMeasures.find((measure) => measure.startOffset > last.startOffset);
+      let restoreCandidate = null;
+      if (run.inheritedMeter && next?.inheritedMeter?.text === run.inheritedMeter.text && next.meter?.text === run.inheritedMeter.text) {
+        restoreCandidate = {
+          kind: "restore",
+          scope: "measure",
+          scopeLabel: "復帰する小節のみ",
+          meter: run.inheritedMeter,
+          line: next.line,
+          measure: next.measure,
+          lineStart: next.lineStart,
+          lineText: next.lineText,
+          measureStart: next.startOffset,
+          measureEnd: next.endOffset,
+          measures: [next]
+        };
+        candidates.push(restoreCandidate);
+      }
+      const continuationLine = run.measures.find((measure) => measure.line > run.startLine
+        && !(measure.inheritedMeter?.sourceKind === "directive" && measure.inheritedMeter.text === run.meter.text));
+      if (continuationLine) {
+        candidates.push({
+          kind: "promote",
+          scope: "line",
+          scopeLabel: "後続行全体",
+          meter: run.meter,
+          line: continuationLine.line,
+          lineStart: continuationLine.lineStart,
+          lineText: continuationLine.lineText,
+          measures: run.measures,
+          restoreAfter: restoreCandidate
+        });
+      }
+    });
+    byLine.forEach((lineMeasures) => {
+      const inferred = lineMeasures.map((measure) => inferredMeterForBeats(measure.beats));
+      const sameMeter = inferred.length > 1 && inferred.every((meter) => meter && meter.text === inferred[0].text);
+      const lineMeasureCount = measures.filter((measure) => measure.line === lineMeasures[0].line).length;
+      if (sameMeter && lineMeasures.length === lineMeasureCount) {
+        candidates.push({
+          scope: "line",
+          scopeLabel: "行全体",
+          meter: inferred[0],
+          line: lineMeasures[0].line,
+          lineStart: lineMeasures[0].lineStart,
+          lineText: lineMeasures[0].lineText,
+          measures: lineMeasures
+        });
+        return;
+      }
+      const lineHasMixedInference = new Set(inferred.filter(Boolean).map((meter) => meter.text)).size > 1;
+      lineMeasures.forEach((measure, index) => {
+        const meter = inferred[index];
+        if (!meter) return;
+        if (meter.text === "4/4") return;
+        if (lineHasMixedInference && meter.text === "4/4" && measure.beats === 8) return;
+        candidates.push({
+          scope: "measure",
+          scopeLabel: "小節のみ",
+          meter,
+          line: measure.line,
+          measure: measure.measure,
+          lineStart: measure.lineStart,
+          lineText: measure.lineText,
+          measureStart: measure.startOffset,
+          measureEnd: measure.endOffset,
+          measures: [measure]
+        });
+      });
+    });
+    return candidates;
+  }
+
+  function proposeMeterAnnotation(source, candidate) {
+    if (!candidate?.meter) return null;
+    const before = String(source || "");
+    const meterText = candidate.meter.text;
+    if (candidate.scope === "line") {
+      const start = Number(candidate.lineStart);
+      if (!Number.isInteger(start) || start < 0 || start > before.length) return null;
+      const insertion = `{ci:${meterText}拍子}`;
+      let after = `${before.slice(0, start)}${insertion}\n${before.slice(start)}`;
+      if (candidate.kind === "promote" && candidate.restoreAfter) {
+        const restoreStart = Number(candidate.restoreAfter.measureStart) + insertion.length + 1;
+        const restoreInsertion = `(${candidate.restoreAfter.meter.text})`;
+        after = `${after.slice(0, restoreStart)}${restoreInsertion}${after.slice(restoreStart)}`;
+      }
+      return {
+        before,
+        after,
+        insertion,
+        meter: candidate.meter,
+        scope: candidate.scope,
+        scopeLabel: candidate.scopeLabel,
+        line: candidate.line
+      };
+    }
+    const start = Number(candidate.measureStart);
+    if (!Number.isInteger(start) || start < 0 || start > before.length) return null;
+    const insertion = `(${meterText})`;
+    return {
+      before,
+      after: `${before.slice(0, start)}${insertion}${before.slice(start)}`,
+      insertion,
+      meter: candidate.meter,
+      scope: candidate.scope,
+      scopeLabel: candidate.scopeLabel,
+      line: candidate.line,
+      measure: candidate.measure
+    };
+  }
+
   function formatMeasureSource(measure) {
     const source = String(measure?.measureSource ?? measure?.source ?? "").trim();
     if (!source) return "|（小節の中身を取得できません）|";
@@ -154,7 +353,7 @@
     return { before, after, token, addedBeats: expected - actual, replacement: `${source}[${token}]` };
   }
 
-  function validate(source) {
+  function validate(source, options = {}) {
     const measures = [];
     const issues = [];
     const lines = String(source || "").replace(/\r\n?/g, "\n").split("\n");
@@ -171,6 +370,8 @@
     let segmentLineStartOffset = 0;
     let segmentLineText = "";
     let segmentMeasure = 0;
+    let segmentMeter = null;
+    let currentMeter = null;
     lines.forEach((line, lineIndex) => {
       let lineMeasureNumber = 0;
 
@@ -188,12 +389,20 @@
           return;
         }
         const measureNumber = segmentMeasure || lineMeasureNumber + 1;
+        const source = segment.join("");
+        const inlineMeter = parseInlineMeter(source);
+        const inheritedMeter = segmentMeter;
+        const meter = inlineMeter || inheritedMeter;
         measures.push({
           line: segmentLineIndex + 1,
           measure: measureNumber,
           beats: segmentHasRhythm ? segmentWidth / 2 : null,
+          meter,
+          inheritedMeter,
+          inlineMeter,
+          meterScope: inlineMeter ? "measure" : (meter ? "line" : null),
           closed,
-          source: segment.join(""),
+          source,
           start: segmentStart,
           end: boundary,
           lineStart: segmentLineStartOffset,
@@ -214,8 +423,11 @@
         segmentLineStartOffset = lineStartOffset;
         segmentLineText = line;
         segmentMeasure = lineMeasureNumber + 1;
+        segmentMeter = currentMeter;
       };
 
+      const directiveMeter = parseDirectiveMeter(line);
+      if (directiveMeter) currentMeter = directiveMeter;
       if (/^\s*(?:#|\{)/u.test(line)) {
         if (segmentOpen && lineIndex < lines.length - 1) segment.push("\n");
         if (lineIndex === lines.length - 1) inspectSegment(false);
@@ -290,30 +502,50 @@
       lineStartOffset += line.length + 1;
     });
 
+    (options.meterOverrides || []).forEach((override) => {
+      const meter = override?.meter?.text ? override.meter : parseMeterText(override?.meter);
+      if (!meter) return;
+      measures.forEach((measure) => {
+        const matchesLine = Number(measure.line) === Number(override.line);
+        const matchesMeasure = override.scope !== "measure" || Number(measure.measure) === Number(override.measure);
+        if (matchesLine && matchesMeasure) {
+          measure.meter = { ...meter, scope: override.scope || "measure", sourceKind: "stored" };
+          measure.meterScope = override.scope || "measure";
+        }
+      });
+    });
+
+    const meterRuns = applyInlineMeterRuns(measures);
     const rhythmMeasures = measures.filter((measure) => measure.beats !== null);
     const noBeatMeasures = measures.filter((measure) => measure.beats === null);
-    let expectedBeats = null;
+    const defaultMeter = parseMeterText(options.defaultMeter || "4/4") || parseMeterText("4/4");
+    let expectedBeats = defaultMeter.capacity;
     if (rhythmMeasures.length) {
-      expectedBeats = rhythmMeasures[0].beats;
       rhythmMeasures.forEach((measure) => {
-        if (measure.beats === expectedBeats) return;
+        const measureExpected = measure.meter ? measure.meter.capacity : expectedBeats;
+        if (measure.beats === measureExpected) return;
         issues.push({
           line: measure.line,
           measure: measure.measure,
           type: "beat",
           code: "beat-mismatch",
           actualBeats: measure.beats,
-          expectedBeats,
+          expectedBeats: measureExpected,
+          meter: measure.meter,
           closed: measure.closed,
           measureSource: measure.source,
           lineStart: measure.lineStart,
           lineText: measure.lineText,
           measureStart: measure.startOffset ?? measure.lineStart + measure.start,
           measureEnd: measure.endOffset ?? measure.lineStart + measure.end,
-          message: `拍の長さが違います（この小節は${beatText(measure.beats)}、基準は${beatText(expectedBeats)}）。`
+          message: measure.meter
+            ? `${measure.meter.text}として${beatText(measureExpected)}必要ですが、この小節は${beatText(measure.beats)}です。`
+            : `拍の長さが違います（この小節は${beatText(measure.beats)}、基準は${beatText(measureExpected)}）。`
         });
       });
     }
+
+    const meterCandidates = buildMeterCandidates(measures, rhythmMeasures, meterRuns);
 
     return {
       ok: issues.length === 0,
@@ -324,6 +556,7 @@
       syntaxIssues: issues.filter((issue) => issue.type === "syntax"),
       beatIssues: issues.filter((issue) => issue.type === "beat"),
       expectedBeats,
+      meterCandidates,
       checkedMeasureCount: measures.length,
       rhythmMeasureCount: rhythmMeasures.length,
       noBeatMeasureCount: noBeatMeasures.length,
@@ -331,5 +564,5 @@
     };
   }
 
-  return { validate, rhythmWidth, beatLabel, beatText, formatMeasureSource, analyzeMeasureRhythm, proposeBeatAdjustment, proposeSixteenthAccentNotation, issueFix, applyFixes };
+  return { validate, rhythmWidth, beatLabel, beatText, parseMeterText, parseDirectiveMeter, parseInlineMeter, inferredMeterForBeats, proposeMeterAnnotation, formatMeasureSource, analyzeMeasureRhythm, proposeBeatAdjustment, proposeSixteenthAccentNotation, issueFix, applyFixes };
 }));
