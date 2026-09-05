@@ -13,6 +13,10 @@ const css = fs.readFileSync(path.join(root, "style-measure-check.css"), "utf8");
 const matching = check.validate("[|][C][>---][G][≧===][|][Am][---][F][---][|]");
 assert.strictEqual(matching.ok, true, "accent and half-note symbols must contribute to the beat total");
 assert.deepStrictEqual(matching.rhythmMeasures.map((measure) => measure.beats), [6, 6]);
+assert.strictEqual(check.rhythmWidth("＞＝＝"), 4, "full-width ＞＝＝ must represent a two-beat triplet");
+const triplet = check.validate("[|][C][＞＝＝][|][G][＞＝＝][|]");
+assert.strictEqual(triplet.ok, true, "full-width two-beat triplets must match across measures");
+assert.deepStrictEqual(triplet.rhythmMeasures.map((measure) => measure.beats), [2, 2]);
 
 const mismatch = check.validate("[|][C][----][G][----][|][Am][----][F][----][|][Dm][----][|]");
 assert.strictEqual(mismatch.ok, false);
@@ -49,9 +53,10 @@ assert.ok(syntax.syntaxIssues.some((issue) => /リズム記号/.test(issue.messa
 assert.ok(check.validate("[|][C][----").syntaxIssues.some((issue) => /閉じ括弧/.test(issue.message)));
 
 const recommendation = check.proposeSixteenthAccentNotation("[|][C][>====][|]\n[|][G][＞＝＝][|]");
-assert.strictEqual(recommendation.changes, 2);
-assert.strictEqual(recommendation.after, "[|][C][≧====][|]\n[|][G][≧＝＝][|]");
+assert.strictEqual(recommendation.changes, 1);
+assert.strictEqual(recommendation.after, "[|][C][≧====][|]\n[|][G][＞＝＝][|]");
 assert.match(recommendation.summary, /変更前：\[\|\]\[C\]\[>====\]/);
+assert.strictEqual(check.proposeSixteenthAccentNotation("[|][G][＞＝＝][|]"), null, "full-width triplets must not be rewritten as sixteenth accents");
 assert.strictEqual(check.rhythmWidth(">="), 2, "a > followed by = is one plus one fine-width unit");
 assert.strictEqual(check.rhythmWidth("---="), 7, "three hyphens plus one half-beat symbol must equal 3.5 beats");
 

@@ -10,26 +10,44 @@
 
   function rhythmWidth(value) {
     const characters = [...String(value || "")];
-    return characters.reduce((total, character, index) => {
+    let total = 0;
+    for (let index = 0; index < characters.length; index += 1) {
+      const character = characters[index];
       const next = characters[index + 1];
-      if (character === "-" || character === ">" || character === "＞") {
-        if (character === "-") return total + 2;
-        return total + ((next === "=" || next === "＝") ? 1 : 2);
+      if (character === "＞" && next === "＝" && characters[index + 2] === "＝") {
+        // 全角の「＞＝＝」は、3連符3音を2拍に収める既存表記。
+        total += 4;
+        index += 2;
+        continue;
       }
-      if (character === "=" || character === "＝" || character === "≧") return total + 1;
-      return total;
-    }, 0);
+      if (character === "-") total += 2;
+      else if (character === ">" || character === "＞") total += (next === "=" || next === "＝") ? 1 : 2;
+      else if (character === "=" || character === "＝" || character === "≧") total += 1;
+    }
+    return total;
   }
 
   function replaceSixteenthAccentRuns(value, onChange) {
-    return String(value || "").replace(/[>＞\-＝=≧]+/gu, (run) => [...run].map((character, index) => {
-      const next = [...run][index + 1];
+    return String(value || "").replace(/[>＞\-＝=≧]+/gu, (run) => {
+      const characters = [...run];
+      const result = [];
+      for (let index = 0; index < characters.length; index += 1) {
+        const character = characters[index];
+        const next = characters[index + 1];
+        if (character === "＞" && next === "＝" && characters[index + 2] === "＝") {
+          result.push("＞＝＝");
+          index += 2;
+          continue;
+        }
       if ((character === ">" || character === "＞") && (next === "=" || next === "＝")) {
         onChange();
-        return "≧";
+          result.push("≧");
+          continue;
+        }
+        result.push(character);
       }
-      return character;
-    }).join(""));
+      return result.join("");
+    });
   }
 
   function proposeSixteenthAccentNotation(source) {
