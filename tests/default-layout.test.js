@@ -35,7 +35,7 @@ assert(css.includes(".settings-panel.settings-closed .settings-reset-button, .se
 assert(css.includes(".settings-panel.settings-closed { height: auto; min-height: 0; overflow: visible; }"), "a closed settings panel must keep its heading and open button visible");
 assert(css.includes(".settings-panel.settings-closed .settings-shell { height: auto !important; overflow: hidden; }"), "a closed settings shell must not leak a saved height");
 assert(app.includes("elements.settingsShell.style.removeProperty(\"height\");"), "settings open/close must clear saved manual height");
-assert(html.includes("style.css?v=20260906-002"));
+assert(html.includes("style.css?v=20260906-003"));
 assert(css.includes(".app-logo { width: min(420px, 48vw);"), "the logo must stay left-aligned while leaving room for header actions");
 assert(css.includes(".app-header .eyebrow") && css.includes("white-space: nowrap"), "the app subtitle must stay on one line");
 assert(css.includes(".header-secondary-actions .help-open-button") && css.includes("min-height: 29px") && css.includes("line-height: 28px"), "wrapped header buttons must grow to about 58px across two lines");
