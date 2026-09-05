@@ -19,6 +19,7 @@
   let lastOutputValue = String(output.value || "");
   const storedMeterOverrides = new Map();
   const appliedMeterProposals = new Map();
+  const appliedMeterDismissalLocations = new Set();
   const DISMISSED_METER_STORAGE_KEY = "CBF_MEASURE_CHECK_DISMISSED_METERS_V1";
   const dismissedMeterCandidates = new Set((() => {
     try {
@@ -232,6 +233,16 @@
     ]);
   }
 
+  function meterCandidateLocationKey(candidate) {
+    return JSON.stringify([
+      candidate.kind || "missing",
+      candidate.scope,
+      candidate.line,
+      candidate.measure || "all",
+      candidate.meter?.text || ""
+    ]);
+  }
+
   function saveDismissedMeterCandidates() {
     try {
       window.localStorage.setItem(DISMISSED_METER_STORAGE_KEY, JSON.stringify([...dismissedMeterCandidates]));
@@ -241,7 +252,11 @@
   }
 
   function rememberAppliedMeterProposal(candidate, proposal) {
-    appliedMeterProposals.set(meterCandidateKey(candidate), { after: proposal.after, insertion: proposal.insertion });
+    appliedMeterProposals.set(meterCandidateKey(candidate), {
+      after: proposal.after,
+      insertion: proposal.insertion,
+      location: meterCandidateLocationKey(candidate)
+    });
   }
 
   function currentMeterOverrides() {
@@ -262,7 +277,7 @@
   function renderMeterCandidates(checker, result) {
     if (!meterSection || !meterSummary || !meterResults) return;
     const defaultMeter = currentDefaultMeter();
-    const candidates = (result.meterCandidates || []).filter((candidate) => !storedMeterOverrides.get(String(output.value || ""))?.some((override) => override.key === meterCandidateKey(candidate)) && !dismissedMeterCandidates.has(meterCandidateKey(candidate)));
+    const candidates = (result.meterCandidates || []).filter((candidate) => !storedMeterOverrides.get(String(output.value || ""))?.some((override) => override.key === meterCandidateKey(candidate)) && !dismissedMeterCandidates.has(meterCandidateKey(candidate)) && !appliedMeterDismissalLocations.has(meterCandidateLocationKey(candidate)));
     meterSection.hidden = candidates.length === 0;
     meterResults.replaceChildren();
     if (!candidates.length) return;
@@ -487,6 +502,7 @@
     appliedMeterProposals.forEach((record, key) => {
       if (lastOutputValue === record.after && !nextOutputValue.includes(record.insertion)) {
         dismissedMeterCandidates.add(key);
+        if (record.location) appliedMeterDismissalLocations.add(record.location);
         dismissedAfterDeletion = true;
       }
     });
