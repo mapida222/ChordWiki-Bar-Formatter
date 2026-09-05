@@ -1273,15 +1273,20 @@ textarea::placeholder { color: var(--muted); opacity: .7; }
   .correction-position-with-help { grid-template-columns: 1fr; }
   .correction-rebuild-button { justify-self: start; }
 }
-@media (max-width: 1100px) {
+@media (max-width: 1199px) {
+  .score-window-toolbar { grid-template-columns: minmax(0, 1fr); position: sticky; top: 0; align-items: center; padding: 8px 10px; }
+  .score-window-controls { justify-content: flex-end; flex-wrap: nowrap; }
+  .score-window-main { min-height: calc(100vh - 118px); }
+}
+@media (max-width: 760px) {
   .score-window-page { overflow: auto; }
-  .score-window-toolbar { grid-template-columns: minmax(0, 1fr); position: sticky; top: 0; align-items: stretch; padding: 8px 10px; }
-  .score-window-heading { grid-template-columns: minmax(0, 1fr); grid-template-areas: "title" "logo" "status"; justify-items: center; gap: 5px; text-align: center; }
+  .score-window-toolbar { align-items: stretch; }
+  .score-window-heading { grid-template-columns: minmax(0, 1fr); grid-template-areas: "title" "logo" "status"; justify-items: stretch; gap: 5px; text-align: left; }
   .score-window-heading h1 { overflow: hidden; max-width: 100%; font-size: clamp(.92rem, 3.2vw, 1.1rem); text-overflow: ellipsis; white-space: nowrap; }
-  .score-window-brand-logo { width: min(240px, 72vw); }
+  .score-window-brand-logo { justify-self: start; width: min(240px, 72vw); }
   .score-window-status { display: block; max-width: 100%; margin: 0; font-size: .72rem; line-height: 1.4; overflow-wrap: anywhere; }
   .score-window-controls { display: grid; grid-template-columns: minmax(0, 1fr); justify-content: stretch; gap: 6px; }
-  .score-window-display-controls, .score-window-action-controls { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 6px; min-width: 0; }
+  .score-window-display-controls, .score-window-action-controls { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-start; gap: 6px; min-width: 0; }
   .score-window-display-controls > *, .score-window-action-controls > * { min-width: 0; }
   .score-window-main { min-height: calc(100vh - 190px); }
 }
@@ -1299,7 +1304,7 @@ textarea::placeholder { color: var(--muted); opacity: .7; }
 }
 @media (max-width: 390px) {
   .score-window-toolbar { grid-template-columns: 1fr; }
-  .score-window-controls { justify-content: flex-end; }
+  .score-window-controls { justify-content: stretch; }
   .score-window-settings-panel { right: -1px; grid-template-columns: 1fr; }
 }
 
