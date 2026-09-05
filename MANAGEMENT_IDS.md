@@ -137,7 +137,7 @@
 | `PREVIEW-009` | リアルタイム編集でコード位置調整モードを使い、譜面上のコードクリックと矢印キー（Enter／Shift+Enterのコード巡回を含む）で上下左右へ位置調整できる | 有効 | `committed-preview.html`、`js/committed-preview-window.js`、`style.css`、`tests/committed-preview-window.test.js` |
 | `PREVIEW-010` | committed-preview.htmlの編集テキストで小節チェック。小節内の構文エラー、アクセント・半拍記号を含む拍数の不一致、拍数なし小節の許容を確認し、各エラーの原因・対策と該当行への移動／安全な適用を表示する | 有効 | `committed-preview.html`、`js/measure-check.js`、`js/committed-measure-check-panel.js`、`style.css`、`tests/measure-check.test.js` |
 | `PREVIEW-011` | committed-preview.htmlの小節チェック結果にChordWiki to Clover準拠の16分音符アクセント推奨編集を表示し、OK／NGおよび「すべて適用」で選択的に反映する | 有効 | `committed-preview.html`、`js/measure-check.js`、`js/committed-measure-check-panel.js`、`style.css`、`tests/measure-check.test.js` |
-| `PUBLIC-001` | 公開準備と公開前確認 | 有効 | `README.md`、`PUBLICATION_CHECKLIST.md`、`help-usage-screenshot.png`、`.gitignore`、`package.json` |
+| `PUBLIC-001` | 公開準備と公開前確認 | 有効 | `README.md`、`PUBLICATION_CHECKLIST.md`、`docs/images/help-usage-screenshot.png`、`.gitignore`、`package.json` |
 | `PUBLIC-002` | GitHubトップページの文章・画像改善 | 有効 | `README.md`、`docs/images/readme-*.png`、`docs/README_CAPTURE_SAMPLE.md` |
 | `PUBLIC-003` | クレジット・意見要望・応援リンク | 有効 | `index.html`、`style.css`、`tests/public-links.test.js` |
 | `PUBLIC-004` | GitHub Actionsによる自動テストと公開ファイル限定のPages配信 | 有効 | `.github/workflows/test.yml`、`.github/workflows/pages.yml`、`tests/github-publication.test.js` |
