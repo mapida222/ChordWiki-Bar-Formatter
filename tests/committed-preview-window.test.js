@@ -98,6 +98,7 @@ assert(css.includes('.committed-window-preview.is-panning { cursor: grabbing; us
 assert(css.includes('.committed-window-preview { cursor: grab; touch-action: none; }'), "touch drag must stay available for two-axis preview panning");
 assert(html.includes('id="committed-font-size-value"'));
 assert(html.includes('id="committed-spelling"') && html.includes('<option value="preserve">元表記</option>') && html.includes('<option value="sharp">#表示</option>') && html.includes('<option value="flat">♭表記</option>'), "realtime editor must expose the same note-name spelling choices as the score preview");
+assert(html.indexOf('id="committed-transpose-up"') < html.indexOf('id="committed-spelling"') && html.indexOf('id="committed-spelling"') < html.indexOf('id="committed-layout-toggle"'), "realtime note-name spelling must sit immediately to the right of transpose controls");
 assert(html.includes('id="committed-bold-code" type="checkbox" checked'));
 assert(windowScript.includes("const contentLineTop = paddingTop + activeLine * lineHeight;"));
 assert(windowScript.includes('text.style.setProperty("--active-line-top", `${contentLineTop - text.scrollTop}px`);'));
