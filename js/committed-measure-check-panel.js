@@ -248,6 +248,13 @@
     return storedMeterOverrides.get(String(output.value || "")) || [];
   }
 
+  function currentDefaultMeter() {
+    const values = window.CBFSettings?.load?.() || {};
+    const capacity = Number(values.measureCapacity);
+    if (!Number.isInteger(capacity) || capacity < 2) return "4/4";
+    return capacity === 8 ? "4/4" : `${capacity}/8`;
+  }
+
   function focusMeterCandidate(candidate) {
     focusIssue({ line: candidate.line });
   }
@@ -370,7 +377,7 @@
 
   function render(open = true) {
     const checker = window.CBFMeasureCheck;
-    const result = checker?.validate(output.value, { meterOverrides: currentMeterOverrides() });
+    const result = checker?.validate(output.value, { defaultMeter: currentDefaultMeter(), meterOverrides: currentMeterOverrides() });
     const proposal = checker?.proposeSixteenthAccentNotation?.(output.value);
     if (!result) return;
 
@@ -496,7 +503,7 @@
   });
   applyAllButton?.addEventListener("click", () => {
     const checker = window.CBFMeasureCheck;
-    const result = checker?.validate(output.value);
+    const result = checker?.validate(output.value, { defaultMeter: currentDefaultMeter(), meterOverrides: currentMeterOverrides() });
     if (!checker || !result) return;
     const fixes = result.issues.map((issue) => checker.issueFix?.(issue)).filter(Boolean);
     let next = checker.applyFixes(output.value, fixes);
