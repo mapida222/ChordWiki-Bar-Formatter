@@ -52,6 +52,9 @@ assert(html.includes('<b>この行を更新</b>') && html.includes('<b>変換後
 assert(css.includes(".correction-card { z-index: 10; grid-column: 1; grid-row: 2; transform: translateY(var(--correction-controls-offset, 0px)); }"), "row-edit help must be above the result column");
 assert(css.includes(".correction-history-actions > .context-help { display: grid; place-items: center; align-self: center; justify-self: center; }"));
 assert(css.includes(".correction-history-actions .context-help-button { flex: 0 0 18px; width: 18px; height: 18px; min-height: 18px; padding: 0; border-radius: 50%; place-items: center; }"), "row-edit help must remain a centered circular question button");
+assert(css.includes(".app-header { flex-direction: column; align-items: stretch; gap: 10px; padding-block: 14px 12px; }"), "narrow headers must stack the logo block above the action groups");
+assert(css.includes(".header-realtime-row { display: flex; flex-wrap: wrap; }") && css.includes(".header-realtime-row .header-notice { flex: 1 1 180px; min-width: 0; }"), "narrow headers must keep update history and realtime editor in a wrapping row");
+assert(css.includes(".app-header .header-secondary-actions { flex-wrap: wrap; justify-content: flex-start; }"), "narrow headers must wrap history and utility actions below the realtime row");
 assert(html.includes('class="column-resize-edge guide-column-resize-edge"'));
 assert(!html.includes('data-panel="guide"'));
 assert(css.includes(".correction-input-guide { position: relative; min-width: 0; min-height: 72px; height: auto;"));
