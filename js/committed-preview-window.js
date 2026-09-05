@@ -29,6 +29,7 @@
   const lineHeightValue = document.querySelector("#committed-line-height-value");
   const font = document.querySelector("#committed-font");
   const theme = document.querySelector("#committed-theme");
+  const spelling = document.querySelector("#committed-spelling");
   const textColoring = document.querySelector("#committed-text-coloring");
   const boldCode = document.querySelector("#committed-bold-code");
   const scrollSync = document.querySelector("#committed-scroll-sync");
@@ -168,7 +169,7 @@
     try {
       const previewTranspose = transposeCommitted ? 0 : Number(transpose.value) || 0;
       const previewText = window.ChordWikiTranspose
-        ? window.ChordWikiTranspose.transposeText(text.value, previewTranspose, "preserve")
+        ? window.ChordWikiTranspose.transposeText(text.value, previewTranspose, spelling.value)
         : text.value;
       window.ChordWikiPreview.renderInto(preview, previewText);
       const previewRows = [...preview.children];
@@ -552,13 +553,14 @@
       setActiveLine(activeLine);
     });
     updateTransposeButtons();
-    try { localStorage.setItem(displayKey, JSON.stringify({ fontSize: fontSize.value, font: font.value, theme: theme.value, textColoring: textColoring.checked, boldCode: boldCode.checked, scrollSync: scrollSync.checked, transpose: transpose.value, transposeApplied: transposeCommitted, appliedTranspose, layoutMode, layoutPreferenceVersion: 1, checkboxDefaultsVersion: 1, stackedLineHeight, sideLineHeight, stackedPaneSize, sidePaneSize })); } catch (_error) {}
+    try { localStorage.setItem(displayKey, JSON.stringify({ fontSize: fontSize.value, font: font.value, theme: theme.value, spelling: spelling.value, textColoring: textColoring.checked, boldCode: boldCode.checked, scrollSync: scrollSync.checked, transpose: transpose.value, transposeApplied: transposeCommitted, appliedTranspose, layoutMode, layoutPreferenceVersion: 1, checkboxDefaultsVersion: 1, stackedLineHeight, sideLineHeight, stackedPaneSize, sidePaneSize })); } catch (_error) {}
   };
   document.addEventListener("click", (event) => {
     if (helpPanel?.open && !helpPanel.contains(event.target)) helpPanel.open = false;
     if (settingsPanel?.open && !settingsPanel.contains(event.target)) settingsPanel.open = false;
   });
-  [fontSize, font, theme, textColoring, boldCode, scrollSync].forEach((control) => control.addEventListener("input", applyDisplaySettings));
+  [fontSize, font, theme, spelling, textColoring, boldCode, scrollSync].forEach((control) => control.addEventListener("input", applyDisplaySettings));
+  spelling.addEventListener("change", render);
   lineHeight.addEventListener("input", () => {
     const next = Math.max(1.4, Math.min(3.2, Number.parseFloat(lineHeight.value) || 1.65));
     if (layoutMode === "stacked") stackedLineHeight = next; else sideLineHeight = next;
@@ -577,7 +579,7 @@
     }
     const selectionStart = text.selectionStart;
     const selectionEnd = text.selectionEnd;
-    const transposed = window.ChordWikiTranspose?.transposeText(text.value, delta, "preserve");
+    const transposed = window.ChordWikiTranspose?.transposeText(text.value, delta, spelling.value);
     if (typeof transposed !== "string") return;
     text.value = transposed;
     appliedTranspose = target;
@@ -642,7 +644,7 @@
   });
   if (channel) channel.addEventListener("message", (event) => { if (event.data?.type === "score-state") applyState(event.data.payload); });
   window.addEventListener("storage", (event) => { if (event.key === STATE_KEY && event.newValue) { try { applyState(JSON.parse(event.newValue)); } catch (_error) {} } if (event.key === TEXT_KEY && event.newValue !== text.value) { text.value = event.newValue; appliedTranspose = 0; transposeCommitted = false; render(); } });
-  try { const saved = JSON.parse(localStorage.getItem(displayKey) || "null"); if (saved) { fontSize.value = saved.fontSize || fontSize.value; font.value = saved.font || font.value; theme.value = saved.theme === "dark-gray" ? "dark" : saved.theme || theme.value; transpose.value = String(Math.max(window.ChordWikiTranspose.transposeMin, Math.min(window.ChordWikiTranspose.transposeMax, Number(saved.transpose) || 0))); transposeCommitted = saved.transposeApplied === true; appliedTranspose = transposeCommitted ? Number(saved.appliedTranspose ?? saved.transpose) || 0 : 0; const savedCheckboxDefaults = saved.checkboxDefaultsVersion === 1; textColoring.checked = savedCheckboxDefaults ? saved.textColoring !== false : true; boldCode.checked = savedCheckboxDefaults ? saved.boldCode !== false : true; scrollSync.checked = savedCheckboxDefaults ? saved.scrollSync !== false : true; layoutMode = saved.layoutPreferenceVersion === 1 && saved.layoutMode === "side" ? "side" : "stacked"; stackedLineHeight = Math.max(1.4, Math.min(3.2, Number.parseFloat(saved.stackedLineHeight) || 1.65)); sideLineHeight = Math.max(1.4, Math.min(3.2, Number.parseFloat(saved.sideLineHeight) || 2.75)); stackedPaneSize = Math.max(6, Math.min(94, Number.parseFloat(saved.stackedPaneSize) || 48)); sidePaneSize = Math.max(6, Math.min(94, Number.parseFloat(saved.sidePaneSize) || 48)); } } catch (_error) {}
+  try { const saved = JSON.parse(localStorage.getItem(displayKey) || "null"); if (saved) { fontSize.value = saved.fontSize || fontSize.value; font.value = saved.font || font.value; theme.value = saved.theme === "dark-gray" ? "dark" : saved.theme || theme.value; spelling.value = ["preserve", "sharp", "flat"].includes(saved.spelling) ? saved.spelling : spelling.value; transpose.value = String(Math.max(window.ChordWikiTranspose.transposeMin, Math.min(window.ChordWikiTranspose.transposeMax, Number(saved.transpose) || 0))); transposeCommitted = saved.transposeApplied === true; appliedTranspose = transposeCommitted ? Number(saved.appliedTranspose ?? saved.transpose) || 0 : 0; const savedCheckboxDefaults = saved.checkboxDefaultsVersion === 1; textColoring.checked = savedCheckboxDefaults ? saved.textColoring !== false : true; boldCode.checked = savedCheckboxDefaults ? saved.boldCode !== false : true; scrollSync.checked = savedCheckboxDefaults ? saved.scrollSync !== false : true; layoutMode = saved.layoutPreferenceVersion === 1 && saved.layoutMode === "side" ? "side" : "stacked"; stackedLineHeight = Math.max(1.4, Math.min(3.2, Number.parseFloat(saved.stackedLineHeight) || 1.65)); sideLineHeight = Math.max(1.4, Math.min(3.2, Number.parseFloat(saved.sideLineHeight) || 2.75)); stackedPaneSize = Math.max(6, Math.min(94, Number.parseFloat(saved.stackedPaneSize) || 48)); sidePaneSize = Math.max(6, Math.min(94, Number.parseFloat(saved.sidePaneSize) || 48)); } } catch (_error) {}
   applyDisplaySettings();
   try { const draft = JSON.parse(localStorage.getItem(DRAFT_KEY) || "null"); if (draft?.text) { loadedDraftText = draft.text; text.value = draft.text; draftUpdatedAt = Number(draft.updatedAt) || 0; } } catch (_error) {}
   if (!keepExistingDraft && !pendingReplace) { try { applyState(JSON.parse(localStorage.getItem(STATE_KEY) || "null")); } catch (_error) {} }

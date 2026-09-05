@@ -82,7 +82,9 @@ assert(
 assert(css.includes("grid-template-columns: minmax(88px, 118px) 28px 28px;"));
 assert(css.includes(".cw-upper-token-level-2 { position: relative; top: -1.1em; }"));
 assert(entry.includes('import "../transposer.js"'));
-assert(windowScript.includes('window.ChordWikiTranspose.transposeText(text.value, previewTranspose, "preserve")'));
+assert(windowScript.includes('window.ChordWikiTranspose.transposeText(text.value, previewTranspose, spelling.value)'));
+assert(windowScript.includes('const spelling = document.querySelector("#committed-spelling");') && windowScript.includes('spelling.addEventListener("change", render);'), "realtime note-name spelling must rerender the preview");
+assert(windowScript.includes('spelling: spelling.value'), "realtime note-name spelling must persist with display settings");
 assert(windowScript.includes("let appliedTranspose = 0;") && windowScript.includes("let transposeCommitted = false;"), "realtime transpose must track text-applied state separately from the selector");
 assert(windowScript.includes("const previewTranspose = transposeCommitted ? 0 : Number(transpose.value) || 0;"), "realtime preview must not apply a transpose twice after the editor text is changed");
 assert(windowScript.includes("const commitTransposeSelection = () => {") && windowScript.includes("const delta = transposeCommitted ? target - appliedTranspose : target;"), "realtime transpose changes must apply the selected delta to the editor text");
@@ -95,6 +97,7 @@ assert(windowScript.includes('preview.setPointerCapture(event.pointerId);'));
 assert(css.includes('.committed-window-preview.is-panning { cursor: grabbing; user-select: none; }'));
 assert(css.includes('.committed-window-preview { cursor: grab; touch-action: none; }'), "touch drag must stay available for two-axis preview panning");
 assert(html.includes('id="committed-font-size-value"'));
+assert(html.includes('id="committed-spelling"') && html.includes('<option value="preserve">元表記</option>') && html.includes('<option value="sharp">#表示</option>') && html.includes('<option value="flat">♭表記</option>'), "realtime editor must expose the same note-name spelling choices as the score preview");
 assert(html.includes('id="committed-bold-code" type="checkbox" checked'));
 assert(windowScript.includes("const contentLineTop = paddingTop + activeLine * lineHeight;"));
 assert(windowScript.includes('text.style.setProperty("--active-line-top", `${contentLineTop - text.scrollTop}px`);'));
