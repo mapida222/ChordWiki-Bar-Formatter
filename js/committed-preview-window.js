@@ -560,7 +560,20 @@
     if (settingsPanel?.open && !settingsPanel.contains(event.target)) settingsPanel.open = false;
   });
   [fontSize, font, theme, spelling, textColoring, boldCode, scrollSync].forEach((control) => control.addEventListener("input", applyDisplaySettings));
-  spelling.addEventListener("change", render);
+  const commitSpellingSelection = () => {
+    const selectionStart = text.selectionStart;
+    const selectionEnd = text.selectionEnd;
+    const converted = window.ChordWikiTranspose?.transposeText(text.value, 0, spelling.value);
+    if (typeof converted !== "string") return;
+    text.value = converted;
+    activeChordStart = -1;
+    if (document.activeElement === text) {
+      text.setSelectionRange(Math.min(selectionStart, text.value.length), Math.min(selectionEnd, text.value.length));
+    }
+    applyDisplaySettings();
+    publishText();
+  };
+  spelling.addEventListener("change", commitSpellingSelection);
   lineHeight.addEventListener("input", () => {
     const next = Math.max(1.4, Math.min(3.2, Number.parseFloat(lineHeight.value) || 1.65));
     if (layoutMode === "stacked") stackedLineHeight = next; else sideLineHeight = next;
