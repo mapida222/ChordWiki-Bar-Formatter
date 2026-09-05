@@ -1116,6 +1116,14 @@ textarea::placeholder { color: var(--muted); opacity: .7; }
   .help-rhythm-examples em { grid-column: 1; }
 }
 @media (max-width: 820px) {
+  .app-header { flex-direction: column; align-items: stretch; gap: 10px; padding-block: 14px 12px; }
+  .app-header > div:first-child { width: 100%; flex: none; }
+  .header-actions { width: 100%; align-items: stretch; gap: 7px; }
+  .header-realtime-row, .header-secondary-actions { width: 100%; justify-content: flex-start; }
+  .header-realtime-row { display: flex; flex-wrap: wrap; }
+  .header-realtime-row .header-notice { flex: 1 1 180px; min-width: 0; }
+  .header-realtime-row #header-realtime-editor { flex: 0 1 190px; }
+  .app-header .header-secondary-actions { flex-wrap: wrap; justify-content: flex-start; }
   .history-dialog .help-dialog-frame { overflow-y: auto; }
   .history-content { display: flex; flex-direction: column; }
   .history-layout { grid-template-columns: 1fr; }
