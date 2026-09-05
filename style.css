@@ -1120,8 +1120,8 @@ textarea::placeholder { color: var(--muted); opacity: .7; }
   .app-header > div:first-child { width: 100%; flex: none; }
   .header-actions { width: 100%; align-items: stretch; gap: 7px; }
   .header-realtime-row, .header-secondary-actions { width: 100%; justify-content: flex-start; }
-  .header-realtime-row { display: flex; flex-wrap: wrap; }
-  .header-realtime-row .header-notice { flex: 1 1 180px; min-width: 0; }
+  .header-realtime-row { display: flex; flex-wrap: wrap; justify-content: flex-end; }
+  .header-realtime-row .header-notice { flex: 0 1 auto; width: max-content; max-width: min(100%, 280px); min-width: 0; }
   .header-realtime-row #header-realtime-editor { flex: 0 1 190px; }
   .app-header .header-secondary-actions { flex-wrap: wrap; justify-content: flex-start; }
   .history-dialog .help-dialog-frame { overflow-y: auto; }
