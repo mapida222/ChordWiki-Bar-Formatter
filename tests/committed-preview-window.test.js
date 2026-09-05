@@ -22,7 +22,7 @@ assert(windowScript.includes('id="committed-replace-dialog"') === false && html.
 assert(windowScript.includes('replaceDialog.returnValue === "yes"') && windowScript.includes("history.replaceState"), "cancel must leave the old draft and close the one-shot replacement prompt");
 assert(windowScript.includes("// numbers, syntax layer, or score preview. Always perform an initial render.\n  render();"));
 assert(html.includes('type="module" src="/js/entries/committed-preview.js?v=20260905-013"'));
-assert(html.includes('style.css?v=20260906-003'));
+assert(html.includes('style.css?v=20260906-004'));
 assert(css.includes('.committed-window-editor, .committed-window-editor-wrap .editor-highlight { padding: 10px; }'), "realtime editor text and highlight layers must share mobile padding");
 assert(css.includes('font-variant-ligatures: none;'), "realtime editor text and highlight layers must use the same glyph shaping");
 assert(css.includes('.bold-chords .committed-window-editor-wrap .editor-highlight .syntax-chord { font-weight: 400; text-shadow: 0 0 .35px currentColor; }'), "realtime bold chords must not change the caret measurement width");
@@ -107,7 +107,7 @@ assert(css.includes('.score-window-heading { display: grid;') && css.includes('g
 assert(css.includes('.score-window-heading { grid-template-columns: minmax(0, 1fr); grid-template-areas: "title" "logo" "status";'), "realtime editor narrow header must show title, logo, and status in order");
 assert(css.includes('.score-window-status { display: block; max-width: 100%;'), "realtime editor explanatory status must remain visible on narrow screens");
 assert(css.includes('.score-window-display-controls, .score-window-action-controls { display: flex; flex-wrap: wrap;'), "realtime editor narrow controls must split into two wrapped rows");
-assert(css.includes('@media (max-width: 1100px) {'), "realtime editor must switch to the narrow three-row header before the title column collapses");
+assert(css.includes('@media (max-width: 1199px) {') && css.includes('@media (max-width: 760px) {'), "realtime editor must progressively switch from one row to two and three rows");
 assert(html.includes('id="committed-bold-code" type="checkbox" checked'));
 assert(windowScript.includes("const contentLineTop = paddingTop + activeLine * lineHeight;"));
 assert(windowScript.includes('text.style.setProperty("--active-line-top", `${contentLineTop - text.scrollTop}px`);'));
