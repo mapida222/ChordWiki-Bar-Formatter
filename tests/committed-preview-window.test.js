@@ -82,7 +82,13 @@ assert(
 assert(css.includes("grid-template-columns: minmax(88px, 118px) 28px 28px;"));
 assert(css.includes(".cw-upper-token-level-2 { position: relative; top: -1.1em; }"));
 assert(entry.includes('import "../transposer.js"'));
-assert(windowScript.includes('window.ChordWikiTranspose.transposeText(text.value, transpose.value, "preserve")'));
+assert(windowScript.includes('window.ChordWikiTranspose.transposeText(text.value, previewTranspose, "preserve")'));
+assert(windowScript.includes("let appliedTranspose = 0;") && windowScript.includes("let transposeCommitted = false;"), "realtime transpose must track text-applied state separately from the selector");
+assert(windowScript.includes("const previewTranspose = transposeCommitted ? 0 : Number(transpose.value) || 0;"), "realtime preview must not apply a transpose twice after the editor text is changed");
+assert(windowScript.includes("const commitTransposeSelection = () => {") && windowScript.includes("const delta = transposeCommitted ? target - appliedTranspose : target;"), "realtime transpose changes must apply the selected delta to the editor text");
+assert(windowScript.includes("text.value = transposed;") && windowScript.includes("publishText();"), "realtime transpose must publish the transposed editor text");
+assert(windowScript.includes("transposeApplied: transposeCommitted") && windowScript.includes("appliedTranspose"), "realtime transpose state must persist without changing the existing draft schema");
+assert(windowScript.includes('text.value = event.newValue; appliedTranspose = 0; transposeCommitted = false;'), "external realtime text updates must reset the baked transpose tracking");
 assert(windowScript.includes('const startedOnBackground = event.target === preview || Boolean(sourceLine);'), "dragging any rendered score line must pan the preview");
 assert(windowScript.includes('if (!startedOnBackground || (event.pointerType === "mouse" && event.button !== 0)) return;'));
 assert(windowScript.includes('preview.setPointerCapture(event.pointerId);'));
