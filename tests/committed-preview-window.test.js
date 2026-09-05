@@ -22,7 +22,7 @@ assert(windowScript.includes('id="committed-replace-dialog"') === false && html.
 assert(windowScript.includes('replaceDialog.returnValue === "yes"') && windowScript.includes("history.replaceState"), "cancel must leave the old draft and close the one-shot replacement prompt");
 assert(windowScript.includes("// numbers, syntax layer, or score preview. Always perform an initial render.\n  render();"));
 assert(html.includes('type="module" src="/js/entries/committed-preview.js?v=20260905-013"'));
-assert(html.includes('style.css?v=20260906-001'));
+assert(html.includes('style.css?v=20260906-002'));
 assert(css.includes('.committed-window-editor, .committed-window-editor-wrap .editor-highlight { padding: 10px; }'), "realtime editor text and highlight layers must share mobile padding");
 assert(css.includes('font-variant-ligatures: none;'), "realtime editor text and highlight layers must use the same glyph shaping");
 assert(css.includes('.bold-chords .committed-window-editor-wrap .editor-highlight .syntax-chord { font-weight: 400; text-shadow: 0 0 .35px currentColor; }'), "realtime bold chords must not change the caret measurement width");
@@ -102,6 +102,11 @@ assert(html.includes('id="committed-spelling"') && html.includes('<option value=
 assert(html.indexOf('id="committed-transpose-up"') < html.indexOf('id="committed-spelling"') && html.indexOf('id="committed-spelling"') < html.indexOf('id="committed-layout-toggle"'), "realtime note-name spelling must sit immediately to the right of transpose controls");
 assert(html.includes('<span>移調</span><span class="committed-transpose-stepper">') && html.includes('aria-label="プレビューを半音下げる">▼') && html.includes('aria-label="プレビューを半音上げる">▲'), "realtime transpose and note-name controls must stay inline without opening a side settings panel");
 assert(css.includes('.committed-transpose-control, .committed-spelling-control { display: flex;') && css.includes('.committed-transpose-stepper { display: grid;'), "realtime transpose and spelling controls must use the compact inline toolbar layout");
+assert(html.includes('<div class="score-window-display-controls">') && html.includes('<div class="score-window-action-controls">'), "realtime editor controls must have separate display and action groups");
+assert(css.includes('.score-window-heading { display: grid;') && css.includes('grid-template-areas: "logo title" "logo status";'), "realtime editor heading must keep logo and explanatory text aligned on desktop");
+assert(css.includes('.score-window-heading { grid-template-columns: minmax(0, 1fr); grid-template-areas: "title" "logo" "status";'), "realtime editor narrow header must show title, logo, and status in order");
+assert(css.includes('.score-window-status { display: block; max-width: 100%;'), "realtime editor explanatory status must remain visible on narrow screens");
+assert(css.includes('.score-window-display-controls, .score-window-action-controls { display: flex; flex-wrap: wrap;'), "realtime editor narrow controls must split into two wrapped rows");
 assert(html.includes('id="committed-bold-code" type="checkbox" checked'));
 assert(windowScript.includes("const contentLineTop = paddingTop + activeLine * lineHeight;"));
 assert(windowScript.includes('text.style.setProperty("--active-line-top", `${contentLineTop - text.scrollTop}px`);'));

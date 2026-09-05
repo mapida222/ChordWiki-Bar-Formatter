@@ -6,18 +6,22 @@
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
   <title>リアルタイムエディター｜ChordWiki Bar Formatter</title>
   <link rel="icon" type="image/png" href="logo/260810_favicon_touka.png">
-  <link rel="stylesheet" href="style.css?v=20260906-001">
+  <link rel="stylesheet" href="style.css?v=20260906-002">
   <link rel="stylesheet" href="style-measure-check.css?v=20260905-001">
 </head>
 <body class="score-window-page">
   <header class="score-window-toolbar">
     <div class="score-window-heading">
       <a class="score-window-brand-logo" href="index.html" aria-label="ChordWiki Bar Formatter トップページへ"><img src="logo/260810_chordwiki_logo.png" alt="ChordWiki Bar Formatter"></a>
-      <div class="score-window-heading-copy"><h1>リアルタイムエディター</h1><p id="committed-window-status" class="score-window-status">テキストと譜面プレビューを比較しながら編集できます。</p></div>
+      <h1>リアルタイムエディター</h1>
+      <p id="committed-window-status" class="score-window-status">テキストと譜面プレビューを比較しながら編集できます。</p>
     </div>
-    <div class="score-window-controls">
-      <label class="committed-transpose-control"><span>移調</span><span class="committed-transpose-stepper"><select id="committed-transpose" aria-label="リアルタイムプレビューの移調"></select><button id="committed-transpose-down" type="button" aria-label="プレビューを半音下げる">▼</button><button id="committed-transpose-up" type="button" aria-label="プレビューを半音上げる">▲</button></span></label>
-      <label class="preview-control committed-spelling-control"><span>音名</span><select id="committed-spelling" aria-label="シャープ・フラット表記"><option value="sharp">#表記</option><option value="preserve">元表記</option><option value="flat">♭表記</option></select></label>
+    <div class="score-window-controls" aria-label="リアルタイムエディター操作">
+      <div class="score-window-display-controls">
+        <label class="committed-transpose-control"><span>移調</span><span class="committed-transpose-stepper"><select id="committed-transpose" aria-label="リアルタイムプレビューの移調"></select><button id="committed-transpose-down" type="button" aria-label="プレビューを半音下げる">▼</button><button id="committed-transpose-up" type="button" aria-label="プレビューを半音上げる">▲</button></span></label>
+        <label class="preview-control committed-spelling-control"><span>音名</span><select id="committed-spelling" aria-label="シャープ・フラット表記"><option value="sharp">#表記</option><option value="preserve">元表記</option><option value="flat">♭表記</option></select></label>
+      </div>
+      <div class="score-window-action-controls">
       <button id="committed-layout-toggle" class="layout-toggle-button" type="button" aria-pressed="true">左右比較へ</button>
       <details class="score-window-help">
         <summary>使い方</summary>
@@ -33,7 +37,7 @@
           </ol>
         </div>
       </details>
-      <details class="score-window-settings">
+        <details class="score-window-settings">
         <summary>表示設定</summary>
         <div class="score-window-settings-panel">
           <label class="preview-control font-size-control"><span>文字サイズ <output id="committed-font-size-value">14px</output></span><input id="committed-font-size" type="range" min="11" max="24" value="14"></label>
@@ -44,7 +48,8 @@
           <label class="final-bar-setting"><input id="committed-bold-code" type="checkbox" checked> <span>太字コード</span></label>
           <label class="final-bar-setting"><input id="committed-scroll-sync" type="checkbox" checked> <span>スクロール連動</span></label>
         </div>
-      </details>
+        </details>
+      </div>
     </div>
   </header>
   <dialog id="committed-replace-dialog" class="committed-replace-dialog" aria-labelledby="committed-replace-title">
