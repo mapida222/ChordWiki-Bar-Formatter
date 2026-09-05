@@ -100,6 +100,16 @@ assert(html.includes("複数指定はカンマ区切りで入力します（例�
 assert(html.includes("「できるだけ省略」：コードチェンジの位置が必要な箇所を残して省略します。"));
 assert(html.includes("小節位置を調整します。<br>入力例と記号の意味"));
 assert(html.includes("譜面に近い形で確認します。<br>移調、音名表記"));
+[
+  'id="preview-spelling-main"',
+  'id="preview-spelling"'
+].forEach((id) => {
+  const selectStart = html.indexOf(id);
+  const sharp = html.indexOf('<option value="sharp">#表記</option>', selectStart);
+  const preserve = html.indexOf('<option value="preserve">元表記</option>', selectStart);
+  const flat = html.indexOf('<option value="flat">♭表記</option>', selectStart);
+  assert(selectStart >= 0 && sharp > selectStart && sharp < preserve && preserve < flat, `${id} must use #表記, 元表記, ♭表記 order`);
+});
 assert(html.includes("初期設定値を使う"));
 assert(app.includes("LYRIC_HYPHEN_MODE_STORAGE_KEY"));
 assert(app.includes('elements.lyricHyphenMode.addEventListener("change"'));
