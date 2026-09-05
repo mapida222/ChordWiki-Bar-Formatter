@@ -108,6 +108,7 @@
 | `LAYOUT-028` | 青いコード文字の太字ストロークを無効化し、二重表示に見える描画を防止 | 有効 | `style.css`、`tests/setting-processing.test.js` |
 | `LAYOUT-029` | 色付け用レイヤーとtextareaの同時描画を防ぎ、青いコードの二重表示を防止 | 有効 | `style.css`、`tests/setting-processing.test.js` |
 | `LAYOUT-030` | ヘッダーのサブタイトルを1行表示にし、ロゴを左揃えで縮小し、右側ボタンの高さと折り返しを整える | 有効 | `index.html`、`style.css`、`tests/default-layout.test.js`、`tests/linked-code-highlight.test.js` |
+| `LAYOUT-031` | TOPのリアルタイムエディター左に、最新更新を1行表示しクリックで過去履歴を使用履歴に重ねて開く更新履歴欄を追加 | 有効 | `index.html`、`style.css`、`tests/header-controls.test.js` |
 | `PREVIEW-001` | 譜面プレビューのベスト条件 | 基準 | `LAYOUT_REFERENCE.md`、`layout-snapshots/2026-07-22-good/`、Gitタグ `preview-layout-best-2026-07-22` |
 | `PREVIEW-002` | 拍記号に挟まれた縦小節線が直後の拍記号と重ならないよう補正 | 有効 | `js/chordwiki-preview.js`、`style.css`、`tests/preview-layout.test.js` |
 | `PREVIEW-003` | 譜面プレビューの移調では`{key:...}`だけを移調し、`{ci:...}`・`{title:...}`・`{subtitle:...}`などコメント系ディレクティブ内部のコード風文字列は保持 | 有効 | `js/transposer.js`、`tests/transposer.test.js` |
@@ -134,7 +135,9 @@
 | `PREVIEW-007` | リアルタイム編集へ既存Transposerを使った表示専用±12移調を追加 | 有効 | `committed-preview.html`、`js/entries/committed-preview.js`、`js/committed-preview-window.js`、`tests/committed-preview-window.test.js` |
 | `PREVIEW-008` | 旧ChordWikiの二重角括弧を通常・別画面・リアルタイムプレビューで二段上付き表示し、リアルタイム移調を「移調なし／−／＋」順へ統一 | 有効 | `js/chordwiki-preview.js`、`js/renderer/old-chordwiki-renderer.js`、`committed-preview.html`、`style.css`、`tests/preview.test.js`、`tests/official-parser-integration.test.mjs`、`tests/committed-preview-window.test.js` |
 | `PREVIEW-009` | リアルタイム編集でコード位置調整モードを使い、譜面上のコードクリックと矢印キー（Enter／Shift+Enterのコード巡回を含む）で上下左右へ位置調整できる | 有効 | `committed-preview.html`、`js/committed-preview-window.js`、`style.css`、`tests/committed-preview-window.test.js` |
-| `PUBLIC-001` | 公開準備と公開前確認 | 有効 | `README.md`、`PUBLICATION_CHECKLIST.md`、`help-usage-screenshot.png`、`.gitignore`、`package.json` |
+| `PREVIEW-010` | committed-preview.htmlの編集テキストで小節チェック。小節内の構文エラー、アクセント・半拍記号を含む拍数の不一致、拍数なし小節の許容を確認し、各エラーの原因・対策と該当行への移動／安全な適用を表示する | 有効 | `committed-preview.html`、`js/measure-check.js`、`js/committed-measure-check-panel.js`、`style.css`、`tests/measure-check.test.js` |
+| `PREVIEW-011` | committed-preview.htmlの小節チェック結果にChordWiki to Clover準拠の16分音符アクセント推奨編集を表示し、OK／NGおよび「すべて適用」で選択的に反映する | 有効 | `committed-preview.html`、`js/measure-check.js`、`js/committed-measure-check-panel.js`、`style.css`、`tests/measure-check.test.js` |
+| `PUBLIC-001` | 公開準備と公開前確認 | 有効 | `README.md`、`PUBLICATION_CHECKLIST.md`、`docs/images/help-usage-screenshot.png`、`.gitignore`、`package.json` |
 | `PUBLIC-002` | GitHubトップページの文章・画像改善 | 有効 | `README.md`、`docs/images/readme-*.png`、`docs/README_CAPTURE_SAMPLE.md` |
 | `PUBLIC-003` | クレジット・意見要望・応援リンク | 有効 | `index.html`、`style.css`、`tests/public-links.test.js` |
 | `PUBLIC-004` | GitHub Actionsによる自動テストと公開ファイル限定のPages配信 | 有効 | `.github/workflows/test.yml`、`.github/workflows/pages.yml`、`tests/github-publication.test.js` |
@@ -156,6 +159,7 @@
 | `HELP-005` | 変換後の直接編集案内を、改行やふりがな、コードは変換前で編集する推奨文へ簡潔化 | 有効 | `index.html`、`tests/header-controls.test.js` |
 | `HELP-006` | 基本フローの最終段を「確定」操作ではなく、完成した譜面をコピーして投稿する案内へ変更 | 有効 | `index.html`、`tests/help-layout.test.js` |
 | `HELP-007` | 4段階の基本フローをヘルプ枠の横幅いっぱいへ均等配置 | 有効 | `style.css`、`tests/help-layout.test.js` |
+| `HELP-008` | 狭い画面でヘルプの変換例を縦積みにし、右端の横はみ出しを防止 | 有効 | `style.css`、`tests/help-layout.test.js` |
 
 ## カテゴリ
 

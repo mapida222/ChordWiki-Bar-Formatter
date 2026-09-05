@@ -21,7 +21,11 @@ assert(windowScript.includes('const pendingReplace = new URLSearchParams(window.
 assert(windowScript.includes('id="committed-replace-dialog"') === false && html.includes('id="committed-replace-dialog"'), "replacement choice must be shown inside the realtime editor");
 assert(windowScript.includes('replaceDialog.returnValue === "yes"') && windowScript.includes("history.replaceState"), "cancel must leave the old draft and close the one-shot replacement prompt");
 assert(windowScript.includes("// numbers, syntax layer, or score preview. Always perform an initial render.\n  render();"));
-assert(html.includes('type="module" src="/js/entries/committed-preview.js?v=20260902-002"'));
+assert(html.includes('type="module" src="/js/entries/committed-preview.js?v=20260905-013"'));
+assert(html.includes('style.css?v=20260905-011'));
+assert(css.includes('.committed-window-editor, .committed-window-editor-wrap .editor-highlight { padding: 10px; }'), "realtime editor text and highlight layers must share mobile padding");
+assert(css.includes('font-variant-ligatures: none;'), "realtime editor text and highlight layers must use the same glyph shaping");
+assert(css.includes('.bold-chords .committed-window-editor-wrap .editor-highlight .syntax-chord { font-weight: 400; text-shadow: 0 0 .35px currentColor; }'), "realtime bold chords must not change the caret measurement width");
 assert(entry.includes('await import("../committed-preview-window.js")'));
 assert(html.includes('id="committed-layout-toggle"'));
 assert(html.includes('id="committed-position-toggle"') && html.includes("コード位置調整モード"), "realtime editor must expose chord position adjustment mode");
