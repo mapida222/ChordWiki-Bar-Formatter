@@ -1286,6 +1286,8 @@ textarea::placeholder { color: var(--muted); opacity: .7; }
   .score-window-brand-logo { justify-self: start; width: min(240px, 72vw); }
   .score-window-status { display: block; max-width: 100%; margin: 0; font-size: .72rem; line-height: 1.4; overflow-wrap: anywhere; }
   .score-window-controls { display: grid; grid-template-columns: minmax(0, 1fr); justify-content: stretch; gap: 6px; }
+  .score-window-action-controls { grid-column: 1; grid-row: 1; }
+  .score-window-display-controls { grid-column: 1; grid-row: 2; }
   .score-window-display-controls, .score-window-action-controls { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-start; gap: 6px; min-width: 0; }
   .score-window-display-controls > *, .score-window-action-controls > * { min-width: 0; }
   .score-window-main { min-height: calc(100vh - 190px); }
