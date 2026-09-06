@@ -24,6 +24,9 @@ assert(css.includes(".bold-chords .editor-text-layer textarea { color: transpare
 assert(css.includes(".bold-chords .editor-highlight .syntax-chord { font-weight: 400; text-shadow: 0 0 .35px currentColor; -webkit-text-stroke: 0; }"));
 assert(css.includes(".editor-text-layer .editor-highlight { visibility: hidden; }"));
 assert(css.includes(".colorized-editors .editor-text-layer .editor-highlight,") && css.includes(".editor-text-layer.diff-visible .editor-highlight,"));
+assert(css.includes("html:not(.colorized-editors) .editor-highlight .syntax-key"), "色付けOFFでは{key:}も通常文字色へ戻す");
+assert(css.includes("--syntax-key: #d7193f"), "{key:}は赤系の構文色を使う");
+assert(app.includes('else if (/^\\{\\s*key\\s*:/i.test(token)) className = "syntax-key";'), "{key:}を専用の構文色へ分類する");
 
 // 表示設定は変換イベントへ接続せず、必要な表示・保存処理だけを行う。
 [

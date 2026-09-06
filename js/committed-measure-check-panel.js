@@ -277,14 +277,23 @@
   function renderMeterCandidates(checker, result) {
     if (!meterSection || !meterSummary || !meterResults) return;
     const defaultMeter = currentDefaultMeter();
-    const candidates = (result.meterCandidates || []).filter((candidate) => !storedMeterOverrides.get(String(output.value || ""))?.some((override) => override.key === meterCandidateKey(candidate)) && !dismissedMeterCandidates.has(meterCandidateKey(candidate)) && !appliedMeterDismissalLocations.has(meterCandidateLocationKey(candidate)));
+    const candidates = (result.meterCandidates || [])
+      .filter((candidate) => !storedMeterOverrides.get(String(output.value || ""))?.some((override) => override.key === meterCandidateKey(candidate)) && !dismissedMeterCandidates.has(meterCandidateKey(candidate)) && !appliedMeterDismissalLocations.has(meterCandidateLocationKey(candidate)))
+      .filter((candidate, _index, visibleCandidates) => {
+        // 1小節だけの一時的な拍数の乱れは、拍子変更として急かさない。
+        if (candidate.kind || candidate.scope === "line") return true;
+        return visibleCandidates.some((other) => other !== candidate
+          && other.scope === "measure"
+          && other.line === candidate.line
+          && other.meter?.text === candidate.meter?.text);
+      });
     meterSection.hidden = candidates.length === 0;
     meterResults.replaceChildren();
     if (!candidates.length) return;
     const hasTransition = candidates.some((candidate) => candidate.kind === "restore" || candidate.kind === "promote");
     meterSummary.textContent = hasTransition
-      ? "拍子の切り替え候補があります。区間としてまとめるか、戻りを明示するかを選んでください。入力欄は選択するまで変更しません。"
-      : "拍子指定がない箇所があります。書き忘れか変拍子かを選んでください。入力欄は「付加」を選ぶまで変更しません。";
+      ? "途中で1小節の長さが変わっている可能性があります。続く小節を同じ長さとして扱うか、元の長さに戻す場所を選んでください。入力欄は選ぶまで変更しません。"
+      : "同じ長さの小節が続いています。書き忘れか、意図した変化かを確認してください。入力欄は「追加」を選ぶまで変更しません。";
     candidates.forEach((candidate) => {
       const proposal = checker.proposeMeterAnnotation?.(output.value, candidate);
       if (!proposal) return;

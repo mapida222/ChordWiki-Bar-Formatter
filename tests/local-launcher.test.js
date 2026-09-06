@@ -12,6 +12,8 @@ assert.match(launcher, /Invoke-WebRequest[\s\S]+127\.0\.0\.1:5173/i, "the launch
 assert.match(launcher, /set "APP_URL=http:\/\/127\.0\.0\.1:5173\/committed-preview\.html"/i, "the launcher opens the realtime editor on the canonical port");
 assert.match(launcher, /if not errorlevel 1[\s\S]+start "" "%APP_URL%"/i, "an existing latest server opens directly instead of failing on the occupied port");
 assert.match(launcher, /committed-measure-check/i, "the launcher must not reuse an older server without the measure checker");
+assert.match(launcher, /node_modules\\\.bin\\vite\.cmd/i, "the launcher must detect missing Vite dependencies");
+assert.match(launcher, /call npm\.cmd install --cache "%NPM_CACHE%" --no-audit --no-fund/i, "the launcher must install dependencies with a temporary npm cache on the first run");
 assert.match(
   launcher,
   /npm\.cmd run dev -- --host 127\.0\.0\.1 --port 5173 --strictPort --open/i,
