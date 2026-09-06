@@ -217,8 +217,8 @@
     return runs;
   }
 
-  function buildMeterCandidates(measures, rhythmMeasures, meterRuns = []) {
-    const unmetered = rhythmMeasures.filter((measure) => !measure.meter);
+  function buildMeterCandidates(measures, rhythmMeasures, meterRuns = [], defaultMeter = parseMeterText("4/4")) {
+    const unmetered = rhythmMeasures.filter((measure) => !measure.meter && measure.beats !== defaultMeter?.capacity);
     const byLine = new Map();
     unmetered.forEach((measure) => {
       if (!byLine.has(measure.line)) byLine.set(measure.line, []);
@@ -266,7 +266,7 @@
       const inferred = lineMeasures.map((measure) => inferredMeterForBeats(measure.beats));
       const sameMeter = inferred.length > 1 && inferred.every((meter) => meter && meter.text === inferred[0].text);
       const lineMeasureCount = measures.filter((measure) => measure.line === lineMeasures[0].line && !measure.isPickup).length;
-      if (sameMeter && lineMeasures.length === lineMeasureCount) {
+      if (sameMeter && lineMeasures.length === lineMeasureCount && inferred[0].capacity !== defaultMeter?.capacity) {
         candidates.push({
           scope: "line",
           scopeLabel: "行全体",
@@ -278,12 +278,10 @@
         });
         return;
       }
-      const lineHasMixedInference = new Set(inferred.filter(Boolean).map((meter) => meter.text)).size > 1;
       lineMeasures.forEach((measure, index) => {
         const meter = inferred[index];
         if (!meter) return;
-        if (meter.text === "4/4") return;
-        if (lineHasMixedInference && meter.text === "4/4" && measure.beats === 8) return;
+        if (meter.capacity === defaultMeter?.capacity) return;
         candidates.push({
           scope: "measure",
           scopeLabel: "小節のみ",
@@ -586,7 +584,7 @@
       });
     }
 
-    const meterCandidates = buildMeterCandidates(measures, rhythmMeasures, meterRuns);
+    const meterCandidates = buildMeterCandidates(measures, rhythmMeasures, meterRuns, defaultMeter);
 
     return {
       ok: issues.length === 0,

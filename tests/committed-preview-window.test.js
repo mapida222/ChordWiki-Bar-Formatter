@@ -21,16 +21,16 @@ assert(windowScript.includes('const pendingReplace = new URLSearchParams(window.
 assert(windowScript.includes('id="committed-replace-dialog"') === false && html.includes('id="committed-replace-dialog"'), "replacement choice must be shown inside the realtime editor");
 assert(windowScript.includes('replaceDialog.returnValue === "yes"') && windowScript.includes("history.replaceState"), "cancel must leave the old draft and close the one-shot replacement prompt");
 assert(windowScript.includes("// numbers, syntax layer, or score preview. Always perform an initial render.\n  render();"));
-assert(html.includes('type="module" src="/js/entries/committed-preview.js?v=20260905-013"'));
-assert(html.includes('style.css?v=20260906-005'));
+assert(html.includes('type="module" src="/js/entries/committed-preview.js?v=20260907-001"'));
+assert(html.includes('style.css?v=20260907-002'));
 assert(css.includes('.committed-window-editor, .committed-window-editor-wrap .editor-highlight { padding: 10px; }'), "realtime editor text and highlight layers must share mobile padding");
 assert(css.includes('font-variant-ligatures: none;'), "realtime editor text and highlight layers must use the same glyph shaping");
 assert(css.includes('.bold-chords .committed-window-editor-wrap .editor-highlight .syntax-chord { font-weight: 400; text-shadow: 0 0 .35px currentColor; }'), "realtime bold chords must not change the caret measurement width");
 assert(entry.includes('await import("../committed-preview-window.js")'));
 assert(html.includes('id="committed-layout-toggle"'));
-assert(html.includes('id="committed-position-toggle"') && html.includes("コード位置調整モード"), "realtime editor must expose chord position adjustment mode");
+assert(html.includes('id="committed-position-toggle"') && html.includes("コード位置調整モード") && html.includes("F2で切替"), "realtime editor must expose chord position adjustment mode and its F2 shortcut");
 assert(!html.includes('id="committed-copy"'), "realtime editor must not add a separate copy button");
-assert(html.includes('id="committed-position-help"') && html.includes('id="committed-position-help" class="position-adjust-help" hidden') && html.includes("<kbd>Shift+Space</kbd> 前"), "position adjustment guide must be hidden until the mode starts");
+assert(html.includes('id="committed-position-help"') && html.includes('id="committed-position-help" class="position-adjust-help" hidden') && html.includes("<kbd>F2</kbd> 開閉") && html.includes("<kbd>Shift+F2</kbd> 対象切替") && html.includes("<kbd>Shift+Space</kbd> 前"), "position adjustment guide must be hidden until the mode starts");
 assert(html.includes('id="committed-preview-mode-status"') && html.includes('class="preview-position-status" hidden'), "preview header must expose a mode status hidden outside position adjustment");
 assert(html.includes('id="committed-position-symbols"') && html.includes("小節線・ハイフンも移動対象にする"), "position adjustment must offer an optional structural-token target mode");
 assert(html.indexOf('id="committed-position-toggle"') > html.indexOf('class="committed-window-editor-pane"'), "position adjustment toggle belongs to the editor pane header");
@@ -44,6 +44,8 @@ assert(windowScript.includes('if ((event.ctrlKey || event.metaKey) && ["a", "c",
 assert(windowScript.includes('const positionUndoStack = []') && windowScript.includes('const undoPositionEdit = ()') && windowScript.includes('document.addEventListener("keydown", handlePositionUndo, true)'), "position adjustment mode must undo scripted movements with Ctrl+Z");
 assert(windowScript.includes('const directiveTokenPattern = /\\{[^{}\\r\\n]*\\}/g') && windowScript.includes('const movementRanges = (source)'), "position adjustment must treat brace directives as indivisible movement units");
 assert(windowScript.includes('const handlePositionNavigation = (event)') && windowScript.includes('if (["Tab", "Shift", "Control", "Alt", "Meta"].includes(event.key)) return;') && windowScript.includes('event.stopImmediatePropagation();'), "position adjustment mode must block non-navigation keyboard edits");
+assert(windowScript.includes('const handlePositionShortcut = (event)') && windowScript.includes('event.key !== "F2"') && windowScript.includes('event.shiftKey && !positionAdjustMode'), "F2 shortcuts must stay separate from ordinary text input and require position mode for Shift+F2");
+assert(windowScript.includes('positionSymbols.checked = !positionSymbols.checked;') && windowScript.includes('positionSymbols.dispatchEvent(new Event("change"));'), "Shift+F2 must toggle structural-token movement targets through the checkbox state");
 assert(windowScript.includes('previousCodePointStart') && windowScript.includes('nextCodePointEnd'), "horizontal position adjustment must move by text characters");
 assert(windowScript.includes('text.setRangeText(`${range.token}${previousText}`, previousStart, range.end, "select")') && windowScript.includes('text.setRangeText(`${nextText}${range.token}`, range.start, nextEnd, "select")'), "horizontal position adjustment must move the selected token between text characters");
 assert(windowScript.includes('const previousToken = positionTokens.find((token) => token.end === range.start)') && windowScript.includes('const nextToken = positionTokens.find((token) => token.start === range.end)'), "horizontal position adjustment must move across one position unit at a time");
@@ -79,7 +81,7 @@ assert(
     && html.indexOf('id="committed-transpose-down"') < html.indexOf('id="committed-transpose-up"'),
   "realtime transpose controls must be ordered as no-transpose select, minus, plus"
 );
-assert(css.includes("grid-template-columns: minmax(88px, 118px) 28px 28px;"));
+assert(css.includes("grid-template-columns: max-content 28px 28px;") && css.includes("select { width: max-content;"), "realtime transpose choices must use their text width instead of a wide fixed column");
 assert(css.includes(".cw-upper-token-level-2 { position: relative; top: -1.1em; }"));
 assert(entry.includes('import "../transposer.js"'));
 assert(windowScript.includes('window.ChordWikiTranspose.transposeText(text.value, previewTranspose, spelling.value)'));
@@ -102,13 +104,6 @@ assert(html.includes('id="committed-spelling"') && html.includes('<option value=
 assert(html.indexOf('id="committed-transpose-up"') < html.indexOf('id="committed-spelling"') && html.indexOf('id="committed-spelling"') < html.indexOf('id="committed-layout-toggle"'), "realtime note-name spelling must sit immediately to the right of transpose controls");
 assert(html.includes('<span>移調</span><span class="committed-transpose-stepper">') && html.includes('aria-label="プレビューを半音下げる">▼') && html.includes('aria-label="プレビューを半音上げる">▲'), "realtime transpose and note-name controls must stay inline without opening a side settings panel");
 assert(css.includes('.committed-transpose-control, .committed-spelling-control { display: flex;') && css.includes('.committed-transpose-stepper { display: grid;'), "realtime transpose and spelling controls must use the compact inline toolbar layout");
-assert(html.includes('<div class="score-window-display-controls">') && html.includes('<div class="score-window-action-controls">'), "realtime editor controls must have separate display and action groups");
-assert(css.includes('.score-window-heading { display: grid;') && css.includes('grid-template-areas: "logo title" "logo status";'), "realtime editor heading must keep logo and explanatory text aligned on desktop");
-assert(css.includes('.score-window-heading { grid-template-columns: minmax(0, 1fr); grid-template-areas: "title" "logo" "status";'), "realtime editor narrow header must show title, logo, and status in order");
-assert(css.includes('.score-window-status { display: block; max-width: 100%;'), "realtime editor explanatory status must remain visible on narrow screens");
-assert(css.includes('.score-window-display-controls, .score-window-action-controls { display: flex; flex-wrap: wrap;'), "realtime editor narrow controls must split into two wrapped rows");
-assert(css.includes('@media (max-width: 1199px) {') && css.includes('@media (max-width: 760px) {'), "realtime editor must progressively switch from one row to two and three rows");
-assert(css.includes('.score-window-action-controls { grid-column: 1; grid-row: 1; }') && css.includes('.score-window-display-controls { grid-column: 1; grid-row: 2; }'), "narrow realtime editor must show action controls before transpose and spelling controls");
 assert(html.includes('id="committed-bold-code" type="checkbox" checked'));
 assert(windowScript.includes("const contentLineTop = paddingTop + activeLine * lineHeight;"));
 assert(windowScript.includes('text.style.setProperty("--active-line-top", `${contentLineTop - text.scrollTop}px`);'));
@@ -124,7 +119,16 @@ assert(css.includes(".committed-window-editor-wrap .line-numbers span { height: 
 assert(css.includes(".committed-window-preview { height: 100%; margin: 0; border: 0; border-radius: 0; font-size: var(--editor-font-size) !important; }"));
 assert(css.includes(".committed-window-layout.committed-window-stacked"));
 assert(css.includes("--committed-line-height: 1.65"));
-assert(windowScript.includes('layoutMode = layoutMode === "side" ? "stacked" : "side"'));
+assert(css.includes("@media (min-width: 1040px)") && css.includes("grid-template-columns: minmax(330px, .92fr) minmax(0, 1.08fr);"), "realtime editor must keep the toolbar on one row when the CSS viewport has room");
+assert(css.includes("@media (min-width: 521px) and (max-width: 1039px)") && css.includes("row-gap: 4px;") && css.includes("justify-content: flex-start; flex-wrap: nowrap; gap: 5px;"), "realtime editor must use the compact two-row toolbar at intermediate widths");
+assert(css.includes("@media (min-width: 521px) and (max-width: 820px)") && css.includes(".score-window-controls { justify-content: flex-start; flex-wrap: wrap; gap: 4px; }"), "realtime editor controls must wrap only when the intermediate toolbar becomes too narrow");
+assert(css.includes(".score-window-brand-logo { flex-basis: 150px; min-width: 108px; }") && css.includes(".score-window-brand-logo { flex-basis: 112px; min-width: 88px; }"), "realtime editor branding must shrink before the toolbar adds another row");
+assert(css.includes("@media (min-width: 480px) and (max-width: 820px)") && css.includes("grid-template-columns: minmax(190px, .72fr) minmax(0, 1.28fr);"), "realtime editor must use empty heading space before adding a third toolbar row");
+assert(windowScript.includes('const layoutModes = ["stacked", "side", "side-reverse", "stacked-reverse"]') && windowScript.includes('layoutMode = layoutModes[(currentIndex + 1 + layoutModes.length) % layoutModes.length]'), "realtime comparison layout must cycle through vertical, horizontal, and reversed arrangements");
+assert(windowScript.includes('layout.classList.toggle("committed-window-stacked-reverse", stackedReverse)') && windowScript.includes('layout.classList.toggle("committed-window-side-reverse", sideReverse)'), "realtime comparison layout must apply reverse pane order");
+assert(html.includes('id="committed-layout-toggle" class="layout-toggle-button" type="button">↕表示入替↔</button>') && windowScript.includes('layoutToggle.textContent = "↕表示入替↔"'), "comparison layout must use one fixed compact button label");
+assert(windowScript.includes('layoutToggle.setAttribute("aria-label", `編集とプレビューの配置を切り替え'), "comparison layout button must announce the current arrangement");
+assert(css.includes('grid-template-areas: "editor" "divider" "preview";') && css.includes('grid-template-areas: "preview" "divider" "editor";') && css.includes('grid-template-areas: "preview divider editor";'), "realtime comparison layout must define both vertical and horizontal reverse arrangements");
 assert(windowScript.includes('let layoutMode = "stacked";'));
 assert(windowScript.includes("stackedLineHeight = next; else sideLineHeight = next;"));
 assert(windowScript.includes("checkboxDefaultsVersion: 1"));

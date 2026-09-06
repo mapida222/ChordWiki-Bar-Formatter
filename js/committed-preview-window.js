@@ -41,6 +41,8 @@
   let activeLine = 0;
   let draftUpdatedAt = 0;
   let loadedDraftText = "";
+  const layoutModes = ["stacked", "side", "side-reverse", "stacked-reverse"];
+  const layoutLabels = { stacked: "上下（編集→プレビュー）", side: "左右（編集→プレビュー）", "side-reverse": "左右反転（プレビュー→編集）", "stacked-reverse": "上下反転（プレビュー→編集）" };
   let layoutMode = "stacked";
   let positionAdjustMode = false;
   let appliedTranspose = 0;
@@ -388,6 +390,18 @@
     event.preventDefault();
     event.stopImmediatePropagation();
   };
+  const handlePositionShortcut = (event) => {
+    if (event.key !== "F2" || event.ctrlKey || event.metaKey || event.altKey) return;
+    if (event.shiftKey && !positionAdjustMode) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    if (event.shiftKey) {
+      positionSymbols.checked = !positionSymbols.checked;
+      positionSymbols.dispatchEvent(new Event("change"));
+      return;
+    }
+    setPositionMode(!positionAdjustMode);
+  };
   const syncPreviewHeaderHeight = () => {
     if (!positionAdjustMode) {
       previewTitle.style.removeProperty("height");
@@ -401,7 +415,6 @@
   document.addEventListener("keyup", handlePositionSpace, true);
   document.addEventListener("beforeinput", handlePositionBeforeInput, true);
   document.addEventListener("keydown", handlePositionClipboard, true);
-  document.addEventListener("keydown", handlePositionNavigation, true);
   document.addEventListener("keydown", handlePositionUndo, true);
   window.addEventListener("resize", syncPreviewHeaderHeight);
   const setPositionMode = (enabled) => {
@@ -417,7 +430,7 @@
       text.readOnly = true;
       positionToggle.textContent = "● コード位置調整モード中";
       positionToggle.setAttribute("aria-pressed", "true");
-      positionToggle.title = "コード位置調整モードを終了";
+      positionToggle.title = "コード位置調整モードを終了（F2）";
       editorPane.classList.add("position-adjust-active");
       previewPane.classList.add("position-adjust-active");
       positionHelp.hidden = false;
@@ -435,7 +448,7 @@
     text.readOnly = false;
     positionToggle.textContent = "コード位置調整モード";
     positionToggle.setAttribute("aria-pressed", "false");
-    positionToggle.title = "コードを選択して矢印キーで位置を調整";
+    positionToggle.title = "コードを選択して矢印キーで位置を調整（F2で切替）";
     editorPane.classList.remove("position-adjust-active");
     previewPane.classList.remove("position-adjust-active");
     positionHelp.hidden = true;
@@ -445,6 +458,8 @@
     render();
     positionStatus();
   };
+  document.addEventListener("keydown", handlePositionShortcut, true);
+  document.addEventListener("keydown", handlePositionNavigation, true);
   text.addEventListener("beforeinput", (event) => {
     if (positionAdjustMode && !["historyUndo", "historyRedo"].includes(event.inputType)) event.preventDefault();
   });
@@ -522,15 +537,20 @@
     transposeUp.disabled = false;
   }
   const applyLayoutMode = () => {
-    const stacked = layoutMode === "stacked";
+    const stacked = layoutMode.startsWith("stacked");
+    const stackedReverse = layoutMode === "stacked-reverse";
+    const sideReverse = layoutMode === "side-reverse";
     const currentLineHeight = stacked ? stackedLineHeight : sideLineHeight;
     layout.classList.toggle("committed-window-stacked", stacked);
+    layout.classList.toggle("committed-window-stacked-reverse", stackedReverse);
+    layout.classList.toggle("committed-window-side-reverse", sideReverse);
     layout.style.setProperty(stacked ? "--committed-window-top" : "--committed-window-left", `${stacked ? stackedPaneSize : sidePaneSize}%`);
     layout.style.setProperty("--committed-line-height", String(currentLineHeight));
     lineHeight.value = String(currentLineHeight);
     lineHeightValue.textContent = `${Number(currentLineHeight).toFixed(2)}倍`;
-    layoutToggle.textContent = stacked ? "左右比較へ" : "上下比較へ";
-    layoutToggle.setAttribute("aria-pressed", String(stacked));
+    layoutToggle.textContent = "↕表示入替↔";
+    layoutToggle.title = `編集とプレビューの配置を切り替え（現在：${layoutLabels[layoutMode] || layoutLabels.stacked}）`;
+    layoutToggle.setAttribute("aria-label", `編集とプレビューの配置を切り替え（現在：${layoutLabels[layoutMode] || layoutLabels.stacked}）`);
     const divider = document.querySelector("#committed-window-divider");
     divider.setAttribute("aria-orientation", stacked ? "horizontal" : "vertical");
     divider.setAttribute("aria-label", stacked ? "テキストとプレビューの高さを調整" : "テキストとプレビューの幅を調整");
@@ -576,10 +596,14 @@
   spelling.addEventListener("change", commitSpellingSelection);
   lineHeight.addEventListener("input", () => {
     const next = Math.max(1.4, Math.min(3.2, Number.parseFloat(lineHeight.value) || 1.65));
-    if (layoutMode === "stacked") stackedLineHeight = next; else sideLineHeight = next;
+    if (layoutMode.startsWith("stacked")) stackedLineHeight = next; else sideLineHeight = next;
     applyDisplaySettings();
   });
-  layoutToggle.addEventListener("click", () => { layoutMode = layoutMode === "side" ? "stacked" : "side"; applyDisplaySettings(); });
+  layoutToggle.addEventListener("click", () => {
+    const currentIndex = layoutModes.indexOf(layoutMode);
+    layoutMode = layoutModes[(currentIndex + 1 + layoutModes.length) % layoutModes.length];
+    applyDisplaySettings();
+  });
   const commitTransposeSelection = () => {
     const target = Number(transpose.value) || 0;
     const delta = transposeCommitted ? target - appliedTranspose : target;
@@ -641,7 +665,7 @@
     preview.addEventListener("pointercancel", finish, { once: true });
   });
   document.querySelector("#committed-window-divider").addEventListener("pointerdown", (event) => {
-    const stacked = layoutMode === "stacked";
+    const stacked = layoutMode.startsWith("stacked");
     const start = stacked ? event.clientY : event.clientX;
     const property = stacked ? "--committed-window-top" : "--committed-window-left";
     const initial = Number.parseFloat(getComputedStyle(layout).getPropertyValue(property)) || 48;
@@ -657,7 +681,7 @@
   });
   if (channel) channel.addEventListener("message", (event) => { if (event.data?.type === "score-state") applyState(event.data.payload); });
   window.addEventListener("storage", (event) => { if (event.key === STATE_KEY && event.newValue) { try { applyState(JSON.parse(event.newValue)); } catch (_error) {} } if (event.key === TEXT_KEY && event.newValue !== text.value) { text.value = event.newValue; appliedTranspose = 0; transposeCommitted = false; render(); } });
-  try { const saved = JSON.parse(localStorage.getItem(displayKey) || "null"); if (saved) { fontSize.value = saved.fontSize || fontSize.value; font.value = saved.font || font.value; theme.value = saved.theme === "dark-gray" ? "dark" : saved.theme || theme.value; spelling.value = ["preserve", "sharp", "flat"].includes(saved.spelling) ? saved.spelling : spelling.value; transpose.value = String(Math.max(window.ChordWikiTranspose.transposeMin, Math.min(window.ChordWikiTranspose.transposeMax, Number(saved.transpose) || 0))); transposeCommitted = saved.transposeApplied === true; appliedTranspose = transposeCommitted ? Number(saved.appliedTranspose ?? saved.transpose) || 0 : 0; const savedCheckboxDefaults = saved.checkboxDefaultsVersion === 1; textColoring.checked = savedCheckboxDefaults ? saved.textColoring !== false : true; boldCode.checked = savedCheckboxDefaults ? saved.boldCode !== false : true; scrollSync.checked = savedCheckboxDefaults ? saved.scrollSync !== false : true; layoutMode = saved.layoutPreferenceVersion === 1 && saved.layoutMode === "side" ? "side" : "stacked"; stackedLineHeight = Math.max(1.4, Math.min(3.2, Number.parseFloat(saved.stackedLineHeight) || 1.65)); sideLineHeight = Math.max(1.4, Math.min(3.2, Number.parseFloat(saved.sideLineHeight) || 2.75)); stackedPaneSize = Math.max(6, Math.min(94, Number.parseFloat(saved.stackedPaneSize) || 48)); sidePaneSize = Math.max(6, Math.min(94, Number.parseFloat(saved.sidePaneSize) || 48)); } } catch (_error) {}
+  try { const saved = JSON.parse(localStorage.getItem(displayKey) || "null"); if (saved) { fontSize.value = saved.fontSize || fontSize.value; font.value = saved.font || font.value; theme.value = saved.theme === "dark-gray" ? "dark" : saved.theme || theme.value; spelling.value = ["preserve", "sharp", "flat"].includes(saved.spelling) ? saved.spelling : spelling.value; transpose.value = String(Math.max(window.ChordWikiTranspose.transposeMin, Math.min(window.ChordWikiTranspose.transposeMax, Number(saved.transpose) || 0))); transposeCommitted = saved.transposeApplied === true; appliedTranspose = transposeCommitted ? Number(saved.appliedTranspose ?? saved.transpose) || 0 : 0; const savedCheckboxDefaults = saved.checkboxDefaultsVersion === 1; textColoring.checked = savedCheckboxDefaults ? saved.textColoring !== false : true; boldCode.checked = savedCheckboxDefaults ? saved.boldCode !== false : true; scrollSync.checked = savedCheckboxDefaults ? saved.scrollSync !== false : true; layoutMode = saved.layoutPreferenceVersion === 1 && layoutModes.includes(saved.layoutMode) ? saved.layoutMode : "stacked"; stackedLineHeight = Math.max(1.4, Math.min(3.2, Number.parseFloat(saved.stackedLineHeight) || 1.65)); sideLineHeight = Math.max(1.4, Math.min(3.2, Number.parseFloat(saved.sideLineHeight) || 2.75)); stackedPaneSize = Math.max(6, Math.min(94, Number.parseFloat(saved.stackedPaneSize) || 48)); sidePaneSize = Math.max(6, Math.min(94, Number.parseFloat(saved.sidePaneSize) || 48)); } } catch (_error) {}
   applyDisplaySettings();
   try { const draft = JSON.parse(localStorage.getItem(DRAFT_KEY) || "null"); if (draft?.text) { loadedDraftText = draft.text; text.value = draft.text; draftUpdatedAt = Number(draft.updatedAt) || 0; } } catch (_error) {}
   if (!keepExistingDraft && !pendingReplace) { try { applyState(JSON.parse(localStorage.getItem(STATE_KEY) || "null")); } catch (_error) {} }

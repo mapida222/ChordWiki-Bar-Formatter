@@ -6,23 +6,19 @@
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
   <title>リアルタイムエディター｜ChordWiki Bar Formatter</title>
   <link rel="icon" type="image/png" href="logo/260810_favicon_touka.png">
-  <link rel="stylesheet" href="style.css?v=20260906-005">
+  <link rel="stylesheet" href="style.css?v=20260907-002">
   <link rel="stylesheet" href="style-measure-check.css?v=20260905-001">
 </head>
 <body class="score-window-page">
   <header class="score-window-toolbar">
     <div class="score-window-heading">
       <a class="score-window-brand-logo" href="index.html" aria-label="ChordWiki Bar Formatter トップページへ"><img src="logo/260810_chordwiki_logo.png" alt="ChordWiki Bar Formatter"></a>
-      <h1>リアルタイムエディター</h1>
-      <p id="committed-window-status" class="score-window-status">テキストと譜面プレビューを比較しながら編集できます。</p>
+      <div class="score-window-heading-copy"><h1>リアルタイムエディター</h1><p id="committed-window-status" class="score-window-status">テキストと譜面プレビューを比較しながら編集できます。</p></div>
     </div>
-    <div class="score-window-controls" aria-label="リアルタイムエディター操作">
-      <div class="score-window-display-controls">
-        <label class="committed-transpose-control"><span>移調</span><span class="committed-transpose-stepper"><select id="committed-transpose" aria-label="リアルタイムプレビューの移調"></select><button id="committed-transpose-down" type="button" aria-label="プレビューを半音下げる">▼</button><button id="committed-transpose-up" type="button" aria-label="プレビューを半音上げる">▲</button></span></label>
-        <label class="preview-control committed-spelling-control"><span>音名</span><select id="committed-spelling" aria-label="シャープ・フラット表記"><option value="sharp">#表記</option><option value="preserve">元表記</option><option value="flat">♭表記</option></select></label>
-      </div>
-      <div class="score-window-action-controls">
-      <button id="committed-layout-toggle" class="layout-toggle-button" type="button" aria-pressed="true">左右比較へ</button>
+    <div class="score-window-controls">
+      <label class="committed-transpose-control"><span>移調</span><span class="committed-transpose-stepper"><select id="committed-transpose" aria-label="リアルタイムプレビューの移調"></select><button id="committed-transpose-down" type="button" aria-label="プレビューを半音下げる">▼</button><button id="committed-transpose-up" type="button" aria-label="プレビューを半音上げる">▲</button></span></label>
+      <label class="preview-control committed-spelling-control"><span>音名</span><select id="committed-spelling" aria-label="シャープ・フラット表記"><option value="sharp">#表記</option><option value="preserve">元表記</option><option value="flat">♭表記</option></select></label>
+      <button id="committed-layout-toggle" class="layout-toggle-button" type="button">↕表示入替↔</button>
       <details class="score-window-help">
         <summary>使い方</summary>
         <div class="score-window-help-panel">
@@ -31,13 +27,13 @@
             <li>左の「編集テキスト」を直接編集します。</li>
             <li>入力した内容は右の「譜面プレビュー」へリアルタイムで反映されます。</li>
             <li>右の譜面をクリックすると、対応する左の行を確認できます。</li>
-            <li>移調、文字サイズ、テーマ、上下／左右比較は表示だけを調整します。</li>
-            <li>「コード位置調整モード」を開始すると、コードをクリックまたは選択して矢印キーで移動できます。Spaceで次、Shift+Spaceで前のコードを選びます。</li>
+            <li>移調、文字サイズ、テーマ、上下／左右の比較順は表示だけを調整します。</li>
+            <li>「コード位置調整モード」はF2で切り替えます。コードをクリックまたは選択して矢印キーで移動できます。Shift+F2で小節線・ハイフンも移動対象に切り替え、Spaceで次、Shift+Spaceで前のコードを選びます。</li>
             <li>編集内容はこのブラウザの下書きとして保存されます。元の画面の変換前・変換後は自動更新されません。</li>
           </ol>
         </div>
       </details>
-        <details class="score-window-settings">
+      <details class="score-window-settings">
         <summary>表示設定</summary>
         <div class="score-window-settings-panel">
           <label class="preview-control font-size-control"><span>文字サイズ <output id="committed-font-size-value">14px</output></span><input id="committed-font-size" type="range" min="11" max="24" value="14"></label>
@@ -48,8 +44,7 @@
           <label class="final-bar-setting"><input id="committed-bold-code" type="checkbox" checked> <span>太字コード</span></label>
           <label class="final-bar-setting"><input id="committed-scroll-sync" type="checkbox" checked> <span>スクロール連動</span></label>
         </div>
-        </details>
-      </div>
+      </details>
     </div>
   </header>
   <dialog id="committed-replace-dialog" class="committed-replace-dialog" aria-labelledby="committed-replace-title">
@@ -65,14 +60,14 @@
   <main class="score-window-main committed-window-layout committed-window-stacked" id="committed-window-layout">
     <section class="committed-window-pane committed-window-editor-pane">
       <div class="committed-window-pane-title">
-        <div class="committed-window-pane-title-main"><span>編集テキスト</span><span class="committed-editor-title-actions"><button id="committed-position-toggle" class="position-adjust-toggle" type="button" aria-pressed="false" title="コードを選択して矢印キーで位置を調整">コード位置調整モード</button><button id="committed-measure-check" class="measure-check-button committed-measure-check-button" type="button" aria-controls="committed-measure-check-panel" aria-expanded="false" title="小節ごとの構文エラーと拍数を確認">小節をチェック</button></span></div>
-        <div id="committed-position-help" class="position-adjust-help" hidden><div class="position-adjust-help-keys"><kbd>←</kbd> <kbd>→</kbd> 移動　<kbd>↑</kbd> <kbd>↓</kbd> 行移動　<kbd>Space</kbd> 次　<kbd>Shift+Space</kbd> 前　<kbd>Esc</kbd> 終了</div><label class="position-adjust-option"><input id="committed-position-symbols" type="checkbox"> 小節線・ハイフンも移動対象にする</label></div>
+        <div class="committed-window-pane-title-main"><span>編集テキスト</span><span class="committed-editor-title-actions"><button id="committed-position-toggle" class="position-adjust-toggle" type="button" aria-pressed="false" title="コードを選択して矢印キーで位置を調整（F2で切替）">コード位置調整モード</button><button id="committed-measure-check" class="measure-check-button committed-measure-check-button" type="button" aria-controls="committed-measure-check-panel" aria-expanded="false" title="小節ごとの構文エラーと拍数を確認">小節をチェック</button></span></div>
+        <div id="committed-position-help" class="position-adjust-help" hidden><div class="position-adjust-help-keys"><kbd>F2</kbd> 開閉　<kbd>Shift+F2</kbd> 対象切替　<kbd>←</kbd> <kbd>→</kbd> 移動　<kbd>↑</kbd> <kbd>↓</kbd> 行移動　<kbd>Space</kbd> 次　<kbd>Shift+Space</kbd> 前　<kbd>Esc</kbd> 終了</div><label class="position-adjust-option"><input id="committed-position-symbols" type="checkbox"> 小節線・ハイフンも移動対象にする</label></div>
       </div>
       <aside id="committed-measure-check-panel" class="measure-check-panel committed-measure-check-panel" aria-live="polite" hidden>
         <div class="measure-check-toolbar"><div id="committed-measure-check-summary" class="measure-check-summary"></div><div class="measure-check-bulk-actions"><button id="committed-measure-check-expand-all" type="button" aria-expanded="false">すべて開く</button><button id="committed-measure-check-apply-all" type="button" hidden>安全な対策をすべて適用</button></div></div>
         <ul id="committed-measure-check-results" class="measure-check-results"></ul>
         <section id="committed-measure-check-meter" class="measure-check-meter" hidden>
-          <div class="measure-check-meter-title">拍子の事前確認</div>
+          <div class="measure-check-meter-title">1小節の長さを確認（4/4・6/8など）</div>
           <p id="committed-measure-check-meter-summary" class="measure-check-meter-copy"></p>
           <div id="committed-measure-check-meter-results" class="measure-check-meter-results"></div>
         </section>
@@ -89,6 +84,6 @@
     <div id="committed-window-divider" class="committed-window-divider" role="separator" aria-label="テキストとプレビューの高さを調整" aria-orientation="horizontal" tabindex="0"></div>
     <section class="committed-window-pane committed-window-preview-pane"><div class="committed-window-pane-title"><span>譜面プレビュー</span><span id="committed-preview-mode-status" class="preview-position-status" hidden>● コード位置調整モード中</span></div><div id="committed-window-preview" class="chordwiki-preview committed-window-preview" aria-label="譜面プレビュー"></div></section>
   </main>
-      <script type="module" src="/js/entries/committed-preview.js?v=20260905-013"></script>
+      <script type="module" src="/js/entries/committed-preview.js?v=20260907-001"></script>
 </body>
 </html>

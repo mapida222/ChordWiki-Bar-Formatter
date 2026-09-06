@@ -19,6 +19,7 @@
   let lastOutputValue = String(output.value || "");
   const storedMeterOverrides = new Map();
   const appliedMeterProposals = new Map();
+  const appliedMeterDismissalLocations = new Set();
   const DISMISSED_METER_STORAGE_KEY = "CBF_MEASURE_CHECK_DISMISSED_METERS_V1";
   const dismissedMeterCandidates = new Set((() => {
     try {
@@ -232,6 +233,16 @@
     ]);
   }
 
+  function meterCandidateLocationKey(candidate) {
+    return JSON.stringify([
+      candidate.kind || "missing",
+      candidate.scope,
+      candidate.line,
+      candidate.measure || "all",
+      candidate.meter?.text || ""
+    ]);
+  }
+
   function saveDismissedMeterCandidates() {
     try {
       window.localStorage.setItem(DISMISSED_METER_STORAGE_KEY, JSON.stringify([...dismissedMeterCandidates]));
@@ -241,11 +252,22 @@
   }
 
   function rememberAppliedMeterProposal(candidate, proposal) {
-    appliedMeterProposals.set(meterCandidateKey(candidate), { after: proposal.after, insertion: proposal.insertion });
+    appliedMeterProposals.set(meterCandidateKey(candidate), {
+      after: proposal.after,
+      insertion: proposal.insertion,
+      location: meterCandidateLocationKey(candidate)
+    });
   }
 
   function currentMeterOverrides() {
     return storedMeterOverrides.get(String(output.value || "")) || [];
+  }
+
+  function currentDefaultMeter() {
+    const values = window.CBFSettings?.load?.() || {};
+    const capacity = Number(values.measureCapacity);
+    if (!Number.isInteger(capacity) || capacity < 2) return "4/4";
+    return capacity === 8 ? "4/4" : `${capacity}/8`;
   }
 
   function focusMeterCandidate(candidate) {
@@ -254,14 +276,24 @@
 
   function renderMeterCandidates(checker, result) {
     if (!meterSection || !meterSummary || !meterResults) return;
-    const candidates = (result.meterCandidates || []).filter((candidate) => !storedMeterOverrides.get(String(output.value || ""))?.some((override) => override.key === meterCandidateKey(candidate)) && !dismissedMeterCandidates.has(meterCandidateKey(candidate)));
+    const defaultMeter = currentDefaultMeter();
+    const candidates = (result.meterCandidates || [])
+      .filter((candidate) => !storedMeterOverrides.get(String(output.value || ""))?.some((override) => override.key === meterCandidateKey(candidate)) && !dismissedMeterCandidates.has(meterCandidateKey(candidate)) && !appliedMeterDismissalLocations.has(meterCandidateLocationKey(candidate)))
+      .filter((candidate, _index, visibleCandidates) => {
+        // 1小節だけの一時的な拍数の乱れは、拍子変更として急かさない。
+        if (candidate.kind || candidate.scope === "line") return true;
+        return visibleCandidates.some((other) => other !== candidate
+          && other.scope === "measure"
+          && other.line === candidate.line
+          && other.meter?.text === candidate.meter?.text);
+      });
     meterSection.hidden = candidates.length === 0;
     meterResults.replaceChildren();
     if (!candidates.length) return;
     const hasTransition = candidates.some((candidate) => candidate.kind === "restore" || candidate.kind === "promote");
     meterSummary.textContent = hasTransition
-      ? "拍子の切り替え候補があります。区間としてまとめるか、戻りを明示するかを選んでください。入力欄は選択するまで変更しません。"
-      : "拍子指定がない箇所があります。書き忘れか変拍子かを選んでください。入力欄は「付加」を選ぶまで変更しません。";
+      ? "途中で1小節の長さが変わっている可能性があります。続く小節を同じ長さとして扱うか、元の長さに戻す場所を選んでください。入力欄は選ぶまで変更しません。"
+      : "同じ長さの小節が続いています。書き忘れか、意図した変化かを確認してください。入力欄は「追加」を選ぶまで変更しません。";
     candidates.forEach((candidate) => {
       const proposal = checker.proposeMeterAnnotation?.(output.value, candidate);
       if (!proposal) return;
@@ -284,11 +316,11 @@
       actions.className = "measure-check-recommendation-actions";
       const assume = document.createElement("button");
       assume.type = "button";
-      assume.textContent = "4/4として保管";
+      assume.textContent = `${defaultMeter}として保管`;
       assume.addEventListener("click", () => {
         const source = String(output.value || "");
         const overrides = storedMeterOverrides.get(source) || [];
-        overrides.push({ key: meterCandidateKey(candidate), scope: candidate.scope, line: candidate.line, measure: candidate.measure, meter: "4/4" });
+        overrides.push({ key: meterCandidateKey(candidate), scope: candidate.scope, line: candidate.line, measure: candidate.measure, meter: defaultMeter });
         storedMeterOverrides.set(source, overrides);
         render(true);
       });
@@ -370,7 +402,7 @@
 
   function render(open = true) {
     const checker = window.CBFMeasureCheck;
-    const result = checker?.validate(output.value, { meterOverrides: currentMeterOverrides() });
+    const result = checker?.validate(output.value, { defaultMeter: currentDefaultMeter(), meterOverrides: currentMeterOverrides() });
     const proposal = checker?.proposeSixteenthAccentNotation?.(output.value);
     if (!result) return;
 
@@ -479,6 +511,7 @@
     appliedMeterProposals.forEach((record, key) => {
       if (lastOutputValue === record.after && !nextOutputValue.includes(record.insertion)) {
         dismissedMeterCandidates.add(key);
+        if (record.location) appliedMeterDismissalLocations.add(record.location);
         dismissedAfterDeletion = true;
       }
     });
@@ -496,7 +529,7 @@
   });
   applyAllButton?.addEventListener("click", () => {
     const checker = window.CBFMeasureCheck;
-    const result = checker?.validate(output.value);
+    const result = checker?.validate(output.value, { defaultMeter: currentDefaultMeter(), meterOverrides: currentMeterOverrides() });
     if (!checker || !result) return;
     const fixes = result.issues.map((issue) => checker.issueFix?.(issue)).filter(Boolean);
     let next = checker.applyFixes(output.value, fixes);
