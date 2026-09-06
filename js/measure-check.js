@@ -139,6 +139,45 @@
     return meter ? { ...meter, scope: "measure", sourceKind: "inline", rawAnnotation: match[1] } : null;
   }
 
+  function normalizeChordLabel(value) {
+    return String(value || "").trim().replace(/\s+/gu, "");
+  }
+
+  function extractLastPreDisplayChord(source) {
+    const matches = String(source || "").matchAll(/\[\(([^\[\]\r\n]+)\)\]/gu);
+    let chord = null;
+    for (const match of matches) {
+      const candidate = normalizeChordLabel(match[1]);
+      if (/^(?:[A-G](?:[#b♯♭])?|N\.C\.)/iu.test(candidate)) chord = candidate;
+    }
+    return chord;
+  }
+
+  function extractLeadingChord(source) {
+    const match = String(source || "").trimStart().match(/^\[([^\[\]\r\n]+)\]/u);
+    if (!match) return null;
+    const candidate = normalizeChordLabel(match[1]);
+    if (!candidate || candidate.startsWith("(") || RHYTHM_TOKEN_CHARACTERS.test(candidate)) return null;
+    return /^(?:[A-G](?:[#b♯♭])?|N\.C\.)/iu.test(candidate) ? candidate : null;
+  }
+
+  function isPickupMeasure(measure, previousMeasure, expectedBeats) {
+    if (!measure || !previousMeasure || measure.closed !== true || measure.beats === null) return false;
+    if (measure.beats >= expectedBeats || previousMeasure.beats !== expectedBeats) return false;
+    if (!String(measure.source || "").startsWith("\n")) return false;
+    const previousChord = extractLastPreDisplayChord(previousMeasure.source);
+    const leadingChord = extractLeadingChord(measure.source);
+    return Boolean(previousChord && leadingChord && previousChord === leadingChord);
+  }
+
+  function markPickupMeasures(measures, defaultMeter) {
+    measures.forEach((measure, index) => {
+      const previousMeasure = measures[index - 1];
+      const expectedBeats = measure.meter?.capacity || defaultMeter.capacity;
+      measure.isPickup = isPickupMeasure(measure, previousMeasure, expectedBeats);
+    });
+  }
+
   function inferredMeterForBeats(beats) {
     const value = Number(beats);
     if (!Number.isFinite(value) || value <= 0 || !Number.isInteger(value)) return null;
@@ -154,7 +193,7 @@
       runs.push(active);
       active = null;
     };
-    measures.filter((measure) => measure.beats !== null).forEach((measure) => {
+    measures.filter((measure) => measure.beats !== null && !measure.isPickup).forEach((measure) => {
       if (measure.inlineMeter) {
         finish();
         active = {
@@ -226,7 +265,7 @@
     byLine.forEach((lineMeasures) => {
       const inferred = lineMeasures.map((measure) => inferredMeterForBeats(measure.beats));
       const sameMeter = inferred.length > 1 && inferred.every((meter) => meter && meter.text === inferred[0].text);
-      const lineMeasureCount = measures.filter((measure) => measure.line === lineMeasures[0].line).length;
+      const lineMeasureCount = measures.filter((measure) => measure.line === lineMeasures[0].line && !measure.isPickup).length;
       if (sameMeter && lineMeasures.length === lineMeasureCount) {
         candidates.push({
           scope: "line",
@@ -515,10 +554,12 @@
       });
     });
 
-    const meterRuns = applyInlineMeterRuns(measures);
-    const rhythmMeasures = measures.filter((measure) => measure.beats !== null);
-    const noBeatMeasures = measures.filter((measure) => measure.beats === null);
     const defaultMeter = parseMeterText(options.defaultMeter || "4/4") || parseMeterText("4/4");
+    markPickupMeasures(measures, defaultMeter);
+    const meterRuns = applyInlineMeterRuns(measures);
+    const rhythmMeasures = measures.filter((measure) => measure.beats !== null && !measure.isPickup);
+    const pickupMeasures = measures.filter((measure) => measure.isPickup);
+    const noBeatMeasures = measures.filter((measure) => measure.beats === null);
     let expectedBeats = defaultMeter.capacity;
     if (rhythmMeasures.length) {
       rhythmMeasures.forEach((measure) => {
@@ -551,6 +592,7 @@
       ok: issues.length === 0,
       measures,
       rhythmMeasures,
+      pickupMeasures,
       noBeatMeasures,
       issues,
       syntaxIssues: issues.filter((issue) => issue.type === "syntax"),

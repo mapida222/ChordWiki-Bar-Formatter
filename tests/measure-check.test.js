@@ -73,6 +73,13 @@ assert.strictEqual(continuedMeasure.ok, true, "an unclosed measure must continue
 assert.deepStrictEqual(continuedMeasure.rhythmMeasures.map((measure) => measure.beats), [8, 8]);
 assert.strictEqual(continuedMeasure.rhythmMeasures[1].line, 1, "a continued measure keeps the line where it started");
 assert.strictEqual(continuedMeasure.rhythmMeasures[1].measure, 2, "a continued measure keeps its starting line measure number");
+const pickupSource = "|---- ---[(Bbm7)]-|\n[Bbm7][-]逃[|][---]げる事(こ[Eb7(9)][-]と)[---]も多[Abm7][-]く[|]";
+const pickupResult = check.validate(pickupSource);
+assert.strictEqual(pickupResult.ok, true, "a short line-start segment with the matching pre-display chord is an anacrusis");
+assert.deepStrictEqual(pickupResult.rhythmMeasures.map((measure) => measure.beats), [8, 8]);
+assert.strictEqual(pickupResult.pickupMeasures.length, 1, "the anacrusis should be retained as metadata without beat validation");
+assert.strictEqual(pickupResult.pickupMeasures[0].source, "\n[Bbm7][-]逃");
+assert.strictEqual(check.validate("[|][Bbm7][-]逃[|]").beatIssues.length, 1, "an unrelated short measure must still be reported");
 assert.strictEqual(check.beatText(0.5), "0.5拍分");
 assert.ok(check.validate("[|][C][][|]").syntaxIssues.some((issue) => /空の角括弧/.test(issue.message)));
 
