@@ -7,9 +7,11 @@
 
   const RHYTHM_CHARACTERS = "-=>≧＞＝";
   const RHYTHM_TOKEN_CHARACTERS = /^[\s\-=>≧＞＝○*]+$/u;
+  const DEFAULT_RHYTHM_WIDTHS = { "-": 2, ">": 2, "＞": 2, "=": 1, "＝": 1, "≧": 1 };
 
-  function rhythmWidth(value) {
+  function rhythmWidth(value, rhythmProfile = null) {
     const characters = [...String(value || "")];
+    const widths = { ...DEFAULT_RHYTHM_WIDTHS, ...(rhythmProfile?.widths || {}) };
     let total = 0;
     for (let index = 0; index < characters.length; index += 1) {
       const character = characters[index];
@@ -20,11 +22,96 @@
         index += 2;
         continue;
       }
-      if (character === "-") total += 2;
-      else if (character === ">" || character === "＞") total += (next === "=" || next === "＝") ? 1 : 2;
-      else if (character === "=" || character === "＝" || character === "≧") total += 1;
+      if (character === "-") total += widths[character];
+      else if (character === ">" || character === "＞") total += (next === "=" || next === "＝") ? widths[next] : widths[character];
+      else if (character === "=" || character === "＝" || character === "≧") total += widths[character];
     }
     return total;
+  }
+
+  function parseRhythmDirective(line, previousProfile = null) {
+    const source = String(line || "");
+    if (!/^\s*\{\s*c(?:i)?\s*:/iu.test(source)) return previousProfile;
+    const widths = { ...DEFAULT_RHYTHM_WIDTHS, ...(previousProfile?.widths || {}) };
+    const explicitWidth = new Set();
+    let found = false;
+    for (const match of source.matchAll(/([\-=>≧＝＞])\s*[：:]\s*(?:(\d+)\s*分音符)?/gu)) {
+      const symbol = match[1];
+      const denominator = Number(match[2]);
+      if (Number.isInteger(denominator) && denominator > 0) {
+        const width = 16 / denominator;
+        if (!Number.isFinite(width) || width <= 0) continue;
+        if (symbol === "=") widths["="] = width;
+        else if (symbol === "＝") widths["＝"] = width;
+        else if (symbol === ">" || symbol === "＞") {
+          widths[">"] = width;
+          widths["＞"] = width;
+        } else widths[symbol] = width;
+        explicitWidth.add(symbol);
+        found = true;
+      } else if (symbol === ">" || symbol === "＞") {
+        found = true;
+      }
+    }
+    if (!found) return previousProfile;
+    if (explicitWidth.has("-") && !explicitWidth.has(">") && !explicitWidth.has("＞")) {
+      widths[">"] = widths["-"];
+      widths["＞"] = widths["-"];
+    }
+    if (explicitWidth.has("=") && !explicitWidth.has("＝")) widths["＝"] = widths["="];
+    if (explicitWidth.has("＝") && !explicitWidth.has("=")) widths["="] = widths["＝"];
+    return { widths };
+  }
+
+  function extractRhythmParts(source, rhythmProfile = null) {
+    const text = String(source || "");
+    const parts = [];
+    let index = 0;
+    while (index < text.length) {
+      if (text[index] === "[") {
+        const end = text.indexOf("]", index + 1);
+        if (end >= 0) {
+          const content = text.slice(index + 1, end);
+          const width = rhythmWidth(content, rhythmProfile);
+          if (RHYTHM_TOKEN_CHARACTERS.test(content) && width > 0) {
+            parts.push({ token: text.slice(index, end + 1), width, isFullWidthAccent: content === "＞" });
+          }
+          index = end + 1;
+          continue;
+        }
+      }
+      if (RHYTHM_CHARACTERS.includes(text[index])) {
+        let end = index;
+        while (end < text.length && RHYTHM_CHARACTERS.includes(text[end])) end += 1;
+        const token = text.slice(index, end);
+        parts.push({ token, width: rhythmWidth(token, rhythmProfile), isFullWidthAccent: token === "＞" });
+        index = end;
+        continue;
+      }
+      index += 1;
+    }
+    return parts;
+  }
+
+  function applyTwoBeatTriplets(parts) {
+    const result = parts.map((part) => ({ ...part }));
+    let index = 0;
+    while (index < result.length) {
+      if (!result[index].isFullWidthAccent) {
+        index += 1;
+        continue;
+      }
+      let end = index;
+      while (end < result.length && result[end].isFullWidthAccent) end += 1;
+      for (let groupStart = index; groupStart + 2 < end; groupStart += 3) {
+        for (let groupIndex = groupStart; groupIndex < groupStart + 3; groupIndex += 1) {
+          result[groupIndex].beats = 4 / 3;
+          result[groupIndex].triplet = true;
+        }
+      }
+      index = end;
+    }
+    return result;
   }
 
   function replaceSixteenthAccentRuns(value, onChange) {
@@ -154,11 +241,13 @@
   }
 
   function extractLeadingChord(source) {
-    const match = String(source || "").trimStart().match(/^\[([^\[\]\r\n]+)\]/u);
-    if (!match) return null;
-    const candidate = normalizeChordLabel(match[1]);
-    if (!candidate || candidate.startsWith("(") || RHYTHM_TOKEN_CHARACTERS.test(candidate)) return null;
-    return /^(?:[A-G](?:[#b♯♭])?|N\.C\.)/iu.test(candidate) ? candidate : null;
+    const text = String(source || "").trimStart();
+    for (const match of text.matchAll(/\[([^\[\]\r\n]+)\]/gu)) {
+      const candidate = normalizeChordLabel(match[1]);
+      if (!candidate || candidate.startsWith("(") || RHYTHM_TOKEN_CHARACTERS.test(candidate)) continue;
+      if (/^(?:[A-G](?:[#b♯♭])?|N\.C\.)/iu.test(candidate)) return candidate;
+    }
+    return null;
   }
 
   function isPickupMeasure(measure, previousMeasure, expectedBeats) {
@@ -346,30 +435,13 @@
 
   function analyzeMeasureRhythm(measure) {
     const source = String(measure?.measureSource ?? measure?.source ?? "");
-    const parts = [];
-    let index = 0;
-    while (index < source.length) {
-      if (source[index] === "[") {
-        const end = source.indexOf("]", index + 1);
-        if (end >= 0) {
-          const content = source.slice(index + 1, end);
-          const width = rhythmWidth(content);
-          if (RHYTHM_TOKEN_CHARACTERS.test(content) && width > 0) parts.push({ token: source.slice(index, end + 1), beats: width / 2 });
-          index = end + 1;
-          continue;
-        }
-      }
-      if (RHYTHM_CHARACTERS.includes(source[index])) {
-        let end = index;
-        while (end < source.length && RHYTHM_CHARACTERS.includes(source[end])) end += 1;
-        const token = source.slice(index, end);
-        parts.push({ token, beats: rhythmWidth(token) / 2 });
-        index = end;
-        continue;
-      }
-      index += 1;
-    }
-    return { parts, totalBeats: parts.reduce((total, part) => total + part.beats, 0) };
+    const parts = applyTwoBeatTriplets(extractRhythmParts(source, measure?.rhythmProfile)).map((part) => ({
+      token: part.token,
+      beats: part.triplet ? part.beats : part.width / 2,
+      triplet: Boolean(part.triplet)
+    }));
+    const totalBeats = parts.reduce((total, part) => total + part.beats, 0);
+    return { parts, totalBeats: Math.round(totalBeats * 1000000) / 1000000 };
   }
 
   function proposeBeatAdjustment(issue) {
@@ -408,7 +480,9 @@
     let segmentLineText = "";
     let segmentMeasure = 0;
     let segmentMeter = null;
+    let segmentRhythmProfile = null;
     let currentMeter = null;
+    let currentRhythmProfile = null;
     lines.forEach((line, lineIndex) => {
       let lineMeasureNumber = 0;
 
@@ -427,14 +501,17 @@
         }
         const measureNumber = segmentMeasure || lineMeasureNumber + 1;
         const source = segment.join("");
+        const rhythmProfile = segmentRhythmProfile || currentRhythmProfile;
+        const analyzedRhythm = segmentHasRhythm ? analyzeMeasureRhythm({ measureSource: source, rhythmProfile }) : null;
         const inlineMeter = parseInlineMeter(source);
         const inheritedMeter = segmentMeter;
         const meter = inlineMeter || inheritedMeter;
         measures.push({
           line: segmentLineIndex + 1,
           measure: measureNumber,
-          beats: segmentHasRhythm ? segmentWidth / 2 : null,
+          beats: analyzedRhythm ? analyzedRhythm.totalBeats : null,
           meter,
+          rhythmProfile,
           inheritedMeter,
           inlineMeter,
           meterScope: inlineMeter ? "measure" : (meter ? "line" : null),
@@ -461,10 +538,13 @@
         segmentLineText = line;
         segmentMeasure = lineMeasureNumber + 1;
         segmentMeter = currentMeter;
+        segmentRhythmProfile = currentRhythmProfile;
       };
 
       const directiveMeter = parseDirectiveMeter(line);
       if (directiveMeter) currentMeter = directiveMeter;
+      const directiveRhythmProfile = parseRhythmDirective(line, currentRhythmProfile);
+      if (directiveRhythmProfile) currentRhythmProfile = directiveRhythmProfile;
       if (/^\s*(?:#|\{)/u.test(line)) {
         if (segmentOpen && lineIndex < lines.length - 1) segment.push("\n");
         if (lineIndex === lines.length - 1) inspectSegment(false);

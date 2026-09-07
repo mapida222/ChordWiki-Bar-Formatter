@@ -116,7 +116,9 @@
     if (!analysis?.parts?.length) return "記号として数えられるリズムがありません。";
     const beatText = (value) => checker?.beatText?.(value)
       || `${Number.isInteger(value) ? value : Number(value).toFixed(1)}拍分`;
-    const parts = analysis.parts.map((part) => `記号「${part.token}」は${beatText(part.beats)}`).join("、");
+    const parts = analysis.parts.map((part) => part.triplet
+      ? `記号「${part.token}」は2拍3連符の1音`
+      : `記号「${part.token}」は${beatText(part.beats)}`).join("、");
     return `${parts}。合計${beatText(analysis.totalBeats)}。`;
   }
 
