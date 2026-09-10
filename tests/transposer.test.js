@@ -15,6 +15,7 @@ assert.strictEqual(transposer.transposeChordToken("N.C.", 7, "sharp"), "N.C.");
 assert.strictEqual(transposer.transposeChordToken("----", 1, "sharp"), "----");
 assert.strictEqual(transposer.transposeChordToken("All", 1, "sharp"), "All");
 assert.strictEqual(transposer.transposeText("", 0, "preserve", false), "", "empty preview text must be safe before the first conversion");
+assert.strictEqual(transposer.transposeText("abcdef", 0, "preserve", false), "abcdef", "text without chord or key sections must remain safe before preview conversion");
 assert.strictEqual(transposer.transposeChordToken("Db", 0, "preserve"), "Db");
 assert.strictEqual(transposer.transposeChordToken("C#", 0, "flat"), "Db");
 assert.strictEqual(transposer.transposeChordToken("B", 0, "flat", true), "Cb");

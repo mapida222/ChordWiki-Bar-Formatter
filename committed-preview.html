@@ -60,17 +60,12 @@
   <main class="score-window-main committed-window-layout committed-window-stacked" id="committed-window-layout">
     <section class="committed-window-pane committed-window-editor-pane">
       <div class="committed-window-pane-title">
-        <div class="committed-window-pane-title-main"><span>編集テキスト</span><span class="committed-editor-title-actions"><button id="committed-position-toggle" class="position-adjust-toggle" type="button" aria-pressed="false" title="コードを選択して矢印キーで位置を調整（F2で切替）">コード位置調整モード</button><button id="committed-measure-check" class="measure-check-button committed-measure-check-button" type="button" aria-controls="committed-measure-check-panel" aria-expanded="false" title="小節ごとの構文エラーと拍数を確認">小節をチェック</button></span></div>
-        <div id="committed-position-help" class="position-adjust-help" hidden><div class="position-adjust-help-keys"><kbd>F2</kbd> 開閉　<kbd>Shift+F2</kbd> 対象切替　<kbd>←</kbd> <kbd>→</kbd> 移動　<kbd>↑</kbd> <kbd>↓</kbd> 行移動　<kbd>Space</kbd> 次　<kbd>Shift+Space</kbd> 前　<kbd>Esc</kbd> 終了</div><label class="position-adjust-option"><input id="committed-position-symbols" type="checkbox"> 小節線・ハイフンも移動対象にする</label></div>
+        <div class="committed-window-pane-title-main"><span>編集テキスト</span><span class="committed-editor-title-actions"><button id="committed-position-toggle" class="position-adjust-toggle" type="button" aria-pressed="false" title="コードを選択して矢印キーで位置を調整（F2で切替）">コード位置調整モード(F2)</button><button id="committed-measure-check" class="measure-check-button committed-measure-check-button" type="button" aria-controls="committed-measure-check-panel" aria-expanded="false" title="小節ごとの構文エラーと拍数を確認">小節をチェック</button></span></div>
+        <div id="committed-position-help" class="position-adjust-help" hidden><div class="position-adjust-help-keys"><kbd>F2</kbd> 開閉　<kbd>Shift+F2</kbd> 対象切替　<kbd>←</kbd> <kbd>→</kbd> 移動　<kbd>↑</kbd> <kbd>↓</kbd> 行移動　<kbd>Space</kbd> 次　<kbd>Shift+Space</kbd> 前　<kbd>Esc</kbd> 終了</div><label class="position-adjust-option"><input id="committed-position-symbols" type="checkbox"> 小節線・ハイフンも移動対象にする (Shift+F2)</label></div>
       </div>
       <aside id="committed-measure-check-panel" class="measure-check-panel committed-measure-check-panel" aria-live="polite" hidden>
         <div class="measure-check-toolbar"><div id="committed-measure-check-summary" class="measure-check-summary"></div><div class="measure-check-bulk-actions"><button id="committed-measure-check-expand-all" type="button" aria-expanded="false">すべて開く</button><button id="committed-measure-check-apply-all" type="button" hidden>安全な対策をすべて適用</button></div></div>
         <ul id="committed-measure-check-results" class="measure-check-results"></ul>
-        <section id="committed-measure-check-meter" class="measure-check-meter" hidden>
-          <div class="measure-check-meter-title">1小節の長さを確認（4/4・6/8など）</div>
-          <p id="committed-measure-check-meter-summary" class="measure-check-meter-copy"></p>
-          <div id="committed-measure-check-meter-results" class="measure-check-meter-results"></div>
-        </section>
         <section id="committed-measure-check-recommendation" class="measure-check-recommendation" hidden>
           <div class="measure-check-recommendation-title">推奨編集：16分音符アクセントを「≧」で明示</div>
           <p class="measure-check-recommendation-copy">入力欄はOKを押すまで変更しません。変更前と変更後を確認してください。</p>
@@ -84,6 +79,6 @@
     <div id="committed-window-divider" class="committed-window-divider" role="separator" aria-label="テキストとプレビューの高さを調整" aria-orientation="horizontal" tabindex="0"></div>
     <section class="committed-window-pane committed-window-preview-pane"><div class="committed-window-pane-title"><span>譜面プレビュー</span><span id="committed-preview-mode-status" class="preview-position-status" hidden>● コード位置調整モード中</span></div><div id="committed-window-preview" class="chordwiki-preview committed-window-preview" aria-label="譜面プレビュー"></div></section>
   </main>
-      <script type="module" src="/js/entries/committed-preview.js?v=20260907-004"></script>
+      <script type="module" src="/js/entries/committed-preview.js?v=20260908-003"></script>
 </body>
 </html>

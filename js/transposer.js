@@ -252,7 +252,7 @@
     return source.split(/(\r\n|\r|\n)/).map((line) => {
       if (/^(?:\r\n|\r|\n)$/.test(line)) return line;
       const section = sections.find((candidate) => lineIndex + 1 >= candidate.startLine && lineIndex + 1 <= candidate.endLine) || sections[0];
-      if (section.index !== sectionIndex) {
+      if (section && section.index !== sectionIndex) {
         sectionIndex = section.index;
         context = sectionContext(section, sectionSettings, amount, preference, theoretical, doubleSharpStyle);
       }

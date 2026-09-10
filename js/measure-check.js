@@ -5,9 +5,9 @@
 }(typeof globalThis !== "undefined" ? globalThis : this, function () {
   "use strict";
 
-  const RHYTHM_CHARACTERS = "-=>≧＞＝";
-  const RHYTHM_TOKEN_CHARACTERS = /^[\s\-=>≧＞＝○*]+$/u;
-  const DEFAULT_RHYTHM_WIDTHS = { "-": 2, ">": 2, "＞": 2, "=": 1, "＝": 1, "≧": 1 };
+  const RHYTHM_CHARACTERS = "-=>≧＞＝≡";
+  const RHYTHM_TOKEN_CHARACTERS = /^[\s\-=>≧＞＝≡○*]+$/u;
+  const DEFAULT_RHYTHM_WIDTHS = { "-": 2, ">": 2, "＞": 2, "=": 1, "＝": 1, "≡": 1, "≧": 1 };
 
   function rhythmWidth(value, rhythmProfile = null) {
     const characters = [...String(value || "")];
@@ -16,15 +16,21 @@
     for (let index = 0; index < characters.length; index += 1) {
       const character = characters[index];
       const next = characters[index + 1];
-      if (character === "＞" && next === "＝" && characters[index + 2] === "＝") {
+      if (character === "＞" && next === "＞" && characters[index + 2] === "＞") {
+        // 「＞＞＞」も3音を2拍に収める全角の2拍3連符表記。
+        total += 4;
+        index += 2;
+        continue;
+      }
+      if (character === "＞" && (next === "＝" || next === "≡") && (characters[index + 2] === "＝" || characters[index + 2] === "≡")) {
         // 全角の「＞＝＝」は、3連符3音を2拍に収める既存表記。
         total += 4;
         index += 2;
         continue;
       }
       if (character === "-") total += widths[character];
-      else if (character === ">" || character === "＞") total += (next === "=" || next === "＝") ? widths[next] : widths[character];
-      else if (character === "=" || character === "＝" || character === "≧") total += widths[character];
+      else if (character === ">" || character === "＞") total += (next === "=" || next === "＝" || next === "≡") ? widths[next] : widths[character];
+      else if (character === "=" || character === "＝" || character === "≡" || character === "≧") total += widths[character];
     }
     return total;
   }
@@ -33,23 +39,42 @@
     const source = String(line || "");
     if (!/^\s*\{\s*c(?:i)?\s*:/iu.test(source)) return previousProfile;
     const widths = { ...DEFAULT_RHYTHM_WIDTHS, ...(previousProfile?.widths || {}) };
+    const declarations = { ...(previousProfile?.declarations || {}) };
     const explicitWidth = new Set();
     let found = false;
-    for (const match of source.matchAll(/([\-=>≧＝＞])\s*[：:]\s*(?:(\d+)\s*分音符)?/gu)) {
+    for (const match of source.matchAll(/([\-=>≧＝＞≡])\s*[：:]\s*([^\s　,，;；{}]+)/gu)) {
       const symbol = match[1];
-      const denominator = Number(match[2]);
+      const label = match[2];
+      const denominatorMatch = label.match(/^(\d+)\s*分(?:音符)?(?:アクセント)?$/u);
+      const denominator = Number(denominatorMatch?.[1]);
+      const declaration = /3連符アクセント/u.test(label)
+        ? "triplet-accent"
+        : /3連符/u.test(label)
+          ? "triplet"
+          : /アクセント/u.test(label)
+            ? "accent"
+            : /白玉/u.test(label)
+              ? "hold"
+              : (denominatorMatch ? "note" : null);
+      const declarationSymbols = symbol === ">" || symbol === "＞"
+        ? [">", "＞"]
+        : symbol === "=" || symbol === "＝"
+          ? ["=", "＝"]
+          : [symbol];
+      if (declaration) declarationSymbols.forEach((declarationSymbol) => { declarations[declarationSymbol] = declaration; });
       if (Number.isInteger(denominator) && denominator > 0) {
         const width = 16 / denominator;
         if (!Number.isFinite(width) || width <= 0) continue;
         if (symbol === "=") widths["="] = width;
         else if (symbol === "＝") widths["＝"] = width;
+        else if (symbol === "≡") widths["≡"] = width;
         else if (symbol === ">" || symbol === "＞") {
           widths[">"] = width;
           widths["＞"] = width;
         } else widths[symbol] = width;
         explicitWidth.add(symbol);
         found = true;
-      } else if (symbol === ">" || symbol === "＞") {
+      } else if (declaration || symbol === ">" || symbol === "＞") {
         found = true;
       }
     }
@@ -60,7 +85,50 @@
     }
     if (explicitWidth.has("=") && !explicitWidth.has("＝")) widths["＝"] = widths["="];
     if (explicitWidth.has("＝") && !explicitWidth.has("=")) widths["="] = widths["＝"];
-    return { widths };
+    return { widths, declarations };
+  }
+
+  function isOneBeatTripletText(value) {
+    const text = String(value || "");
+    return [...text].length === 3 && text.includes("＞") && !/^(?:＞＞＞|＞＝＝)$/u.test(text);
+  }
+
+  function isExplicitTwoBeatTripletText(value, rhythmProfile = null) {
+    const text = String(value || "");
+    const declarations = rhythmProfile?.declarations || {};
+    return [...text].length === 3 && [...text].every((character) => ["triplet", "triplet-accent"].includes(declarations[character]));
+  }
+
+  function isThreeSymbolTripletRun(value, rhythmProfile = null) {
+    const characters = [...String(value || "")];
+    if (characters.length < 3 || characters.length % 3 !== 0) return false;
+    for (let index = 0; index < characters.length; index += 3) {
+      const group = characters.slice(index, index + 3).join("");
+      if (!group.includes("＞") && !isExplicitTwoBeatTripletText(group, rhythmProfile)) return false;
+    }
+    return true;
+  }
+
+  function makeRhythmPart(token, content = token, rhythmProfile = null, forceOneBeatTriplet = false) {
+    const text = String(content || "");
+    const isExplicitTwoBeatTriplet = !forceOneBeatTriplet && (/^(?:＞＞＞|＞＝＝)$/u.test(text) || isExplicitTwoBeatTripletText(text, rhythmProfile));
+    const isInferredOneBeatTriplet = forceOneBeatTriplet || isOneBeatTripletText(text);
+    return {
+      token,
+      width: rhythmWidth(text, rhythmProfile),
+      isFullWidthAccent: text === "＞",
+      isTripletGroup: isExplicitTwoBeatTriplet || isInferredOneBeatTriplet,
+      tripletBeats: isExplicitTwoBeatTriplet ? 2 : (isInferredOneBeatTriplet ? 1 : null)
+    };
+  }
+
+  function splitRhythmRun(run, rhythmProfile = null) {
+    const text = String(run || "");
+    if (/^(?:＞＞＞|＞＝＝)$/u.test(text) || !isThreeSymbolTripletRun(text, rhythmProfile)) return [makeRhythmPart(text, text, rhythmProfile)];
+    return Array.from({ length: text.length / 3 }, (_, index) => {
+      const group = [...text].slice(index * 3, index * 3 + 3).join("");
+      return makeRhythmPart(group, group, rhythmProfile, !isExplicitTwoBeatTripletText(group, rhythmProfile));
+    });
   }
 
   function extractRhythmParts(source, rhythmProfile = null) {
@@ -73,9 +141,7 @@
         if (end >= 0) {
           const content = text.slice(index + 1, end);
           const width = rhythmWidth(content, rhythmProfile);
-          if (RHYTHM_TOKEN_CHARACTERS.test(content) && width > 0) {
-            parts.push({ token: text.slice(index, end + 1), width, isFullWidthAccent: content === "＞" });
-          }
+          if (RHYTHM_TOKEN_CHARACTERS.test(content) && width > 0) parts.push(makeRhythmPart(text.slice(index, end + 1), content, rhythmProfile));
           index = end + 1;
           continue;
         }
@@ -84,7 +150,7 @@
         let end = index;
         while (end < text.length && RHYTHM_CHARACTERS.includes(text[end])) end += 1;
         const token = text.slice(index, end);
-        parts.push({ token, width: rhythmWidth(token, rhythmProfile), isFullWidthAccent: token === "＞" });
+        parts.push(...splitRhythmRun(token, rhythmProfile));
         index = end;
         continue;
       }
@@ -107,6 +173,7 @@
         for (let groupIndex = groupStart; groupIndex < groupStart + 3; groupIndex += 1) {
           result[groupIndex].beats = 4 / 3;
           result[groupIndex].triplet = true;
+          result[groupIndex].tripletBeats = 2;
         }
       }
       index = end;
@@ -395,7 +462,7 @@
     if (candidate.scope === "line") {
       const start = Number(candidate.lineStart);
       if (!Number.isInteger(start) || start < 0 || start > before.length) return null;
-      const insertion = `{ci:${meterText}拍子}`;
+      const insertion = `{ci:${formatMeterText(candidate.meter)}拍子}`;
       let after = `${before.slice(0, start)}${insertion}\n${before.slice(start)}`;
       if (candidate.kind === "promote" && candidate.restoreAfter) {
         const restoreStart = Number(candidate.restoreAfter.measureStart) + insertion.length + 1;
@@ -433,12 +500,19 @@
     return `|${source}${measure?.closed === false ? "" : "|"}`;
   }
 
+  function formatMeterText(meter) {
+    if (!meter?.text) return "";
+    return `${meter.text}${meter.groupingText ? `(${meter.groupingText})` : ""}`;
+  }
+
   function analyzeMeasureRhythm(measure) {
     const source = String(measure?.measureSource ?? measure?.source ?? "");
     const parts = applyTwoBeatTriplets(extractRhythmParts(source, measure?.rhythmProfile)).map((part) => ({
       token: part.token,
-      beats: part.triplet ? part.beats : part.width / 2,
-      triplet: Boolean(part.triplet)
+      beats: part.isTripletGroup ? part.tripletBeats : (part.triplet ? part.beats : part.width / 2),
+      triplet: Boolean(part.triplet),
+      tripletGroup: Boolean(part.isTripletGroup),
+      tripletBeats: part.isTripletGroup ? part.tripletBeats : (part.triplet ? part.tripletBeats : null)
     }));
     const totalBeats = parts.reduce((total, part) => total + part.beats, 0);
     return { parts, totalBeats: Math.round(totalBeats * 1000000) / 1000000 };
@@ -586,7 +660,7 @@
             if (rhythmToken && width > 0) {
               segmentHasRhythm = true;
               segmentWidth += width;
-            } else if (/^[\-=>≧]/u.test(content) && !rhythmToken) {
+            } else if (/^[\-=>≧＝＞≡]/u.test(content) && !rhythmToken) {
               issues.push({ line: lineIndex + 1, measure: lineMeasureNumber + 1, type: "syntax", code: "invalid-rhythm-token", token, lineStart: lineStartOffset, lineText: line, start: lineStartOffset + index, end: lineStartOffset + end + 1, message: `リズム記号として解釈できない文字があります：${token}` });
             }
           }

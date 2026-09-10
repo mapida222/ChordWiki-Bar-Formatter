@@ -12,23 +12,7 @@
   const recommendationSummary = document.querySelector("#committed-measure-check-recommendation-summary");
   const applyRecommendationButton = document.querySelector("#committed-measure-check-apply");
   const rejectRecommendationButton = document.querySelector("#committed-measure-check-reject");
-  const meterSection = document.querySelector("#committed-measure-check-meter");
-  const meterSummary = document.querySelector("#committed-measure-check-meter-summary");
-  const meterResults = document.querySelector("#committed-measure-check-meter-results");
   let rejectedSource = null;
-  let lastOutputValue = String(output.value || "");
-  const storedMeterOverrides = new Map();
-  const appliedMeterProposals = new Map();
-  const appliedMeterDismissalLocations = new Set();
-  const DISMISSED_METER_STORAGE_KEY = "CBF_MEASURE_CHECK_DISMISSED_METERS_V1";
-  const dismissedMeterCandidates = new Set((() => {
-    try {
-      const stored = JSON.parse(window.localStorage.getItem(DISMISSED_METER_STORAGE_KEY) || "[]");
-      return Array.isArray(stored) ? stored : [];
-    } catch (_error) {
-      return [];
-    }
-  })());
 
   if (!output || !button || !panel || !summary || !results) return;
 
@@ -37,12 +21,28 @@
       || (value === null || value === undefined ? "拍数なし" : `${Number.isInteger(value) ? value : Number(value).toFixed(1)}拍分`);
     switch (issue.code) {
       case "beat-mismatch":
-        const difference = Math.abs(Number(issue.expectedBeats || 0) - Number(issue.actualBeats || 0));
-        return {
+        const actual = Number(issue.actualBeats || 0);
+        const expected = Number(issue.expectedBeats || 0);
+        const difference = Math.abs(expected - actual);
+        const isShort = actual < expected;
+        const isLong = actual > expected;
+        if (isShort) return {
           current: `この小節は${beatText(issue.actualBeats)}です。`,
           cause: `基準の${beatText(issue.expectedBeats)}より${beatText(difference)}足りません。`,
           measure: `小節線「|」の内側に、足りない${beatText(difference)}をリズム記号として追加します。下の「調整例」を参考にしてください。`,
           result: `調整例のように${beatText(issue.expectedBeats)}になればOKです。入力欄は自動で変更しません。`
+        };
+        if (isLong) return {
+          current: `この小節は${beatText(issue.actualBeats)}です。`,
+          cause: `基準の${beatText(issue.expectedBeats)}より${beatText(difference)}多すぎます。`,
+          measure: `小節線「|」の内側から、多すぎる${beatText(difference)}分のリズム記号を減らしてください。下の入力を手動で確認します。`,
+          result: `${beatText(issue.expectedBeats)}になるように余分なリズム記号を減らせばOKです。`
+        };
+        return {
+          current: `この小節は${beatText(issue.actualBeats)}です。`,
+          cause: "基準と拍数が一致していません。",
+          measure: "小節内のリズム記号を確認してください。",
+          result: `${beatText(issue.expectedBeats)}になればOKです。`
         };
       case "empty-bracket":
         return {
@@ -116,8 +116,10 @@
     if (!analysis?.parts?.length) return "記号として数えられるリズムがありません。";
     const beatText = (value) => checker?.beatText?.(value)
       || `${Number.isInteger(value) ? value : Number(value).toFixed(1)}拍分`;
-    const parts = analysis.parts.map((part) => part.triplet
-      ? `記号「${part.token}」は2拍3連符の1音`
+    const parts = analysis.parts.map((part) => part.tripletGroup
+      ? `記号「${part.token}」は${part.tripletBeats || 2}拍3連符`
+      : part.triplet
+      ? `記号「${part.token}」は${part.tripletBeats || 2}拍3連符の1音`
       : `記号「${part.token}」は${beatText(part.beats)}`).join("、");
     return `${parts}。合計${beatText(analysis.totalBeats)}。`;
   }
@@ -224,135 +226,11 @@
     requestAnimationFrame(() => render(true));
   }
 
-  function meterCandidateKey(candidate) {
-    return JSON.stringify([
-      candidate.kind || "missing",
-      candidate.scope,
-      candidate.line,
-      candidate.measure || "all",
-      candidate.meter?.text || "",
-      String(candidate.lineText || "").replace(/\r/gu, "").trim()
-    ]);
-  }
-
-  function meterCandidateLocationKey(candidate) {
-    return JSON.stringify([
-      candidate.kind || "missing",
-      candidate.scope,
-      candidate.line,
-      candidate.measure || "all",
-      candidate.meter?.text || ""
-    ]);
-  }
-
-  function saveDismissedMeterCandidates() {
-    try {
-      window.localStorage.setItem(DISMISSED_METER_STORAGE_KEY, JSON.stringify([...dismissedMeterCandidates]));
-    } catch (_error) {
-      // localStorageが使えない環境でも、現在のタブ内の抑制は維持する。
-    }
-  }
-
-  function rememberAppliedMeterProposal(candidate, proposal) {
-    appliedMeterProposals.set(meterCandidateKey(candidate), {
-      after: proposal.after,
-      insertion: proposal.insertion,
-      location: meterCandidateLocationKey(candidate)
-    });
-  }
-
-  function currentMeterOverrides() {
-    return storedMeterOverrides.get(String(output.value || "")) || [];
-  }
-
   function currentDefaultMeter() {
     const values = window.CBFSettings?.load?.() || {};
     const capacity = Number(values.measureCapacity);
     if (!Number.isInteger(capacity) || capacity < 2) return "4/4";
     return capacity === 8 ? "4/4" : `${capacity}/8`;
-  }
-
-  function focusMeterCandidate(candidate) {
-    focusIssue({ line: candidate.line });
-  }
-
-  function renderMeterCandidates(checker, result) {
-    if (!meterSection || !meterSummary || !meterResults) return;
-    const defaultMeter = currentDefaultMeter();
-    const candidates = (result.meterCandidates || [])
-      .filter((candidate) => !storedMeterOverrides.get(String(output.value || ""))?.some((override) => override.key === meterCandidateKey(candidate)) && !dismissedMeterCandidates.has(meterCandidateKey(candidate)) && !appliedMeterDismissalLocations.has(meterCandidateLocationKey(candidate)))
-      .filter((candidate, _index, visibleCandidates) => {
-        // 1小節だけの一時的な拍数の乱れは、拍子変更として急かさない。
-        if (candidate.kind || candidate.scope === "line") return true;
-        return visibleCandidates.some((other) => other !== candidate
-          && other.scope === "measure"
-          && other.line === candidate.line
-          && other.meter?.text === candidate.meter?.text);
-      });
-    meterSection.hidden = candidates.length === 0;
-    meterResults.replaceChildren();
-    if (!candidates.length) return;
-    const hasTransition = candidates.some((candidate) => candidate.kind === "restore" || candidate.kind === "promote");
-    meterSummary.textContent = hasTransition
-      ? "途中で1小節の長さが変わっている可能性があります。続く小節を同じ長さとして扱うか、元の長さに戻す場所を選んでください。入力欄は選ぶまで変更しません。"
-      : "同じ長さの小節が続いています。書き忘れか、意図した変化かを確認してください。入力欄は「追加」を選ぶまで変更しません。";
-    candidates.forEach((candidate) => {
-      const proposal = checker.proposeMeterAnnotation?.(output.value, candidate);
-      if (!proposal) return;
-      const card = document.createElement("article");
-      card.className = "measure-check-meter-card";
-      const title = document.createElement("div");
-      title.className = "measure-check-meter-card-title";
-      const location = candidate.scope === "line"
-        ? `${candidate.line}行目・行全体`
-        : `${candidate.line}行目・${candidate.measure}小節目`;
-      title.textContent = candidate.kind === "restore"
-        ? `${location}：${candidate.meter.text}へ戻ることを明示（適用範囲：${candidate.scopeLabel}）`
-        : candidate.kind === "promote"
-          ? `${location}：${candidate.meter.text}の区間としてまとめる（適用範囲：${candidate.scopeLabel}）`
-          : `${location}：推定 ${candidate.meter.text}（適用範囲：${candidate.scopeLabel}）`;
-      const comparison = document.createElement("div");
-      comparison.className = "measure-check-meter-comparison measure-check-recommendation-comparison";
-      renderProposalComparison(comparison, proposal);
-      const actions = document.createElement("div");
-      actions.className = "measure-check-recommendation-actions";
-      const assume = document.createElement("button");
-      assume.type = "button";
-      assume.textContent = `${defaultMeter}として保管`;
-      assume.addEventListener("click", () => {
-        const source = String(output.value || "");
-        const overrides = storedMeterOverrides.get(source) || [];
-        overrides.push({ key: meterCandidateKey(candidate), scope: candidate.scope, line: candidate.line, measure: candidate.measure, meter: defaultMeter });
-        storedMeterOverrides.set(source, overrides);
-        render(true);
-      });
-      const apply = document.createElement("button");
-      apply.type = "button";
-      apply.textContent = candidate.kind === "restore"
-        ? `${candidate.meter.text}を付加`
-        : candidate.kind === "promote"
-          ? `{ci:${candidate.meter.text}拍子}を追加`
-          : `推定${candidate.meter.text}を付加`;
-      apply.addEventListener("click", () => {
-        rememberAppliedMeterProposal(candidate, proposal);
-        applyText(proposal.after);
-      });
-      const manual = document.createElement("button");
-      manual.type = "button";
-      manual.textContent = "手動で確認";
-      manual.addEventListener("click", () => focusMeterCandidate(candidate));
-      const dismiss = document.createElement("button");
-      dismiss.type = "button";
-      dismiss.textContent = "追加しない（再提案しない）";
-      dismiss.addEventListener("click", () => {
-        dismissedMeterCandidates.add(meterCandidateKey(candidate));
-        saveDismissedMeterCandidates();
-        render(true);
-      });
-      actions.append(assume, apply, manual, dismiss);
-      card.append(title, comparison, actions);
-      meterResults.append(card);
-    });
   }
 
   function applyBeatSuggestion(issue) {
@@ -385,7 +263,7 @@
     const expectedBeatText = window.CBFMeasureCheck?.beatText?.(issue.expectedBeats)
       || `${Number.isInteger(issue.expectedBeats) ? issue.expectedBeats : Number(issue.expectedBeats).toFixed(1)}拍分`;
     const explanationText = issue.type === "beat"
-      ? `${explanation.cause}下の自動修正案では${expectedBeatText}になります。`
+      ? `${explanation.cause}${Number(issue.actualBeats) < Number(issue.expectedBeats) ? `下の自動修正案では${expectedBeatText}になります。` : ""}`
       : explanation.cause;
     paragraph.append(labelElement, document.createTextNode(explanationText));
     body.append(paragraph);
@@ -404,7 +282,7 @@
 
   function render(open = true) {
     const checker = window.CBFMeasureCheck;
-    const result = checker?.validate(output.value, { defaultMeter: currentDefaultMeter(), meterOverrides: currentMeterOverrides() });
+    const result = checker?.validate(output.value, { defaultMeter: currentDefaultMeter() });
     const proposal = checker?.proposeSixteenthAccentNotation?.(output.value);
     if (!result) return;
 
@@ -466,8 +344,6 @@
       }
     }));
 
-    renderMeterCandidates(checker, result);
-
     if (!result.issues.length && result.noBeatMeasureCount) {
       const item = document.createElement("li");
       item.className = "measure-check-result measure-check-result-note";
@@ -508,18 +384,6 @@
   });
   output.addEventListener("input", () => {
     rejectedSource = null;
-    const nextOutputValue = String(output.value || "");
-    let dismissedAfterDeletion = false;
-    appliedMeterProposals.forEach((record, key) => {
-      if (lastOutputValue === record.after && !nextOutputValue.includes(record.insertion)) {
-        dismissedMeterCandidates.add(key);
-        if (record.location) appliedMeterDismissalLocations.add(record.location);
-        dismissedAfterDeletion = true;
-      }
-    });
-    if (dismissedAfterDeletion) saveDismissedMeterCandidates();
-    lastOutputValue = nextOutputValue;
-    storedMeterOverrides.delete(nextOutputValue);
     if (!panel.hidden) render(true);
   });
   expandAllButton?.addEventListener("click", () => {
@@ -531,7 +395,7 @@
   });
   applyAllButton?.addEventListener("click", () => {
     const checker = window.CBFMeasureCheck;
-    const result = checker?.validate(output.value, { defaultMeter: currentDefaultMeter(), meterOverrides: currentMeterOverrides() });
+    const result = checker?.validate(output.value, { defaultMeter: currentDefaultMeter() });
     if (!checker || !result) return;
     const fixes = result.issues.map((issue) => checker.issueFix?.(issue)).filter(Boolean);
     let next = checker.applyFixes(output.value, fixes);

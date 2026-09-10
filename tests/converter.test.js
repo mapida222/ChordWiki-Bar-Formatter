@@ -523,6 +523,16 @@ if (CBFConverter.renderCompletedOutput(shortFractionMissingTail, [4], 4).output 
   failures += 1;
   console.error("FAIL a 3+1 two-chord measure must restore its four-beat tail after the preposed lyric character");
 }
+const fiveBeatCrossMeasureLyric = CBFConverter.convertChordText(
+  "[Ab]相対ヒス[G]テリカ　[G/B]情の成す無[Cm]条件に",
+  settings,
+  ["4354"]
+);
+const fiveBeatCrossMeasureLyricExpected = "[|][Ab][----]相対ヒス[G][---]テリカ　[G/B][-]情[|][----]の成す無[Cm][----]条件に[|]";
+if (fiveBeatCrossMeasureLyric.output !== fiveBeatCrossMeasureLyricExpected) {
+  failures += 1;
+  console.error(`FAIL a five-beat crossing lyric must place one character after the one-beat marker\nexpected: ${fiveBeatCrossMeasureLyricExpected}\nactual: ${fiveBeatCrossMeasureLyric.output}`);
+}
 const oneChordFourFour = "[|][C][----][----]歌詞続く[|]";
 const oneChordFourFourExpected = "[|][C]歌詞続く[|]";
 const incompleteFour = "[|][C][----]途中だけ[|]";

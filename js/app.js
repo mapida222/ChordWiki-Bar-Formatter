@@ -611,6 +611,12 @@
     for (let index = 0; index < Math.max(0, lineIndex); index += 1) offset += (lines[index] || "").length + 1;
     return offset;
   }
+  const AUTO_SCROLL_EDGE_ROWS = 2;
+  function lineIsNearVerticalEdge(lineTop, lineHeight, scrollTop, clientHeight) {
+    const edgeMargin = Math.min(lineHeight * AUTO_SCROLL_EDGE_ROWS, Math.max(0, (clientHeight - lineHeight) / 2));
+    const lineCenter = lineTop + lineHeight / 2;
+    return lineCenter < scrollTop + edgeMargin || lineCenter > scrollTop + clientHeight - edgeMargin;
+  }
   function keepCorrectionLineInView(lineIndex) {
     if (window.matchMedia("(max-width: 699px)").matches) return;
     // A correction paste may update the active slot as part of its input event.
@@ -621,6 +627,7 @@
     const lineHeight = Number.parseFloat(computed.lineHeight) || 23;
     const paddingTop = Number.parseFloat(computed.paddingTop) || 0;
     const lineTop = paddingTop + Math.max(0, lineIndex) * lineHeight;
+    if (!lineIsNearVerticalEdge(lineTop, lineHeight, elements.correction.scrollTop, elements.correction.clientHeight)) return;
     const nextScrollTop = Math.max(0, lineTop - (elements.correction.clientHeight - lineHeight) / 2);
     if (nextScrollTop !== elements.correction.scrollTop) elements.correction.scrollTop = nextScrollTop;
   }
@@ -737,6 +744,7 @@
     const preview = elements.finalPreview;
     const lineTop = active.offsetTop;
     const lineHeight = active.offsetHeight || Number.parseFloat(getComputedStyle(preview).lineHeight) || 23;
+    if (!lineIsNearVerticalEdge(lineTop, lineHeight, preview.scrollTop, preview.clientHeight)) return;
     const nextScrollTop = Math.max(0, lineTop - (preview.clientHeight - lineHeight) / 2);
     if (nextScrollTop !== preview.scrollTop) preview.scrollTop = nextScrollTop;
   }
@@ -747,6 +755,7 @@
     const lineHeight = Number.parseFloat(computed.lineHeight) || 23;
     const paddingTop = Number.parseFloat(computed.paddingTop) || 0;
     const lineTop = paddingTop + linkedLineIndex * lineHeight;
+    if (!lineIsNearVerticalEdge(lineTop, lineHeight, textarea.scrollTop, textarea.clientHeight)) return;
     const nextScrollTop = Math.max(0, lineTop - (textarea.clientHeight - lineHeight) / 2);
     if (nextScrollTop !== textarea.scrollTop) textarea.scrollTop = nextScrollTop;
   }
@@ -2574,6 +2583,8 @@
   };
   const moveOutputCursor = (direction) => {
     const value = elements.output.value;
+    const preservedScrollTop = elements.output.scrollTop;
+    const preservedScrollLeft = elements.output.scrollLeft;
     const position = elements.output.selectionEnd;
     const lineStart = Math.max(value.lastIndexOf("\n", position - 1), value.lastIndexOf("\r", position - 1)) + 1;
     const nextLineBreak = value.slice(position).search(/\r\n|\r|\n/);
@@ -2584,8 +2595,11 @@
     if (direction === "up" || direction === "down") {
       const column = position - lineStart;
       if (direction === "up" && lineStart > 0) {
-        const previousEnd = lineStart - 1;
-        const previousStart = Math.max(value.lastIndexOf("\n", previousEnd - 1), value.lastIndexOf("\r", previousEnd - 1)) + 1;
+        const previousBreakStart = value[lineStart - 2] === "\r" && value[lineStart - 1] === "\n"
+          ? lineStart - 2
+          : lineStart - 1;
+        const previousEnd = previousBreakStart;
+        const previousStart = Math.max(value.lastIndexOf("\n", previousBreakStart - 1), value.lastIndexOf("\r", previousBreakStart - 1)) + 1;
         nextPosition = Math.min(previousStart + column, previousEnd);
       }
       if (direction === "down" && lineEnd < value.length) {
@@ -2597,12 +2611,29 @@
     }
     elements.output.setSelectionRange(nextPosition, nextPosition);
     elements.output.focus({ preventScroll: true });
-    if (["left", "right"].includes(direction)) requestAnimationFrame(() => revealEditorAhead(elements.output, direction));
+    if (["up", "down"].includes(direction)) {
+      requestAnimationFrame(() => {
+        const caretLineStart = Math.max(value.lastIndexOf("\n", nextPosition - 1), value.lastIndexOf("\r", nextPosition - 1)) + 1;
+        const lineIndex = value.slice(0, caretLineStart).split(/\r\n|\r|\n/).length - 1;
+        const style = window.getComputedStyle(elements.output);
+        const lineHeight = Number.parseFloat(style.lineHeight) || 23;
+        const paddingTop = Number.parseFloat(style.paddingTop) || 0;
+        const lineTop = paddingTop + lineIndex * lineHeight;
+        if (!lineIsNearVerticalEdge(lineTop, lineHeight, elements.output.scrollTop, elements.output.clientHeight)) {
+          elements.output.scrollTop = preservedScrollTop;
+          elements.output.scrollLeft = preservedScrollLeft;
+          return;
+        }
+        elements.output.scrollTop = Math.max(0, lineTop - (elements.output.clientHeight - lineHeight) / 2);
+        elements.output.scrollLeft = preservedScrollLeft;
+      });
+    } else requestAnimationFrame(() => revealEditorAhead(elements.output, direction));
   };
   elements.output.addEventListener("keydown", (event) => {
     if (applyKeyTransitionOnEnter(elements.output, event)) return;
-    if (!["ArrowLeft", "ArrowRight"].includes(event.key) || event.altKey || event.ctrlKey || event.metaKey) return;
-    requestAnimationFrame(() => revealEditorAhead(elements.output, event.key === "ArrowLeft" ? "left" : "right"));
+    if (!["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(event.key) || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
+    event.preventDefault();
+    moveOutputCursor(event.key === "ArrowLeft" ? "left" : event.key === "ArrowRight" ? "right" : event.key === "ArrowUp" ? "up" : "down");
   });
   elements.input.addEventListener("keydown", (event) => {
     if (applyKeyTransitionOnEnter(elements.input, event)) return;
@@ -3475,7 +3506,43 @@
       if (Number.isFinite(layout.committedHeight)) setRowHeight("committed", layout.committedHeight);
     } catch (_error) { /* 壊れた保存値は既定レイアウトを使う */ }
   }
+  const resizeScrollEditors = [elements.correction, elements.input, elements.output, elements.finalOutput, elements.committedOutput, elements.finalPreview].filter(Boolean);
+  let columnResizeActive = false;
+  let columnResizeScrollPositions = null;
+  function captureResizeScrollPositions() {
+    return resizeScrollEditors.map((editor) => {
+      const maxScrollLeft = Math.max(0, editor.scrollWidth - editor.clientWidth);
+      const paddingRight = Number.parseFloat(getComputedStyle(editor).paddingRight) || 0;
+      const rightOffset = Math.max(0, maxScrollLeft - editor.scrollLeft);
+      return { editor, scrollLeft: editor.scrollLeft, rightOffset, atRightEdge: maxScrollLeft > 0 && rightOffset <= Math.max(2, paddingRight + 2) };
+    });
+  }
+  function restoreResizeScrollPositions(positions) {
+    positions.forEach(({ editor, scrollLeft, rightOffset, atRightEdge }) => {
+      const maxScrollLeft = Math.max(0, editor.scrollWidth - editor.clientWidth);
+      editor.scrollLeft = atRightEdge ? Math.max(0, maxScrollLeft - rightOffset) : Math.min(scrollLeft, maxScrollLeft);
+    });
+  }
+  function beginColumnResize(event) {
+    event.preventDefault();
+    event.currentTarget?.focus();
+    columnResizeActive = true;
+    columnResizeScrollPositions = captureResizeScrollPositions();
+  }
+  function finishColumnResize() {
+    const positions = columnResizeScrollPositions || [];
+    restoreResizeScrollPositions(positions);
+    requestAnimationFrame(() => {
+      restoreResizeScrollPositions(positions);
+      requestAnimationFrame(() => {
+        restoreResizeScrollPositions(positions);
+        columnResizeActive = false;
+        columnResizeScrollPositions = null;
+      });
+    });
+  }
   function setLeftColumnWidth(width) {
+    const resizeScrollPositions = columnResizeScrollPositions || captureResizeScrollPositions();
     const workspaceWidth = elements.workspace.getBoundingClientRect().width;
     const clamped = Math.max(220, Math.min(width, Math.max(220, workspaceWidth - 10)));
     const current = Number.parseFloat(elements.workspace.style.getPropertyValue("--left-column-width"));
@@ -3483,11 +3550,14 @@
     document.querySelectorAll(".column-resize-edge").forEach((edge) => edge.setAttribute("aria-valuenow", String(Math.round(clamped))));
     saveLayout();
     positionSettingsPanel();
+    restoreResizeScrollPositions(resizeScrollPositions);
+    requestAnimationFrame(() => restoreResizeScrollPositions(resizeScrollPositions));
   }
   document.querySelectorAll(".column-resize-edge").forEach((edge) => {
     let dragStartX = 0;
     let dragStartWidth = 0;
     edge.addEventListener("pointerdown", (event) => {
+      beginColumnResize(event);
       dragStartX = event.clientX;
       dragStartWidth = elements.correctionCard.getBoundingClientRect().width;
       edge.classList.add("dragging");
@@ -3498,10 +3568,13 @@
       const direction = edge.dataset.column === "inverse" ? -1 : 1;
       setLeftColumnWidth(dragStartWidth + (event.clientX - dragStartX) * direction);
     });
-    edge.addEventListener("pointerup", (event) => {
+    const endColumnResize = (event) => {
       edge.classList.remove("dragging");
+      finishColumnResize();
       if (edge.hasPointerCapture(event.pointerId)) edge.releasePointerCapture(event.pointerId);
-    });
+    };
+    edge.addEventListener("pointerup", endColumnResize);
+    edge.addEventListener("pointercancel", endColumnResize);
     edge.addEventListener("keydown", (event) => {
       if (!["ArrowLeft", "ArrowRight"].includes(event.key)) return;
       event.preventDefault();
@@ -3553,6 +3626,7 @@
               ? elements.committedOutputShell
               : elements.outputShell;
     handle.addEventListener("pointerdown", (event) => {
+      beginColumnResize(event);
       startX = event.clientX;
       startY = event.clientY;
       startWidth = elements.correctionCard.getBoundingClientRect().width;
@@ -3571,8 +3645,10 @@
     });
     handle.addEventListener("pointerup", (event) => {
       handle.classList.remove("dragging");
+      finishColumnResize();
       if (handle.hasPointerCapture(event.pointerId)) handle.releasePointerCapture(event.pointerId);
     });
+    handle.addEventListener("pointercancel", () => finishColumnResize());
     handle.addEventListener("keydown", (event) => {
       if (!["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(event.key)) return;
       event.preventDefault();
@@ -3786,6 +3862,7 @@
         elements.correctionGrid.style.setProperty("--correction-grid-scroll-top", `${editor.scrollTop}px`);
       }
       syncHighlightScroll(editor);
+      if (columnResizeActive) return;
       if ([elements.correction, elements.output].includes(editor) && !mobileProgrammaticScroll && !syncingScroll && !restoringPasteScroll && window.matchMedia("(max-width: 699px)").matches) mobileLinkedScrollPaused = true;
       if (suppressed || syncingScroll || restoringPasteScroll) return;
       const correctionResultPair = [elements.correction, elements.output];
