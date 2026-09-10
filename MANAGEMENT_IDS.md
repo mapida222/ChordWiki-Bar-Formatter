@@ -141,6 +141,7 @@
 | `PREVIEW-012` | リアルタイムエディターの移調操作を左の編集テキストへ反映し、右プレビューへの二重適用を防止 | 有効 | `js/committed-preview-window.js`、`tests/committed-preview-window.test.js` |
 | `PREVIEW-013` | リアルタイムエディターの表示設定で音名を元表記・#表示・♭表記から選択し、譜面プレビューへ反映 | 有効 | `committed-preview.html`、`js/committed-preview-window.js`、`tests/committed-preview-window.test.js` |
 | `PREVIEW-014` | リアルタイムエディターのコード位置調整モードをF2で切り替え、Shift+F2で小節線・ハイフンの移動対象を切り替える | 有効 | `committed-preview.html`、`js/committed-preview-window.js`、`tests/committed-preview-window.test.js` |
+| `PREVIEW-015` | コード・キー区間のない変換後テキストでも移調プレビューを停止させず、そのまま表示 | 有効 | `js/transposer.js`、`tests/transposer.test.js` |
 | `PUBLIC-001` | 公開準備と公開前確認 | 有効 | `README.md`、`PUBLICATION_CHECKLIST.md`、`docs/images/help-usage-screenshot.png`、`.gitignore`、`package.json` |
 | `PUBLIC-002` | GitHubトップページの文章・画像改善 | 有効 | `README.md`、`docs/images/readme-*.png`、`docs/README_CAPTURE_SAMPLE.md` |
 | `PUBLIC-003` | クレジット・意見要望・応援リンク | 有効 | `index.html`、`style.css`、`tests/public-links.test.js` |

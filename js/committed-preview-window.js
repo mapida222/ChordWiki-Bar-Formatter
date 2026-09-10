@@ -446,7 +446,7 @@
     positionUndoStack.length = 0;
     activeChordStart = -1;
     text.readOnly = false;
-    positionToggle.textContent = "コード位置調整モード";
+    positionToggle.textContent = "コード位置調整モード(F2)";
     positionToggle.setAttribute("aria-pressed", "false");
     positionToggle.title = "コードを選択して矢印キーで位置を調整（F2で切替）";
     editorPane.classList.remove("position-adjust-active");

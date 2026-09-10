@@ -16,6 +16,18 @@ const settings = {
 
 const source = "|[Cadd9](rit...)　　　　　|　　　　　|";
 const result = CBFConverter.convertChordText(source, settings, []);
-assert.strictEqual(result.output, source, "parenthesized timing annotations must not convert a source line into a chord-only row");
+assert.strictEqual(result.output, source, "(rit...) must remain authored without making the line lyric-bearing");
+
+const unisonSource = "|[C#m]---- [/D#]----|[/E]---- [/G#]----[|](unis)[/A][----][/G#][----]|[/A]-[/G#]-[/E]-[/C#]- -";
+const unisonResult = CBFConverter.convertChordText(unisonSource, settings, []);
+assert.strictEqual(unisonResult.output, unisonSource, "(unis) must remain notation and must not add lyric brackets to an interlude line");
+
+const ritSource = "[Ab]-|---- ----|[Ab]---- ---[G]-|---- ----|[G]--[N.C.](rit...)-- ----|";
+const ritResult = CBFConverter.convertChordText(ritSource, settings, []);
+assert.strictEqual(
+  ritResult.output,
+  ritSource,
+  "(rit...) must remain notation while preserving the authored compact rhythm layout"
+);
 
 console.log("PASS: parenthesized annotations remain in their authored compact form");

@@ -109,12 +109,17 @@
   // notation (`[C]-- --|`). Bracketing each hyphen group would add empty text
   // brackets. Time signatures, spacing and a white-note marker are notation,
   // not lyrics, so they keep the compact rhythm form.
-  const ARRANGEMENT_PARENTHESIS_RE = /[（(]\s*(?:key|capo|tempo|guitar|bass|piano|drums?|vocal|synth|strings?|percussion|intro|outro|interlude|solo|break|instrumental)\b[^）)]*[）)]/iu;
+  const ARRANGEMENT_PARENTHESIS_RE = /[（(]\s*(?:key|capo|tempo|guitar|bass|piano|drums?|vocal|synth|strings?|percussion|intro|outro|interlude|solo|break|instrumental|unis(?:on)?|rit\b)[^）)]*[）)]/iu;
+  const STANDALONE_PARENTHESIZED_ANNOTATION_RE = /^(?:[\s　]*(?:\(\s*(?:key|capo|tempo|guitar|bass|piano|drums?|vocal|synth|strings?|percussion|intro|outro|interlude|solo|break|instrumental|unis(?:on)?|rit\b)[^()\r\n]*\)|（\s*(?:key|capo|tempo|guitar|bass|piano|drums?|vocal|synth|strings?|percussion|intro|outro|interlude|solo|break|instrumental|unis(?:on)?|rit\b)[^（）\r\n]*）))+[\s　]*$/iu;
+  function isStandaloneParenthesizedAnnotation(value) {
+    return STANDALONE_PARENTHESIZED_ANNOTATION_RE.test(String(value || ""));
+  }
   function isStandaloneWaveMarker(value) {
     return /^[\s　]*[～~][\s　]*$/u.test(String(value || ""));
   }
   function hasInlineArrangementNotation(tokens) {
-    return tokens.some((token) => token.kind === "text" && (isStandaloneWaveMarker(token.value) || ARRANGEMENT_PARENTHESIS_RE.test(token.value)));
+    return tokens.some((token) => token.kind === "text" && (isStandaloneWaveMarker(token.value)
+      || ARRANGEMENT_PARENTHESIS_RE.test(token.value)));
   }
   function normalizeStandaloneWaveMarkers(tokens) {
     return tokens.map((token) => {
@@ -131,14 +136,11 @@
         return false;
       }
       let value = token.value;
-      // A closed parenthesized label before the first bar/chord, such as
-      // (Synth), names an instrumental part. It is notation, not a lyric.
+      // Parenthesized annotations such as (unis) and (rit...) remain in the
+      // authored output, but their contents are notation rather than lyrics.
+      if (isStandaloneParenthesizedAnnotation(value)) value = "";
       if (!musicStarted) value = value.replace(/^(?:[ \t　]*(?:\([^()\r\n]*\)|（[^（）\r\n]*）))+/u, "");
       value = value.replace(ARRANGEMENT_PARENTHESIS_RE, "");
-      // Parenthesized annotations such as (rit...) are not sung text.  Do
-      // not let their contents turn an otherwise rhythm-only source into a
-      // lyric line.  Text outside the parentheses still counts normally.
-      value = value.replace(/[（(][^（）()\r\n]*[）)]/gu, "");
       if (isStandaloneWaveMarker(value)) value = "";
       const content = value
         .replace(/\(\s*\d+\s*\/\s*\d+\s*\)/g, "")
@@ -192,12 +194,13 @@
   }
 
   // A line may contain both sung measures and explicitly authored instrumental
-  // measures.  Classify those measures independently: a vocal such as (ah...)
-  // is lyric text here, while spaces and meter annotations are not.
+  // measures. Parenthesized annotations remain authored text, but do not make
+  // a measure lyric-bearing.
   function hasMeaningfulMeasureLyricText(tokens) {
     return tokens.some((token) => {
       if (token.kind !== "text") return false;
-      let value = token.value.replace(ARRANGEMENT_PARENTHESIS_RE, "");
+      let value = isStandaloneParenthesizedAnnotation(token.value) ? "" : token.value;
+      value = value.replace(ARRANGEMENT_PARENTHESIS_RE, "");
       if (isStandaloneWaveMarker(value)) value = "";
       const content = value
         .replace(/\(\s*\d+\s*\/\s*\d+\s*\)/g, "")
@@ -872,6 +875,7 @@
       let remaining = unitSyncopated ? (unit.width * 2) + (Number(unit.syncBefore) || 0) - (Number(unit.syncAfter) || 0) : unit.width;
       if (remaining < 0) return;
       const lyricDistribution = longBeatLyricDistribution(unit, followingLyric, position, capacity, settings, unitSyncopated, authoredLyric);
+      let pendingCrossMeasureLyric = false;
       const fractionalFivePrepose = !lyricDistribution && !unitSyncopated
         && Boolean(settings.shortFractionPrepose)
         && Number(settings.hyphenSpacing) === 4
@@ -917,10 +921,21 @@
             lyricSpan = candidateLyricSpan;
           }
         }
-        if (crossesMeasure && followingLyric?.kind === "text" && followingLyric.value) {
+        if (crossesMeasure && segmentWidth === 1 && followingLyric?.kind === "text" && followingLyric.value) {
+          const lyricSpan = candidateLyricSpan || 1;
+          parts.push(rendered);
+          parts.push(followingLyric.value.slice(0, lyricSpan));
+          followingLyric.value = followingLyric.value.slice(lyricSpan);
+          pendingCrossMeasureLyric = Boolean(followingLyric.value);
+        } else if (crossesMeasure && followingLyric?.kind === "text" && followingLyric.value) {
           parts.push(rendered);
           parts.push(followingLyric.value);
           followingLyric.value = "";
+        } else if (pendingCrossMeasureLyric && followingLyric?.kind === "text" && followingLyric.value && position === 0 && remaining === segmentWidth) {
+          parts.push(rendered);
+          parts.push(followingLyric.value);
+          followingLyric.value = "";
+          pendingCrossMeasureLyric = false;
         } else if (lyricDistribution) {
           parts.push(insertDistributedLyric(rendered, lyricDistribution));
         } else if (lyricSpan) {
@@ -1386,18 +1401,26 @@
     const inlineArrangementNotation = hasInlineArrangementNotation(musicTokens);
     const normalizedMusicTokens = normalizeStandaloneWaveMarkers(musicTokens);
     const authoredParenthesizedNote = musicTokens.some((token) => token.kind === "text" && /[（(](?!\s*\d+\s*[\/／])[^（）()\r\n]*[）)]/u.test(token.value));
+    const authoredRhythmicAnnotation = musicTokens.some((token) => token.kind === "text" && /[（(]\s*rit\b[^（）()\r\n]*[）)]/iu.test(token.value));
+    const compactRhythmicAnnotationSource = authoredRhythmicAnnotation && manualRhythm && musicTokens.some((token) => token.kind === "bar");
     // Only retain raw mixed spans when the author explicitly starts the line
     // with a bar.  Ordinary lyric lines that merely continue into code-only
     // measures still use the established mixed-measure conversion.
     const mixedAuthoredSource = manualRhythm && musicTokens[0]?.kind === "bar" && hasMixedLyricAndCodeOnlyMeasures(musicTokens);
-    const preserveCompactSource = !hasMeaningfulLyricText(musicTokens)
-      && ((authoredParenthesizedNote && musicTokens.some((token) => token.kind === "bar"))
-        || (manualRhythm && (annotation?.preserveCompact || inlineArrangementNotation || /^[ \t　]|[ \t　]$/u.test(line) || /^[ \t　]*(?:\((?!\s*\d+\s*\/)[^()\r\n]*\)|（(?!\s*\d+\s*[\/／])[^（）\r\n]*）)[ \t　]*(?:\[\|\]|\|)/u.test(line))));
+    const authoredParenthesizedSource = authoredParenthesizedNote && musicTokens.some((token) => token.kind === "bar");
+    const otherCompactSource = manualRhythm && (
+      annotation?.preserveCompact
+      || inlineArrangementNotation
+      || /^[ \t　]|[ \t　]$/u.test(line)
+      || /^[ \t　]*(?:\((?!\s*\d+\s*\/)[^()\r\n]*\)|（(?!\s*\d+\s*[\/／])[^（）\r\n]*）)[ \t　]*(?:\[\|\]|\|)/u.test(line)
+    );
+    const preserveCompactSource = compactRhythmicAnnotationSource
+      || (!hasMeaningfulLyricText(musicTokens) && (authoredParenthesizedSource || otherCompactSource));
     const result = manualRhythm
       ? formatManualRhythm(moveDelayedRhythmAfterChord(normalizedMusicTokens, settings.measureCapacity), settings)
       : isCodeOnly(normalizedMusicTokens) ? formatChordOnly(normalizedMusicTokens, settings) : formatLyric(normalizedMusicTokens, settings);
     const rawBody = preserveCompactSource
-      ? line
+      ? compactRhythmicAnnotationSource ? serializeCodeOnlyTokens(musicTokens, settings.hyphenSpacing) : line
       : mixedAuthoredSource
         ? serializeMixedAuthoredSource(musicTokens, settings)
       : suppressTrailingBarAfterParenthesizedFinalChord(result.body) + (annotation?.suffix || "");
@@ -1665,7 +1688,7 @@
         correctionLines.push(protectedCode);
         appliedCorrectionLines.push(protectedCode);
         correctionStates.push("fixed");
-        bodyLines.push(addContinuationChordsToManualRhythm(match[3], settings));
+        bodyLines.push(compactSourceLines.get(outputIndex) ?? addContinuationChordsToManualRhythm(match[3], settings));
         return;
       }
       if (requestedMode === "fixed" && manualBody !== null) {
@@ -1715,10 +1738,10 @@
         else correctionErrors.push({ line: outputIndex + 1, message: rendered.message });
       }
       renderedBody = suppressTrailingBarAfterParenthesizedFinalChord(renderedBody);
-      if (partialOutputIndices.has(outputIndex) && manualBody === null) {
+      if (partialOutputIndices.has(outputIndex) && manualBody === null && !compactSourceLines.has(outputIndex)) {
         renderedBody = addContinuationChordsToManualRhythm(renderedBody, settings);
       }
-      if (mixedMeasureOutputIndices.has(outputIndex) && !useSource) {
+      if (mixedMeasureOutputIndices.has(outputIndex) && !useSource && !compactSourceLines.has(outputIndex)) {
         renderedBody = serializeMixedMeasureTokens(parseTokens(renderedBody), settings);
       }
       if (useSource) renderedBody = lines[outputIndex] ?? renderedBody;
