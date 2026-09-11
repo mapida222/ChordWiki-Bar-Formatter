@@ -110,9 +110,12 @@
   // brackets. Time signatures, spacing and a white-note marker are notation,
   // not lyrics, so they keep the compact rhythm form.
   const ARRANGEMENT_PARENTHESIS_RE = /[（(]\s*(?:key|capo|tempo|guitar|bass|piano|drums?|vocal|synth|strings?|percussion|intro|outro|interlude|solo|break|instrumental|unis(?:on)?|rit\b)[^）)]*[）)]/iu;
-  const STANDALONE_PARENTHESIZED_ANNOTATION_RE = /^(?:[\s　]*(?:\(\s*(?:key|capo|tempo|guitar|bass|piano|drums?|vocal|synth|strings?|percussion|intro|outro|interlude|solo|break|instrumental|unis(?:on)?|rit\b)[^()\r\n]*\)|（\s*(?:key|capo|tempo|guitar|bass|piano|drums?|vocal|synth|strings?|percussion|intro|outro|interlude|solo|break|instrumental|unis(?:on)?|rit\b)[^（）\r\n]*）))+[\s　]*$/iu;
+  const PARENTHESIZED_SEGMENT_RE = /(?:\([^()\r\n]*\)|（[^（）\r\n]*）)/gu;
   function isStandaloneParenthesizedAnnotation(value) {
-    return STANDALONE_PARENTHESIZED_ANNOTATION_RE.test(String(value || ""));
+    const source = String(value || "");
+    const segments = source.match(PARENTHESIZED_SEGMENT_RE);
+    if (!segments?.length || source.replace(PARENTHESIZED_SEGMENT_RE, "").trim()) return false;
+    return segments.every((segment) => ARRANGEMENT_PARENTHESIS_RE.test(segment));
   }
   function isStandaloneWaveMarker(value) {
     return /^[\s　]*[～~][\s　]*$/u.test(String(value || ""));
@@ -597,9 +600,12 @@
   }
 
   function longBeatLyricDistribution(unit, followingLyric, position, capacity, settings, syncopated, authoredLyric) {
+    // Leading/trailing syncopation still has visible rhythm markers across the
+    // measure boundary, so distribute lyrics across those markers as well.
     const placementMode = settings.longBeatLyricPlacement == null ? -1 : Number(settings.longBeatLyricPlacement);
     if (![0, 1, 2, 3, 4].includes(placementMode)) return null;
-    if (syncopated || unit.halfNote || unit.accents || unit.suffixStar || unit.noLeadingBar || unit.noTrailingBar) return null;
+    if (syncopated && unit.width <= Math.max(1, Number(settings.hyphenUnit) || 1)) return null;
+    if (unit.halfNote || unit.accents || unit.suffixStar || unit.noLeadingBar || unit.noTrailingBar) return null;
     if (followingLyric?.kind !== "text") return null;
     const authoredText = String(authoredLyric || "");
     if (!authoredText || !followingLyric.value.startsWith(authoredText)) return null;
@@ -610,13 +616,19 @@
     if (!characters.length) return null;
 
     const spacing = Math.max(0, Number(settings.hyphenSpacing) || 0);
+    const leadingSingleBeat = spacing > 0
+      && unit.width > spacing
+      && unit.width % spacing === 1
+      && position > 0
+      && capacity - position === 1
+      && unit.width >= (spacing * 2) + 1;
     // A one-beat remainder must stay available to the fractional-prepose
     // logic below.  Otherwise the long-beat placement mode consumes the
     // whole lyric before the 5-beat unit can place its short marker and lyric
     // character together (for example 53 -> 4+1+3).
-    if (spacing > 0 && unit.width > spacing && unit.width % spacing === 1) return null;
-    let remaining = unit.width;
-    let plannedPosition = position;
+    if (spacing > 0 && unit.width > spacing && unit.width % spacing === 1 && !leadingSingleBeat) return null;
+    let remaining = leadingSingleBeat ? unit.width - 1 : unit.width;
+    let plannedPosition = leadingSingleBeat ? 0 : position;
     let markerCount = 0;
     while (remaining > 0) {
       const available = capacity - plannedPosition || capacity;
@@ -634,6 +646,7 @@
       && characters.length >= 2;
     if (forcedSpacingSplit) markerCount = 2;
     if (markerCount < 2) return null;
+    if (leadingSingleBeat) markerCount += 1;
 
     // Automatic mode only splits an ordinary one-unit beat when it has at
     // least two lyric graphemes.  Longer ballad-like durations keep the
@@ -642,45 +655,58 @@
     const effectivePlacementMode = placementMode === 0
       ? (forcedSpacingSplit ? 1 : 3)
       : placementMode;
-    let insertions;
-    if (effectivePlacementMode === 3 || effectivePlacementMode === 4) {
-      insertions = Array.from({ length: markerCount }, () => "");
-      insertions[effectivePlacementMode === 3 ? 0 : markerCount - 1] = phrase;
-    } else if (effectivePlacementMode === 1) {
-      const boundaryIndex = phrase.indexOf("　");
-      let front;
-      let back;
-      if (boundaryIndex > 0 && phrase.slice(boundaryIndex + 1).replace(/　/gu, "")) {
-        front = phrase.slice(0, boundaryIndex + 1);
-        back = phrase.slice(boundaryIndex + 1).replace(/^　+/u, "");
-      } else if (forcedSpacingSplit) {
-        front = characters[0] || "";
-        back = characters.slice(1).join("");
-      } else {
-        const frontSize = Math.ceil(characters.length / 2);
-        front = characters.slice(0, frontSize).join("");
-        back = characters.slice(frontSize).join("");
+    const splitPhrase = (text, splitCharacters, count, mode, forceFirstSplit = false) => {
+      if (mode === 3 || mode === 4) {
+        const grouped = Array.from({ length: count }, () => "");
+        grouped[mode === 3 ? 0 : count - 1] = text;
+        return grouped;
       }
-      insertions = Array.from({ length: markerCount }, () => "");
-      insertions[0] = front;
-      insertions[markerCount - 1] = back;
-    } else {
-      const lyricCharacters = characters.filter((character) => !/^\s$/u.test(character));
-      const baseSize = Math.floor(lyricCharacters.length / markerCount);
-      const remainder = lyricCharacters.length % markerCount;
-      const targetSizes = Array.from({ length: markerCount }, (_unused, markerIndex) => baseSize + (markerIndex < remainder ? 1 : 0));
-      insertions = Array.from({ length: markerCount }, () => "");
+      if (mode === 1) {
+        const boundaryIndex = text.indexOf("　");
+        let front;
+        let back;
+        if (boundaryIndex > 0 && text.slice(boundaryIndex + 1).replace(/　/gu, "")) {
+          front = text.slice(0, boundaryIndex + 1);
+          back = text.slice(boundaryIndex + 1).replace(/^　+/u, "");
+        } else if (forceFirstSplit) {
+          front = splitCharacters[0] || "";
+          back = splitCharacters.slice(1).join("");
+        } else {
+          const frontSize = Math.ceil(splitCharacters.length / 2);
+          front = splitCharacters.slice(0, frontSize).join("");
+          back = splitCharacters.slice(frontSize).join("");
+        }
+        const split = Array.from({ length: count }, () => "");
+        split[0] = front;
+        split[count - 1] = back;
+        return split;
+      }
+      const lyricCharacters = splitCharacters.filter((character) => !/^\s$/u.test(character));
+      const baseSize = Math.floor(lyricCharacters.length / count);
+      const remainder = lyricCharacters.length % count;
+      const targetSizes = Array.from({ length: count }, (_unused, markerIndex) => baseSize + (markerIndex < remainder ? 1 : 0));
+      const split = Array.from({ length: count }, () => "");
       let markerIndex = 0;
       let characterIndex = 0;
-      for (const character of characters) {
+      for (const character of splitCharacters) {
         if (/^\s$/u.test(character)) {
-          insertions[markerIndex] += character;
+          split[Math.max(0, markerIndex - (markerIndex > 0 ? 1 : 0))] += character;
           continue;
         }
-        insertions[markerIndex] += character;
+        split[markerIndex] += character;
         characterIndex += 1;
-        if (characterIndex >= targetSizes[markerIndex] && markerIndex < markerCount - 1) markerIndex += 1;
+        if (characterIndex >= targetSizes[markerIndex] && markerIndex < count - 1) markerIndex += 1;
       }
+      return split;
+    };
+    let insertions;
+    if (leadingSingleBeat) {
+      const preposed = settings.shortFractionPrepose ? characters.slice(0, 1).join("") : "";
+      const distributedPhrase = settings.shortFractionPrepose ? phrase.slice(preposed.length) : phrase;
+      const distributedCharacters = lyricGraphemes(distributedPhrase);
+      insertions = [preposed, ...splitPhrase(distributedPhrase, distributedCharacters, markerCount - 1, effectivePlacementMode, forcedSpacingSplit)];
+    } else {
+      insertions = splitPhrase(phrase, characters, markerCount, effectivePlacementMode, forcedSpacingSplit);
     }
     return { insertions, markerIndex: 0, consumedLength: authoredText.length, forcedSpacingSplit, startPosition: position };
   }
@@ -705,6 +731,22 @@
       output = output.replace(/\[\|\]\[---\]\[\|\]$/u, "[|][---]");
     }
     return output;
+  }
+
+  function distributePickupMarkerLyrics(body, settings) {
+    const placementMode = settings.longBeatLyricPlacement == null ? -1 : Number(settings.longBeatLyricPlacement);
+    if (![0, 1, 2, 3, 4].includes(placementMode)) return body;
+    return String(body || "").replace(/(\[-\])([^\[\]|]*)\[\|\]((?:\[-+\]){2})([^\[\]|]+)/gu,
+      (match, pickup, beforeBar, markerRun, lyric) => {
+        const firstSpan = lyric.includes("　")
+          ? lyric.indexOf("　") + 1
+          : firstLyricSpan(lyric);
+        if (!firstSpan || firstSpan >= lyric.length) return match;
+        const markers = markerRun.match(/\[-+\]/gu) || [];
+        if (markers.length !== 2) return match;
+        if (markers[0].replace(/[^-]/gu, "").length !== Math.max(1, Number(settings.hyphenSpacing) || 1)) return match;
+        return `${pickup}${beforeBar}[|]${markers[0]}${lyric.slice(0, firstSpan)}${markers[1]}${lyric.slice(firstSpan)}`;
+      });
   }
 
   function applySingleChordPickupTail(body, tailWidth) {
@@ -1059,6 +1101,7 @@
     const suppressIncompleteCorrectionBar = effectiveCode === "444" && sourceEndsWithBar && position > 0;
     if (musicStarted && !suppressIncompleteCorrectionBar && !trailingBarSuppressed && !suppressNextSourceBar && !suppressPendingBar && parts[parts.length - 1] !== "[|]") parts.push("[|]");
     let renderedBody = applyAdoptedFractionalLyricLayout(parts.join(""), effectiveCode, settings);
+    renderedBody = distributePickupMarkerLyrics(renderedBody, settings);
     if (singleChordPickupTail) renderedBody = applySingleChordPickupTail(renderedBody, singleChordPickupTail.width);
     return { ok: true, body: renderedBody };
   }
@@ -2495,5 +2538,5 @@
     return renderedLines.map((line, index) => rowModes?.[index] === "source" ? (sourceLines[index] ?? "") : line).join("\n");
   }
 
-  window.CBFConverter = { convertChordText, parseTokens, isChordSymbol, normalizeChordSymbol, moveDelayedRhythmAfterChord, suppressTrailingBarAfterParenthesizedFinalChord, renderWithBeatCode, mergeCorrectionScope, renderCompletedOutput, restoreSourceAdoptedLines, inferBeatCodeFromRenderedLine, recoverBeatCodeFromRenderedLine, protectUnsupportedCorrectionSlots, mergeChangedLines, alignLineIndices, musicLineSignature, sameMusicStructure, alignMusicLineIndices, addedCharacterIndices, remapTrackedCharacterIndices, addContinuationChordsToManualRhythm, analyzeAuthoredMeasureCapacity, analyzeAuthoredFormatting };
+  window.CBFConverter = { convertChordText, parseTokens, isChordSymbol, normalizeChordSymbol, moveDelayedRhythmAfterChord, suppressTrailingBarAfterParenthesizedFinalChord, renderWithBeatCode, mergeCorrectionScope, renderCompletedOutput, restoreSourceAdoptedLines, inferBeatCodeFromRenderedLine, recoverBeatCodeFromRenderedLine, protectUnsupportedCorrectionSlots, mergeChangedLines, alignLineIndices, musicLineSignature, sameMusicStructure, alignMusicLineIndices, addedCharacterIndices, remapTrackedCharacterIndices, distributePickupMarkerLyrics, addContinuationChordsToManualRhythm, analyzeAuthoredMeasureCapacity, analyzeAuthoredFormatting };
 }());

@@ -3016,9 +3016,14 @@
         return redistributedCorrections?.preserved[index] && redistributedCorrections.lines[index] ? "edit" : "";
       });
       manualOutputLines = new Set();
-      const remappedOutputLines = remapArray(previousOutputLines, "");
+      const remappedOutputLines = CBFOutputOverrides.remapUnchangedOutputLines(
+        previousLines,
+        currentLines,
+        previousOutputLines,
+        mapping
+      ).split("\n");
       mapping.forEach((previousIndex, index) => {
-        if (previousIndex >= 0 && previousManualOutputLines.has(previousIndex)) manualOutputLines.add(index);
+        if (previousIndex >= 0 && !changedLines.has(index) && previousManualOutputLines.has(previousIndex)) manualOutputLines.add(index);
       });
       elements.output.value = remappedOutputLines.join("\n");
       outputHighlightValue = elements.output.value;

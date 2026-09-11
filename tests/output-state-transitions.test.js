@@ -141,6 +141,20 @@ function remapRows(state, previousInput, nextInput) {
   assertStable(state, "changed source text must not reuse a stale output override");
 }
 
+// 入力行数が変わった場合も、内容が変わった行の旧変換後を行番号だけで流用しない。
+{
+  const previousInputLines = ["{title:sample}", "|[C]old|", "|[G]same|"];
+  const currentInputLines = ["{c:4/4拍子}", "|[C]new|", "|[G]same|"];
+  const previousOutputLines = ["{title:sample}", "|[C]old| line97", "|[G]same|"];
+  const mapping = CBFConverter.alignMusicLineIndices(previousInputLines, currentInputLines);
+  assert.deepStrictEqual(mapping, [-1, 1, 2]);
+  assert.strictEqual(
+    overridesApi.remapUnchangedOutputLines(previousInputLines, currentInputLines, previousOutputLines, mapping),
+    "\n\n|[G]same|",
+    "a changed source line must not inherit a stale output line while unchanged rows remain available"
+  );
+}
+
 // 手動編集あり → 履歴保存 → 復元: 一覧のhistoryTextと復元後の表示を一致させる。
 {
   const state = regenerate(makeState("[C]one\n[G]two"));

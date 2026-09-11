@@ -122,6 +122,58 @@ const explicitFrontLongBeat = CBFConverter.convertChordText(
 ).output;
 assert.strictEqual(automaticLongBeat, explicitFrontLongBeat, "automatic mode should keep long-ballad lyrics at the front");
 
+const syncopatedLongBeat = CBFConverter.convertChordText(
+  "[C]あいう[D]かき",
+  { ...settings, measureCapacity: 8, hyphenSpacing: 4, longBeatLyricPlacement: 2 },
+  ["s8"]
+).output;
+assert.strictEqual(
+  syncopatedLongBeat,
+  "[C][-]あ[|][----]い[----]う[|][D][----]かき[|]",
+  "s8 should distribute a dense lyric phrase across the visible long-beat markers"
+);
+
+const nineBeatAfterPickup = CBFConverter.convertChordText(
+  "[C]前[D]舌打　た",
+  { ...settings, measureCapacity: 8, hyphenSpacing: 4, shortFractionPrepose: 1, longBeatLyricPlacement: 2 },
+  ["79"]
+).output;
+assert.strictEqual(
+  nineBeatAfterPickup,
+  "[|][C][----]前[---][D][-]舌[|][----]打　[----]た[|]",
+  "a one-beat pickup must leave the following two long markers paired with their lyrics"
+);
+
+const pickupMarkerExamples = [
+  [
+    "[F#m7][-]な[|][----][---]んぴと)",
+    "[F#m7][-]な[|][----]ん[---]ぴと)",
+    "parenthesized reading text should still follow the two visible pickup-tail markers"
+  ],
+  [
+    "[G#aug][-]た[|][----][---]りとも",
+    "[G#aug][-]た[|][----]り[---]とも",
+    "plain lyric text should be distributed after a short pickup"
+  ],
+  [
+    "[C#m7][-]け[|][----][---]が)せな",
+    "[C#m7][-]け[|][----]が)[---]せな",
+    "a closing parenthesis should stay with the lyric before the next marker"
+  ],
+  [
+    "[C#m7][-]舌[|][----][----]打　た",
+    "[C#m7][-]舌[|][----]打　[----]た",
+    "a full-width lyric boundary should stay with the first marker"
+  ]
+];
+pickupMarkerExamples.forEach(([sourceLine, expectedLine, message]) => {
+  assert.strictEqual(
+    CBFConverter.distributePickupMarkerLyrics(sourceLine, { longBeatLyricPlacement: 2, hyphenSpacing: 4 }),
+    expectedLine,
+    message
+  );
+});
+
 const chordMustLeadLyricWithRhythm = CBFConverter.convertChordText(
   "[C]眠れないまま朝を待って",
   { ...settings, measureCapacity: 8, hyphenSpacing: 4, longBeatLyricPlacement: 0 },
