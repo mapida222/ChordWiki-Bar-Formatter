@@ -105,6 +105,17 @@
       .filter(([id]) => knownIds.has(id)));
   }
 
+  function remapUnchangedOutputLines(previousInputLines, currentInputLines, previousOutputLines, mapping) {
+    const previousInputs = Array.from(previousInputLines || [], String);
+    const currentInputs = Array.from(currentInputLines || [], String);
+    const previousOutputs = Array.from(previousOutputLines || [], String);
+    return currentInputs.map((line, index) => {
+      const previousIndex = Number.isInteger(mapping?.[index]) ? mapping[index] : -1;
+      if (previousIndex < 0 || line !== previousInputs[previousIndex]) return "";
+      return previousOutputs[previousIndex] ?? "";
+    }).join("\n");
+  }
+
   function validateState({
     lineCount,
     sourceLineIds: ids,
@@ -138,5 +149,5 @@
     return { valid: errors.length === 0, errors };
   }
 
-  return { lines, normalizeIds, remapIds, sanitize, capture, apply, overriddenIndices, prune, validateState };
+  return { lines, normalizeIds, remapIds, sanitize, capture, apply, overriddenIndices, prune, remapUnchangedOutputLines, validateState };
 }));

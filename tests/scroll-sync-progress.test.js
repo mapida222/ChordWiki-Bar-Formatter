@@ -4,7 +4,7 @@ const assert = require("assert");
 const fs = require("fs");
 const path = require("path");
 
-const app = fs.readFileSync(path.join(path.resolve(__dirname, ".."), "js", "app.js"), "utf8");
+const app = fs.readFileSync(path.join(path.resolve(__dirname, ".."), "js", "app.js"), "utf8").replace(/\r\n?/gu, "\n");
 const scrollHandler = app.match(/editor\.addEventListener\("scroll", \(\) => \{[\s\S]*?requestAnimationFrame\(\(\) => \{ syncingScroll = false; \}\);/);
 assert(scrollHandler, "editor scroll handler must remain present");
 const handler = scrollHandler[0];
