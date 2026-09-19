@@ -110,6 +110,7 @@
 | `LAYOUT-029` | 色付け用レイヤーとtextareaの同時描画を防ぎ、青いコードの二重表示を防止 | 有効 | `style.css`、`tests/setting-processing.test.js` |
 | `LAYOUT-030` | ヘッダーのサブタイトルを1行表示にし、ロゴを左揃えで縮小し、右側ボタンの高さと折り返しを整える | 有効 | `index.html`、`style.css`、`tests/default-layout.test.js`、`tests/linked-code-highlight.test.js` |
 | `LAYOUT-031` | TOPのリアルタイムエディター左に、最新更新を1行表示しクリックで過去履歴を使用履歴に重ねて開く更新履歴欄を追加 | 有効 | `index.html`、`style.css`、`tests/header-controls.test.js` |
+| `LAYOUT-032` | 編集枠の端2行をクリックしても位置を保ち、キー操作時は最大2行ずつ滑らかに追従 | 有効 | `js/app.js`、`tests/scroll-sync-progress.test.js` |
 | `PREVIEW-001` | 譜面プレビューのベスト条件 | 基準 | `LAYOUT_REFERENCE.md`、`layout-snapshots/2026-07-22-good/`、Gitタグ `preview-layout-best-2026-07-22` |
 | `PREVIEW-002` | 拍記号に挟まれた縦小節線が直後の拍記号と重ならないよう補正 | 有効 | `js/chordwiki-preview.js`、`style.css`、`tests/preview-layout.test.js` |
 | `PREVIEW-003` | 譜面プレビューの移調では`{key:...}`だけを移調し、`{ci:...}`・`{title:...}`・`{subtitle:...}`などコメント系ディレクティブ内部のコード風文字列は保持 | 有効 | `js/transposer.js`、`tests/transposer.test.js` |
