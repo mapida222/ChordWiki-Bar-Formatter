@@ -287,10 +287,14 @@
 
   function parseInlineMeter(source) {
     const text = String(source || "");
-    const match = text.match(/^\s*(?:\|\s*)?(\(\s*\d+\s*[\/／]\s*\d+[^)]*\)|\{\s*ci?\s*:\s*[^}]+\})/iu);
-    if (!match) return null;
-    const meter = parseMeterText(match[1]);
-    return meter ? { ...meter, scope: "measure", sourceKind: "inline", rawAnnotation: match[1] } : null;
+    const withoutLeadingBar = text.trimStart().replace(/^(?:\|\s*|\[\s*\|\s*\]\s*)/u, "");
+    const annotationPattern = "(?:\\(\\s*\\d+\\s*[\\/／]\\s*\\d+[^)]*\\)|\\{\\s*ci?\\s*:\\s*[^}]+\\})";
+    const bracketedMatch = withoutLeadingBar.match(new RegExp(`^\\[\\s*(${annotationPattern})\\s*\\]`, "iu"));
+    const plainMatch = withoutLeadingBar.match(new RegExp(`^(${annotationPattern})`, "iu"));
+    const rawAnnotation = bracketedMatch?.[1] || plainMatch?.[1];
+    if (!rawAnnotation) return null;
+    const meter = parseMeterText(rawAnnotation);
+    return meter ? { ...meter, scope: "measure", sourceKind: "inline", rawAnnotation } : null;
   }
 
   function normalizeChordLabel(value) {

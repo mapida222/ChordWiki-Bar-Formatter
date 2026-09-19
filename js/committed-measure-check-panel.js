@@ -297,7 +297,17 @@
     } else if (result.ok && !result.rhythmMeasureCount) {
       summary.textContent = `OK：${checked}（${rhythm}${noBeat}）。拍数なしのため比較不要です。`;
     } else if (result.ok) {
-      summary.textContent = `OK：${checked}（${rhythm}${noBeat}）。拍数はすべて${result.beatLabel(result.expectedBeats)}で一致しています。`;
+      const expectedByMeter = [...new Set(result.rhythmMeasures.map((measure) => {
+        const meter = measure.meter;
+        const expectedBeats = meter?.capacity ?? result.expectedBeats;
+        return meter?.text
+          ? `${meter.text}（${result.beatLabel(expectedBeats)}）`
+          : result.beatLabel(expectedBeats);
+      }))];
+      const expectedSummary = expectedByMeter.length > 1
+        ? `拍子ごとの基準（${expectedByMeter.join("、")}）に一致しています。`
+        : `拍数はすべて${expectedByMeter[0] || result.beatLabel(result.expectedBeats)}で一致しています。`;
+      summary.textContent = `OK：${checked}（${rhythm}${noBeat}）。${expectedSummary}`;
     } else {
       summary.textContent = `要確認：${checked}（${rhythm}${noBeat}）。${result.issues.length}件のエラーがあります。`;
     }
