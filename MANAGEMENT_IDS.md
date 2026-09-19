@@ -78,6 +78,7 @@
 | `CONVERT-015` | 行修正後の末尾が1小節未満の場合、終端の自動小節線を付けない | 有効 | `js/converter.js`、`tests/converter.test.js` |
 | `CONVERT-016` | 変換前行の文頭・文末空白を変換後も保持 | 有効 | `js/converter.js`、`tests/converter.test.js` |
 | `CONVERT-017` | 1文字歌詞を含む手動リズム小節は、ハイフンを歌詞の前後へ分けて連続表示 | 有効 | `js/converter.js`、`tests/converter.test.js` |
+| `CONVERT-018` | 譜面全体の貼り替えで曲が変わったとき旧譜面の手修正を引き継がず、変換前の先頭・末尾を含む空白行を保持 | 有効 | `js/app.js`、`js/converter.js` |
 | `WARNING-001` | 歌詞が90%以上変わった時に限り、部分入力も含む変換前譜面の拍子・小節ハイフン数を初期設定と比較し、標準空白を案内 | 有効 | `js/app.js`、`js/converter.js`、`tests/measure-capacity-warning.test.js` |
 | `LAYOUT-001` | 行修正枠と変換後枠の入力欄上端を揃える | 有効 | `style.css`、`js/app.js` |
 | `LAYOUT-002` | 確定譜面テキスト枠の右下リサイズとサイズ保存 | 有効 | `index.html`、`style.css`、`js/app.js`、`tests/committed-resize.test.js` |

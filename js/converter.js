@@ -1650,8 +1650,7 @@
   }
 
   function convertChordText(inputText, settings, rowCorrections = [], manualOutputLines = [], previousRowCorrections = [], rowModes = []) {
-    const normalized = inputText.replace(/^\n+|\n+$/g, "");
-    const lines = normalized ? normalized.split(/\r\n|\r|\n/) : [];
+    const lines = inputText ? inputText.split(/\r\n|\r|\n/) : [];
     const output = [];
     const warnings = [];
     const partialLines = [];
