@@ -655,19 +655,40 @@
     const lineCenter = lineTop + lineHeight / 2;
     return lineCenter < scrollTop + edgeMargin || lineCenter > scrollTop + clientHeight - edgeMargin;
   }
+  const AUTO_SCROLL_MAX_ROWS = 2;
+  function edgeScrollTopForLine(element, lineTop, lineHeight) {
+    const edgeMargin = Math.min(lineHeight * AUTO_SCROLL_EDGE_ROWS, Math.max(0, (element.clientHeight - lineHeight) / 2));
+    const lineCenter = lineTop + lineHeight / 2;
+    const target = lineCenter < element.scrollTop + edgeMargin
+      ? lineCenter - edgeMargin
+      : lineCenter - element.clientHeight + edgeMargin;
+    const maxDelta = lineHeight * AUTO_SCROLL_MAX_ROWS;
+    const limited = element.scrollTop + Math.max(-maxDelta, Math.min(maxDelta, target - element.scrollTop));
+    const maxScrollTop = Math.max(0, element.scrollHeight - element.clientHeight);
+    return Math.max(0, Math.min(maxScrollTop, limited));
+  }
+  function scrollEditorTo(element, top) {
+    if (Math.abs(top - element.scrollTop) < 0.5) return false;
+    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (typeof element.scrollTo === "function") {
+      element.scrollTo({ top, behavior: prefersReducedMotion ? "auto" : "smooth" });
+    } else {
+      element.scrollTop = top;
+    }
+    return true;
+  }
   function keepCorrectionLineInView(lineIndex) {
-    if (window.matchMedia("(max-width: 699px)").matches) return;
+    if (window.matchMedia("(max-width: 699px)").matches) return false;
     // A correction paste may update the active slot as part of its input event.
     // Keep that bookkeeping, but do not let it move the viewport captured at
     // the start of the paste.
-    if (restoringPasteScroll) return;
+    if (restoringPasteScroll) return false;
     const computed = getComputedStyle(elements.correction);
     const lineHeight = Number.parseFloat(computed.lineHeight) || 23;
     const paddingTop = Number.parseFloat(computed.paddingTop) || 0;
     const lineTop = paddingTop + Math.max(0, lineIndex) * lineHeight;
-    if (!lineIsNearVerticalEdge(lineTop, lineHeight, elements.correction.scrollTop, elements.correction.clientHeight)) return;
-    const nextScrollTop = Math.max(0, lineTop - (elements.correction.clientHeight - lineHeight) / 2);
-    if (nextScrollTop !== elements.correction.scrollTop) elements.correction.scrollTop = nextScrollTop;
+    if (!lineIsNearVerticalEdge(lineTop, lineHeight, elements.correction.scrollTop, elements.correction.clientHeight)) return false;
+    return scrollEditorTo(elements.correction, edgeScrollTopForLine(elements.correction, lineTop, lineHeight));
   }
   function keepMobileLinkedLineInView(lineIndex) {
     if (!window.matchMedia("(max-width: 699px)").matches || restoringPasteScroll || lineIndex < 0) return;
@@ -706,12 +727,23 @@
     if (elements.correction.selectionStart !== start || elements.correction.selectionEnd !== end) {
       elements.correction.setSelectionRange(start, end);
     }
-    keepCorrectionLineInView(resolvedLine);
+    keepLinkedTextLineInView(resolvedLine, elements.correction);
     applyLinkedPosition();
     if (!window.matchMedia("(max-width: 699px)").matches) {
-      keepOutputLineInView();
       keepPreviewLineInView();
     }
+  }
+  function keepLinkedTextLineInView(lineIndex, preferredEditor = null) {
+    const editors = preferredEditor === elements.output
+      ? [elements.output, elements.correction]
+      : [elements.correction, elements.output];
+    for (const editor of editors) {
+      const moved = editor === elements.correction
+        ? keepCorrectionLineInView(lineIndex)
+        : keepOutputLineInView(lineIndex);
+      if (moved) return true;
+    }
+    return false;
   }
   function moveCorrectionSlot(key) {
     const lines = elements.correction.value.split(/\r\n|\r|\n/);
@@ -783,19 +815,17 @@
     const lineTop = active.offsetTop;
     const lineHeight = active.offsetHeight || Number.parseFloat(getComputedStyle(preview).lineHeight) || 23;
     if (!lineIsNearVerticalEdge(lineTop, lineHeight, preview.scrollTop, preview.clientHeight)) return;
-    const nextScrollTop = Math.max(0, lineTop - (preview.clientHeight - lineHeight) / 2);
-    if (nextScrollTop !== preview.scrollTop) preview.scrollTop = nextScrollTop;
+    scrollEditorTo(preview, edgeScrollTopForLine(preview, lineTop, lineHeight));
   }
-  function keepOutputLineInView() {
-    if (window.matchMedia("(max-width: 699px)").matches || linkedLineIndex < 0) return;
+  function keepOutputLineInView(lineIndex = linkedLineIndex) {
+    if (window.matchMedia("(max-width: 699px)").matches || lineIndex < 0) return false;
     const textarea = elements.output;
     const computed = getComputedStyle(textarea);
     const lineHeight = Number.parseFloat(computed.lineHeight) || 23;
     const paddingTop = Number.parseFloat(computed.paddingTop) || 0;
-    const lineTop = paddingTop + linkedLineIndex * lineHeight;
-    if (!lineIsNearVerticalEdge(lineTop, lineHeight, textarea.scrollTop, textarea.clientHeight)) return;
-    const nextScrollTop = Math.max(0, lineTop - (textarea.clientHeight - lineHeight) / 2);
-    if (nextScrollTop !== textarea.scrollTop) textarea.scrollTop = nextScrollTop;
+    const lineTop = paddingTop + lineIndex * lineHeight;
+    if (!lineIsNearVerticalEdge(lineTop, lineHeight, textarea.scrollTop, textarea.clientHeight)) return false;
+    return scrollEditorTo(textarea, edgeScrollTopForLine(textarea, lineTop, lineHeight));
   }
   function applyLinkedPosition() {
     gutterByEditor.forEach((gutter) => {
@@ -821,6 +851,7 @@
     updateCorrectionPosition();
   }
   function updateActivePosition(textarea, _gutter, activate = false, eventType = "") {
+    const shouldAutoFollowActiveLine = eventType === "keyup" || eventType === "input";
     if (activate) {
       linkedLineIndex = activeLineIndex(textarea);
       linkedSlotIndex = slotIndexAt(textarea, linkedLineIndex, lineColumnAtSelection(textarea));
@@ -848,13 +879,11 @@
         }
       }
     }
-    if (activate && textarea === elements.correction) keepCorrectionLineInView(linkedLineIndex);
     applyLinkedPosition();
-    if (activate) {
+    if (activate && shouldAutoFollowActiveLine) {
       keepMobileLinkedLineInView(linkedLineIndex);
       if (!window.matchMedia("(max-width: 699px)").matches) {
-        keepCorrectionLineInView(linkedLineIndex);
-        keepOutputLineInView();
+        keepLinkedTextLineInView(linkedLineIndex, textarea);
         keepPreviewLineInView();
       }
     }
@@ -3876,7 +3905,18 @@
       : Math.max(0, editor.scrollHeight - editor.clientHeight);
     return max * Math.max(0, Math.min(1, progress));
   };
+  function isEditorScrollbarPoint(event, editor) {
+    if (!event || event.target !== editor) return false;
+    const rect = editor.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
+    return x >= editor.clientWidth || y >= editor.clientHeight;
+  }
+  function isEditorScrollbarClick(event, editor) {
+    return event?.type === "click" && isEditorScrollbarPoint(event, editor);
+  }
   const scrollEditors = [elements.correction, elements.input, elements.output, elements.finalOutput];
+  const scrollbarFocusEditors = new WeakSet();
   window.addEventListener("resize", syncCorrectionScrollbarWidth);
   [
     [elements.correction, elements.correctionLines],
@@ -3885,7 +3925,16 @@
     [elements.finalOutput, elements.finalOutputLines]
   ].forEach(([editor, gutter]) => {
     const positionEvents = editor === elements.correction ? ["click", "keyup", "focus"] : ["click", "keyup", "select", "focus"];
-    positionEvents.forEach((eventName) => editor.addEventListener(eventName, () => updateActivePosition(editor, gutter, true, eventName)));
+    editor.addEventListener("pointerdown", (event) => {
+      if (isEditorScrollbarPoint(event, editor)) scrollbarFocusEditors.add(editor);
+    });
+    editor.addEventListener("pointerup", () => scrollbarFocusEditors.delete(editor));
+    editor.addEventListener("pointercancel", () => scrollbarFocusEditors.delete(editor));
+    positionEvents.forEach((eventName) => editor.addEventListener(eventName, (event) => {
+      if (eventName === "focus" && scrollbarFocusEditors.has(editor)) return;
+      if (eventName === "click" && isEditorScrollbarClick(event, editor)) return;
+      updateActivePosition(editor, gutter, true, eventName);
+    }));
     editor.addEventListener("focus", () => editor.parentElement.classList.add("editing-active"));
     editor.addEventListener("blur", () => {
       editor.parentElement.classList.remove("editing-active");

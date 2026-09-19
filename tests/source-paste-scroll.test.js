@@ -13,7 +13,7 @@ assert(app.includes("[elements.correction, elements.input, elements.output, elem
 assert(app.includes("editor.scrollTop = top;"));
 assert(app.includes("editor.scrollLeft = left;"));
 assert(app.includes("restoreEditorScrollPositions(scrollPositions);"), "the source paste button must use the same viewport-preserving behavior");
-assert(app.includes("if (restoringPasteScroll) return;"), "a correction paste must not auto-scroll while its active slot is refreshed");
+assert(app.includes("if (restoringPasteScroll) return false;"), "a correction paste must not auto-scroll while its active slot is refreshed");
 assert(!app.includes("scrollInputToTopAfterPaste"));
 assert(!app.includes("elements.input.scrollTop = 0;"), "pasting must not force the source frame to the top");
 assert(app.includes("const suppressedScrollEditors = new WeakMap();"), "programmatic scroll targets must be marked before their scroll events fire");
