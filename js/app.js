@@ -160,6 +160,9 @@
   let outputManuallyEdited = false;
   let outputHighlightValue = "";
   let outputAddedOffsets = new Set();
+  let warningLyricBaseline = null;
+  let lastObservedLyrics = null;
+  let songChangeWarningEligible = false;
   let manualOutputLines = new Set();
   let sourceLineIds = [];
   let outputOverrides = {};
@@ -428,6 +431,34 @@
     if (result.valid && persist) CBFSettings.save(result.values);
     return result;
   }
+  function updateSongChangeWarningEligibility() {
+    const lyrics = CBFConverter.extractAuthoredLyrics(elements.input.value);
+    if (lastObservedLyrics === null) {
+      warningLyricBaseline = lyrics;
+      lastObservedLyrics = lyrics;
+      return songChangeWarningEligible;
+    }
+    if (lyrics === lastObservedLyrics) return songChangeWarningEligible;
+    lastObservedLyrics = lyrics;
+    if (!lyrics) {
+      songChangeWarningEligible = false;
+      return false;
+    }
+    if (!warningLyricBaseline) {
+      warningLyricBaseline = lyrics;
+      songChangeWarningEligible = false;
+      return false;
+    }
+    const changed = CBFConverter.authoredLyricChangePercent(warningLyricBaseline, lyrics);
+    if (changed !== null && changed >= 90) {
+      warningLyricBaseline = lyrics;
+      songChangeWarningEligible = true;
+    }
+    return songChangeWarningEligible;
+  }
+  function hasExplicitSixEightMeter(text) {
+    return /(?:\{[^{}]*\b6\s*\/\s*8\b[^{}]*\}|[（(]\s*6\s*\/\s*8(?:\s*\([^)]*\))?(?:\s*拍子)?\s*[）)])/u.test(String(text || ""));
+  }
   function updateMeasureCapacityWarning(values = null) {
     if (!values || !elements.input.value) {
       elements.measureCapacityWarning.hidden = true;
@@ -435,21 +466,27 @@
       syncResultRowAlignment();
       return;
     }
+    const songChangeWarning = updateSongChangeWarningEligibility();
     const measureDetails = CBFConverter.analyzeAuthoredMeasureCapacity(elements.input.value, values.measureCapacity, "", true);
     const measureMismatch = measureDetails && measureDetails.detected !== Number(values.measureCapacity) ? measureDetails : null;
     const formatting = CBFConverter.analyzeAuthoredFormatting(elements.input.value, values);
+    const explicitSixEight = hasExplicitSixEightMeter(elements.input.value);
+    const sixEightSettingsMismatch = explicitSixEight && (
+      Number(values.measureCapacity) !== 6 || Number(values.hyphenUnit) !== 3 || Number(values.hyphenSpacing) !== 3
+    );
     const mismatch = measureMismatch || measureDetails || { detected: 0, percentage: 0 };
     const hyphenUnitMismatch = formatting.hyphenUnit && formatting.hyphenUnit.detected !== Number(values.hyphenUnit);
-    const hyphenSpacingMismatch = formatting.hyphenSpacing && formatting.hyphenSpacing.detected !== Number(values.hyphenSpacing);
-    if (!measureMismatch && !hyphenUnitMismatch && !hyphenSpacingMismatch) {
+    if (!songChangeWarning || (!measureMismatch && !hyphenUnitMismatch && !sixEightSettingsMismatch)) {
       elements.measureCapacityWarning.hidden = true;
       elements.measureCapacityWarningText.textContent = "";
       syncResultRowAlignment();
       return;
     }
-    const useSixEightProfile = [3, 6, 9, 12].includes(mismatch.detected);
+    const useSixEightProfile = explicitSixEight || [3, 6, 9, 12].includes(mismatch.detected);
+    const suggestedCapacity = explicitSixEight ? 6 : mismatch.detected;
+    const standardHyphenSpacing = useSixEightProfile ? 3 : 4;
     elements.measureCapacityWarningText.textContent = measureMismatch && useSixEightProfile
-      ? `※変換前で使われている1小節のハイフン数が、初期設定と異なるようです。判定できた小節の約${mismatch.percentage}%が「1小節${mismatch.detected}ハイフン」です。6/8拍子タブへ切り替え、合計${mismatch.detected}を適用しますか？`
+      ? `※変換前で使われている1小節のハイフン数が、初期設定と異なるようです。判定できた小節の約${mismatch.percentage}%が「1小節${mismatch.detected}ハイフン」です。6/8拍子タブへ切り替え、合計${suggestedCapacity}を適用しますか？`
       : measureMismatch
         ? `※変換前で使われている1小節のハイフン数が、初期設定と異なるようです。判定できた小節の約${mismatch.percentage}%が「1小節${mismatch.detected}ハイフン」です。初期設定を${mismatch.detected}に変更しますか？`
         : "※変換前の譜面を解析した結果、現在の初期設定と異なる書式が検出されました。設定を変更しますか？";
@@ -462,33 +499,34 @@
         : "現状と同じ";
       return `${label}：${detected}ハイフン（${evidence}）`;
     };
+    const detectedCapacity = measureDetails?.detected ?? (explicitSixEight ? 6 : Number(values.measureCapacity));
     const measureSame = measureDetails && measureDetails.detected === Number(values.measureCapacity);
     const measureEvidence = measureDetails
       ? `${measureDetails.percentage}%${Number.isInteger(measureDetails.measureCount) && Number.isInteger(measureDetails.candidateCount) ? `、${measureDetails.measureCount}/${measureDetails.candidateCount}` : ""}${measureSame ? "、現状と同じ" : ""}`
-      : "現状と同じ";
-    formattingDetails.push(`1小節：${measureDetails?.detected ?? Number(values.measureCapacity)}ハイフン（${measureEvidence}）`);
+      : explicitSixEight ? "拍子表記 6/8" : "現状と同じ";
+    formattingDetails.push(`1小節：${detectedCapacity}ハイフン（${measureEvidence}）`);
     formattingDetails.push(detail("コード間のハイフン数", formatting.hyphenUnit, values.hyphenUnit));
-    formattingDetails.push(detail("空白区切り後のグループ", formatting.hyphenSpacing, values.hyphenSpacing));
+    formattingDetails.push(`空白区切り後のグループ：拍子標準の${standardHyphenSpacing}ハイフンごとに変更します`);
     if (formattingDetails.length) {
       const actionText = measureMismatch
         ? useSixEightProfile
-          ? `6/8拍子タブへ切り替え、合計${mismatch.detected}を適用しますか？`
+          ? `6/8拍子タブへ切り替え、合計${suggestedCapacity}を適用しますか？`
           : `初期設定を${mismatch.detected}に変更しますか？`
         : "検出した書式を初期設定へ反映しますか？";
       elements.measureCapacityWarningText.textContent = `※変換前の譜面を解析した結果、現在の初期設定と異なる書式が検出されました。\n\n${formattingDetails.map((detail, index) => `${index + 1}: ${detail}`).join("\n")}\n\n${actionText}`;
     }
-    elements.measureCapacityWarningOpen.dataset.detected = measureMismatch ? String(mismatch.detected) : "";
+    elements.measureCapacityWarningOpen.dataset.detected = measureMismatch || explicitSixEightSettingsMismatch ? String(suggestedCapacity) : "";
     elements.measureCapacityWarningOpen.dataset.formatting = JSON.stringify({
       hyphenUnit: formatting.hyphenUnit?.detected || null,
-      hyphenSpacing: formatting.hyphenSpacing?.detected || null
+      hyphenSpacing: standardHyphenSpacing
     });
     elements.measureCapacityWarningOpen.dataset.profile = useSixEightProfile ? "sixEight" : "";
     elements.measureCapacityWarningOpen.textContent = formattingDetails.length > 1
       ? "設定を一括適用"
       : !measureMismatch
-        ? "設定を変更"
+      ? "設定を変更"
       : useSixEightProfile
-        ? `6/8・${mismatch.detected}を適用`
+        ? `6/8・${suggestedCapacity}を適用`
         : `${mismatch.detected}に変更`;
     elements.measureCapacityWarning.hidden = false;
     syncResultRowAlignment();
@@ -3381,6 +3419,7 @@
     let formatting = {};
     try { formatting = JSON.parse(elements.measureCapacityWarningOpen.dataset.formatting || "{}"); } catch (_error) { formatting = {}; }
     if ((!Number.isInteger(detected) || detected < 2) && !formatting.hyphenUnit && !formatting.hyphenSpacing) return;
+    songChangeWarningEligible = false;
     elements.measureCapacityWarning.hidden = true;
     syncResultRowAlignment();
     if (targetProfile === "sixEight" && CBFSettings.activeProfile() !== "sixEight") {
@@ -3410,6 +3449,7 @@
     });
   });
   elements.measureCapacityWarningDismiss.addEventListener("click", () => {
+    songChangeWarningEligible = false;
     elements.measureCapacityWarning.hidden = true;
     elements.measureCapacityWarningText.textContent = "";
     syncResultRowAlignment();

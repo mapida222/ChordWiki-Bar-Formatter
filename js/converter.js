@@ -1500,6 +1500,47 @@
     }, 0);
   }
 
+  function extractAuthoredLyrics(inputText) {
+    return String(inputText || "").split(/\r\n|\r|\n/).filter((line) => !DIRECTIVE_RE.test(line)).map((line) => {
+      const label = line.match(LABEL_DEF_RE);
+      const tokens = parseTokens(label ? label[3] : line);
+      return tokens.filter((token) => token.kind === "text").map((token) => token.value).join("")
+        .replace(/[（(]\s*\d+\s*\/\s*\d+(?:\s*\([^)]*\))?(?:\s*拍子)?\s*[）)]/gu, "")
+        .replace(/\d+\s*\/\s*\d+\s*拍子/gu, "")
+        .normalize("NFC")
+        .toLowerCase()
+        .match(/[\p{L}\p{M}\p{N}\p{Extended_Pictographic}]/gu)?.join("") || "";
+    }).join("");
+  }
+
+  function authoredLyricChangePercent(previousLyrics, currentLyrics) {
+    const shingles = (value) => {
+      const characters = [...String(value || "")];
+      if (!characters.length) return new Map();
+      const counts = new Map();
+      if (characters.length < 16) {
+        characters.forEach((character) => counts.set(character, (counts.get(character) || 0) + 1));
+        return counts;
+      }
+      const width = 4;
+      for (let index = 0; index <= characters.length - width; index += 1) {
+        const key = characters.slice(index, index + width).join("");
+        counts.set(key, (counts.get(key) || 0) + 1);
+      }
+      return counts;
+    };
+    const previous = String(previousLyrics || "");
+    const current = String(currentLyrics || "");
+    if (!previous || !current) return null;
+    if (previous === current) return 0;
+    const previousShingles = shingles(previous);
+    const currentShingles = shingles(current);
+    const previousCount = [...previousShingles.values()].reduce((sum, count) => sum + count, 0);
+    const currentCount = [...currentShingles.values()].reduce((sum, count) => sum + count, 0);
+    const commonCount = [...previousShingles].reduce((sum, [key, count]) => sum + Math.min(count, currentShingles.get(key) || 0), 0);
+    return (1 - commonCount / Math.max(previousCount, currentCount)) * 100;
+  }
+
   function analyzeAuthoredMeasureCapacity(inputText, configuredCapacity, targetMeter = "", includeMatching = false) {
     const configured = Number(configuredCapacity);
     if (!Number.isFinite(configured) || configured <= 0) return null;
@@ -1550,12 +1591,7 @@
     const dominant = ranked[0];
     if (ranked[1]?.length === dominant.length) return null;
     const coverage = dominant.length / candidates.length;
-    const lineCount = new Set(dominant.map((candidate) => candidate.line)).size;
-    // Settings warnings describe a song-wide format, not a local edit.  For
-    // short songs every analyzed measure must agree; longer songs need a
-    // strong 80% majority spread across at least two source lines.
-    if (dominant.length < 2) return null;
-    if (candidates.length <= 2 ? dominant.length !== candidates.length : coverage < 0.8 || lineCount < 2) return null;
+    if (candidates.length <= 2 ? dominant.length !== candidates.length : coverage < 0.8) return null;
     const detected = dominant[0].width;
     if (detected === configured && !includeMatching) return null;
     return {
@@ -1570,22 +1606,20 @@
 
   function dominantAuthoredValue(values, configured, includeConfigured = false) {
     const candidates = values.filter((candidate) => Number.isInteger(candidate.value) && candidate.value > 0);
-    if (candidates.length < 2) return null;
+    if (!candidates.length) return null;
     const grouped = new Map();
     candidates.forEach((candidate) => grouped.set(candidate.value, (grouped.get(candidate.value) || 0) + 1));
     const ranked = [...grouped.entries()].sort((left, right) => right[1] - left[1] || right[0] - left[0]);
     if (ranked.length > 1 && ranked[0][1] === ranked[1][1]) return null;
     const [detected, count] = ranked[0];
     const coverage = count / candidates.length;
-    const lineCount = new Set(candidates.filter((candidate) => candidate.value === detected).map((candidate) => candidate.line)).size;
-    if (count < 2 || (candidates.length <= 2 ? count !== candidates.length : coverage < 0.8 || lineCount < 2) || (!includeConfigured && detected === Number(configured))) return null;
+    if ((candidates.length <= 2 ? count !== candidates.length : coverage < 0.8) || (!includeConfigured && detected === Number(configured))) return null;
     return { configured: Number(configured), detected, count, candidateCount: candidates.length, percentage: Math.round(coverage * 100), lineNumbers: [...new Set(candidates.filter((candidate) => candidate.value === detected).map((candidate) => candidate.line))] };
   }
 
   function analyzeAuthoredFormatting(inputText, configuredSettings = {}) {
     const chordIntervals = [];
     const directHyphens = [];
-    const spacingGroups = [];
     const authoredHyphenWidth = (token) => /^-+$/u.test(token?.value || "") ? token.value.length : 0;
     String(inputText || "").split(/\r\n|\r|\n/).forEach((line, lineIndex) => {
       const tokens = parseTokens(line);
@@ -1604,13 +1638,6 @@
           const width = authoredHyphenWidth(tokens[index + 1]);
           if (width) directHyphens.push({ value: width, line: lineIndex + 1 });
         }
-        if (token.kind !== "hyphen") return;
-        const previous = tokens[index - 1];
-        const beforeSeparator = tokens[index - 2];
-        if (previous?.kind === "text" && /^[ \t　]+$/u.test(previous.value) && beforeSeparator?.kind === "hyphen" && authoredHyphenWidth(beforeSeparator)) {
-          const width = authoredHyphenWidth(token);
-          if (width) spacingGroups.push({ value: width, line: lineIndex + 1 });
-        }
       });
     });
     const intervalDetection = dominantAuthoredValue(chordIntervals, configuredSettings.hyphenUnit, true);
@@ -1618,8 +1645,7 @@
       // Prefer complete code-to-next-code intervals.  Keep the old immediate
       // post-chord detector as a compatibility fallback for rhythm-heavy rows
       // where no reliable interval can be established.
-      hyphenUnit: intervalDetection || dominantAuthoredValue(directHyphens, configuredSettings.hyphenUnit, true),
-      hyphenSpacing: dominantAuthoredValue(spacingGroups, configuredSettings.hyphenSpacing, true)
+      hyphenUnit: intervalDetection || dominantAuthoredValue(directHyphens, configuredSettings.hyphenUnit, true)
     };
   }
 
@@ -2538,5 +2564,5 @@
     return renderedLines.map((line, index) => rowModes?.[index] === "source" ? (sourceLines[index] ?? "") : line).join("\n");
   }
 
-  window.CBFConverter = { convertChordText, parseTokens, isChordSymbol, normalizeChordSymbol, moveDelayedRhythmAfterChord, suppressTrailingBarAfterParenthesizedFinalChord, renderWithBeatCode, mergeCorrectionScope, renderCompletedOutput, restoreSourceAdoptedLines, inferBeatCodeFromRenderedLine, recoverBeatCodeFromRenderedLine, protectUnsupportedCorrectionSlots, mergeChangedLines, alignLineIndices, musicLineSignature, sameMusicStructure, alignMusicLineIndices, addedCharacterIndices, remapTrackedCharacterIndices, distributePickupMarkerLyrics, addContinuationChordsToManualRhythm, analyzeAuthoredMeasureCapacity, analyzeAuthoredFormatting };
+  window.CBFConverter = { convertChordText, parseTokens, isChordSymbol, normalizeChordSymbol, moveDelayedRhythmAfterChord, suppressTrailingBarAfterParenthesizedFinalChord, renderWithBeatCode, mergeCorrectionScope, renderCompletedOutput, restoreSourceAdoptedLines, inferBeatCodeFromRenderedLine, recoverBeatCodeFromRenderedLine, protectUnsupportedCorrectionSlots, mergeChangedLines, alignLineIndices, musicLineSignature, sameMusicStructure, alignMusicLineIndices, addedCharacterIndices, remapTrackedCharacterIndices, distributePickupMarkerLyrics, addContinuationChordsToManualRhythm, analyzeAuthoredMeasureCapacity, analyzeAuthoredFormatting, extractAuthoredLyrics, authoredLyricChangePercent };
 }());

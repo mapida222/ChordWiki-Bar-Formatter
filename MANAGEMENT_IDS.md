@@ -66,7 +66,7 @@
 | `CONVERT-010` | 括弧内を含むコードのテンション列で、カンマ区切り（例：`E7(9,11)`）をコードとして認識 | 有効 | `js/converter.js`、`tests/converter.test.js` |
 | `SETTINGS-001` | 数値設定のフォーカス直後入力で既存値を置換 | 有効 | `js/numeric-entry.js`、`js/app.js`、`tests/numeric-entry.test.js` |
 | `SETTINGS-002` | 端数歌詞前置きと長い拍の歌詞配置の優先関係 | 調査済み | `js/converter.js`、`tests/long-beat-lyric-distribution.test.js` |
-| `SETTINGS-003` | 変換前で検出した3・6・9・12ハイフンの小節候補を、6/8拍子タブへ切替えて合計ハイフン数へ適用 | 有効 | `js/app.js`、`tests/measure-capacity-warning.test.js` |
+| `SETTINGS-003` | 変換前で検出した小節ハイフン数や明示された6/8拍子を、6/8拍子タブへ切替えて3・6などの標準値へ適用 | 有効 | `js/app.js`、`tests/measure-capacity-warning.test.js` |
 | `SETTINGS-004` | 初期設定を「小節・拍・区切り→コード引継ぎ→歌詞配置」の順で並べ、全項目に具体的な変換例を表示。1文字だけで完結する歌詞小節のハイフンは省略／残すを選択し、歌詞の前後へ分割したハイフンも同じ設定で処理 | 有効 | `js/settings.js`、`js/app.js`、`js/converter.js`、`style.css`、`tests/settings.test.js`、`tests/single-character-hyphen-removal.test.js` |
 | `SETTINGS-005` | 表示フォント切替時に日本語・記号のフォールバックを統一し、ブラウザ標準・MS Gothic等で文字欠けを防止 | 有効 | `js/app.js`、`js/preview-window.js`、`style.css`、`tests/setting-processing.test.js` |
 | `SETTINGS-006` | 表示設定の「太字コード」を変換前・変換後・譜面プレビューのコード表示へ反映 | 有効 | `style.css`、`tests/setting-processing.test.js` |
@@ -78,7 +78,7 @@
 | `CONVERT-015` | 行修正後の末尾が1小節未満の場合、終端の自動小節線を付けない | 有効 | `js/converter.js`、`tests/converter.test.js` |
 | `CONVERT-016` | 変換前行の文頭・文末空白を変換後も保持 | 有効 | `js/converter.js`、`tests/converter.test.js` |
 | `CONVERT-017` | 1文字歌詞を含む手動リズム小節は、ハイフンを歌詞の前後へ分けて連続表示 | 有効 | `js/converter.js`、`tests/converter.test.js` |
-| `WARNING-001` | 変換前と初期設定の1小節ハイフン数不一致警告 | 有効 | `js/app.js`、`js/converter.js` |
+| `WARNING-001` | 歌詞が90%以上変わった時に限り、部分入力も含む変換前譜面の拍子・小節ハイフン数を初期設定と比較し、標準空白を案内 | 有効 | `js/app.js`、`js/converter.js`、`tests/measure-capacity-warning.test.js` |
 | `LAYOUT-001` | 行修正枠と変換後枠の入力欄上端を揃える | 有効 | `style.css`、`js/app.js` |
 | `LAYOUT-002` | 確定譜面テキスト枠の右下リサイズとサイズ保存 | 有効 | `index.html`、`style.css`、`js/app.js`、`tests/committed-resize.test.js` |
 | `LAYOUT-003` | 01・03を畳んだ初期配置、変換前の省スペース化、行修正上部枠の強調 | 有効 | `index.html`、`style.css`、`js/app.js`、`tests/default-layout.test.js` |
@@ -136,7 +136,7 @@
 | `PREVIEW-007` | リアルタイム編集へ既存Transposerを使った表示専用±12移調を追加 | 有効 | `committed-preview.html`、`js/entries/committed-preview.js`、`js/committed-preview-window.js`、`tests/committed-preview-window.test.js` |
 | `PREVIEW-008` | 旧ChordWikiの二重角括弧を通常・別画面・リアルタイムプレビューで二段上付き表示し、リアルタイム移調を「移調なし／−／＋」順へ統一 | 有効 | `js/chordwiki-preview.js`、`js/renderer/old-chordwiki-renderer.js`、`committed-preview.html`、`style.css`、`tests/preview.test.js`、`tests/official-parser-integration.test.mjs`、`tests/committed-preview-window.test.js` |
 | `PREVIEW-009` | リアルタイム編集でコード位置調整モードを使い、譜面上のコードクリックと矢印キー（Enter／Shift+Enterのコード巡回を含む）で上下左右へ位置調整できる | 有効 | `committed-preview.html`、`js/committed-preview-window.js`、`style.css`、`tests/committed-preview-window.test.js` |
-| `PREVIEW-010` | committed-preview.htmlの編集テキストで小節チェック。小節内の構文エラー、アクセント・半拍記号を含む拍数の不一致、拍数なし小節の許容を確認し、各エラーの原因・対策と該当行への移動／安全な適用を表示する | 有効 | `committed-preview.html`、`js/measure-check.js`、`js/committed-measure-check-panel.js`、`style.css`、`tests/measure-check.test.js` |
+| `PREVIEW-010` | committed-preview.htmlの編集テキストで小節チェック。小節内の構文エラー、拍数の不一致、拍子注記前の小節線と角括弧付き拍子注記を確認し、各エラーの原因・対策と該当行への移動／安全な適用を表示する | 有効 | `committed-preview.html`、`js/measure-check.js`、`js/committed-measure-check-panel.js`、`style.css`、`tests/measure-check.test.js` |
 | `PREVIEW-011` | committed-preview.htmlの小節チェック結果にChordWiki to Clover準拠の16分音符アクセント推奨編集を表示し、OK／NGおよび「すべて適用」で選択的に反映する | 有効 | `committed-preview.html`、`js/measure-check.js`、`js/committed-measure-check-panel.js`、`style.css`、`tests/measure-check.test.js` |
 | `PREVIEW-012` | リアルタイムエディターの移調操作を左の編集テキストへ反映し、右プレビューへの二重適用を防止 | 有効 | `js/committed-preview-window.js`、`tests/committed-preview-window.test.js` |
 | `PREVIEW-013` | リアルタイムエディターの表示設定で音名を元表記・#表示・♭表記から選択し、譜面プレビューへ反映 | 有効 | `committed-preview.html`、`js/committed-preview-window.js`、`tests/committed-preview-window.test.js` |

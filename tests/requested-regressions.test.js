@@ -13,15 +13,15 @@ assert.ok([...added].some((index) => output[index] === "小"), "the inserted lin
 assert.ok([...added].some((index) => output[index] === "-"), "generated rhythm characters must remain highlighted");
 
 const settings = { hyphenUnit: 2, measureCapacity: 4, hyphenSpacing: 2 };
-assert.deepStrictEqual(
-  window.CBFConverter.analyzeAuthoredFormatting("[C]---- ----|[D]---- ----|", settings).hyphenSpacing.detected,
-  4,
-  "spacing analysis must detect the dominant authored group width"
+assert.strictEqual(
+  Object.hasOwn(window.CBFConverter.analyzeAuthoredFormatting("[C]---- ----|[D]---- ----|", settings), "hyphenSpacing"),
+  false,
+  "the warning analyzer must not infer settings from authored spacing groups"
 );
 assert.strictEqual(
-  window.CBFConverter.analyzeAuthoredFormatting("[C]---- ----|[D]---- ----|", { ...settings, hyphenSpacing: 4 }).hyphenSpacing.detected,
-  4,
-  "format analysis must retain values that match the current setting for warning details"
+  Object.hasOwn(window.CBFConverter.analyzeAuthoredFormatting("[C]----|[D]----|", { ...settings, hyphenSpacing: 4 }), "hyphenSpacing"),
+  false,
+  "the warning analyzer must leave standard spacing to the selected meter"
 );
 assert.strictEqual(
   window.CBFConverter.analyzeAuthoredFormatting("[Bm7]>--- ----|[Bm7]---- ----|[Bm]---- ----|[Bm]>>[(break)]-- ----|", settings).hyphenUnit.detected,
