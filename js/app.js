@@ -149,6 +149,7 @@
   let pendingCompositionCommit = "";
   let pendingCompositionCommitAt = 0;
   let restoringPasteScroll = false;
+  let pendingWholeSourcePaste = false;
   let scrollSyncEnabled = true;
   let mobileLinkedScrollPaused = false;
   let mobileProgrammaticScroll = false;
@@ -948,6 +949,45 @@
       sourceLineIds,
       createSourceLineId
     );
+  }
+  function wholeSourceSelectionSelected() {
+    return elements.input.selectionStart === 0 && elements.input.selectionEnd === elements.input.value.length;
+  }
+  function markWholeSourcePaste(isWholeSource) {
+    pendingWholeSourcePaste = Boolean(isWholeSource);
+    if (pendingWholeSourcePaste) {
+      window.setTimeout(() => { pendingWholeSourcePaste = false; }, 0);
+    }
+  }
+  function pastedTextReplacesSong(previousText, nextText) {
+    if (String(previousText || "") === String(nextText || "")) return false;
+    const previousLyrics = CBFConverter.extractAuthoredLyrics(previousText);
+    const nextLyrics = CBFConverter.extractAuthoredLyrics(nextText);
+    if (previousLyrics && nextLyrics) {
+      return CBFConverter.authoredLyricChangePercent(previousLyrics, nextLyrics) >= 90;
+    }
+    return true;
+  }
+  function resetEditsForPastedSong(lines) {
+    sourceLineIds = lines.map(() => createSourceLineId());
+    outputOverrides = {};
+    manualOutputLines.clear();
+    outputManuallyEdited = false;
+    lastGeneratedOutput = "";
+    outputAddedOffsets.clear();
+    elements.correction.value = "";
+    inferenceFallbackCorrectionLines = [];
+    lastAppliedCorrectionLines = [];
+    correctionDisplayStates = [];
+    rowAdoptionModes = [];
+    correctionSlotCounts = [];
+    authoredWhiteNoteCounts = [];
+    persistOutputLayer();
+    persistRowAdoptionModes();
+    localStorage.setItem(CORRECTION_STORAGE_KEY, "");
+    resetCorrectionHistory();
+    updateCorrectionModes();
+    scheduleConversion(true);
   }
   function persistOutputLayer() {
     localStorage.setItem(SOURCE_LINE_IDS_STORAGE_KEY, JSON.stringify(sourceLineIds));
@@ -3006,11 +3046,21 @@
   });
   elements.correctionUndo.addEventListener("click", undoCorrection);
   elements.correctionRedo.addEventListener("click", redoCorrection);
+  elements.input.addEventListener("paste", () => {
+    markWholeSourcePaste(wholeSourceSelectionSelected());
+  });
   elements.input.addEventListener("input", () => {
     localStorage.setItem(INPUT_STORAGE_KEY, elements.input.value);
     updateCount(elements.input, elements.inputCount);
     updateLineNumbers(elements.input, elements.inputLines);
     const currentLines = elements.input.value.split(/\r\n|\r|\n/);
+    const wasWholeSourcePaste = pendingWholeSourcePaste;
+    pendingWholeSourcePaste = false;
+    if (wasWholeSourcePaste && pastedTextReplacesSong(lastConvertedInputLines.join("\n"), elements.input.value)) {
+      resetEditsForPastedSong(currentLines);
+      markActivity();
+      return;
+    }
     if (currentLines.length !== lastConvertedInputLines.length) {
       const previousLines = [...lastConvertedInputLines];
       const mapping = CBFConverter.alignMusicLineIndices(previousLines, currentLines);
@@ -3131,9 +3181,13 @@
   });
   $("#paste-input").addEventListener("click", async () => {
     try {
+      const start = elements.input.selectionStart;
+      const end = elements.input.selectionEnd;
+      const replacesWholeSource = start === 0 && end === elements.input.value.length;
       const text = await readClipboard();
       const scrollPositions = captureEditorScrollPositions();
-      elements.input.setRangeText(text, elements.input.selectionStart, elements.input.selectionEnd, "end");
+      elements.input.setRangeText(text, start, end, "end");
+      markWholeSourcePaste(replacesWholeSource);
       elements.input.dispatchEvent(new Event("input", { bubbles: true }));
       requestAnimationFrame(() => scheduleConversion(false));
       elements.input.focus();
