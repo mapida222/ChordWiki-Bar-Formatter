@@ -2691,7 +2691,7 @@
   });
   const outputAssistButtons = [...document.querySelectorAll("[data-output-insert], [data-output-move], [data-output-backspace]")];
   const pendingArrowScrolls = new WeakMap();
-  const revealEditorAhead = (editor, direction) => {
+  const revealEditorAhead = (editor, direction, browserScrollLeft = editor.scrollLeft) => {
     const caret = editor.selectionEnd;
     const lineStart = Math.max(editor.value.lastIndexOf("\n", caret - 1), editor.value.lastIndexOf("\r", caret - 1)) + 1;
     const linePrefix = editor.value.slice(lineStart, caret);
@@ -2705,7 +2705,11 @@
     const maxScrollLeft = Math.max(0, editor.scrollWidth - editor.clientWidth);
     const caretViewportRatio = direction === "left" ? 0.58 : 0.42;
     const preferredScrollLeft = Math.max(0, Math.min(maxScrollLeft, caretX - editor.clientWidth * caretViewportRatio));
-    if ((direction === "left" && preferredScrollLeft < editor.scrollLeft) || (direction === "right" && preferredScrollLeft > editor.scrollLeft)) scrollEditorTo(editor, preferredScrollLeft, "left");
+    const browserTarget = Math.max(0, Math.min(maxScrollLeft, browserScrollLeft));
+    const targetScrollLeft = direction === "left"
+      ? Math.min(preferredScrollLeft, browserTarget)
+      : Math.max(preferredScrollLeft, browserTarget);
+    if ((direction === "left" && targetScrollLeft < editor.scrollLeft) || (direction === "right" && targetScrollLeft > editor.scrollLeft)) scrollEditorTo(editor, targetScrollLeft, "left");
   };
   const moveOutputCursor = (direction) => {
     const value = elements.output.value;
@@ -2771,16 +2775,17 @@
       pending.direction = direction;
       return;
     }
-    const scheduledScroll = { scrollLeft: editor.scrollLeft, direction };
+    const scheduledScroll = { scrollLeft: editor.scrollLeft, browserScrollLeft: editor.scrollLeft, direction };
     pendingArrowScrolls.set(editor, scheduledScroll);
     requestAnimationFrame(() => {
       if (pendingArrowScrolls.get(editor) !== scheduledScroll) return;
+      if (editor.scrollLeft !== scheduledScroll.scrollLeft) scheduledScroll.browserScrollLeft = editor.scrollLeft;
       pendingArrowScrolls.delete(editor);
       if (editor.scrollLeft !== scheduledScroll.scrollLeft) {
         editor.scrollLeft = scheduledScroll.scrollLeft;
         syncHighlightScroll(editor);
       }
-      revealEditorAhead(editor, scheduledScroll.direction);
+      revealEditorAhead(editor, scheduledScroll.direction, scheduledScroll.browserScrollLeft);
     });
   });
   const preserveEditorHorizontalScroll = (editor) => {
@@ -4033,7 +4038,10 @@
     editor.addEventListener("scroll", () => {
       const pendingArrowScroll = pendingArrowScrolls.get(editor);
       if (pendingArrowScroll) {
-        if (editor.scrollLeft !== pendingArrowScroll.scrollLeft) editor.scrollLeft = pendingArrowScroll.scrollLeft;
+        if (editor.scrollLeft !== pendingArrowScroll.scrollLeft) {
+          pendingArrowScroll.browserScrollLeft = editor.scrollLeft;
+          editor.scrollLeft = pendingArrowScroll.scrollLeft;
+        }
         syncHighlightScroll(editor);
         return;
       }
