@@ -132,6 +132,7 @@ assert(html.includes('<summary class="header-notice-summary">'));
 assert(html.includes('<span class="header-notice-label">更新履歴</span>'));
 assert(html.includes('class="header-notice-latest"'));
 assert(html.includes('class="header-notice-history" aria-label="更新履歴"'));
+assert(app.includes('if (headerNotice?.open && !headerNotice.contains(event.target)) headerNotice.open = false;'), "update history must close when the user clicks outside it");
 assert(html.includes('class="header-notice-category">[Editor]</span>'));
 assert(html.includes('class="header-notice-category">[Formatter・Editor]</span>'));
 assert(html.includes('class="header-notice-category">[Formatter]</span>'));
