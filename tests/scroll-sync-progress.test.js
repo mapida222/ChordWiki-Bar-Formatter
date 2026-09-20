@@ -12,10 +12,17 @@ const positionHandler = app.match(/positionEvents\.forEach\(\(eventName\) => edi
 assert(positionHandler, "editor position handler must be present");
 const activePositionFunction = app.match(/function updateActivePosition\([\s\S]*?\n  function updateEditorHighlight/);
 assert(activePositionFunction, "active position update function must be present");
+const horizontalRevealFunction = app.match(/const revealEditorAhead = \(editor, direction\) => \{[\s\S]*?\n  \};\n  const moveOutputCursor/);
+assert(horizontalRevealFunction, "horizontal caret reveal function must be present");
+const horizontalReveal = horizontalRevealFunction[0];
 
 assert(handler.includes("correctionResultPair.includes(editor) ? correctionResultPair : [editor]"), "scroll sync OFF must keep the result and row-edit panes aligned while leaving the source independent");
 assert(handler.includes('scrollProgress(editor, "top")'), "linked vertical scroll must use normalized progress");
 assert(handler.includes('scrollPositionForProgress(other, "top", topProgress)'), "linked panes with different heights must receive proportional scroll positions");
+assert(horizontalReveal.includes("const scrollStep = viewportWidth / 6;"), "horizontal caret follow must move in viewport sixths");
+assert(horizontalReveal.includes("caretViewportX >= viewportWidth * 3 / 5") && horizontalReveal.includes("caretViewportX <= viewportWidth * 2 / 5"), "horizontal caret follow must keep the caret within the middle 40–60% band");
+assert(horizontalReveal.includes("activeAnimation ? activeAnimation.target : editor.scrollLeft"), "successive key presses must advance from the pending segment target");
+assert(app.includes("duration: 140") && app.includes("1 - Math.pow(1 - progress, 3)"), "horizontal segments must use a short ease-out animation");
 assert(app.includes("const AUTO_SCROLL_EDGE_ROWS = 2;"), "vertical auto-scroll must use a two-row edge threshold");
 assert(app.includes("function lineIsNearVerticalEdge(lineTop, lineHeight, scrollTop, clientHeight)"), "vertical auto-scroll must be limited to rows near the viewport edges");
 assert(app.includes("if (!lineIsNearVerticalEdge(lineTop, lineHeight, elements.correction.scrollTop, elements.correction.clientHeight)) return false;"), "central correction rows must not recenter the row editor");

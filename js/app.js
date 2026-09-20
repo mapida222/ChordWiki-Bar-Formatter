@@ -682,20 +682,24 @@
         return true;
       }
       if (runningAnimation) {
+        if (Math.abs(runningAnimation.target - position) < 0.5) return true;
+        runningAnimation.from = element.scrollLeft;
         runningAnimation.target = position;
+        runningAnimation.startedAt = performance.now();
         return true;
       }
-      const animation = { target: position, frame: 0 };
-      const advance = () => {
+      const animation = { from: element.scrollLeft, target: position, startedAt: performance.now(), duration: 140, frame: 0 };
+      const advance = (now) => {
         const maxScrollLeft = Math.max(0, element.scrollWidth - element.clientWidth);
         animation.target = Math.max(0, Math.min(maxScrollLeft, animation.target));
-        const distance = animation.target - element.scrollLeft;
-        if (Math.abs(distance) < 0.5) {
+        const progress = Math.min(1, Math.max(0, (now - animation.startedAt) / animation.duration));
+        const easedProgress = 1 - Math.pow(1 - progress, 3);
+        element.scrollLeft = animation.from + (animation.target - animation.from) * easedProgress;
+        if (progress >= 1) {
           element.scrollLeft = animation.target;
           horizontalScrollAnimations.delete(element);
           return;
         }
-        element.scrollLeft += distance * 0.3;
         animation.frame = requestAnimationFrame(advance);
       };
       horizontalScrollAnimations.set(element, animation);
@@ -2361,6 +2365,10 @@
   });
   elements.keySettingsList.addEventListener("input", renderKeySettingsPreview);
   elements.keySettingsList.addEventListener("change", renderKeySettingsPreview);
+  const headerNotice = $(".header-notice");
+  document.addEventListener("click", (event) => {
+    if (headerNotice?.open && !headerNotice.contains(event.target)) headerNotice.open = false;
+  });
   $("#history-close").addEventListener("click", () => closeDialog(elements.historyDialog));
   elements.historyDialog.addEventListener("click", (event) => { if (event.target === elements.historyDialog) closeDialog(elements.historyDialog); });
   elements.historyPreviewTabs.addEventListener("click", (event) => {
@@ -2756,7 +2764,7 @@
     return position;
   };
   const revealEditorAhead = (editor, direction) => {
-    const caret = editor.selectionEnd;
+    const caret = editor.selectionDirection === "backward" ? editor.selectionStart : editor.selectionEnd;
     const value = editor.value;
     const lineStart = Math.max(value.lastIndexOf("\n", caret - 1), value.lastIndexOf("\r", caret - 1)) + 1;
     const linePrefix = value.slice(lineStart, caret);
@@ -2792,14 +2800,22 @@
     const paddingLeft = Number.parseFloat(style.paddingLeft) || 0;
     const caretX = paddingLeft + measuredPrefixWidth;
     const maxScrollLeft = Math.max(0, editor.scrollWidth - editor.clientWidth);
-    const caretViewportRatio = direction === "left" ? 0.58 : 0.42;
-    const preferredScrollLeft = Math.max(0, Math.min(maxScrollLeft, caretX - editor.clientWidth * caretViewportRatio));
-    const targetScrollLeft = preferredScrollLeft;
-    if (horizontalScrollAnimations.has(editor)
-      || (direction === "left" && targetScrollLeft < editor.scrollLeft)
-      || (direction === "right" && targetScrollLeft > editor.scrollLeft)) {
-      scrollEditorTo(editor, targetScrollLeft, "left");
+    const viewportWidth = editor.clientWidth;
+    if (!viewportWidth) return;
+    const scrollStep = viewportWidth / 6;
+    const activeAnimation = horizontalScrollAnimations.get(editor);
+    const segmentScrollLeft = activeAnimation ? activeAnimation.target : editor.scrollLeft;
+    const caretViewportX = caretX - segmentScrollLeft;
+    let targetScrollLeft = segmentScrollLeft;
+    if (direction === "right" && caretViewportX >= viewportWidth * 3 / 5) {
+      const stepCount = Math.max(1, Math.ceil((caretViewportX - viewportWidth * 3 / 5) / scrollStep));
+      targetScrollLeft += scrollStep * stepCount;
+    } else if (direction === "left" && caretViewportX <= viewportWidth * 2 / 5) {
+      const stepCount = Math.max(1, Math.ceil((viewportWidth * 2 / 5 - caretViewportX) / scrollStep));
+      targetScrollLeft -= scrollStep * stepCount;
     }
+    targetScrollLeft = Math.max(0, Math.min(maxScrollLeft, targetScrollLeft));
+    if (Math.abs(targetScrollLeft - segmentScrollLeft) >= 0.5) scrollEditorTo(editor, targetScrollLeft, "left");
   };
   const moveOutputCursor = (direction) => {
     const value = elements.output.value;
