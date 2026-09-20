@@ -668,16 +668,53 @@
     const maxScrollTop = Math.max(0, element.scrollHeight - element.clientHeight);
     return Math.max(0, Math.min(maxScrollTop, limited));
   }
-  function scrollEditorTo(element, top) {
-    if (Math.abs(top - element.scrollTop) < 0.5) return false;
+  const horizontalScrollAnimations = new WeakMap();
+  function scrollEditorTo(element, position, axis = "top") {
+    const scrollProperty = axis === "left" ? "scrollLeft" : "scrollTop";
+    const runningAnimation = axis === "left" ? horizontalScrollAnimations.get(element) : null;
+    if (Math.abs(position - element[scrollProperty]) < 0.5 && !runningAnimation) return false;
     const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (axis === "left") {
+      if (prefersReducedMotion) {
+        if (runningAnimation) cancelAnimationFrame(runningAnimation.frame);
+        horizontalScrollAnimations.delete(element);
+        element.scrollLeft = position;
+        return true;
+      }
+      if (runningAnimation) {
+        runningAnimation.target = position;
+        return true;
+      }
+      const animation = { target: position, frame: 0 };
+      const advance = () => {
+        const maxScrollLeft = Math.max(0, element.scrollWidth - element.clientWidth);
+        animation.target = Math.max(0, Math.min(maxScrollLeft, animation.target));
+        const distance = animation.target - element.scrollLeft;
+        if (Math.abs(distance) < 0.5) {
+          element.scrollLeft = animation.target;
+          horizontalScrollAnimations.delete(element);
+          return;
+        }
+        element.scrollLeft += distance * 0.3;
+        animation.frame = requestAnimationFrame(advance);
+      };
+      horizontalScrollAnimations.set(element, animation);
+      animation.frame = requestAnimationFrame(advance);
+      return true;
+    }
     if (typeof element.scrollTo === "function") {
-      element.scrollTo({ top, behavior: prefersReducedMotion ? "auto" : "smooth" });
+      element.scrollTo({ [axis]: position, behavior: prefersReducedMotion ? "auto" : "smooth" });
     } else {
-      element.scrollTop = top;
+      element[scrollProperty] = position;
     }
     return true;
   }
+  const cancelHorizontalScrollAnimation = (element) => {
+    const animation = horizontalScrollAnimations.get(element);
+    if (!animation) return;
+    cancelAnimationFrame(animation.frame);
+    horizontalScrollAnimations.delete(element);
+  };
   function keepCorrectionLineInView(lineIndex) {
     if (window.matchMedia("(max-width: 699px)").matches) return false;
     // A correction paste may update the active slot as part of its input event.
@@ -969,6 +1006,8 @@
     return true;
   }
   function resetEditsForPastedSong(lines) {
+    clearPendingConversion();
+    lastConvertedInputLines = [...lines];
     sourceLineIds = lines.map(() => createSourceLineId());
     outputOverrides = {};
     manualOutputLines.clear();
@@ -988,6 +1027,13 @@
     resetCorrectionHistory();
     updateCorrectionModes();
     scheduleConversion(true);
+  }
+  function clearPendingConversion() {
+    clearTimeout(conversionTimer);
+    conversionTimer = undefined;
+    pendingCorrectionRefresh = false;
+    pendingCorrectionLineIndices.clear();
+    pendingSourceLineIndices.clear();
   }
   function persistOutputLayer() {
     localStorage.setItem(SOURCE_LINE_IDS_STORAGE_KEY, JSON.stringify(sourceLineIds));
@@ -2380,6 +2426,7 @@
   });
   $("#insert-input-sample").addEventListener("click", () => {
     if (elements.input.value.trim() && !window.confirm("入力中の内容をサンプルで上書きします。よろしいですか？")) return;
+    clearPendingConversion();
     CBFSettings.setActiveProfile("fourFour");
     CBFSettings.save(INITIAL_SETTINGS, "fourFour");
     renderSettings(INITIAL_SETTINGS);
@@ -2393,6 +2440,13 @@
     localStorage.setItem(REMOVAL_STORAGE_KEY, "4,8");
     persistFeatureSettings();
     elements.input.value = INITIAL_INPUT;
+    const sampleLines = elements.input.value.split(/\r\n|\r|\n/);
+    sourceLineIds = sampleLines.map(() => createSourceLineId());
+    outputOverrides = {};
+    lastGeneratedOutput = "";
+    outputAddedOffsets.clear();
+    persistOutputLayer();
+    lastConvertedInputLines = [...sampleLines];
     elements.correction.value = INITIAL_CORRECTION;
     correctionSlotCounts = INITIAL_CORRECTION.split("\n").map((line) => CBFCorrectionInput.groups(line).length);
     authoredWhiteNoteCounts = correctionSlotCounts.map(() => 0);
@@ -2672,21 +2726,80 @@
     });
   });
   const outputAssistButtons = [...document.querySelectorAll("[data-output-insert], [data-output-move], [data-output-backspace]")];
+  const caretSegmenter = typeof Intl.Segmenter === "function"
+    ? new Intl.Segmenter(undefined, { granularity: "grapheme" })
+    : null;
+  let textMeasureElement = null;
+  const moveCaretByCharacter = (value, position, direction) => {
+    if (caretSegmenter) {
+      for (const segment of caretSegmenter.segment(value)) {
+        const segmentEnd = segment.index + segment.segment.length;
+        if (direction === "left" && segmentEnd >= position) return segment.index;
+        if (direction === "right" && segment.index <= position && segmentEnd > position) return segmentEnd;
+      }
+      return direction === "left" ? 0 : value.length;
+    }
+    if (direction === "left" && position > 0) {
+      const previous = value.charCodeAt(position - 1);
+      const beforePrevious = value.charCodeAt(position - 2);
+      return previous >= 0xdc00 && previous <= 0xdfff && beforePrevious >= 0xd800 && beforePrevious <= 0xdbff
+        ? position - 2
+        : position - 1;
+    }
+    if (direction === "right" && position < value.length) {
+      const current = value.charCodeAt(position);
+      const next = value.charCodeAt(position + 1);
+      return current >= 0xd800 && current <= 0xdbff && next >= 0xdc00 && next <= 0xdfff
+        ? position + 2
+        : position + 1;
+    }
+    return position;
+  };
   const revealEditorAhead = (editor, direction) => {
     const caret = editor.selectionEnd;
-    const lineStart = Math.max(editor.value.lastIndexOf("\n", caret - 1), editor.value.lastIndexOf("\r", caret - 1)) + 1;
-    const linePrefix = editor.value.slice(lineStart, caret);
+    const value = editor.value;
+    const lineStart = Math.max(value.lastIndexOf("\n", caret - 1), value.lastIndexOf("\r", caret - 1)) + 1;
+    const linePrefix = value.slice(lineStart, caret);
     const style = window.getComputedStyle(editor);
     const canvas = document.createElement("canvas");
     const context = canvas.getContext("2d");
-    if (!context) return;
-    context.font = `${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
-    const letterSpacing = Number.parseFloat(style.letterSpacing) || 0;
-    const caretX = (Number.parseFloat(style.paddingLeft) || 0) + context.measureText(linePrefix).width + linePrefix.length * letterSpacing;
+    let measuredPrefixWidth;
+    if (context) {
+      context.font = style.font || `${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
+      measuredPrefixWidth = context.measureText(linePrefix).width + linePrefix.length * (Number.parseFloat(style.letterSpacing) || 0);
+    } else {
+      if (!textMeasureElement) {
+        textMeasureElement = document.createElement("span");
+        Object.assign(textMeasureElement.style, {
+          position: "fixed",
+          left: "-100000px",
+          top: "0",
+          visibility: "hidden",
+          whiteSpace: "pre",
+          width: "max-content",
+          pointerEvents: "none",
+        });
+        textMeasureElement.setAttribute("aria-hidden", "true");
+        document.body.append(textMeasureElement);
+      }
+      textMeasureElement.style.font = style.font || `${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
+      textMeasureElement.style.letterSpacing = style.letterSpacing;
+      textMeasureElement.style.fontKerning = style.fontKerning;
+      textMeasureElement.style.tabSize = style.tabSize;
+      textMeasureElement.textContent = linePrefix;
+      measuredPrefixWidth = textMeasureElement.getBoundingClientRect().width;
+    }
+    const paddingLeft = Number.parseFloat(style.paddingLeft) || 0;
+    const caretX = paddingLeft + measuredPrefixWidth;
     const maxScrollLeft = Math.max(0, editor.scrollWidth - editor.clientWidth);
     const caretViewportRatio = direction === "left" ? 0.58 : 0.42;
     const preferredScrollLeft = Math.max(0, Math.min(maxScrollLeft, caretX - editor.clientWidth * caretViewportRatio));
-    if ((direction === "left" && preferredScrollLeft < editor.scrollLeft) || (direction === "right" && preferredScrollLeft > editor.scrollLeft)) editor.scrollLeft = preferredScrollLeft;
+    const targetScrollLeft = preferredScrollLeft;
+    if (horizontalScrollAnimations.has(editor)
+      || (direction === "left" && targetScrollLeft < editor.scrollLeft)
+      || (direction === "right" && targetScrollLeft > editor.scrollLeft)) {
+      scrollEditorTo(editor, targetScrollLeft, "left");
+    }
   };
   const moveOutputCursor = (direction) => {
     const value = elements.output.value;
@@ -2744,8 +2857,36 @@
   });
   elements.input.addEventListener("keydown", (event) => {
     if (applyKeyTransitionOnEnter(elements.input, event)) return;
-    if (!["ArrowLeft", "ArrowRight"].includes(event.key) || event.altKey || event.ctrlKey || event.metaKey) return;
-    requestAnimationFrame(() => revealEditorAhead(elements.input, event.key === "ArrowLeft" ? "left" : "right"));
+    if (!["ArrowLeft", "ArrowRight"].includes(event.key) || event.altKey || event.ctrlKey || event.metaKey || event.isComposing || event.keyCode === 229) return;
+    const editor = elements.input;
+    const direction = event.key === "ArrowLeft" ? "left" : "right";
+    const start = editor.selectionStart;
+    const end = editor.selectionEnd;
+    let nextStart = start;
+    let nextEnd = end;
+    let selectionDirection = editor.selectionDirection;
+    if (event.shiftKey) {
+      const anchor = start === end ? start : selectionDirection === "backward" ? end : start;
+      const focus = start === end ? end : selectionDirection === "backward" ? start : end;
+      const nextFocus = moveCaretByCharacter(editor.value, focus, direction);
+      nextStart = Math.min(anchor, nextFocus);
+      nextEnd = Math.max(anchor, nextFocus);
+      selectionDirection = nextFocus < anchor ? "backward" : "forward";
+    } else if (start !== end) {
+      nextStart = direction === "left" ? start : end;
+      nextEnd = nextStart;
+      selectionDirection = "none";
+    } else {
+      nextStart = moveCaretByCharacter(editor.value, end, direction);
+      nextEnd = nextStart;
+      selectionDirection = "none";
+    }
+    event.preventDefault();
+    editor.setSelectionRange(nextStart, nextEnd, selectionDirection);
+    editor.focus({ preventScroll: true });
+    requestAnimationFrame(() => {
+      revealEditorAhead(editor, direction);
+    });
   });
   const preserveEditorHorizontalScroll = (editor) => {
     const scrollLeft = editor.scrollLeft;
@@ -2756,6 +2897,9 @@
     }));
   };
   [elements.input, elements.output].forEach((editor) => {
+    ["pointerdown", "wheel", "input"].forEach((eventName) => {
+      editor.addEventListener(eventName, () => cancelHorizontalScrollAnimation(editor), { passive: eventName === "wheel" });
+    });
     editor.addEventListener("keydown", (event) => {
       if (!["ArrowUp", "ArrowDown"].includes(event.key) || event.altKey || event.ctrlKey || event.metaKey) return;
       preserveEditorHorizontalScroll(editor);
