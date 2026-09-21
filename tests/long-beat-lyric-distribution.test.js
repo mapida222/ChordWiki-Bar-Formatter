@@ -133,6 +133,75 @@ assert.strictEqual(
   "s8 should distribute a dense lyric phrase across the visible long-beat markers"
 );
 
+const measureCompletingFourBeatSource = "嗚[|][Dm]呼　バ[Am]カ野郎何[|][Bb][--]死んでん[C][--]だ　お別[F][-]れすらし[---]ないで[|]";
+const measureCompletingFourBeatSettings = {
+  ...settings, hyphenUnit: 4, measureCapacity: 8, hyphenSpacing: 4, longBeatLyricPlacement: 2
+};
+const measureCompletingFourBeatRender = CBFConverter.renderWithBeatCode(
+  measureCompletingFourBeatSource,
+  "44224",
+  measureCompletingFourBeatSettings,
+  measureCompletingFourBeatSource
+);
+const measureCompletingFourBeat = CBFConverter.mergeCorrectionScope(
+  measureCompletingFourBeatSource,
+  measureCompletingFourBeatRender.body,
+  "44223",
+  "44224",
+  measureCompletingFourBeatSettings
+);
+assert.strictEqual(
+  measureCompletingFourBeat,
+  "嗚[|][Dm]呼　バ[Am]カ野郎何[|][Bb][--]死んでん[C][--]だ　お別[F][----]れすらしないで[|]",
+  "editing the final duration to four should preserve other measures and keep this complete bar on one marker"
+);
+
+const measureCompletingFourBeatWithRubySource = "昨日(きの[|][D#m]う)まであ[A#m]りがとう最期(さい[|][B][--]ご)に君[C#][--]の笑顔[A#/D][-]見れてよ[---]かった[|]";
+const measureCompletingFourBeatWithRubyRender = CBFConverter.renderWithBeatCode(
+  measureCompletingFourBeatWithRubySource,
+  "44224",
+  measureCompletingFourBeatSettings,
+  measureCompletingFourBeatWithRubySource
+);
+const measureCompletingFourBeatWithRuby = CBFConverter.mergeCorrectionScope(
+  measureCompletingFourBeatWithRubySource,
+  measureCompletingFourBeatWithRubyRender.body,
+  "44223",
+  "44224",
+  measureCompletingFourBeatSettings
+);
+assert.strictEqual(
+  measureCompletingFourBeatWithRuby,
+  "昨日(きの[|][D#m]う)まであ[A#m]りがとう最期(さい[|][B][--]ご)に君[C#][--]の笑顔[A#/D][----]見れてよかった[|]",
+  "partial correction should preserve ruby lyrics and avoid splitting a measure-completing four-beat lyric"
+);
+const sameAsAutomaticMeasureCompletingEdit = CBFConverter.convertChordText(
+  measureCompletingFourBeatWithRubySource,
+  measureCompletingFourBeatSettings,
+  ["44224"],
+  [],
+  ["44223"],
+  ["edit"]
+);
+assert.strictEqual(
+  sameAsAutomaticMeasureCompletingEdit.output,
+  "昨日(きの[|][D#m]う)まであ[A#m]りがとう最期(さい[|][B][--]ご)に君[C#][--]の笑顔[A#/D][----]見れてよかった[|]",
+  "a partial row edit must rerender the changed measure even when its new code equals the automatically detected code"
+);
+const sameAsAutomaticSpacedEdit = CBFConverter.convertChordText(
+  measureCompletingFourBeatSource,
+  measureCompletingFourBeatSettings,
+  ["44224"],
+  [],
+  ["44223"],
+  ["edit"]
+);
+assert.strictEqual(
+  sameAsAutomaticSpacedEdit.output,
+  "嗚[|][Dm]呼　バ[Am]カ野郎何[|][Bb][--]死んでん[C][--]だ　お別[F][----]れすらしないで[|]",
+  "a partial row edit must preserve authored full-width lyric spaces around the changed measure"
+);
+
 const nineBeatAfterPickup = CBFConverter.convertChordText(
   "[C]前[D]舌打　た",
   { ...settings, measureCapacity: 8, hyphenSpacing: 4, shortFractionPrepose: 1, longBeatLyricPlacement: 2 },

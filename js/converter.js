@@ -643,6 +643,7 @@
       && unit.width === spacing
       && unit.width >= 2
       && position > 0
+      && position + unit.width < capacity
       && characters.length >= 2;
     if (forcedSpacingSplit) markerCount = 2;
     if (markerCount < 2) return null;
@@ -1776,11 +1777,12 @@
         bodyLines.push(manualBody);
         return;
       }
-      const enteredCode = useAutomatic || useSource ? "" : partialOutputIndices.has(outputIndex) && displayedEnteredCode === automaticCode
-        ? ""
-        : displayedEnteredCode;
-      const displayedCode = displayedEnteredCode || automaticCode;
       const previousCode = (previousRowCorrections[outputIndex] || "").trim();
+      const unchangedAutomaticPartial = partialOutputIndices.has(outputIndex)
+        && displayedEnteredCode === automaticCode
+        && (!previousCode || previousCode === displayedEnteredCode);
+      const enteredCode = useAutomatic || useSource ? "" : unchangedAutomaticPartial ? "" : displayedEnteredCode;
+      const displayedCode = displayedEnteredCode || automaticCode;
       let appliedCode = enteredCode ? (previousCode || automaticCode) : automaticCode;
       let renderedBody = manualBody ?? compactSourceLines.get(outputIndex) ?? match[3];
       if (enteredCode.toLowerCase() === "n") appliedCode = "n";
@@ -1798,8 +1800,9 @@
         const rowEditSource = anchoredCorrection ? renderedBody : renderedBody.replaceAll("[○]", "");
         const rendered = renderWithBeatCode(rowEditSource, effectiveCode, settings, manualBody ?? lines[outputIndex] ?? rowEditSource, automaticCode);
         if (rendered.ok) {
-          renderedBody = manualBody && previousCode && previousCode !== enteredCode && !anchoredCorrection && !previousCode.includes("|")
-            ? mergeCorrectionScope(manualBody, rendered.body, previousCode, enteredCode, settings)
+          const correctionScopeSource = manualBody ?? (partialOutputIndices.has(outputIndex) ? rowEditSource : null);
+          renderedBody = correctionScopeSource && previousCode && previousCode !== enteredCode && !anchoredCorrection && !previousCode.includes("|")
+            ? mergeCorrectionScope(correctionScopeSource, rendered.body, previousCode, enteredCode, settings)
             : rendered.body;
           appliedCode = enteredCode;
         }
