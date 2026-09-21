@@ -111,8 +111,17 @@
   // not lyrics, so they keep the compact rhythm form.
   const ARRANGEMENT_PARENTHESIS_RE = /[（(]\s*(?:key|capo|tempo|guitar|bass|piano|drums?|vocal|synth|strings?|percussion|intro|outro|interlude|solo|break|instrumental|unis(?:on)?|rit\b)[^）)]*[）)]/iu;
   const PARENTHESIZED_SEGMENT_RE = /(?:\([^()\r\n]*\)|（[^（）\r\n]*）)/gu;
+  function isEscapedArrangementAnnotation(value) {
+    return /^\s*\\[（(][^（）()\r\n]*[）)]\s*$/u.test(String(value || ""));
+  }
+  function normalizeArrangementAnnotationTokens(tokens) {
+    return tokens.map((token) => token.kind === "text" && isEscapedArrangementAnnotation(token.value)
+      ? { ...token, value: token.value.replace(/\\(?=[（(])/u, "") }
+      : token);
+  }
   function isStandaloneParenthesizedAnnotation(value) {
     const source = String(value || "");
+    if (isEscapedArrangementAnnotation(source)) return true;
     const segments = source.match(PARENTHESIZED_SEGMENT_RE);
     if (!segments?.length || source.replace(PARENTHESIZED_SEGMENT_RE, "").trim()) return false;
     return segments.every((segment) => ARRANGEMENT_PARENTHESIS_RE.test(segment));
@@ -122,6 +131,7 @@
   }
   function hasInlineArrangementNotation(tokens) {
     return tokens.some((token) => token.kind === "text" && (isStandaloneWaveMarker(token.value)
+      || isEscapedArrangementAnnotation(token.value)
       || ARRANGEMENT_PARENTHESIS_RE.test(token.value)));
   }
   function normalizeStandaloneWaveMarkers(tokens) {
@@ -182,8 +192,9 @@
     // a lyric.  Keep readable parenthesized dialogue as lyrics; only common
     // arrangement labels and strings made solely of notation characters form
     // an annotation suffix.
-    const parenthesizedTrailingNote = /^[ \t　]+[（(].+[）)]\s*$/u.test(finalToken.value);
-    const readable = finalToken.value
+    const parenthesizedTrailingNote = isEscapedArrangementAnnotation(finalToken.value)
+      || /^[ \t　]+[（(].+[）)]\s*$/u.test(finalToken.value);
+    const readable = (isEscapedArrangementAnnotation(finalToken.value) ? "" : finalToken.value)
       .replace(/[（(]\s*(?:repeat|fade(?:out)?|fine|coda|segno|d\.?\s*[cs]\.?|to\s+coda|vamp|intro|outro|interlude|solo|break|instrumental|synth)\b[^）)]*[）)]/giu, "")
       .replace(/[\s　.:：,，、;；!?！？…・･\-–—_=+*/\\|<>〈〉《》「」『』【】［］(){}\[\]]/gu, "");
     if (readable && !parenthesizedTrailingNote) return null;
@@ -643,6 +654,7 @@
       && unit.width === spacing
       && unit.width >= 2
       && position > 0
+      && position + unit.width < capacity
       && characters.length >= 2;
     if (forcedSpacingSplit) markerCount = 2;
     if (markerCount < 2) return null;
@@ -1442,7 +1454,7 @@
     const musicTokens = annotation?.musicTokens || tokens;
     const manualRhythm = hasHyphens(musicTokens);
     const inlineArrangementNotation = hasInlineArrangementNotation(musicTokens);
-    const normalizedMusicTokens = normalizeStandaloneWaveMarkers(musicTokens);
+    const normalizedMusicTokens = normalizeStandaloneWaveMarkers(normalizeArrangementAnnotationTokens(musicTokens));
     const authoredParenthesizedNote = musicTokens.some((token) => token.kind === "text" && /[（(](?!\s*\d+\s*[\/／])[^（）()\r\n]*[）)]/u.test(token.value));
     const authoredRhythmicAnnotation = musicTokens.some((token) => token.kind === "text" && /[（(]\s*rit\b[^（）()\r\n]*[）)]/iu.test(token.value));
     const compactRhythmicAnnotationSource = authoredRhythmicAnnotation && manualRhythm && musicTokens.some((token) => token.kind === "bar");
@@ -1459,11 +1471,14 @@
     );
     const preserveCompactSource = compactRhythmicAnnotationSource
       || (!hasMeaningfulLyricText(musicTokens) && (authoredParenthesizedSource || otherCompactSource));
+    const escapedArrangementAnnotation = musicTokens.some((token) => token.kind === "text" && isEscapedArrangementAnnotation(token.value));
     const result = manualRhythm
       ? formatManualRhythm(moveDelayedRhythmAfterChord(normalizedMusicTokens, settings.measureCapacity), settings)
       : isCodeOnly(normalizedMusicTokens) ? formatChordOnly(normalizedMusicTokens, settings) : formatLyric(normalizedMusicTokens, settings);
     const rawBody = preserveCompactSource
-      ? compactRhythmicAnnotationSource ? serializeCodeOnlyTokens(musicTokens, settings.hyphenSpacing) : line
+      ? compactRhythmicAnnotationSource || escapedArrangementAnnotation
+        ? serializeCodeOnlyTokens(normalizedMusicTokens, settings.hyphenSpacing)
+        : line
       : mixedAuthoredSource
         ? serializeMixedAuthoredSource(musicTokens, settings)
       : suppressTrailingBarAfterParenthesizedFinalChord(result.body) + (annotation?.suffix || "");
@@ -1776,11 +1791,12 @@
         bodyLines.push(manualBody);
         return;
       }
-      const enteredCode = useAutomatic || useSource ? "" : partialOutputIndices.has(outputIndex) && displayedEnteredCode === automaticCode
-        ? ""
-        : displayedEnteredCode;
-      const displayedCode = displayedEnteredCode || automaticCode;
       const previousCode = (previousRowCorrections[outputIndex] || "").trim();
+      const unchangedAutomaticPartial = partialOutputIndices.has(outputIndex)
+        && displayedEnteredCode === automaticCode
+        && (!previousCode || previousCode === displayedEnteredCode);
+      const enteredCode = useAutomatic || useSource ? "" : unchangedAutomaticPartial ? "" : displayedEnteredCode;
+      const displayedCode = displayedEnteredCode || automaticCode;
       let appliedCode = enteredCode ? (previousCode || automaticCode) : automaticCode;
       let renderedBody = manualBody ?? compactSourceLines.get(outputIndex) ?? match[3];
       if (enteredCode.toLowerCase() === "n") appliedCode = "n";
@@ -1798,8 +1814,9 @@
         const rowEditSource = anchoredCorrection ? renderedBody : renderedBody.replaceAll("[○]", "");
         const rendered = renderWithBeatCode(rowEditSource, effectiveCode, settings, manualBody ?? lines[outputIndex] ?? rowEditSource, automaticCode);
         if (rendered.ok) {
-          renderedBody = manualBody && previousCode && previousCode !== enteredCode && !anchoredCorrection && !previousCode.includes("|")
-            ? mergeCorrectionScope(manualBody, rendered.body, previousCode, enteredCode, settings)
+          const correctionScopeSource = manualBody ?? (partialOutputIndices.has(outputIndex) ? rowEditSource : null);
+          renderedBody = correctionScopeSource && previousCode && previousCode !== enteredCode && !anchoredCorrection && !previousCode.includes("|")
+            ? mergeCorrectionScope(correctionScopeSource, rendered.body, previousCode, enteredCode, settings)
             : rendered.body;
           appliedCode = enteredCode;
         }

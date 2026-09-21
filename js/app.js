@@ -2075,7 +2075,9 @@
         const musicStructureChanged = sourceChanged.has(index)
           && !CBFConverter.sameMusicStructure(lastConvertedInputLines[index] || "", currentInputLines[index] || "");
         if (musicStructureChanged && rowAdoptionModes[index] !== "source") return "";
-        if (line === (inferenceFallbackCorrectionLines[index] || "")) return "";
+        const previousAppliedCorrection = (lastAppliedCorrectionLines[index] || "").trim();
+        if (line === (inferenceFallbackCorrectionLines[index] || "")
+          && (!previousAppliedCorrection || line === previousAppliedCorrection)) return "";
         return line;
       });
     const manualSources = [];
