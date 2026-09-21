@@ -14,6 +14,12 @@ assert.strictEqual(
   arrangementLine,
   "(Key) と単独の ～ を含む演奏記号行は、歌詞行にせず入力表記のまま残す"
 );
+const bracketedFermataLine = "[|][N.C.][----] [----][|][----] [----][|]\\(fermata)[|]";
+assert.strictEqual(
+  CBFConverter.convertChordText(bracketedFermataLine, settings, ["g"], [], [], ["edit"]).output,
+  "|[N.C.]---- ----|---- ----|(fermata)|",
+  "a standalone fermata after repeated rhythm measures should stay as arrangement notation"
+);
 assert.ok(
   CBFConverter.convertChordText("[A]あ|い", settings, []).output.includes("[|]　い"),
   "小節線の直後が歌詞なら全角空白を補う"
