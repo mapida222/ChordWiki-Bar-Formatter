@@ -124,4 +124,11 @@ for (const output of [
   assert(!/\[(?:-+|=+|>+|≧+)\][)）]/u.test(output), "rhythm markers must never be inserted directly before a closing parenthesis");
 }
 
+const symbolAfterMeasureBoundary = "[|][AbM7][----]いてな[---]いよ[AbmM7][-]ね[|][----]？[----][|]";
+assert.strictEqual(
+  CBFConverter.convertChordText(symbolAfterMeasureBoundary, settings, []).output,
+  "[|][AbM7][----]いてな[---]いよ[AbmM7][-]ね？[|][----][----][|]",
+  "a leading question mark after a bar stays linked to the preceding lyric"
+);
+
 console.log("PASS: CONVERT-003/004/008 and ROW-008 conversion regressions");
