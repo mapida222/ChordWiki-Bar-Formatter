@@ -297,4 +297,12 @@ assert.strictEqual(
   "relaxed placement should keep a short lyric near its chord in 6/8 too"
 );
 
+const syncopatedLyricBoundaryNg = "[|][Eb][----]寝癖[---]の[Cm7][-]ま[|][----][----]まで散[|][Ab][----][---]歩しちゃうん[Abm][-]だ[|][----][|]";
+const syncopatedLyricBoundaryOk = "[|][Eb][----]寝癖[---]の[Cm7][-]ま[|][----]ま[----]で散[|][Ab][----]歩しちゃ[---]うん[Abm][-]だ[|][----][|]";
+assert.strictEqual(
+  CBFConverter.distributePickupMarkerLyrics(syncopatedLyricBoundaryNg, { longBeatLyricPlacement: 2, hyphenSpacing: 4 }),
+  syncopatedLyricBoundaryOk,
+  "8s88s8 should distribute adjacent lyric text across both rhythm-marker runs"
+);
+
 console.log("PASS: ROW-007 selectable long-beat lyric placement");
