@@ -105,4 +105,23 @@ assert.strictEqual(
   "a trailing parenthesized repeat note and notation-only marks must not turn a compact rhythm row into lyrics"
 );
 
+const linkedClosingParenthesisInput = "[C][----]愛（[----]あい[----]）なくて[|]";
+assert.strictEqual(
+  CBFConverter.convertChordText(linkedClosingParenthesisInput, settings, []).output,
+  "[|][C][----]愛（[----]あい）[----]なくて[|]",
+  "a full-width closing parenthesis stays linked to the preceding lyric before rhythm redistribution"
+);
+const linkedAsciiClosingParenthesisInput = "[C][----]愛([----]あい[----])なくて[|]";
+assert.strictEqual(
+  CBFConverter.convertChordText(linkedAsciiClosingParenthesisInput, settings, []).output,
+  "[|][C][----]愛([----]あい)[----]なくて[|]",
+  "an ASCII closing parenthesis stays linked to the preceding lyric before rhythm redistribution"
+);
+for (const output of [
+  CBFConverter.convertChordText(linkedClosingParenthesisInput, settings, []).output,
+  CBFConverter.convertChordText(linkedAsciiClosingParenthesisInput, settings, []).output
+]) {
+  assert(!/\[(?:-+|=+|>+|≧+)\][)）]/u.test(output), "rhythm markers must never be inserted directly before a closing parenthesis");
+}
+
 console.log("PASS: CONVERT-003/004/008 and ROW-008 conversion regressions");
