@@ -574,14 +574,24 @@
     return chunks.map((chunk) => `[${chunk}]`).join("");
   }
 
-  const LYRIC_CLOSING_MARK_RE = /^[)）\]］}｝〉》」』】〕〗〙〛]/u;
+  const LYRIC_TRAILING_SYMBOL_RE = /^[)）\]］}｝〉》」『』【】〔〕〗〙〛、。，．・：；！？!?.,:;…]/u;
   function lyricSpanWithClosingMarks(value, span) {
     let resolved = span;
     for (const character of [...value.slice(resolved)]) {
-      if (!LYRIC_CLOSING_MARK_RE.test(character)) break;
+      if (!LYRIC_TRAILING_SYMBOL_RE.test(character)) break;
       resolved += character.length;
     }
     return resolved;
+  }
+
+  function attachTrailingSymbolsToPreviousLyric(parts) {
+    for (let index = 1; index < parts.length; index += 1) {
+      const trailingSymbols = parts[index].match(/^[)）\]］}｝〉》」『』【】〔〕〗〙〛、。，．・：；！？!?.,:;…]+/u)?.[0] || "";
+      if (!trailingSymbols || !parts[index - 1]) continue;
+      parts[index - 1] += trailingSymbols;
+      parts[index] = parts[index].slice(trailingSymbols.length);
+    }
+    return parts;
   }
   function firstLyricSpan(value) {
     const english = value.match(/^[A-Za-z]+/);
@@ -691,7 +701,7 @@
         const split = Array.from({ length: count }, () => "");
         split[0] = front;
         split[count - 1] = back;
-        return split;
+        return attachTrailingSymbolsToPreviousLyric(split);
       }
       const lyricCharacters = splitCharacters.filter((character) => !/^\s$/u.test(character));
       const baseSize = Math.floor(lyricCharacters.length / count);
@@ -709,7 +719,7 @@
         characterIndex += 1;
         if (characterIndex >= targetSizes[markerIndex] && markerIndex < count - 1) markerIndex += 1;
       }
-      return split;
+      return attachTrailingSymbolsToPreviousLyric(split);
     };
     let insertions;
     if (leadingSingleBeat) {
@@ -735,7 +745,7 @@
     if (!settings.shortFractionPrepose || !String(code || "").includes("5")) return body;
     let output = body.replace(/(\[[^\[\]\r\n]+\])(\[----\])([^\[\]\r\n]+)(\[-\])([^\[\]\r\n]+)(?=\[[^\[\]\r\n]+\])/gu,
       (match, chord, longMarker, firstLyric, shortMarker, remainingLyric) => {
-        const lyric = lyricGraphemes(`${firstLyric}${remainingLyric}`);
+        const lyric = attachTrailingSymbolsToPreviousLyric(lyricGraphemes(`${firstLyric}${remainingLyric}`)).filter(Boolean);
         if (lyric.length < 2) return match;
         return `${chord}${longMarker}${lyric.slice(0, -1).join("")}${shortMarker}${lyric.at(-1)}`;
       });

@@ -305,4 +305,15 @@ assert.strictEqual(
   "8s88s8 should distribute adjacent lyric text across both rhythm-marker runs"
 );
 
+const symbolBoundarySource = "[|][EM7]ねぇ！見(み)覚(おぼ)[|][D#m7-5]えの[|][G#7]ある[|][Bm7]この海(うみ)[|][C#7]に　[|]";
+const symbolBoundaryOutput = CBFConverter.convertChordText(symbolBoundarySource, { ...settings, measureCapacity: 8, hyphenSpacing: 4, longBeatLyricPlacement: 2 }, ["53547"]).output;
+assert(
+  !/\[-+\][)）\]］}｝〉》」『』【】〔〕〗〙〛、。，．・：；！？!?.,:;…]/u.test(symbolBoundaryOutput),
+  "lyric distribution must never put a rhythm hyphen immediately before a closing symbol"
+);
+assert(
+  symbolBoundaryOutput.includes("この海([|][-]うみ)"),
+  "a rhythm marker after an opening parenthesis remains allowed"
+);
+
 console.log("PASS: ROW-007 selectable long-beat lyric placement");
