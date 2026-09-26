@@ -586,12 +586,42 @@
 
   function attachTrailingSymbolsToPreviousLyric(parts) {
     for (let index = 1; index < parts.length; index += 1) {
-      const trailingSymbols = parts[index].match(/^[)）\]］}｝〉》」『』【】〔〕〗〙〛、。，．・：；！？!?.,:;…]+/u)?.[0] || "";
+      const trailingSymbols = leadingTrailingSymbols(parts[index]);
       if (!trailingSymbols || !parts[index - 1]) continue;
       parts[index - 1] += trailingSymbols;
       parts[index] = parts[index].slice(trailingSymbols.length);
     }
     return parts;
+  }
+
+  function leadingTrailingSymbols(value) {
+    return String(value || "").match(/^[)）\]］}｝〉》」『』【】〔〕〗〙〛、。，．・：；！？!?.,:;…]+/u)?.[0] || "";
+  }
+
+  function attachLeadingTrailingSymbolsAcrossBar(tokens) {
+    const output = tokens.map((part) => part.kind === "text" ? { ...part } : part);
+    for (let index = 0; index < output.length; index += 1) {
+      const token = output[index];
+      if (token.kind !== "text") continue;
+      const trailingSymbols = leadingTrailingSymbols(token.value);
+      if (!trailingSymbols) continue;
+      let cursor = index - 1;
+      let crossedRhythm = false;
+      while (cursor >= 0 && output[cursor].kind === "hyphen") {
+        crossedRhythm = true;
+        cursor -= 1;
+      }
+      if (!crossedRhythm || output[cursor]?.kind !== "bar") continue;
+      const previousLyric = output[cursor - 1];
+      if (previousLyric?.kind !== "text" || !previousLyric.value) continue;
+      previousLyric.value += trailingSymbols;
+      token.value = token.value.slice(trailingSymbols.length);
+      if (!token.value) {
+        output.splice(index, 1);
+        index -= 1;
+      }
+    }
+    return output;
   }
   function firstLyricSpan(value) {
     const english = value.match(/^[A-Za-z]+/);
@@ -1312,18 +1342,19 @@
   }
 
   function moveDelayedRhythmAfterChord(tokens, measureCapacity = DEFAULT_SETTINGS.measureCapacity) {
+    const normalizedTokens = attachLeadingTrailingSymbolsAcrossBar(tokens);
     const output = [];
     let index = 0;
-    while (index < tokens.length) {
-      const token = tokens[index];
+    while (index < normalizedTokens.length) {
+      const token = normalizedTokens[index];
       if (token.kind !== "chord") {
         output.push(token);
         index += 1;
         continue;
       }
       let segmentEnd = index + 1;
-      while (segmentEnd < tokens.length && !["chord", "bar"].includes(tokens[segmentEnd].kind)) segmentEnd += 1;
-      const segment = tokens.slice(index + 1, segmentEnd).map((part) => part.kind === "text" ? { ...part } : part);
+      while (segmentEnd < normalizedTokens.length && !["chord", "bar"].includes(normalizedTokens[segmentEnd].kind)) segmentEnd += 1;
+      const segment = normalizedTokens.slice(index + 1, segmentEnd).map((part) => part.kind === "text" ? { ...part } : part);
       for (let partIndex = 1; partIndex + 1 < segment.length; partIndex += 1) {
         const previous = segment[partIndex - 1];
         const rhythm = segment[partIndex];
