@@ -748,7 +748,7 @@
   function distributePickupMarkerLyrics(body, settings) {
     const placementMode = settings.longBeatLyricPlacement == null ? -1 : Number(settings.longBeatLyricPlacement);
     if (![0, 1, 2, 3, 4].includes(placementMode)) return body;
-    return String(body || "").replace(/(\[-\])([^\[\]|]*)\[\|\]((?:\[-+\]){2})([^\[\]|]+)/gu,
+    const pickupDistributed = String(body || "").replace(/(\[-\])([^\[\]|]*)\[\|\]((?:\[-+\]){2})([^\[\]|]+)/gu,
       (match, pickup, beforeBar, markerRun, lyric) => {
         const firstSpan = lyric.includes("　")
           ? lyric.indexOf("　") + 1
@@ -758,6 +758,18 @@
         if (markers.length !== 2) return match;
         if (markers[0].replace(/[^-]/gu, "").length !== Math.max(1, Number(settings.hyphenSpacing) || 1)) return match;
         return `${pickup}${beforeBar}[|]${markers[0]}${lyric.slice(0, firstSpan)}${markers[1]}${lyric.slice(firstSpan)}`;
+      });
+    if (placementMode !== 2) return pickupDistributed;
+    return pickupDistributed.replace(/(\[[^\[\]|]+\])((?:\[-+\]){2})([^\[\]|]+?)(?=\[[^\[\]|]+\])/gu,
+      (match, chord, markerRun, lyric) => {
+        if (!isChordSymbol(chord.slice(1, -1))) return match;
+        const markers = markerRun.match(/\[-+\]/gu) || [];
+        const widths = markers.map((marker) => marker.replace(/[^-]/gu, "").length);
+        const totalWidth = widths.reduce((sum, width) => sum + width, 0);
+        const characters = lyricGraphemes(lyric);
+        if (totalWidth <= 0 || characters.length < 2 || widths.some((width) => width <= 0)) return match;
+        const firstCount = Math.max(1, Math.min(characters.length - 1, Math.ceil(characters.length * widths[0] / totalWidth)));
+        return `${chord}${markers[0]}${characters.slice(0, firstCount).join("")}${markers[1]}${characters.slice(firstCount).join("")}`;
       });
   }
 
@@ -1301,7 +1313,21 @@
       }
       let segmentEnd = index + 1;
       while (segmentEnd < tokens.length && !["chord", "bar"].includes(tokens[segmentEnd].kind)) segmentEnd += 1;
-      const segment = tokens.slice(index + 1, segmentEnd);
+      const segment = tokens.slice(index + 1, segmentEnd).map((part) => part.kind === "text" ? { ...part } : part);
+      for (let partIndex = 1; partIndex + 1 < segment.length; partIndex += 1) {
+        const previous = segment[partIndex - 1];
+        const rhythm = segment[partIndex];
+        const following = segment[partIndex + 1];
+        if (previous.kind !== "text" || rhythm.kind !== "hyphen" || following.kind !== "text") continue;
+        const closingMarks = following.value.match(/^[)）\]］}｝〉》」』】〕〗〙〛]+/u)?.[0] || "";
+        if (!closingMarks) continue;
+        previous.value += closingMarks;
+        following.value = following.value.slice(closingMarks.length);
+        if (!following.value) {
+          segment.splice(partIndex + 1, 1);
+          partIndex -= 1;
+        }
+      }
       const delayedRhythmWidth = segment.reduce((sum, part) => sum + rhythmWidth(part), 0);
       output.push(token);
       if (segment[0]?.kind !== "hyphen" && delayedRhythmWidth > 0 && delayedRhythmWidth < measureCapacity) {
