@@ -513,8 +513,3 @@ export function convertMusicXmlText(xmlText, Parser = globalThis.DOMParser) {
   if (document.querySelector?.('parsererror')) throw new Error('MusicXMLを読み取れませんでした。XMLの形式を確認してください。');
   return convertMusicXmlDocument(document);
 }
-
-
-
-
-

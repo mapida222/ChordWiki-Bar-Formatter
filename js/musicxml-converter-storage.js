@@ -26,5 +26,3 @@ export function normalizeStoredMusicXmlResult(saved) {
     fileSize: Number.isFinite(saved.fileSize) && saved.fileSize >= 0 ? saved.fileSize : 0,
   };
 }
-
-

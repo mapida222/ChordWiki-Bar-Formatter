@@ -398,5 +398,3 @@ $('copy-button').addEventListener('click', async () => {
 });
 
 restoreBrowserResult();
-
-
