@@ -170,6 +170,13 @@
 | `HELP-007` | 4段階の基本フローをヘルプ枠の横幅いっぱいへ均等配置 | 有効 | `style.css`、`tests/help-layout.test.js` |
 | `HELP-008` | 狭い画面でヘルプの変換例を縦積みにし、右端の横はみ出しを防止 | 有効 | `style.css`、`tests/help-layout.test.js` |
 
+| `PROJECT-013` | MusicXML変換ページを正式プロジェクト内で単体起動 | 有効 | `musicxml-converter.html`、`musicxml-converter.css`、`js/musicxml-converter*.js`、`open-musicxml-converter.bat`、`vite.config.js` |
+| `PROJECT-014` | MusicXML出力のコード略記を切り替え可能にし、読み取り結果を拍子・BPM優先の順へ整える | 有効 | `musicxml-converter.html`、`musicxml-converter.css`、`js/musicxml-converter.js`、`js/musicxml-converter-page.js`、`tests/musicxml-compact-cards.test.js` |
+| `PROJECT-015` | MusicXML出力へ移調選択と半音ステップ操作を追加し、表示・コピーへ反映 | 有効 | `musicxml-converter.html`、`musicxml-converter.css`、`js/musicxml-converter-page.js`、`js/transposer.js`、`tests/musicxml-compact-cards.test.js` |
+| `PROJECT-016` | MusicXML変換ページへFormatter共通フッターを追加し、サイト情報・公開リンクを統一 | 有効 | `musicxml-converter.html`、`tests/musicxml-header-navigation.test.js` |
+| `PROJECT-017` | MusicXML変換ページの説明にMuseScoreとPiano Sheet Converterの出力元リンクを追加 | 有効 | `musicxml-converter.html`、`tests/musicxml-header-navigation.test.js` |
+| `PROJECT-018` | MusicXML出力03枠の高さ固定を解除し、上下方向のリサイズを可能にする | 有効 | `musicxml-converter.css`、`tests/musicxml-compact-cards.test.js` |
+
 ## カテゴリ
 
 | カテゴリ | 用途 |

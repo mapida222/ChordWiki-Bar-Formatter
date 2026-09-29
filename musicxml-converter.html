@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="MusicXMLのコード進行をChordWiki用の下書きへ変換するブラウザー内ツール">
+  <title>MusicXML変換 | ChordWiki Bar Formatter</title>
+  <link rel="icon" type="image/png" href="logo/260810_favicon_touka.png">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="musicxml-converter.css">
+</head>
+<body>
+  <main class="app-shell">
+    <header class="converter-topbar">
+      <a class="converter-back-link" href="index.html">ChordWiki Bar Formatterへ戻る</a>
+    </header>
+
+    <section class="converter-heading section-heading">
+      <div>
+        <p class="section-kicker">MUSICXML変換 <span>/ CONVERTER</span></p>
+        <h2>MusicXMLをChordWiki下書きへ変換</h2>
+        <p class="converter-lead">MusicXMLのコード進行を読み取り、ChordWiki形式の下書きを作り、コピーまたは保存できるようにします。MusicXMLファイルは、<a href="https://musescore.org/" target="_blank" rel="noopener noreferrer">MuseScore</a>や<a href="https://piano-sheet-converter.beta.yamaha.com/" target="_blank" rel="noopener noreferrer">Piano Sheet Converter</a>から出力できます。</p>
+      </div>
+      <button id="clear-button" class="help-open-button" type="button">リセット</button>
+    </section>
+<section class="converter-grid" aria-label="MusicXML変換">
+      <article class="converter-card converter-input-card">
+        <header class="editor-heading">
+          <h2 class="compact-editor-title"><button id="source-toggle" class="card-toggle" type="button" aria-expanded="true" aria-controls="source-details"><span>01. MusicXMLファイル <span>/ SOURCE</span></span><span class="card-toggle-mark" aria-hidden="true">▲</span></button></h2>
+          <span class="counter">.musicxml / .xml</span>
+        </header>
+        <div id="source-details" class="card-details">
+          <label id="drop-zone" class="drop-zone" for="file-input">
+            <input id="file-input" type="file" accept=".musicxml,.xml,application/xml,text/xml">
+            <span class="upload-icon" aria-hidden="true">＋</span>
+            <strong>MusicXMLファイルを選択</strong>
+            <span>または、ここへドラッグ＆ドロップ</span>
+            <small>score-partwise形式 / ブラウザー内で処理</small>
+          </label>
+          <div id="file-summary" class="file-summary hidden">
+            <span class="file-badge">XML</span>
+            <div><strong id="file-name">—</strong><span id="file-meta">—</span></div>
+            <button id="remove-file" class="icon-button" type="button" aria-label="ファイルを外す">×</button>
+          </div>
+        </div>
+      </article>
+
+      <article class="converter-card report-card">
+        <header class="editor-heading">
+          <h2 class="compact-editor-title"><button id="report-toggle" class="card-toggle" type="button" aria-expanded="true" aria-controls="report-details-panel"><span>02. 読み取り結果 <span>/ REPORT</span></span><span class="card-toggle-mark" aria-hidden="true">▲</span></button></h2>
+          <span id="result-status" class="status neutral">待機中</span>
+        </header>
+        <div id="report-details-panel" class="card-details">
+          <dl class="metrics">
+            <div><dt>拍子</dt><dd id="time-signature">—</dd></div>
+            <div><dt>BPM</dt><dd id="bpm">—</dd></div>
+            <div><dt>小節</dt><dd id="measure-count">—</dd></div>
+            <div><dt>コード変更数</dt><dd id="harmony-count">—</dd></div>
+            <div id="lyric-metric" class="hidden"><dt>歌詞</dt><dd id="lyric-count">—</dd></div>
+          </dl>
+          <div id="warnings" class="warnings" hidden></div>
+        </div>
+      </article>
+
+      <article class="converter-card output-card is-placeholder">
+        <header class="editor-heading">
+          <div class="output-heading-copy">
+            <h2 class="compact-editor-title"><span>03. ChordWiki出力 <span>/ RESULT</span></span></h2>
+            <span id="output-source-name" class="output-source-name" aria-live="polite">ファイル未選択</span>
+          </div>
+          <label class="musicxml-transpose-control"><span>移調</span><span class="musicxml-transpose-stepper"><select id="musicxml-transpose" aria-label="MusicXML出力の移調"></select><button id="musicxml-transpose-down" type="button" aria-label="出力を半音下げる">▼</button><button id="musicxml-transpose-up" type="button" aria-label="出力を半音上げる">▲</button></span></label>
+          <div id="abbreviation-controls" class="abbreviation-controls" aria-label="コード略記の表記選択">
+            <span class="abbreviation-label">略記切替</span>
+            <button type="button" data-abbreviation="major" aria-label="メジャー表記: M7。クリックでmaj7に切り替え">M7</button>
+            <button type="button" data-abbreviation="diminished" aria-label="ディミニッシュ表記: dim。クリックで切り替え">dim</button>
+            <button type="button" data-abbreviation="augmented" aria-label="オーギュメント表記: aug。クリックで切り替え">aug</button>
+            <button type="button" data-abbreviation="halfDiminished" aria-label="ハーフ・ディミニッシュ表記: m7-5。クリックで切り替え">m7-5</button>
+          </div>
+          <div class="editor-tools">
+            <label class="output-color-setting"><span>文字色付け</span><input id="text-coloring" type="checkbox" checked></label>
+            <button id="copy-button" class="help-open-button" type="button" aria-label="ChordWiki出力をコピー" aria-live="polite" disabled>コピー</button>
+          </div>
+        </header>
+        <div class="output-text-layer">
+          <pre id="output-highlight" class="output-highlight" aria-hidden="true"></pre>
+          <textarea id="output-preview" class="output-preview" readonly spellcheck="false">MusicXMLを選択すると、ここに変換結果が表示されます。</textarea>
+        </div>
+        <footer class="output-footer">
+          <p class="output-guidance">MusicXMLからの出力はリズム確認用の下書きです。ChordWikiへそのまま投稿せず、歌詞を含めて整形してからご利用ください。</p>
+        <nav class="converter-related-links" aria-label="整形に使うツール">
+          <a class="realtime-editor-open" href="https://anipu.web.fc2.com/helper/lyricker.html" target="_blank" rel="noopener noreferrer">りりか（歌詞にコードを付ける）</a>
+          <a class="realtime-editor-open" href="index.html">ChordWiki Bar Formatter</a>
+          <a class="realtime-editor-open" href="committed-preview.html" target="_blank" rel="opener">リアルタイムエディター</a>
+        </nav>
+        </footer>
+      </article>
+    </section>
+  </main>
+
+  <footer class="site-footer" aria-label="サイト情報">
+    <div class="site-footer-inner">
+      <nav class="community-self-links site-footer-links" aria-label="このツールのリンク">
+        <a class="community-logo-link community-site-logo" href="https://mapida222.github.io/ChordWiki-Bar-Formatter/" target="_blank" rel="noopener noreferrer" aria-label="ChordWiki Bar Formatter を開く"><img src="logo/260810_chordwiki_logo.png" alt="ChordWiki Bar Formatter"></a>
+        <a class="community-logo-link community-github-logo" href="https://github.com/mapida222/ChordWiki-Bar-Formatter" target="_blank" rel="noopener noreferrer" aria-label="GitHub リポジトリを開く"><img src="logo/logo_GitHub_Lockup_White.png" alt="GitHub"></a>
+      </nav>
+      <nav class="community-actions site-footer-actions" aria-label="報告・要望と開発支援">
+        <a class="community-action community-feedback" href="https://docs.google.com/forms/d/e/1FAIpQLScYAHIEEOtuk8MoQR_1sNN7SVgCFFRtKCeUkm23sqTIGqg-cQ/viewform" target="_blank" rel="noopener noreferrer" aria-label="報告・要望（Googleフォーム）"><span class="community-feedback-label"><strong>報告・要望</strong></span></a>
+        <details class="support-menu">
+          <summary><span>開発を応援する</span><span class="support-menu-caret" aria-hidden="true">▶</span></summary>
+          <div class="support-menu-links">
+            <a class="support-choice support-choice-booth" href="https://mapida222.booth.pm/items/8642112" target="_blank" rel="noopener noreferrer"><strong>単発応援/BOOTH</strong></a>
+            <a class="support-choice support-choice-fanbox" href="https://mapida2.fanbox.cc/plans" target="_blank" rel="noopener noreferrer"><strong>継続応援/FANBOX</strong></a>
+          </div>
+        </details>
+      </nav>
+      <div class="site-credit">
+        <div class="site-credit-main">
+          <span>制作：<a href="https://x.com/mapida2_boso2" target="_blank" rel="noopener noreferrer">mapida</a>　© 2026 mapida</span>
+          <a href="privacy.html">プライバシーポリシー</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="js/transposer.js"></script>
+  <script type="module" src="js/musicxml-converter-page.js"></script>
+</body>
+</html>
+
+
+
