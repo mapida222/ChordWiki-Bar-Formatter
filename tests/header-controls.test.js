@@ -148,7 +148,7 @@ assert(css.includes("max-width: 100%; flex: 1 1 0; flex-direction: column;"), "h
 assert(css.includes("width: 100%; min-width: 0;"), "header action rows must use the available header width");
 assert(css.includes(".editor-heading > .compact-editor-title, .editor-heading > .heading-with-help { min-width: 0; flex: 1 1 auto; overflow: hidden; }"), "editor headings must let the title shrink before controls overflow");
 assert(css.includes(".editor-tools { display: flex; align-items: center; gap: 8px; min-width: 0; max-width: 100%; flex: 0 1 auto; flex-wrap: wrap;"), "editor controls must wrap within the card width");
-assert(css.includes(".header-realtime-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(190px, max-content);"));
+assert(css.includes(".header-realtime-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(150px, max-content) minmax(190px, max-content);"));
 assert(css.includes(".header-notice-summary { display: grid;"));
 assert(css.includes(".header-notice-label { display: inline-flex; align-items: center;") && css.includes(".header-notice-label::before { content: \"\";"), "update history must use a compact status pill");
 assert(css.includes(".header-notice-latest { display: flex; align-items: baseline;") && css.includes(".header-notice-latest time { flex: 0 0 auto;"), "update history must keep date and message in a readable hierarchy");
@@ -162,7 +162,7 @@ assert(!css.includes("  .header-realtime-row { grid-template-columns: 1fr; }"), 
 assert(css.includes(".header-realtime-row #header-realtime-editor { display: inline-flex;"), "the realtime editor link should have a distinct primary-link treatment");
 assert(css.includes("background: color-mix(in srgb, var(--panel) 93%, var(--accent));") && css.includes("font-size: .78rem;") && css.includes("font-weight: 800;"));
 assert(css.includes('.header-realtime-row #header-realtime-editor::after { content: "↗";'), "the realtime editor link should show an external-page cue");
-assert(css.includes(".header-realtime-row .help-open-button { min-width: 190px; text-align: center; text-decoration: none; background: color-mix(in srgb, var(--panel) 96%, var(--accent)); }"));
+assert(css.includes(".header-realtime-row .help-open-button { min-width: 150px; text-align: center; text-decoration: none; background: color-mix(in srgb, var(--panel) 96%, var(--accent)); }"));
 assert(html.includes('id="display-settings-toggle" class="help-open-button display-settings-trigger"'));
 assert(html.includes('aria-controls="display-settings-shell">表示設定▼</button>'));
 assert(html.indexOf('id="display-settings-toggle"') > html.indexOf('id="help-open"'));
