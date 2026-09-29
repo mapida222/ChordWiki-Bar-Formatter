@@ -35,7 +35,8 @@ assert.match(html, /id="abbreviation-controls"/, "the result header must expose 
 assert.match(html, /id="musicxml-transpose"/, "the result header must expose a transpose selector");
 assert.match(html, /id="musicxml-transpose-down"/, "the result header must expose a transpose down button");
 assert.match(html, /id="musicxml-transpose-up"/, "the result header must expose a transpose up button");
-assert.match(html, /<script src="js\/transposer\.js"><\/script>/, "MusicXML output must load the shared transposer");
+assert(!html.includes('<script src="js/transposer.js"></script>'), "MusicXML output must not depend on an unbundled transposer script path");
+assert.match(page, /import ['"]\.\/transposer\.js['"]/, "MusicXML page module must bundle the shared transposer");
 assert.match(html, />略記切替<\/span>/, "abbreviation controls must have a clear label");
 assert.match(html, /data-abbreviation="major"/, "major abbreviation control must be present");
 assert.match(html, /data-abbreviation="major"[^>]*>M7<\/button>/, "major control must use the standard M7 form");

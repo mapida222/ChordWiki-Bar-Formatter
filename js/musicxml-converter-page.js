@@ -1,3 +1,4 @@
+import './transposer.js';
 import {
   applyChordWikiAbbreviations,
   convertMusicXmlText,
