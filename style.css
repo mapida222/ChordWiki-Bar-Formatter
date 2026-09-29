@@ -58,6 +58,7 @@ h2 { margin-bottom: 0; font-size: .96rem; }
 .header-notice-history time { color: var(--text); font-family: var(--mono); font-weight: 800; }
 .header-realtime-row .help-open-button { min-width: 150px; text-align: center; text-decoration: none; background: color-mix(in srgb, var(--panel) 96%, var(--accent)); }
 .header-realtime-row #header-musicxml-converter { display: inline-flex; align-items: center; justify-content: center; min-height: 34px; border-color: color-mix(in srgb, var(--accent) 42%, var(--line)); color: var(--text); font-size: .78rem; font-weight: 800; }
+.header-realtime-row #header-musicxml-converter::after { content: "↗"; margin-inline-start: .4em; color: var(--accent); font-size: .86em; }
 .help-open-button, .help-close-button { padding: 7px 11px; border: 1px solid var(--line); border-radius: 4px; color: var(--text); background: var(--panel); cursor: pointer; font-weight: 800; }
 .header-secondary-actions .help-open-button { display: inline-flex; flex: 1 1 auto; align-items: center; justify-content: center; min-height: 29px; min-width: 0; padding-inline: 8px; padding-block: 0; font-size: clamp(.7rem, 1vw, .88rem); line-height: 28px; text-align: center; white-space: normal; }
 .help-open-button:hover, .help-close-button:hover { border-color: var(--accent); background: var(--accent-soft); }
