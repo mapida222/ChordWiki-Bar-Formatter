@@ -13,7 +13,7 @@ assert.match(formatterHtml, /<a id="header-musicxml-converter" class="help-open-
 assert.match(converterHtml, /<a class="converter-back-link" href="index\.html">ChordWiki Bar Formatterへ戻る<\/a>/, "MusicXML conversion must provide a single clear return link");
 assert.match(formatterCss, /#header-musicxml-converter/, "the MusicXML header action must have dedicated responsive styling");
 assert.match(formatterCss, /#header-musicxml-converter::after \{ content: "↗"; margin-inline-start: \.4em;/, "the MusicXML header action must show the same external-page cue as the realtime editor");
-assert.match(converterHtml, /MusicXMLのコード進行を読み取り、ChordWiki形式の下書きを作り、コピーまたは保存できるようにします。/, "MusicXML conversion must retain its purpose description");
+assert.match(converterHtml, /MusicXMLのコード進行を読み取り、ChordPro形式の下書きを作り、コピーまたは保存できるようにします。/, "MusicXML conversion must identify the ChordPro draft format");
 assert(converterHtml.includes('href="https://musescore.org/"') && converterHtml.includes(">MuseScore</a>"), "MusicXML description must link to MuseScore");
 assert(converterHtml.includes('href="https://piano-sheet-converter.beta.yamaha.com/"') && converterHtml.includes(">Piano Sheet Converter</a>"), "MusicXML description must link to Piano Sheet Converter");
 assert.match(converterHtml, /<footer class="site-footer" aria-label="サイト情報">/, "MusicXML conversion must include the shared site footer");

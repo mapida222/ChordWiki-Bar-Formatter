@@ -733,6 +733,8 @@ textarea::placeholder { color: var(--muted); opacity: .7; }
 .committed-replace-dialog-content h2 { margin: 0; font-size: 1.08rem; }
 .committed-replace-dialog-content p { margin: 0; line-height: 1.6; }
 .committed-replace-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.musicxml-handoff-dialog { width: min(360px, calc(100% - 28px)); }
+.musicxml-handoff-dialog .committed-replace-dialog-content { gap: 10px; padding: 14px; }
 .help-dialog::backdrop { background: rgb(0 0 0 / .68); backdrop-filter: blur(2px); }
 .help-dialog-frame { height: 100%; overflow-x: hidden; overflow-y: auto; scroll-behavior: smooth; scroll-padding-top: 104px; }
 .help-dialog-header { position: sticky; top: 0; z-index: 2; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 14px; border-bottom: 1px solid var(--line); background: color-mix(in srgb, var(--bg) 94%, transparent); backdrop-filter: blur(8px); }

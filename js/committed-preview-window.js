@@ -4,8 +4,23 @@
   const CHANNEL_NAME = "chordWikiBarFormatter.scoreWindow.channel.v1";
   const TEXT_KEY = "chordWikiBarFormatter.committedOutput.v1";
   const DRAFT_KEY = "chordWikiBarFormatter.committedWindowDraft.v1";
+  const MUSICXML_HANDOFF_STORAGE_KEY = "chordWikiBarFormatter.musicxmlHandoff.v1";
   const keepExistingDraft = new URLSearchParams(window.location.search).get("draft") === "keep";
   const pendingReplace = new URLSearchParams(window.location.search).get("pending") === "replace";
+  function consumeMusicXmlHandoff(target = "realtime") {
+    if (new URLSearchParams(window.location.search).get("import") !== "musicxml") return null;
+    try {
+      const payload = JSON.parse(localStorage.getItem(MUSICXML_HANDOFF_STORAGE_KEY) || "null");
+      if (!payload || payload.target !== target || typeof payload.text !== "string" || !payload.text.trim()) return null;
+      if (!Number.isFinite(Number(payload.createdAt)) || Math.abs(Date.now() - Number(payload.createdAt)) > 10 * 60 * 1000) return null;
+      localStorage.removeItem(MUSICXML_HANDOFF_STORAGE_KEY);
+      return payload.text;
+    } catch (_error) {
+      localStorage.removeItem(MUSICXML_HANDOFF_STORAGE_KEY);
+      return null;
+    }
+  }
+  const musicXmlHandoffText = consumeMusicXmlHandoff('realtime');
   const layout = document.querySelector("#committed-window-layout");
   const text = document.querySelector("#committed-window-text");
   const lines = document.querySelector("#committed-window-lines");
@@ -689,7 +704,27 @@
   // A saved draft can already fill the textarea without producing the line
   // numbers, syntax layer, or score preview. Always perform an initial render.
   render();
-  if (pendingReplace && loadedDraftText && loadedDraftText !== (localStorage.getItem(TEXT_KEY) || "")) {
+  let pendingMusicXmlText = null;
+  if (musicXmlHandoffText) {
+    if (!text.value.trim()) {
+      text.value = musicXmlHandoffText;
+      appliedTranspose = 0;
+      transposeCommitted = false;
+      render();
+    } else pendingMusicXmlText = musicXmlHandoffText;
+  }
+  if (pendingMusicXmlText) {
+    replaceDialog.showModal();
+    replaceDialog.addEventListener("close", () => {
+      if (replaceDialog.returnValue === "yes") {
+        text.value = pendingMusicXmlText;
+        appliedTranspose = 0;
+        transposeCommitted = false;
+        publishText();
+      }
+      history.replaceState(null, "", window.location.pathname);
+    }, { once: true });
+  } else if (pendingReplace && loadedDraftText && loadedDraftText !== (localStorage.getItem(TEXT_KEY) || "")) {
     replaceDialog.showModal();
     replaceDialog.addEventListener("close", () => {
       if (replaceDialog.returnValue === "yes") {

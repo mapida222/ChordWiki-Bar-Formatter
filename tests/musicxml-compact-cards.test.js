@@ -17,7 +17,7 @@ assert.match(html, /class="card-toggle-mark" aria-hidden="true">▲<\/span>/, "d
 assert.match(html, /id="source-details"/, "01 details must be independently collapsible");
 assert.match(html, /id="report-details-panel"/, "02 details must be independently collapsible");
 assert.match(html, /id="warnings"[^>]*hidden/, "warnings must be hidden until there is something to show");
-assert.match(html, /<a class="converter-back-link" href="index\.html">ChordWiki Bar Formatterへ戻る<\/a>/, "the converter must offer a direct return path to Formatter");
+assert.match(html, /<a class="converter-back-link" href="index\.html">ChordWiki Bar Formatterへ戻る<\/a>/, "the converter must offer a compact return path to the Formatter");
 assert(!html.includes("対象パート"), "the report must not expose an implementation-specific target part");
 assert(!html.includes('id="part-name"'), "the report must not render a target part field");
 assert(!html.includes('class="report-details"'), "all standard report metrics must share the compact row");
@@ -29,6 +29,8 @@ assert.match(css, /\.drop-zone>span:not\(\.upload-icon\)\{white-space:nowrap;fon
 assert.match(css, /\.converter-card\.is-collapsed \.card-details\{display:none/, "collapsed cards must retain only their headings");
 assert.match(page, /function bindCardDisclosure\(/, "the page must bind the two disclosure controls");
 assert.match(page, /warningPanel\.hidden = messages\.length === 0/, "a warning-free conversion must not show an empty notice");
+assert.match(page, /warningPanel\.classList\.toggle\('is-error'/, "fatal XML errors must use a distinct warning state");
+assert.match(page, /元のXMLを手動で修正してから/, "fatal XML errors must explain that the source needs manual repair");
 assert.match(page, /setWarnings\(\[\]\)/, "idle and loading states must keep warnings hidden");
 assert(!page.includes("$('part-name')"), "page state must not update a removed target part field");
 assert.match(html, /id="abbreviation-controls"/, "the result header must expose abbreviation controls");
@@ -65,6 +67,7 @@ assert(!converter.includes("if (qualityAndBass === EMPTY) qualityAndBass = major
 assert.match(css, /\.abbreviation-controls button\{[^}]*border-radius:4px/, "abbreviation choices must look like compact buttons");
 assert.match(css, /\.report-card \.status\{[^}]*border-radius:4px/, "conversion status must use a rectangular frame");
 assert.match(css, /\.report-card \.status\{[^}]*white-space:pre-line/, "conversion status must preserve its intentional line break");
+assert.match(css, /\.warnings\.is-error\{[^}]*background:/, "fatal XML errors must have a yellow warning background");
 assert.match(page, /: '変換\\n完了'/, "completed status must break after 変換");
 assert.match(css, /\.output-card\{[^}]*resize:vertical/, "output card must resize vertically only");
 assert(!css.match(/\.output-card\{[^}]*resize:both/), "output card must not resize horizontally");

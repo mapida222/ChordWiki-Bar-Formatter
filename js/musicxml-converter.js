@@ -500,7 +500,7 @@ export function convertMusicXmlDocument(document) {
     emptyMeasures,
     warnings: [
       ...parsed.timingWarnings,
-      ...(lyricCount ? [`歌詞は${lyricCount}件検出しましたが、ChordWiki出力には含めていません。`] : []),
+      ...(lyricCount ? [`歌詞は${lyricCount}件検出しましたが、ChordPro形式出力には含めていません。`] : []),
       ...(emptyMeasures ? [`コードがない小節が${emptyMeasures}件あります。`] : []),
     ],
     chordWiki: outputText,

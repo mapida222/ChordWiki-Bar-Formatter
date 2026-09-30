@@ -10,6 +10,7 @@ const $ = (id) => document.getElementById(id);
 const BROWSER_RESULT_STORAGE_KEY = 'musicxmlConverter.lastResult.v1';
 const ABBREVIATION_STORAGE_KEY = 'musicxmlConverter.abbreviations.v2';
 const MUSICXML_TRANSPOSE_STORAGE_KEY = 'musicxmlConverter.transpose.v1';
+const MUSICXML_HANDOFF_STORAGE_KEY = 'chordWikiBarFormatter.musicxmlHandoff.v1';
 const ABBREVIATION_CYCLES = Object.freeze({
   major: ['maj', 'M'],
   augmented: ['aug', '+'],
@@ -38,14 +39,19 @@ const abbreviationControls = $('abbreviation-controls');
 const transposeSelect = $('musicxml-transpose');
 const transposeDown = $('musicxml-transpose-down');
 const transposeUp = $('musicxml-transpose-up');
+const formatterLink = $('musicxml-open-formatter');
+const realtimeEditorLink = $('musicxml-open-realtime');
 
 function escapeHtml(value) {
   return value.replace(/[&<>"']/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[character]));
 }
 
-function setWarnings(messages) {
+function setWarnings(messages, { error = false } = {}) {
   const warningPanel = $('warnings');
   warningPanel.hidden = messages.length === 0;
+  warningPanel.classList.toggle('is-error', error && messages.length > 0);
+  warningPanel.setAttribute('role', error ? 'alert' : 'status');
+  warningPanel.setAttribute('aria-live', error ? 'assertive' : 'polite');
   warningPanel.innerHTML = messages.map((message) => `<p>⚠ ${escapeHtml(message)}</p>`).join('');
 }
 
@@ -160,7 +166,7 @@ function resetCopyButton() {
     copyFeedbackTimer = null;
   }
   $('copy-button').textContent = 'コピー';
-  $('copy-button').setAttribute('aria-label', 'ChordWiki出力をコピー');
+  $('copy-button').setAttribute('aria-label', 'ChordPro形式出力をコピー');
 }
 
 function showCopyFeedback(label) {
@@ -205,6 +211,23 @@ function saveBrowserResult(result, fileName, fileSize) {
     // ブラウザー保存が使えない環境でも変換自体は継続する。
   }
 }
+
+function saveMusicXmlHandoff(target) {
+  if (!latest || !outputPreview?.value.trim()) return false;
+  try {
+    localStorage.setItem(MUSICXML_HANDOFF_STORAGE_KEY, JSON.stringify({
+      target,
+      text: outputPreview.value,
+      createdAt: Date.now(),
+    }));
+    return true;
+  } catch (_error) {
+    return false;
+  }
+}
+
+formatterLink?.addEventListener('click', () => saveMusicXmlHandoff('formatter'));
+realtimeEditorLink?.addEventListener('click', () => saveMusicXmlHandoff('realtime'));
 
 function clearBrowserResult() {
   try { localStorage.removeItem(BROWSER_RESULT_STORAGE_KEY); } catch (_error) {}
@@ -328,7 +351,13 @@ async function loadFile(file) {
     renderOutput();
     resetCopyButton();
     $('copy-button').disabled = true;
-    setWarnings(['MusicXMLを読み取れませんでした。']);
+    const errorMessage = error instanceof Error && error.message
+      ? error.message
+      : 'MusicXMLを読み取れませんでした。';
+    setWarnings([
+      errorMessage,
+      '元のXMLを手動で修正してから、もう一度読み込んでください。',
+    ], { error: true });
   }
 }
 

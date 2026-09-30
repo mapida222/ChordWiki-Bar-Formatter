@@ -9,7 +9,7 @@
     correctionHighlight: $("#correction-highlight"), inputHighlight: $("#input-highlight"), outputHighlight: $("#output-highlight"), finalOutputHighlight: $("#final-output-highlight"), committedOutputHighlight: $("#committed-output-highlight"),
     correctionCount: $("#correction-count"), correctionPosition: $("#correction-position"), correctionUndo: $("#correction-undo"), correctionRedo: $("#correction-redo"), correctionRefreshLine: $("#correction-refresh-line"), correctionRebuildAll: $("#correction-rebuild-all"), inputCount: $("#input-count"), outputCount: $("#output-count"), finalOutputCount: $("#final-output-count"), committedOutputCount: $("#committed-output-count"), committedOutputShell: $("#committed-output-shell"), committedOutputToggle: $("#committed-output-toggle"), openCommittedPreview: $("#open-committed-preview"), openRealtimeEditor: $("#open-realtime-editor"),
     removalTargets: $("#hyphen-removal-targets"), removalLinked: $("#hyphen-removal-linked"), lyricHyphenMode: $("#lyric-hyphen-mode"), removalSummary: $("#removal-summary"), measureCapacityWarning: $("#measure-capacity-warning"), measureCapacityWarningText: $("#measure-capacity-warning-text"), measureCapacityWarningOpen: $("#measure-capacity-warning-open"), measureCapacityWarningDismiss: $("#measure-capacity-warning-dismiss"),
-    statusDetail: $("#status-detail"), toast: $("#toast"), helpDialog: $("#help-dialog"), helpExamplePreview: $("#help-example-preview"), historyDialog: $("#history-dialog"), historyList: $("#history-list"), historyPreviewPanel: $("#history-preview-panel"), historyPreviewTabs: $("#history-preview-tabs"), historyTextPreview: $("#history-text-preview"), historyPreview: $("#history-score-preview"), historyPreviewTitle: $("#history-preview-title"), historyPreviewDate: $("#history-preview-date"), historyRestore: $("#history-restore"), historyCopyReport: $("#history-copy-report"), historyExportBackup: $("#history-export-backup"), historyImportBackup: $("#history-import-backup"), historyBackupFile: $("#history-backup-file"), historyDeleteAll: $("#history-delete-all"), keySettingsDialog: $("#key-settings-dialog"), keySettingsList: $("#key-settings-list"), keySettingsPreview: $("#key-settings-score-preview")
+    statusDetail: $("#status-detail"), toast: $("#toast"), helpDialog: $("#help-dialog"), helpExamplePreview: $("#help-example-preview"), historyDialog: $("#history-dialog"), historyList: $("#history-list"), historyPreviewPanel: $("#history-preview-panel"), historyPreviewTabs: $("#history-preview-tabs"), historyTextPreview: $("#history-text-preview"), historyPreview: $("#history-score-preview"), historyPreviewTitle: $("#history-preview-title"), historyPreviewDate: $("#history-preview-date"), historyRestore: $("#history-restore"), historyCopyReport: $("#history-copy-report"), historyExportBackup: $("#history-export-backup"), historyImportBackup: $("#history-import-backup"), historyBackupFile: $("#history-backup-file"), historyDeleteAll: $("#history-delete-all"), keySettingsDialog: $("#key-settings-dialog"), keySettingsList: $("#key-settings-list"), keySettingsPreview: $("#key-settings-score-preview"), musicXmlHandoffDialog: $("#musicxml-handoff-dialog")
   };
   elements.displaySettingsToggle.insertAdjacentElement("afterend", elements.fontPanel);
   const correctionGuideItems = [...document.querySelectorAll(".guide-item")];
@@ -211,6 +211,7 @@
   const PREVIEW_KEY_SECTIONS_STORAGE_KEY = "chordWikiBarFormatter.previewKeySections.v1";
   const COMMITTED_OUTPUT_STORAGE_KEY = "chordWikiBarFormatter.committedOutput.v1";
   const COMMITTED_DRAFT_STORAGE_KEY = "chordWikiBarFormatter.committedWindowDraft.v1";
+  const MUSICXML_HANDOFF_STORAGE_KEY = "chordWikiBarFormatter.musicxmlHandoff.v1";
   const SCORE_WINDOW_STATE_KEY = scoreWindowBridge.stateKey;
   const REMOVAL_LINKED_STORAGE_KEY = "chordWikiBarFormatter.hyphenRemovalLinked.v1";
   const CURRENT_STATE_UPDATED_AT_KEY = "chordWikiBarFormatter.currentStateUpdatedAt.v1";
@@ -261,6 +262,33 @@
   ].join("\n");
   const INITIAL_CORRECTION = ["", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "88448", "3535", "8@4@4", "", "4444", "4s4@4x", "4/^3^3^2/44", "4*s4*3*3*^24"].join("\n");
   const INITIAL_SETTINGS = { measureCapacity: 8, hyphenUnit: 4, hyphenSpacing: 4, shortFractionPrepose: 1, longBeatLyricPlacement: 2, singleCharacterHyphens: 0, showContinuationChord: 0 };
+  function consumeMusicXmlHandoff(target = "formatter") {
+    if (new URLSearchParams(window.location.search).get("import") !== "musicxml") return null;
+    try {
+      const payload = JSON.parse(localStorage.getItem(MUSICXML_HANDOFF_STORAGE_KEY) || "null");
+      if (!payload || payload.target !== target || typeof payload.text !== "string" || !payload.text.trim()) return null;
+      if (!Number.isFinite(Number(payload.createdAt)) || Math.abs(Date.now() - Number(payload.createdAt)) > 10 * 60 * 1000) return null;
+      localStorage.removeItem(MUSICXML_HANDOFF_STORAGE_KEY);
+      return payload.text;
+    } catch (_error) {
+      localStorage.removeItem(MUSICXML_HANDOFF_STORAGE_KEY);
+      return null;
+    }
+  }
+  function applyMusicXmlHandoff(text) {
+    elements.input.value = String(text);
+    elements.correction.value = "";
+    sourceLineIds = [];
+    outputOverrides = {};
+    rowAdoptionModes = [];
+    localStorage.setItem(INPUT_STORAGE_KEY, elements.input.value);
+    localStorage.setItem(CORRECTION_STORAGE_KEY, "");
+    localStorage.removeItem(OUTPUT_OVERRIDES_STORAGE_KEY);
+    normalizeSourceLineIds();
+    syncManualOutputLinesFromOverrides();
+    resetCorrectionHistory();
+    convert({ refreshCorrections: true });
+  }
   const CUSTOM_PROFILE_NAME_STORAGE_KEY = "chordWikiBarFormatter.customProfileName.v1";
   const RECOMMENDED_VALUES = {
     fourFour: [0, 2, 4, 8, 16, 24, 32],
@@ -4265,6 +4293,17 @@
   updateLineNumbers(elements.finalOutput, elements.finalOutputLines);
   updateLineNumbers(elements.committedOutput, elements.committedOutputLines);
   convert({ refreshCorrections: migratedLegacyNoEditRows });
+  const musicXmlHandoffText = consumeMusicXmlHandoff('formatter');
+  if (musicXmlHandoffText) {
+    const hasExistingInput = Boolean(elements.input.value.trim()) && elements.input.value !== INITIAL_INPUT;
+    if (!hasExistingInput) applyMusicXmlHandoff(musicXmlHandoffText);
+    else if (elements.musicXmlHandoffDialog?.showModal) {
+      elements.musicXmlHandoffDialog.addEventListener("close", () => {
+        if (elements.musicXmlHandoffDialog.returnValue === "yes") applyMusicXmlHandoff(musicXmlHandoffText);
+      }, { once: true });
+      elements.musicXmlHandoffDialog.showModal();
+    }
+  }
   syncResultRowAlignment();
   if ("ResizeObserver" in window) {
     const resultAlignmentObserver = new ResizeObserver(syncResultRowAlignment);
