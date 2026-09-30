@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="MusicXMLのコード進行をChordWiki用の下書きへ変換するブラウザー内ツール">
+  <meta name="description" content="MusicXMLのコード進行をChordPro形式の下書きへ変換するブラウザー内ツール">
   <title>MusicXML変換 | ChordWiki Bar Formatter</title>
   <link rel="icon" type="image/png" href="logo/260810_favicon_touka.png">
   <link rel="stylesheet" href="style.css">
@@ -18,8 +18,8 @@
     <section class="converter-heading section-heading">
       <div>
         <p class="section-kicker">MUSICXML変換 <span>/ CONVERTER</span></p>
-        <h2>MusicXMLをChordWiki下書きへ変換</h2>
-        <p class="converter-lead">MusicXMLのコード進行を読み取り、ChordWiki形式の下書きを作り、コピーまたは保存できるようにします。MusicXMLファイルは、<a href="https://musescore.org/" target="_blank" rel="noopener noreferrer">MuseScore</a>や<a href="https://piano-sheet-converter.beta.yamaha.com/" target="_blank" rel="noopener noreferrer">Piano Sheet Converter</a>から出力できます。</p>
+        <h2>MusicXMLをChordPro形式へ変換</h2>
+        <p class="converter-lead">MusicXMLのコード進行を読み取り、ChordPro形式の下書きを作り、コピーまたは保存できるようにします。MusicXMLファイルは、<a href="https://musescore.org/" target="_blank" rel="noopener noreferrer">MuseScore</a>や<a href="https://piano-sheet-converter.beta.yamaha.com/" target="_blank" rel="noopener noreferrer">Piano Sheet Converter</a>から出力できます。</p>
       </div>
       <button id="clear-button" class="help-open-button" type="button">リセット</button>
     </section>
@@ -58,14 +58,14 @@
             <div><dt>コード変更数</dt><dd id="harmony-count">—</dd></div>
             <div id="lyric-metric" class="hidden"><dt>歌詞</dt><dd id="lyric-count">—</dd></div>
           </dl>
-          <div id="warnings" class="warnings" hidden></div>
+          <div id="warnings" class="warnings" role="status" aria-live="polite" hidden></div>
         </div>
       </article>
 
       <article class="converter-card output-card is-placeholder">
         <header class="editor-heading">
           <div class="output-heading-copy">
-            <h2 class="compact-editor-title"><span>03. ChordWiki出力 <span>/ RESULT</span></span></h2>
+            <h2 class="compact-editor-title"><span>03. ChordPro形式出力 <span>/ RESULT</span></span></h2>
             <span id="output-source-name" class="output-source-name" aria-live="polite">ファイル未選択</span>
           </div>
           <label class="musicxml-transpose-control"><span>移調</span><span class="musicxml-transpose-stepper"><select id="musicxml-transpose" aria-label="MusicXML出力の移調"></select><button id="musicxml-transpose-down" type="button" aria-label="出力を半音下げる">▼</button><button id="musicxml-transpose-up" type="button" aria-label="出力を半音上げる">▲</button></span></label>
@@ -78,22 +78,33 @@
           </div>
           <div class="editor-tools">
             <label class="output-color-setting"><span>文字色付け</span><input id="text-coloring" type="checkbox" checked></label>
-            <button id="copy-button" class="help-open-button" type="button" aria-label="ChordWiki出力をコピー" aria-live="polite" disabled>コピー</button>
+            <button id="copy-button" class="help-open-button" type="button" aria-label="ChordPro形式出力をコピー" aria-live="polite" disabled>コピー</button>
           </div>
         </header>
         <div class="output-text-layer">
           <pre id="output-highlight" class="output-highlight" aria-hidden="true"></pre>
           <textarea id="output-preview" class="output-preview" readonly spellcheck="false">MusicXMLを選択すると、ここに変換結果が表示されます。</textarea>
         </div>
-        <footer class="output-footer">
-          <p class="output-guidance">MusicXMLからの出力はリズム確認用の下書きです。ChordWikiへそのまま投稿せず、歌詞を含めて整形してからご利用ください。</p>
-        <nav class="converter-related-links" aria-label="整形に使うツール">
-          <a class="realtime-editor-open" href="https://anipu.web.fc2.com/helper/lyricker.html" target="_blank" rel="noopener noreferrer">りりか（歌詞にコードを付ける）</a>
-          <a class="realtime-editor-open" href="index.html">ChordWiki Bar Formatter</a>
-          <a class="realtime-editor-open" href="committed-preview.html" target="_blank" rel="opener">リアルタイムエディター</a>
-        </nav>
-        </footer>
       </article>
+      <div class="converter-output-followup">
+        <p class="output-guidance">MusicXMLからの出力はリズム確認用の下書きです。ChordWikiへ投稿する場合、歌詞を含めて整形してからご利用ください。（インスト曲を除く）</p>
+        <nav class="converter-related-links" aria-label="整形に使うツール">
+          <div class="converter-related-link">
+            <span class="converter-related-role">歌詞にコードをつける</span>
+            <a class="realtime-editor-open" href="https://anipu.web.fc2.com/helper/lyricker.html" target="_blank" rel="noopener noreferrer">りりか</a>
+            <small class="converter-related-note">変換結果をコピー → りりかの上枠に貼り付け</small>
+          </div>
+          <div class="converter-related-link">
+            <span class="converter-related-role">ハイフン数を修正する</span>
+            <a id="musicxml-open-formatter" class="realtime-editor-open" href="index.html?import=musicxml">ChordWiki Bar Formatter</a>
+          </div>
+          <div class="converter-related-link">
+            <span class="converter-related-role">プレビューを見ながら編集する</span>
+            <a id="musicxml-open-realtime" class="realtime-editor-open" href="committed-preview.html?import=musicxml" target="_blank" rel="opener">リアルタイムエディター</a>
+          </div>
+        </nav>
+      </div>
+
     </section>
   </main>
 
