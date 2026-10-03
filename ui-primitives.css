@@ -1,0 +1,120 @@
+/*
+ * Dependency-free UI primitives for the Formatter.
+ *
+ * The existing theme variables remain the color contract. These small aliases
+ * only name the spacing, shape, focus, elevation, and typography values that
+ * are shared by the first MusicXML proof of concept.
+ */
+:root {
+  --ui-space-1: 4px;
+  --ui-space-2: 8px;
+  --ui-space-3: 12px;
+  --ui-space-4: 16px;
+  --ui-radius-sm: 4px;
+  --ui-radius-md: 5px;
+  --ui-radius-pill: 999px;
+  --ui-focus-ring: 0 0 0 2px color-mix(in srgb, var(--focus) 24%, transparent);
+  --ui-elevation-1: 0 1px 2px color-mix(in srgb, var(--text) 12%, transparent);
+  --ui-font-body: var(--sans);
+  --ui-font-mono: var(--mono);
+}
+
+/* Button primitive: compatibility classes can remain alongside these names. */
+.ui-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--ui-space-1);
+  min-width: 0;
+  padding: 7px 11px;
+  border: 1px solid var(--line);
+  border-radius: var(--ui-radius-sm);
+  color: var(--text);
+  background: var(--panel);
+  font-family: var(--ui-font-body);
+  font-weight: 800;
+  line-height: 1.2;
+  text-decoration: none;
+  cursor: pointer;
+  transition: border-color .16s ease, background .16s ease, color .16s ease, box-shadow .16s ease;
+}
+
+.ui-button--default,
+.ui-button--secondary {
+  color: var(--text);
+  background: var(--panel);
+}
+
+.ui-button--primary {
+  border-color: color-mix(in srgb, var(--accent) 58%, var(--line));
+  background: color-mix(in srgb, var(--panel) 93%, var(--accent));
+}
+
+.ui-button--secondary {
+  background: var(--accent-soft);
+}
+
+.ui-button--icon {
+  width: 1.75rem;
+  min-height: 1.75rem;
+  padding: 0;
+  border-color: transparent;
+  color: var(--muted);
+  background: transparent;
+}
+
+.ui-button:hover:not(:disabled),
+.ui-button:focus-visible:not(:disabled) {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.ui-button:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+  box-shadow: var(--ui-focus-ring);
+}
+
+.ui-button:disabled {
+  cursor: not-allowed;
+  opacity: .45;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ui-button {
+    transition-duration: .01ms;
+  }
+}
+
+/* Card primitive: layout-specific classes intentionally remain authoritative. */
+.ui-card,
+[data-ui-card] {
+  min-width: 0;
+  padding: var(--ui-space-3);
+  border: 1px solid var(--line);
+  border-radius: var(--ui-radius-md);
+  background: var(--panel);
+}
+
+.ui-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ui-space-3);
+}
+
+.ui-card__body {
+  min-width: 0;
+}
+
+.ui-card__footer {
+  margin-top: var(--ui-space-3);
+  padding-top: var(--ui-space-2);
+  border-top: 1px solid var(--line);
+}
+
+.ui-card__section-title {
+  min-width: 0;
+  margin: 0;
+  font-family: var(--ui-font-body);
+}

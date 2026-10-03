@@ -12,7 +12,8 @@ export default defineConfig({
         main: resolve(__dirname, "index.html"),
         preview: resolve(__dirname, "chordwiki-preview.html"),
         committedPreview: resolve(__dirname, "committed-preview.html"),
-        privacy: resolve(__dirname, "privacy.html")
+        privacy: resolve(__dirname, "privacy.html"),
+        musicxmlConverter: resolve(__dirname, "musicxml-converter.html")
       }
     }
   }
