@@ -8,11 +8,6 @@
   const results = document.querySelector("#committed-measure-check-results");
   const expandAllButton = document.querySelector("#committed-measure-check-expand-all");
   const applyAllButton = document.querySelector("#committed-measure-check-apply-all");
-  const recommendation = document.querySelector("#committed-measure-check-recommendation");
-  const recommendationSummary = document.querySelector("#committed-measure-check-recommendation-summary");
-  const applyRecommendationButton = document.querySelector("#committed-measure-check-apply");
-  const rejectRecommendationButton = document.querySelector("#committed-measure-check-reject");
-  let rejectedSource = null;
 
   if (!output || !button || !panel || !summary || !results) return;
 
@@ -175,53 +170,9 @@
     body.append(comparison);
   }
 
-  function appendDiffLine(container, line, otherLine, variant) {
-    const text = String(line || "");
-    const other = String(otherLine || "");
-    let prefix = 0;
-    while (prefix < text.length && prefix < other.length && text[prefix] === other[prefix]) prefix += 1;
-    let suffix = 0;
-    while (suffix < text.length - prefix && suffix < other.length - prefix && text[text.length - 1 - suffix] === other[other.length - 1 - suffix]) suffix += 1;
-    const lineElement = document.createElement("pre");
-    lineElement.className = `measure-check-proposal-line measure-check-proposal-line-${variant}`;
-    lineElement.append(document.createTextNode(text.slice(0, prefix)));
-    const changed = text.slice(prefix, text.length - suffix || undefined);
-    if (changed) {
-      const mark = document.createElement("mark");
-      mark.textContent = changed;
-      lineElement.append(mark);
-    }
-    lineElement.append(document.createTextNode(suffix ? text.slice(text.length - suffix) : ""));
-    container.append(lineElement);
-  }
-
-  function renderProposalComparison(container, proposal) {
-    container.replaceChildren();
-    const beforeLines = proposal.before.replace(/\r\n?/gu, "\n").split("\n");
-    const afterLines = proposal.after.replace(/\r\n?/gu, "\n").split("\n");
-    const columns = [
-      { label: "修正前", lines: beforeLines, other: afterLines, variant: "before" },
-      { label: "修正後", lines: afterLines, other: beforeLines, variant: "after" }
-    ];
-    columns.forEach((column) => {
-      const block = document.createElement("div");
-      block.className = "measure-check-proposal-column";
-      const label = document.createElement("div");
-      label.className = "measure-check-code-label";
-      label.textContent = column.label;
-      const lines = document.createElement("div");
-      lines.className = "measure-check-proposal-lines";
-      const lineCount = Math.max(column.lines.length, column.other.length);
-      for (let index = 0; index < lineCount; index += 1) appendDiffLine(lines, column.lines[index], column.other[index], column.variant);
-      block.append(label, lines);
-      container.append(block);
-    });
-  }
-
   function applyText(next) {
     if (next === output.value) return;
     output.value = next;
-    rejectedSource = null;
     output.dispatchEvent(new Event("input", { bubbles: true }));
     requestAnimationFrame(() => render(true));
   }
@@ -283,7 +234,6 @@
   function render(open = true) {
     const checker = window.CBFMeasureCheck;
     const result = checker?.validate(output.value, { defaultMeter: currentDefaultMeter() });
-    const proposal = checker?.proposeSixteenthAccentNotation?.(output.value);
     if (!result) return;
 
     panel.hidden = !open;
@@ -365,19 +315,6 @@
       expandAllButton.setAttribute("aria-expanded", "false");
     }
 
-    const showProposal = Boolean(proposal && output.value !== rejectedSource);
-    if (recommendation && recommendationSummary) {
-      recommendation.hidden = !showProposal;
-      if (showProposal) renderProposalComparison(recommendationSummary, proposal);
-    }
-    if (!showProposal && rejectedSource === output.value) {
-      const item = document.createElement("li");
-      item.className = "measure-check-result measure-check-result-note";
-      item.textContent = "NG：推奨編集は反映しませんでした。";
-      results.append(item);
-    }
-
-    // 推奨編集は内容を確認してから専用の「OK」ボタンで反映する。
     // 一括適用には、機械的に安全と判定できる構文修正だけを含める。
     const canApplyAll = fixes.length > 0;
     if (applyAllButton) {
@@ -389,11 +326,9 @@
   button.addEventListener("click", (event) => {
     event.preventDefault();
     event.stopPropagation();
-    rejectedSource = null;
     render(panel.hidden);
   });
   output.addEventListener("input", () => {
-    rejectedSource = null;
     if (!panel.hidden) render(true);
   });
   expandAllButton?.addEventListener("click", () => {
@@ -411,14 +346,5 @@
     let next = checker.applyFixes(output.value, fixes);
     applyText(next);
   });
-  applyRecommendationButton?.addEventListener("click", () => {
-    const proposal = window.CBFMeasureCheck?.proposeSixteenthAccentNotation?.(output.value);
-    if (proposal) applyText(proposal.after);
-  });
-  rejectRecommendationButton?.addEventListener("click", () => {
-    rejectedSource = output.value;
-    render(true);
-  });
-
   window.CBFCommittedMeasureCheckPanel = { refresh: () => render(!panel.hidden) };
 }());

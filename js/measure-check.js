@@ -40,6 +40,7 @@
     if (!/^\s*\{\s*c(?:i)?\s*:/iu.test(source)) return previousProfile;
     const widths = { ...DEFAULT_RHYTHM_WIDTHS, ...(previousProfile?.widths || {}) };
     const declarations = { ...(previousProfile?.declarations || {}) };
+    const tripletBeats = { ...(previousProfile?.tripletBeats || {}) };
     const explicitWidth = new Set();
     let found = false;
     for (const match of source.matchAll(/([\-=>≧＝＞≡])\s*[：:]\s*([^\s　,，;；{}]+)/gu)) {
@@ -47,7 +48,8 @@
       const label = match[2];
       const denominatorMatch = label.match(/^(\d+)\s*分(?:音符)?(?:アクセント)?$/u);
       const denominator = Number(denominatorMatch?.[1]);
-      const declaration = /3連符アクセント/u.test(label)
+      const declaredTriplet = label.match(/^(\d+)拍3連(?:符)?(アクセント)?$/u);
+      const declaration = /3連(?:符)?アクセント/u.test(label)
         ? "triplet-accent"
         : /3連符/u.test(label)
           ? "triplet"
@@ -56,12 +58,18 @@
             : /白玉/u.test(label)
               ? "hold"
               : (denominatorMatch ? "note" : null);
-      const declarationSymbols = symbol === ">" || symbol === "＞"
+      const declarationSymbols = declaredTriplet ? [symbol] : symbol === ">" || symbol === "＞"
         ? [">", "＞"]
         : symbol === "=" || symbol === "＝"
           ? ["=", "＝"]
           : [symbol];
       if (declaration) declarationSymbols.forEach((declarationSymbol) => { declarations[declarationSymbol] = declaration; });
+      if (declaredTriplet && Number(declaredTriplet[1]) > 0) {
+        // 注記の「1拍」は4分音符。チェック表示は8分音符を1拍分とする。
+        tripletBeats[symbol] = Number(declaredTriplet[1]) * 2;
+        widths[symbol] = tripletBeats[symbol] * 2 / 3;
+        explicitWidth.add(symbol);
+      }
       if (Number.isInteger(denominator) && denominator > 0) {
         const width = 16 / denominator;
         if (!Number.isFinite(width) || width <= 0) continue;
@@ -85,7 +93,7 @@
     }
     if (explicitWidth.has("=") && !explicitWidth.has("＝")) widths["＝"] = widths["="];
     if (explicitWidth.has("＝") && !explicitWidth.has("=")) widths["="] = widths["＝"];
-    return { widths, declarations };
+    return { widths, declarations, tripletBeats };
   }
 
   function isOneBeatTripletText(value) {
@@ -111,14 +119,17 @@
 
   function makeRhythmPart(token, content = token, rhythmProfile = null, forceOneBeatTriplet = false) {
     const text = String(content || "");
+    const declaredBeats = rhythmProfile?.tripletBeats?.[text[0]];
+    const isDeclaredTripletNote = text.length === 1 && Boolean(declaredBeats);
     const isExplicitTwoBeatTriplet = !forceOneBeatTriplet && (/^(?:＞＞＞|＞＝＝)$/u.test(text) || isExplicitTwoBeatTripletText(text, rhythmProfile));
     const isInferredOneBeatTriplet = forceOneBeatTriplet || isOneBeatTripletText(text);
     return {
       token,
       width: rhythmWidth(text, rhythmProfile),
-      isFullWidthAccent: text === "＞",
+      isFullWidthAccent: text === "＞" && !isDeclaredTripletNote,
+      triplet: isDeclaredTripletNote,
       isTripletGroup: isExplicitTwoBeatTriplet || isInferredOneBeatTriplet,
-      tripletBeats: isExplicitTwoBeatTriplet ? 2 : (isInferredOneBeatTriplet ? 1 : null)
+      tripletBeats: isExplicitTwoBeatTriplet ? (declaredBeats || 2) : (isInferredOneBeatTriplet ? 1 : (isDeclaredTripletNote ? declaredBeats : null))
     };
   }
 
@@ -179,52 +190,6 @@
       index = end;
     }
     return result;
-  }
-
-  function replaceSixteenthAccentRuns(value, onChange) {
-    return String(value || "").replace(/[>＞\-＝=≧]+/gu, (run) => {
-      const characters = [...run];
-      const result = [];
-      for (let index = 0; index < characters.length; index += 1) {
-        const character = characters[index];
-        const next = characters[index + 1];
-        if (character === "＞" && next === "＝" && characters[index + 2] === "＝") {
-          result.push("＞＝＝");
-          index += 2;
-          continue;
-        }
-      if ((character === ">" || character === "＞") && (next === "=" || next === "＝")) {
-        onChange();
-          result.push("≧");
-          continue;
-        }
-        result.push(character);
-      }
-      return result.join("");
-    });
-  }
-
-  function proposeSixteenthAccentNotation(source) {
-    const before = String(source || "");
-    if (!before) return null;
-    let changes = 0;
-    const after = replaceSixteenthAccentRuns(before, () => { changes += 1; });
-    if (!changes) return null;
-    const beforeLines = before.replace(/\r\n?/gu, "\n").split("\n");
-    const afterLines = after.replace(/\r\n?/gu, "\n").split("\n");
-    const changedLines = [];
-    const lineCount = Math.max(beforeLines.length, afterLines.length);
-    for (let index = 0; index < lineCount && changedLines.length < 6; index += 1) {
-      if (beforeLines[index] === afterLines[index]) continue;
-      changedLines.push(`入力欄の${index + 1}行目\n変更前：${shortProposalLine(beforeLines[index])}\n変更後：${shortProposalLine(afterLines[index])}`);
-    }
-    const summary = changedLines.join("\n\n") + (lineCount > changedLines.length && changedLines.length >= 6 ? "\n\nほかにも変更箇所があります。" : "");
-    return { before, after, changes, summary };
-  }
-
-  function shortProposalLine(value) {
-    const line = String(value || "").trim();
-    return line.length > 260 ? `${line.slice(0, 260)}…` : line;
   }
 
   function applyFixes(source, fixes) {
@@ -345,7 +310,7 @@
     return parseMeterText(`${value}/8`);
   }
 
-  function applyInlineMeterRuns(measures) {
+  function applyInlineMeterRuns(measures, defaultMeter) {
     const runs = [];
     let active = null;
     const finish = () => {
@@ -365,7 +330,11 @@
         return;
       }
       if (!active) return;
-      if (measure.beats === active.meter.capacity) {
+      const baseMeter = active.inheritedMeter || defaultMeter;
+      const directiveChanged = measure.inheritedMeter !== active.inheritedMeter;
+      const returnedToBase = baseMeter.capacity !== active.meter.capacity && measure.beats === baseMeter.capacity;
+      // 拍数の不足・超過だけでは拍子変更を解除しない。元の拍子への復帰は維持する。
+      if (!directiveChanged && !returnedToBase) {
         measure.meter = { ...active.meter, sourceKind: "inline-region", scope: "measure" };
         measure.meterScope = "inline-region";
         active.measures.push(measure);
@@ -513,7 +482,7 @@
     const source = String(measure?.measureSource ?? measure?.source ?? "");
     const parts = applyTwoBeatTriplets(extractRhythmParts(source, measure?.rhythmProfile)).map((part) => ({
       token: part.token,
-      beats: part.isTripletGroup ? part.tripletBeats : (part.triplet ? part.beats : part.width / 2),
+      beats: part.isTripletGroup ? part.tripletBeats : (part.beats ?? part.width / 2),
       triplet: Boolean(part.triplet),
       tripletGroup: Boolean(part.isTripletGroup),
       tripletBeats: part.isTripletGroup ? part.tripletBeats : (part.triplet ? part.tripletBeats : null)
@@ -527,17 +496,22 @@
     const actual = Number(issue.actualBeats);
     const expected = Number(issue.expectedBeats);
     if (!Number.isFinite(actual) || !Number.isFinite(expected) || actual >= expected) return null;
-    const missingUnits = Math.round((expected - actual) * 2);
+    const missingUnits = (expected - actual) * 2;
     if (missingUnits <= 0) return null;
-    const addedHyphens = Math.floor(missingUnits / 2);
-    const token = missingUnits % 2
-      ? `${"-".repeat(addedHyphens)}=`
-      : "-".repeat(addedHyphens);
+    const hyphenWidth = rhythmWidth("-", issue.rhythmProfile);
+    const equalsWidth = rhythmWidth("=", issue.rhythmProfile);
+    const addedHyphens = Math.floor((missingUnits + 0.000001) / hyphenWidth);
+    const remainingUnits = missingUnits - addedHyphens * hyphenWidth;
+    const addedEquals = Math.round(remainingUnits / equalsWidth);
+    if (addedEquals < 0 || Math.abs(remainingUnits - addedEquals * equalsWidth) > 0.000001) return null;
+    const token = "-".repeat(addedHyphens) + "=".repeat(addedEquals);
     const source = String(issue.measureSource ?? issue.source ?? "").trim();
+    const replacement = `${source}[${token}]`;
+    if (Math.abs(analyzeMeasureRhythm({ measureSource: replacement, rhythmProfile: issue.rhythmProfile }).totalBeats - expected) > 0.000001) return null;
     const before = formatMeasureSource(issue);
     const insertionPoint = before.endsWith("|") ? before.length - 1 : before.length;
     const after = `${before.slice(0, insertionPoint)}[${token}]${before.slice(insertionPoint)}`;
-    return { before, after, token, addedBeats: expected - actual, replacement: `${source}[${token}]` };
+    return { before, after, token, addedBeats: expected - actual, replacement };
   }
 
   function validate(source, options = {}) {
@@ -623,6 +597,14 @@
       if (directiveMeter) currentMeter = directiveMeter;
       const directiveRhythmProfile = parseRhythmDirective(line, currentRhythmProfile);
       if (directiveRhythmProfile) currentRhythmProfile = directiveRhythmProfile;
+      // 長いハイフンだけの行は、譜面のリズムではなく本文の区切り線として扱う。
+      // 20個未満は通常のリズム入力として残す。
+      if (/^\s*(?:\\-{3,}|-{20,})\s*$/u.test(line)) {
+        inspectSegment(false, 0);
+        segmentOpen = false;
+        lineStartOffset += line.length + 1;
+        return;
+      }
       if (/^\s*(?:#|\{)/u.test(line)) {
         if (segmentOpen && lineIndex < lines.length - 1) segment.push("\n");
         if (lineIndex === lines.length - 1) inspectSegment(false);
@@ -712,7 +694,7 @@
 
     const defaultMeter = parseMeterText(options.defaultMeter || "4/4") || parseMeterText("4/4");
     markPickupMeasures(measures, defaultMeter);
-    const meterRuns = applyInlineMeterRuns(measures);
+    const meterRuns = applyInlineMeterRuns(measures, defaultMeter);
     const rhythmMeasures = measures.filter((measure) => measure.beats !== null && !measure.isPickup);
     const pickupMeasures = measures.filter((measure) => measure.isPickup);
     const noBeatMeasures = measures.filter((measure) => measure.beats === null);
@@ -729,6 +711,7 @@
           actualBeats: measure.beats,
           expectedBeats: measureExpected,
           meter: measure.meter,
+          rhythmProfile: measure.rhythmProfile,
           closed: measure.closed,
           measureSource: measure.source,
           lineStart: measure.lineStart,
@@ -762,5 +745,5 @@
     };
   }
 
-  return { validate, rhythmWidth, beatLabel, beatText, parseMeterText, parseDirectiveMeter, parseInlineMeter, inferredMeterForBeats, proposeMeterAnnotation, formatMeasureSource, analyzeMeasureRhythm, proposeBeatAdjustment, proposeSixteenthAccentNotation, issueFix, applyFixes };
+  return { validate, rhythmWidth, beatLabel, beatText, parseMeterText, parseDirectiveMeter, parseInlineMeter, inferredMeterForBeats, proposeMeterAnnotation, formatMeasureSource, analyzeMeasureRhythm, proposeBeatAdjustment, issueFix, applyFixes };
 }));

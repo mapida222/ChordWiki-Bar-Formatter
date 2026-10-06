@@ -30,6 +30,34 @@ const explicitTwoBeatTripletDefinitions = check.validate("{c:2/8拍子　≡：3
 assert.strictEqual(explicitTwoBeatTripletDefinitions.ok, true, "explicit triplet definitions must make three-symbol groups count as two-beat triplets");
 assert.deepStrictEqual(explicitTwoBeatTripletDefinitions.rhythmMeasures.map((measure) => measure.beats), [2, 2]);
 const unannotatedTripletAlias = check.analyzeMeasureRhythm({ measureSource: "≡≡≡" });
+const departuresDirective = "{c:BPM=72　4/4拍子　-：8分音符　=：16分音符　>：アクセント　≡：1拍3連符　＞：1拍3連アクセント}";
+for (const bar of [
+  "|[C#m7]-- ≡[C#m7]＞[Cm7]＞ [Bm7]>-[Eaug/Bb]--|",
+  "|[Bm7]-- ≡[Bm7]＞[A#m7]＞ [Am7]>-[Daug/G#]--|",
+  "|[C]-- [≡][D][＞][E][＞] [F]>-[G]--|"
+]) {
+  const result = check.validate(`${departuresDirective}\n${bar}`);
+  assert.strictEqual(result.rhythmMeasures[0].beats, 8, "declared one-quarter-note triplets must survive intervening chords and brackets");
+  assert.strictEqual(result.ok, true);
+  assert.strictEqual(check.analyzeMeasureRhythm(result.rhythmMeasures[0]).totalBeats, 8);
+  assert.strictEqual(result.rhythmMeasures[0].rhythmProfile.declarations[">"], "accent", "a full-width triplet declaration must not redefine the ordinary accent");
+}
+assert.strictEqual(check.validate(`${departuresDirective}\n|[C]-- ≡[D]＞ [F]>-[G]--|`).ok, false, "an incomplete triplet must not be padded silently");
+assert.strictEqual(check.validate("{c:≡：2拍3連符　＞：2拍3連アクセント}\n|[C]≡[D]＞[E]＞----|").ok, true, "explicit two-quarter-note triplets must use their declared duration");
+assert.strictEqual(check.validate(`${departuresDirective}\n|[C]≡＞＞---- --|`).ok, true, "contiguous triplets must use the same declaration as separated ones");
+for (const separator of ["\\" + "-".repeat(74), "  \\---  "]) {
+  const result = check.validate(`|[C]---- ----||\n${separator}\n{c:※からCapo+2}\n離さない[|][G]---- ----|`);
+  assert.strictEqual(result.ok, true, "a horizontal separator must not become rhythm or join the following pickup lyrics");
+  assert.deepStrictEqual(result.rhythmMeasures.map((measure) => measure.beats), [8, 8]);
+  assert(!result.measures.some((measure) => measure.source.includes(separator)));
+}
+const plainSeparator = "-".repeat(74);
+const plainSeparatorResult = check.validate(`|[C]---- ----||\n${plainSeparator}\n離さない[|][G]---- ----|`);
+assert.strictEqual(plainSeparatorResult.ok, true, "a plain long horizontal separator must not become a 74-beat measure");
+assert.deepStrictEqual(plainSeparatorResult.rhythmMeasures.map((measure) => measure.beats), [8, 8]);
+assert(!plainSeparatorResult.measures.some((measure) => measure.source.includes(plainSeparator)));
+assert.strictEqual(check.validate("|[C]----\n----|").ok, true, "ordinary rhythm continuing across a newline must remain music");
+assert.strictEqual(check.validate("{c:8/4拍子}\n|[C]\n----------------|").ok, true, "long unescaped rhythm lines must not be mistaken for separators");
 assert.strictEqual(unannotatedTripletAlias.totalBeats, 1.5, "an undeclared ≡ run must retain its ordinary 16th-note width");
 assert(unannotatedTripletAlias.parts.every((part) => !part.tripletGroup), "triplet grouping must require either an explicit definition or the fallback ＞ rule");
 const explicitEighthAccentMeasure = check.validate("{c:4/4拍子　-：8分音符　≧：8分アクセント}\n|[C]≧≧≧≧≧≧≧≧|", { defaultMeter: "4/4" });
@@ -112,6 +140,32 @@ assert.strictEqual(inlineMeter.ok, true, "an inline arbitrary meter must determi
 const inlineMeterAfterBar = check.validate("|(3/4)[C]--[G]--[Am]--|");
 assert.strictEqual(inlineMeterAfterBar.rhythmMeasures[0].meter.text, "3/4", "an inline meter may follow a bar delimiter");
 assert.strictEqual(inlineMeterAfterBar.ok, true, "the meter after a bar must determine the expected capacity");
+const shortWaltzMeasures = check.validate("|(3/4)[D]---|[Em7]---|[F#m]---|");
+assert.deepStrictEqual(shortWaltzMeasures.rhythmMeasures.map((measure) => measure.meter?.text), ["3/4", "3/4", "3/4"], "short measures must retain the explicitly started waltz meter");
+assert.deepStrictEqual(shortWaltzMeasures.beatIssues.map((issue) => issue.expectedBeats), [6, 6, 6], "short waltz measures must be compared with 3/4 rather than the default 4/4");
+const interruptedWaltz = check.validate("|(3/4)[D]------|[Em7]----|[F#m]------|(4/4)[G]--------|");
+assert.deepStrictEqual(interruptedWaltz.rhythmMeasures.map((measure) => measure.meter?.text), ["3/4", "3/4", "3/4", "4/4"], "an incomplete bar must not end an inline meter region");
+assert.strictEqual(interruptedWaltz.beatIssues.length, 1);
+assert.strictEqual(interruptedWaltz.beatIssues[0].expectedBeats, 6);
+const waltzWithQuarterDefinition = check.validate("{c:-：4分音符}\n|(3/4)[D]---|[Em7]---|[F#m]---|\n|(4/4)[G]----|");
+assert.strictEqual(waltzWithQuarterDefinition.ok, true, "three declared quarter-note hyphens must fill each inherited 3/4 measure");
+for (const meter of ["2/4", "3/4", "4/4", "5/4", "7/4"]) {
+  for (const lyric of ["", "あいう"]) {
+    const definition = "{c:-：4分音符　=：8分音符}";
+    const numerator = Number(meter.split("/")[0]);
+    const source = `${definition}\n|(${meter})[C]${"-".repeat(numerator - 1)}${lyric}|`;
+    const result = check.validate(source);
+    assert.strictEqual(result.beatIssues.length, 1);
+    const suggestion = check.proposeBeatAdjustment(result.beatIssues[0]);
+    assert.strictEqual(suggestion.token, "-", "a missing quarter note must be repaired with one declared quarter-note hyphen");
+    assert.strictEqual(check.validate(`${definition}\n${suggestion.after}`).ok, true, `${meter} quarter-note repair must fill the measure with and without lyrics`);
+  }
+}
+const unrepresentableQuarterRepair = check.validate("{c:-：4分音符　=：8分音符　≡：16分音符}\n|(3/4)[C]--=≡|");
+assert.strictEqual(check.proposeBeatAdjustment(unrepresentableQuarterRepair.beatIssues[0]), null, "do not offer a repair that cannot be expressed by the declared hyphen and equals durations");
+const changedDirectiveAfterWaltz = check.validate("|(3/4)[D]------|\n{ci:4/4拍子}\n|[G]------|");
+assert.strictEqual(changedDirectiveAfterWaltz.rhythmMeasures[1].meter.text, "4/4", "a new explicit directive must end the previous inline meter region");
+assert.strictEqual(changedDirectiveAfterWaltz.beatIssues[0].expectedBeats, 8);
 const bracketedInlineMeter = check.validate("[|][(3/4)][C]--[G]--[Am]--[|]");
 assert.strictEqual(bracketedInlineMeter.rhythmMeasures[0].meter.text, "3/4", "a bracketed inline meter after a bracketed bar must be recognized");
 assert.strictEqual(bracketedInlineMeter.ok, true, "a bracketed inline meter must determine the expected capacity");
@@ -191,11 +245,6 @@ assert.strictEqual(fullWidthSyntax.ok, false);
 assert.strictEqual(fullWidthSyntax.syntaxIssues.filter((issue) => issue.code === "invalid-rhythm-token").length, 2, "full-width rhythm symbols must reject malformed bracketed tokens");
 assert.ok(check.validate("[|][C][----").syntaxIssues.some((issue) => /閉じ括弧/.test(issue.message)));
 
-const recommendation = check.proposeSixteenthAccentNotation("[|][C][>====][|]\n[|][G][＞＝＝][|]");
-assert.strictEqual(recommendation.changes, 1);
-assert.strictEqual(recommendation.after, "[|][C][≧====][|]\n[|][G][＞＝＝][|]");
-assert.match(recommendation.summary, /変更前：\[\|\]\[C\]\[>====\]/);
-assert.strictEqual(check.proposeSixteenthAccentNotation("[|][G][＞＝＝][|]"), null, "full-width triplets must not be rewritten as sixteenth accents");
 assert.strictEqual(check.rhythmWidth(">="), 2, "a > followed by = is one plus one fine-width unit");
 assert.strictEqual(check.rhythmWidth("---="), 7, "three hyphens plus one half-beat symbol must equal 3.5 beats");
 
@@ -226,8 +275,8 @@ assert(panel.includes("event.preventDefault();") && panel.includes("event.stopPr
 assert(panel.includes("render(panel.hidden);"), "the check button must toggle the result panel");
 assert(panel.includes('applyAllButton?.addEventListener("click"'));
 assert(panel.includes('expandAllButton?.addEventListener("click"'));
-assert(panel.includes('applyRecommendationButton?.addEventListener("click"'));
-assert(panel.includes('rejectRecommendationButton?.addEventListener("click"'));
+assert(!panel.includes("applyRecommendationButton"));
+assert(!panel.includes("rejectRecommendationButton"));
 assert(!panel.includes("原因と対策"));
 assert(panel.includes("measure-check-explanation-label"));
 assert(panel.includes("小節線「|」の内側"));
@@ -256,10 +305,9 @@ assert(css.includes(".measure-check-code-line mark"));
 assert(css.includes("font-size: .8rem; line-height: 1.5"), "measure-check explanations must be readable at the default size");
 assert(css.includes(".measure-check-detail-body { padding: 2px 0 5px; color: var(--text); font-size: .78rem; }"), "measure-check details must be larger than the compact helper labels");
 assert(css.includes(".committed-measure-check-panel { margin: 0 5px 6px; padding: 5px 8px; overflow: auto; max-height: min(42vh, 360px); }"), "the realtime check panel should stay compact");
-assert(html.includes('id="committed-measure-check-recommendation"'));
-assert(html.includes("OK：修正を反映"));
-assert(html.includes("NG：変更しない"));
+assert(!html.includes('id="committed-measure-check-recommendation"'));
+assert(!panel.includes("推奨編集"));
 assert(css.includes(".measure-check-panel.has-errors"));
-assert(css.includes(".measure-check-recommendation"));
+assert(!css.includes(".measure-check-recommendation"));
 
 console.log("PASS: realtime editor checks measure syntax, beat consistency, accents, and no-beat measures");
