@@ -35,6 +35,29 @@ const parseResults = meters.map((text) => {
   const result = check.validate(source, { defaultMeter: text });
   assert.strictEqual(result.ok, true, `${text}の容量に一致する小節を処理する`);
   assert.strictEqual(result.rhythmMeasures[0].beats, parsed.capacity, `${text}の実測値を一致させる`);
+  for (const lyric of ["", "あいう"]) {
+    const rhythm = rhythmForCapacity(parsed.capacity);
+    for (const annotation of ["inline", "directive", "bracketed"]) {
+      const bars = annotation === "bracketed"
+        ? `[|][(${text})][C][${rhythm}]${lyric}[|][G][${rhythm}]${lyric}[|]`
+        : `${annotation === "directive" ? `{ci:${text}拍子}\n|` : `|(${text})`}[C]${rhythm}${lyric}|[G]${rhythm}${lyric}|`;
+      const checked = check.validate(bars);
+      assert.strictEqual(checked.ok, true, `${text} ${annotation} 歌詞${lyric ? "あり" : "なし"}の2小節が一致する`);
+      assert.deepStrictEqual(checked.rhythmMeasures.map((measure) => measure.meter?.text), [text, text], `${text}の拍子を後続小節に継承する`);
+    }
+    for (const delta of [-0.5, 0.5]) {
+      if (parsed.capacity + delta <= 0) continue;
+      const incorrect = `|(${text})[C]${rhythmForCapacity(parsed.capacity + delta)}${lyric}|`;
+      const checked = check.validate(incorrect);
+      assert.strictEqual(checked.beatIssues.length, 1, `${text} 歌詞${lyric ? "あり" : "なし"}の不足・超過を検出する`);
+      assert.strictEqual(checked.beatIssues[0].expectedBeats, parsed.capacity);
+      if (delta < 0) {
+        const suggestion = check.proposeBeatAdjustment(checked.beatIssues[0]);
+        assert(suggestion);
+        assert.strictEqual(check.validate(suggestion.after).ok, true, `${text}の不足修正案が小節を満たす`);
+      }
+    }
+  }
   return { text, parsed, inferred: check.inferredMeterForBeats(parsed.capacity) };
 });
 
@@ -88,6 +111,8 @@ console.log(JSON.stringify({
   meters: meters.length,
   parseAndCapacity: meters.length,
   directValidation: meters.length,
+  lyricAndInstrumentalMeters: meters.length,
+  annotationForms: ["inline", "directive", "bracketed"],
   inferredExact,
   inferredAsOtherNotation,
   inferredUnsupported,

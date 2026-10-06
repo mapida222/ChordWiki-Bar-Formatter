@@ -40,20 +40,11 @@
 .measure-check-code-line { min-height: 1.6em; margin: 0; padding: 4px 6px; overflow: auto; border: 1px solid var(--line); color: var(--text); background: var(--panel); font: .74rem/1.5 var(--mono); white-space: pre-wrap; word-break: break-word; }
 .measure-check-code-line mark { color: var(--danger); background: color-mix(in srgb, var(--danger) 20%, transparent); font-weight: 800; }
 .measure-check-visual-status { margin: 4px 0; color: var(--danger); font-weight: 800; }
-.measure-check-recommendation { display: grid; gap: 5px; padding: 7px 8px; border: 1px solid color-mix(in srgb, var(--accent) 60%, var(--line)); border-radius: 4px; background: color-mix(in srgb, var(--accent) 10%, var(--panel)); }
-.measure-check-recommendation[hidden] { display: none; }
-.measure-check-recommendation-title { font-weight: 800; }
-.measure-check-recommendation-copy { margin: 0; color: var(--muted); font-size: .74rem; }
-.measure-check-recommendation-summary { max-height: 180px; margin: 0; padding: 6px; overflow: auto; border: 1px solid var(--line); color: var(--text); background: var(--panel); font: .74rem/1.5 var(--mono); white-space: pre-wrap; word-break: break-word; }
-.measure-check-recommendation-comparison { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 6px; }
 .measure-check-proposal-column { min-width: 0; }
 .measure-check-proposal-lines { display: grid; gap: 3px; }
 .measure-check-proposal-line { min-height: 1.45em; margin: 0; padding: 3px 5px; overflow: auto; border: 1px solid var(--line); white-space: pre-wrap; word-break: break-word; }
 .measure-check-proposal-line-before mark { color: var(--danger); background: color-mix(in srgb, var(--danger) 20%, transparent); font-weight: 800; }
 .measure-check-proposal-line-after mark { color: var(--accent); background: color-mix(in srgb, var(--accent) 20%, transparent); font-weight: 800; }
-.measure-check-recommendation-actions { display: flex; flex-wrap: wrap; gap: 5px; }
-.measure-check-recommendation-actions button { min-height: 26px; padding: 3px 8px; border: 1px solid color-mix(in srgb, var(--accent) 55%, var(--line)); border-radius: 4px; color: var(--text); background: var(--panel); cursor: pointer; font-size: .67rem; font-weight: 800; }
-.measure-check-recommendation-actions button:hover, .measure-check-recommendation-actions button:focus-visible { border-color: var(--accent); outline: none; }
 .measure-check-meter { display: grid; gap: 5px; margin-top: 6px; padding: 7px 8px; border: 1px solid color-mix(in srgb, var(--accent) 60%, var(--line)); border-radius: 4px; background: color-mix(in srgb, var(--accent) 10%, var(--panel)); }
 .measure-check-meter[hidden] { display: none; }
 .measure-check-meter-title { font-weight: 800; }
