@@ -190,7 +190,7 @@ function formatHyphens(count, spacing) {
 
 function formatMeasure(measure) {
   const output = [];
-  const halfMeasure = measure.cells % 2 === 0 ? measure.cells / 2 : null;
+  const halfMeasure = measure.splitAtHalf !== false && measure.cells % 2 === 0 ? measure.cells / 2 : null;
   let position = 0;
   while (position < measure.cells) {
     let next = position + 1;
@@ -341,23 +341,64 @@ function headerMetadata(title, root, measures) {
   };
 }
 
-function formatHeader(metadata) {
+function formatBpm(bpm, tempoMode) {
+  const numericBpm = Number(bpm);
+  if (!Number.isFinite(numericBpm)) return bpm;
+  const multiplier = tempoMode === 'double' ? 2 : tempoMode === 'half' ? 0.5 : 1;
+  return String(numericBpm * multiplier);
+}
+
+function formatHeader(metadata, tempoMode = 'normal') {
+  const bpm = formatBpm(metadata.bpm, tempoMode);
   return [
     `{title:${metadata.songTitle}}`,
     `{subtitle:${metadata.artistName}}`,
-    `{c:BPM=${metadata.bpm}　　${metadata.timeSignature}拍子　-：8分音符　＝：16分音符　>：8分音符アクセント　≧：16分音符アクセント　○：白玉}`,
+    `{c:BPM=${bpm}　　${metadata.timeSignature}拍子　-：8分音符　＝：16分音符　>：8分音符アクセント　≧：16分音符アクセント　○：白玉}`,
   ];
 }
 
-function formatOutput(metadata, measures) {
-  const lines = formatHeader(metadata);
+function transformTempoMeasures(measures, tempoMode) {
+  if (tempoMode === 'double') {
+    return measures.flatMap((measure) => {
+      const expandedGrid = Array.from({ length: measure.cells * 2 }, () => EMPTY);
+      measure.grid.forEach((label, index) => {
+        if (label) expandedGrid[index * 2] = label;
+      });
+      const firstGrid = expandedGrid.slice(0, measure.cells);
+      const secondGrid = expandedGrid.slice(measure.cells);
+      const carry = [...firstGrid].reverse().find(Boolean) || EMPTY;
+      if (!secondGrid[0] && carry) secondGrid[0] = carry;
+      return [firstGrid, secondGrid].map((grid, index) => ({
+        ...measure,
+        number: `${measure.number}.${index + 1}`,
+        rehearsal: index === 0 ? measure.rehearsal : EMPTY,
+        cells: measure.cells,
+        grid,
+        breakBefore: index === 0 ? measure.breakBefore : false,
+      }));
+    });
+  }
+  if (tempoMode !== 'half') return measures;
+  return measures.map((measure) => {
+    const cells = Math.max(1, Math.ceil(measure.cells / 2));
+    const grid = Array.from({ length: cells }, () => EMPTY);
+    measure.grid.forEach((label, index) => {
+      if (label) grid[Math.min(cells - 1, Math.round(index / 2))] = label;
+    });
+    return { ...measure, cells, grid, splitAtHalf: false };
+  });
+}
+
+function formatOutput(metadata, measures, tempoMode = 'normal') {
+  const outputMeasures = transformTempoMeasures(measures, tempoMode);
+  const lines = formatHeader(metadata, tempoMode);
   let pendingMeasures = [];
   const flush = () => {
     if (!pendingMeasures.length) return;
     lines.push(...formatMeasureGroups(pendingMeasures));
     pendingMeasures = [];
   };
-  for (const measure of measures) {
+  for (const measure of outputMeasures) {
     if (measure.rehearsal) {
       if (pendingMeasures.length) {
         flush();
@@ -370,6 +411,10 @@ function formatOutput(metadata, measures) {
   }
   flush();
   return lines.join('\n');
+}
+
+export function formatMusicXmlOutput(result, tempoMode = 'normal') {
+  return formatOutput(result.metadata, result.measures, tempoMode);
 }
 function parsePart(part, partName = '') {
   const measures = [];
@@ -502,6 +547,7 @@ export function convertMusicXmlDocument(document) {
       ...(lyricCount ? [`歌詞は${lyricCount}件検出しましたが、ChordPro形式出力には含めていません。`] : []),
       ...(emptyMeasures ? [`コードがない小節が${emptyMeasures}件あります。`] : []),
     ],
+    metadata,
     chordWiki: outputText,
   };
 }
