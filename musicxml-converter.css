@@ -38,6 +38,7 @@
 .status.neutral{color:var(--muted);background:var(--panel)}
 .metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:0 4px;padding:4px 0}.metrics.has-lyrics{grid-template-columns:repeat(5,minmax(0,1fr))}
 .metrics div{display:grid;gap:3px}
+.tempo-controls{display:inline-flex;align-items:center;gap:5px;margin:0;color:var(--text);font-size:.68rem;font-weight:800;white-space:nowrap}.tempo-controls-label{display:inline-flex;align-items:center;min-height:32px}.tempo-controls-buttons{display:inline-flex;align-items:center}.tempo-controls button{min-height:32px;border:1px solid var(--line);color:var(--text);background:var(--panel);font-size:.68rem;font-weight:800;cursor:pointer}.tempo-controls button+button{border-left:0}.tempo-controls button:first-child{border-radius:4px 0 0 4px}.tempo-controls button:last-child{border-radius:0 4px 4px 0}.tempo-controls button[aria-pressed="true"]{color:var(--panel);background:var(--correction-line)}.tempo-controls button:disabled{color:var(--muted);cursor:not-allowed;opacity:.5}
 .metrics dt{color:var(--muted);font-size:.66rem}
 .metrics dd{margin:0;color:var(--text);font:800 1.02rem/1 var(--mono)}
 .warnings{min-height:0;padding:6px 4px 0;color:#8a570d;font-size:.7rem;line-height:1.45}
