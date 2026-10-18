@@ -59,6 +59,7 @@ assert.match(page, /preserveTranspose/, "restored results must distinguish saved
 assert.match(page, /ChordWikiTranspose\.transposeText/, "page output must apply the selected transpose");
 assert.match(page, /navigator\.clipboard\.writeText\(outputPreview\.value\)/, "copy must use the displayed abbreviation form");
 assert.match(converter, /export function applyChordWikiAbbreviations\(/, "converter must expose abbreviation transformation");
+assert(!converter.includes('`#${metadata.youtubeName}`'), "MusicXML output must not prepend the file name as a comment");
 assert.match(converter, /major:\s*'M'/, "major abbreviation defaults must use M");
 assert.match(converter, /halfDiminished:\s*'m7-5'/, "half-diminished abbreviation defaults must be defined");
 assert.match(converter, /qualityAndBass === 'M'|qualityAndBass\.startsWith\('M'\)/, "major M notation must preserve its extension when switching back");

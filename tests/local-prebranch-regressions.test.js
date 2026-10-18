@@ -29,6 +29,12 @@ assert.strictEqual(
 );
 
 assert.strictEqual(
+  CBFConverter.convertChordText("[C]く[|][G])あ", base, []).output,
+  "[|][C][----][----]く)[|][G][----]あ[----][|]",
+  "a closing mark must stay with the preceding lyric across an authored bar and chord"
+);
+
+assert.strictEqual(
   CBFCorrectionInput.normalizeLine("@8\\@8", 0),
   "@8|@8",
   "a backslash typed as a measure boundary must retain its parser meaning"

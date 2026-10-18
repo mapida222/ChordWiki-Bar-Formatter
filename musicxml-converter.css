@@ -1,14 +1,14 @@
 /* MusicXML画面は既存Formatterの白背景・緑アクセント・細い境界線に合わせる。 */
 .app-shell{width:100%;min-height:100vh}
-.converter-topbar{width:calc(100% - 28px);max-width:none;margin-inline:auto;padding:10px 5px;border-bottom:1px solid var(--line)}
+.converter-topbar{width:100%;max-width:none;box-sizing:border-box;margin-inline:auto;padding:10px 14px;border-bottom:1px solid var(--line)}
 .converter-back-link{display:inline-flex;align-items:center;min-height:28px;color:var(--text);font-size:.76rem;font-weight:800;text-decoration:none}.converter-back-link::before{content:"←";margin-right:.45em;color:var(--accent)}.converter-back-link:hover,.converter-back-link:focus-visible{color:var(--accent);text-decoration:underline;text-underline-offset:3px}
-.converter-heading{width:calc(100% - 28px);margin:16px auto 10px;padding:0 5px;align-items:end}
+.converter-heading{width:100%;box-sizing:border-box;margin:16px auto 10px;padding:0 14px;align-items:end}
 .converter-heading h2{font-size:1.2rem}
 .converter-heading .section-kicker{margin-bottom:5px}
 .converter-heading .section-kicker span{color:var(--muted);font:700 .62em/1 var(--mono);letter-spacing:.1em}
 .converter-lead{margin:4px 0 0;color:var(--muted);font-size:.75rem}
 .converter-heading>.help-open-button{flex:0 0 auto}
-.converter-grid{width:calc(100% - 28px);margin:0 auto 28px;display:grid;grid-template-columns:minmax(0,1.35fr) minmax(250px,.65fr);gap:10px;align-items:stretch}
+.converter-grid{width:100%;box-sizing:border-box;min-height:calc(100vh - 210px);margin:0 auto 28px;padding:0 14px;display:grid;grid-template-columns:minmax(0,1.35fr) minmax(250px,.65fr);grid-template-rows:auto minmax(280px,1fr) auto;gap:10px;align-items:stretch}
 .converter-card{min-width:0;padding:9px 10px;border:1px solid var(--line);border-radius:5px;background:var(--panel)}
 .converter-card .editor-heading{min-height:34px;padding:0 5px}
 .converter-card .compact-editor-title{font-size:1.05rem}
@@ -61,6 +61,7 @@
 .output-color-setting input{margin:0;accent-color:var(--result-line)}
 .output-card .editor-tools,.output-card .editor-tools button{cursor:auto}.help-open-button:disabled{cursor:not-allowed;opacity:.45}
 @media(max-width:800px){.converter-grid{grid-template-columns:1fr}.output-card{grid-column:auto}.report-card{order:3}.output-card{order:4}.metrics,.metrics.has-lyrics{grid-template-columns:repeat(2,minmax(0,1fr))}.output-card .editor-heading{flex-wrap:wrap}.musicxml-transpose-control{order:3}.abbreviation-controls{order:4;flex-basis:100%;justify-content:flex-start;padding-inline:0}}
+@media(min-width:801px){.converter-grid>.output-card{align-self:stretch}}
 @media(max-width:600px){.converter-related-links{grid-template-columns:1fr}.converter-heading{align-items:start;gap:8px}.converter-heading .help-open-button{padding-inline:8px}.drop-zone>span:not(.upload-icon),.drop-zone small{display:none}}
 .flow-number{display:grid;flex:0 0 auto;width:22px;height:22px;place-items:center;border:1px solid var(--line-strong);border-radius:50%;font:800 .68rem/1 var(--mono)}
 

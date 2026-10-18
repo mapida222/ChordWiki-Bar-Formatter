@@ -60,5 +60,63 @@ assert.strictEqual(
   "[|][C][---=][G][=] [----][|][----] [----][|]",
   "manual syncopation does not carry its prior chord into a chordless measure"
 );
+assert.strictEqual(
+  convert("|[C]---- ----|[G][-]あ[|][---]いう|", true),
+  "[|][C][----][----][|][G][-]あ[|][C][---]いう[|]",
+  "a pickup chord must not become the carried chord for the following chordless measure"
+);
+
+const sixEight = { ...base, hyphenUnit: 3, measureCapacity: 6, hyphenSpacing: 3 };
+assert.strictEqual(
+  CBFConverter.convertChordText("[C]あいう|えお", { ...sixEight, showContinuationChord: 1 }, []).output,
+  "[|][C][---][---]あいう[|][C][---][---]えお　[|]",
+  "an authored bar in a 6/8 lyric line must show the carried chord"
+);
+assert.strictEqual(
+  CBFConverter.renderWithBeatCode("[C]あいう|えお", "c", { ...sixEight, showContinuationChord: 1 }, "[C]あいう|えお").body,
+  "[|][C][---][---]あいう[|][C][---][---]えお[|]",
+  "a 12-beat omitted duration encoded as c must respect the authored 6/8 bar"
+);
+assert.strictEqual(
+  CBFConverter.renderWithBeatCode("[C]あいう|えお", "12", { ...sixEight, showContinuationChord: 1 }, "[C]あいう|えお").body,
+  "[|][C][---][---]あいう[|][C][---][---]えお[|]",
+  "a 12-beat omitted duration written as 12 must respect the authored 6/8 bar"
+);
+assert.strictEqual(
+  CBFConverter.convertChordText("[|][G#7]星が[|]　ない[|][C#m]夜は　[|]    [|]", { ...sixEight, showContinuationChord: 1 }, []).output,
+  "[|][G#7][---][---]星が[|][G#7][---][---]　ない[|][C#m][---][---]夜は　[|][C#m][---][---]    [|]",
+  "an authored whitespace-only 6/8 measure must also show the carried chord"
+);
+const splitTwelveSource = "[|][C#m]痛み[|]　止めじゃ[|][A]なくて[|]　[|]";
+assert.strictEqual(
+  CBFConverter.convertChordText(splitTwelveSource, { ...sixEight, showContinuationChord: 1 }, ["66"]).output,
+  "[|][C#m][---][---]痛み[|][C#m][---][---]　止めじゃ[|][A][---][---]なくて[|][A][---][---]　[|]",
+  "a 12-beat span corrected to 6+6 must keep authored bars and carry each chord"
+);
+assert.strictEqual(
+  CBFConverter.renderCompletedOutput(
+    CBFConverter.convertChordText(splitTwelveSource, { ...sixEight, showContinuationChord: 1 }, ["66"]).output,
+    [3, 6, 12],
+    3
+  ).output,
+  "[|][C#m]痛み[|][C#m]　止めじゃ[|][A]なくて[|][A][---][---]　[|]",
+  "3,6,12 omission must retain the carried chord after splitting a 12-beat span"
+);
+const splitTwelveManualSource = "[|][C#m][---][---]痛み[|]止めじゃ[|][A][---][---]なくて[|]　[|]";
+assert.strictEqual(
+  CBFConverter.convertChordText(splitTwelveManualSource, { ...sixEight, showContinuationChord: 1 }, ["66"]).output,
+  "[|][C#m][---][---]痛み[|][C#m][---][---]止めじゃ[|][A][---][---]なくて[|][A][---][---]　[|]",
+  "a manually rhythmed 12-beat span split by authored bars must fill both 6/8 measures"
+);
+assert.strictEqual(
+  CBFConverter.convertChordText("[|][F#m]大国道[|][F#m][---][---]　[|]", { ...sixEight, showContinuationChord: 1 }, []).output,
+  "[|][F#m]大国道　[|][F#m][---][---][|]",
+  "a lyric-free trailing 6/8 measure must not retain its padding space"
+);
+assert.strictEqual(
+  CBFConverter.convertChordText("[|][G#7]儚(はか[|][G#7]な)い[|][C#m]けれど、[|][C#m][---][---]　[|]", { ...sixEight, showContinuationChord: 1 }, []).output,
+  "[|][G#7]儚(はか[|][G#7]な)い[|][C#m]けれど、　[|][C#m][---][---][|]",
+  "a trailing code-only 6/8 measure moves its padding space to the preceding lyric measure"
+);
 
 console.log("PASS: continuation setting respects direct edits, row corrections, manual rhythm, N.C. and double bars");

@@ -8,6 +8,7 @@ const root = path.join(__dirname, "..");
 const html = fs.readFileSync(path.join(root, "index.html"), "utf8");
 const css = fs.readFileSync(path.join(root, "style.css"), "utf8");
 const app = fs.readFileSync(path.join(root, "js", "app.js"), "utf8");
+const entry = fs.readFileSync(path.join(root, "js", "entries", "main.js"), "utf8");
 
 assert(html.includes('<span>小節線[|]にカッコをつけない</span>'));
 assert.strictEqual((html.match(/id="added-background"/g) || []).length, 1);
@@ -55,6 +56,12 @@ assert(css.includes(".correction-history-actions .context-help-button { flex: 0 
 assert(css.includes(".app-header { flex-direction: column; align-items: stretch; gap: 10px; padding-block: 14px 12px; }"), "narrow headers must stack the logo block above the action groups");
 assert(css.includes(".header-realtime-row { display: flex; flex-wrap: wrap; justify-content: flex-end; }") && css.includes(".header-realtime-row .header-notice { flex: 0 1 auto; width: max-content; max-width: min(100%, 280px); min-width: 0; }"), "narrow headers must keep update history compact and right-aligned beside the realtime editor");
 assert(css.includes(".app-header .header-secondary-actions { flex-wrap: wrap; justify-content: flex-start; }"), "narrow headers must wrap history and utility actions below the realtime row");
+assert(css.includes("@media (max-width: 520px)") && css.includes(".app-header, main { width: calc(100% - 18px);"), "phone layout must keep usable side margins without shrinking the whole app into a tiny column");
+assert(css.includes(".app-logo { width: min(420px, 48vw);"), "the logo must retain a readable phone-sized width");
+assert(css.includes(".app-header .eyebrow { font-size: .84rem; line-height: 1.35;"), "the narrowest header must keep its subtitle readable");
+assert(css.includes(".editor-heading { align-items: flex-start;"), "narrow editor headings must align wrapped controls from the top");
+assert(css.includes(".editor-tools { flex-wrap: wrap;"), "narrow editor actions must wrap instead of compressing their labels");
+assert(css.includes(".editor-shell textarea, .editor-shell .editor-highlight { font-size: 14px; line-height: 1.55;"), "phone editors must preserve a readable text size");
 assert(html.includes('class="column-resize-edge guide-column-resize-edge"'));
 assert(!html.includes('data-panel="guide"'));
 assert(css.includes(".correction-input-guide { position: relative; min-width: 0; min-height: 72px; height: auto;"));
@@ -132,6 +139,9 @@ assert(html.includes('<summary class="header-notice-summary">'));
 assert(html.includes('<span class="header-notice-label">更新履歴</span>'));
 assert(html.includes('class="header-notice-latest"'));
 assert(html.includes('class="header-notice-history" aria-label="更新履歴"'));
+assert(html.includes('id="header-notice-more" class="header-notice-more" type="button" hidden>過去の更新履歴をさらに表示</button>'));
+assert(html.includes('datetime="2026-08-02"') && html.includes('v1.0.0を公開'), "update history must reach the first public release");
+assert(entry.includes('import "../update-history.js";'), "update history must progressively reveal older entries");
 assert(html.includes('datetime="2026-09-30">2026/09/30</time>'));
 assert(html.includes('class="header-notice-category">[MusicXML]</span>'));
 assert(html.includes('MusicXML変換ページを新設'));
@@ -159,6 +169,7 @@ assert(css.includes(".header-notice-category { display: inline-block; flex: 0 0 
 assert(css.includes(".header-notice-history p { display: grid; grid-template-columns: max-content max-content minmax(0, 1fr);"));
 assert(css.includes(".header-notice[open] .header-notice-caret"));
 assert(css.includes(".header-notice-history { position: absolute; z-index: 80;"), "the open history should overlay the lower header actions");
+assert(css.includes(".header-notice-more"), "older update history must have a compact load-more control");
 assert(css.includes("max-height: 168px;") && css.includes("overflow-y: auto;"), "long update histories should scroll within the open panel");
 assert(css.includes("@media (max-width: 699px)") && css.includes(".header-notice { width: max-content; max-width: 100%; }") && css.includes(".header-notice-summary { grid-template-columns: max-content max-content; }") && css.includes(".header-notice-latest { display: none; }"), "the settings mobile breakpoint should show only the compact two-column update-history trigger");
 assert(!css.includes("  .header-realtime-row { grid-template-columns: 1fr; }"), "the compact trigger should keep the realtime editor beside it instead of creating a third header row");
