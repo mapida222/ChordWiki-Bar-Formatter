@@ -335,7 +335,7 @@ function headerMetadata(title, root, measures) {
   return {
     youtubeName,
     songTitle: titleParts?.[2]?.trim() || coreTitle || '曲タイトルっぽいやつ',
-    artistName: titleParts?.[1]?.trim() || 'ここにアーティストっぽいやつ',
+    artistName: titleParts?.[1]?.trim() || '歌：　作詞：　作曲：　編曲：',
     bpm: tempoOf(root) || 'ここにBPMわかってれば',
     timeSignature: measures.find((measure) => measure.time)?.time || '4/4',
   };
@@ -343,7 +343,6 @@ function headerMetadata(title, root, measures) {
 
 function formatHeader(metadata) {
   return [
-    `#${metadata.youtubeName}`,
     `{title:${metadata.songTitle}}`,
     `{subtitle:${metadata.artistName}}`,
     `{c:BPM=${metadata.bpm}　　${metadata.timeSignature}拍子　-：8分音符　＝：16分音符　>：8分音符アクセント　≧：16分音符アクセント　○：白玉}`,

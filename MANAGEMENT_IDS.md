@@ -54,6 +54,7 @@
 | `ROW-038` | 小節頭記号として入力したバックスラッシュを`|`へ正規化し、`@8\@8`等の明示値を無効化しない | 有効 | `js/app.js`、`js/correction-input.js`、`tests/local-prebranch-regressions.test.js` |
 | `ROW-039` | 長い白玉が小節をまたぐ場合、コード継続設定とは独立して各小節へ白玉を継続表示 | 有効 | `js/converter.js`、`tests/white-note-regression-matrix.test.js`、`tests/local-prebranch-regressions.test.js` |
 | `ROW-040` | 端数拍・シンコペーションで前置きする歌詞に連続する閉じ括弧を追従 | 有効 | `js/converter.js`、`tests/local-prebranch-regressions.test.js` |
+| `ROW-041` | 奇数の行修正値（例：`97`、`4534`）が小節またぎの前半ハイフン省略で偶数・ハイフンなしに見えないよう保持 | 有効 | `js/converter.js`、`tests/single-character-hyphen-removal.test.js` |
 | `CONVERT-001` | 歌詞行のハイフン省略モード | 有効 | `index.html`、`js/app.js`、`js/converter.js` |
 | `CONVERT-002` | 1小節3コード以上でタイミング用ハイフンを保持 | 有効 | `js/converter.js` |
 | `CONVERT-003` | コード・拍記号・小節線だけの行を歌詞と誤認しない | 有効 | `js/converter.js`、`tests/conversion-bug-regressions.test.js` |
@@ -79,6 +80,11 @@
 | `CONVERT-016` | 変換前行の文頭・文末空白を変換後も保持 | 有効 | `js/converter.js`、`tests/converter.test.js` |
 | `CONVERT-017` | 1文字歌詞を含む手動リズム小節は、ハイフンを歌詞の前後へ分けて連続表示 | 有効 | `js/converter.js`、`tests/converter.test.js` |
 | `CONVERT-018` | 譜面全体の貼り替えで曲が変わったとき旧譜面の手修正を引き継がず、変換前の先頭・末尾を含む空白行を保持 | 有効 | `js/app.js`、`js/converter.js` |
+| `CONVERT-019` | 歌詞に続く閉じ括弧・句読点を小節線・コード・ハイフンの後ろへ取り残さず、直前の歌詞へ保持 | 有効 | `js/converter.js`、`tests/local-prebranch-regressions.test.js`、`tests/fixtures/v45-regressions.json` |
+| `CONVERT-020` | 奇数の行修正値で、ハイフン間の半角空白を小節内の絶対位置（8/16と9/16の境界）へ配置 | 有効 | `js/converter.js`、`tests/converter.test.js` |
+| `CONVERT-021` | コード継続表示がアウフタクト内の次コードを、後続のコードなし小節へ引き継がない | 有効 | `js/converter.js`、`tests/continuation-priority.test.js` |
+| `CONVERT-022` | 6/8では1小節を6拍として扱い、追加小節線後のコードなし歌詞・空白小節へ前コードを継承する。`12`／`c`は12拍、行修正`66`は6拍＋6拍へ分割し、省略値`3,6,12`は小節構造とコード位置を変えず表示上のハイフンだけを省略する。歌詞を含まない末尾のコード専用小節では歌詞由来の末尾空白を直前の歌詞小節へ移動する。`[---]`／`---`、`[|]`／`|`等の表記正規化は対象外 | 有効 | `js/converter.js`、`tests/continuation-priority.test.js` |
+| `CONVERT-023` | `[---]`／`---`、`[|]`／`|`、コード専用小節の入力表記をどの文字列表現へ統一するかの出力正規化 | 未着手 | 別仕様として設計・回帰影響を確認してから着手 |
 | `WARNING-001` | 歌詞が90%以上変わった時に限り、部分入力も含む変換前譜面の拍子・小節ハイフン数を初期設定と比較し、標準空白を案内 | 有効 | `js/app.js`、`js/converter.js`、`tests/measure-capacity-warning.test.js` |
 | `LAYOUT-001` | 行修正枠と変換後枠の入力欄上端を揃える | 有効 | `style.css`、`js/app.js` |
 | `LAYOUT-002` | 確定譜面テキスト枠の右下リサイズとサイズ保存 | 有効 | `index.html`、`style.css`、`js/app.js`、`tests/committed-resize.test.js` |
@@ -114,6 +120,8 @@
 | `LAYOUT-032` | 編集枠の端2行をクリックしても位置を保ち、矢印キー操作時は上下左右へ滑らかに追従（縦方向は最大2行ずつ） | 有効 | `js/app.js`、`tests/scroll-sync-progress.test.js` |
 | `LAYOUT-033` | 更新履歴を開いた後、履歴の外側をクリックすると閉じる | 有効 | `js/app.js`、`tests/header-controls.test.js` |
 | `LAYOUT-034` | 横スクロールはカーソルを幅40〜60%に保ち、画面幅の1/6ずつ140msのイーズアウトで移動 | 有効 | `js/app.js`、`tests/scroll-sync-progress.test.js` |
+| `LAYOUT-035` | 更新履歴を5件ずつ段階表示し、ボタン操作で最古の履歴まで表示 | 有効 | `index.html`、`style.css`、`js/entries/main.js`、`js/update-history.js`、`tests/header-controls.test.js` |
+| `LAYOUT-036` | 390px以下でもヘッダー・編集見出し・テキスト枠の文字を読みやすく保ち、操作群を潰さず折り返す | 有効 | `index.html`、`style.css`、`tests/header-controls.test.js` |
 | `PREVIEW-001` | 譜面プレビューのベスト条件 | 基準 | `LAYOUT_REFERENCE.md`、`layout-snapshots/2026-07-22-good/`、Gitタグ `preview-layout-best-2026-07-22` |
 | `PREVIEW-002` | 拍記号に挟まれた縦小節線が直後の拍記号と重ならないよう補正 | 有効 | `js/chordwiki-preview.js`、`style.css`、`tests/preview-layout.test.js` |
 | `PREVIEW-003` | 譜面プレビューの移調では`{key:...}`だけを移調し、`{ci:...}`・`{title:...}`・`{subtitle:...}`などコメント系ディレクティブ内部のコード風文字列は保持 | 有効 | `js/transposer.js`、`tests/transposer.test.js` |

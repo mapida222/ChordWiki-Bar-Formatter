@@ -136,10 +136,10 @@
                                 "output":  "[|][A][---]x[D][-][----]2026 love[|]"
                             },
                             {
-                                "name":  "short fraction does not move leading punctuation",
+                                "name":  "short fraction moves leading punctuation before a chord",
                                 "input":  "[A]x[D])love",
                                 "code":  "35",
-                                "output":  "[|][A][---]x[D][-][----])love[|]"
+                                "output":  "[|][A][---]x)[D][-]love[----][|]"
                             },
                             {
                                 "name":  "Japanese short fraction prepose off keeps lyric after completion",

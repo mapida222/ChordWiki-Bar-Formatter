@@ -252,6 +252,15 @@
       && spans.filter((span) => isCodeOnlyMeasure(span.tokens)).length >= 2;
   }
 
+  function trimMeasureTrailingWhitespace(tokens) {
+    const trimmed = [...tokens];
+    let trailing = "";
+    while (trimmed.at(-1)?.kind === "text" && /^[ \t　]+$/u.test(trimmed.at(-1).value)) {
+      trailing = trimmed.pop().value + trailing;
+    }
+    return { tokens: trimmed, trailing };
+  }
+
   function serializeMixedMeasureTokens(tokens, settings) {
     const { spans, bars } = splitMeasureSpans(tokens);
     const codeOnly = spans.map((span) => isCodeOnlyMeasure(span.tokens));
@@ -286,6 +295,32 @@
       if (index < bars.length) output.push(codeOnly[index] ? "|" : "[|]");
     });
     return output.join("");
+  }
+
+  function moveCodeOnlyTrailingWhitespace(text, settings) {
+    if (!String(text || "").includes("[|]")) return text;
+    if (/\(\s*\d+\s*\/|\[○\]/u.test(String(text || ""))) return text;
+    const parts = String(text || "").split(/(\[\|\]|\|)/u);
+    const spans = [];
+    const bars = [];
+    parts.forEach((part) => (part === "[|]" || part === "|") ? bars.push(part) : spans.push(part));
+    const isCodeOnlyText = (value) => {
+      const withoutChords = value.replace(/\[[^\[\]]+\]/gu, "");
+      return /\[[^\[\]]+\]/u.test(value) && !/[^\- \t　]/u.test(withoutChords);
+    };
+    const hasLyricText = spans.some((value) => {
+      const spanTokens = parseTokens(value);
+      return hasChords(spanTokens) && hasMeaningfulMeasureLyricText(spanTokens);
+    });
+    if (!hasLyricText || !spans.some(isCodeOnlyText)) return text;
+    for (let index = 1; index < spans.length; index += 1) {
+      if (!isCodeOnlyText(spans[index])) continue;
+      const trailing = spans[index].match(/[ \t　]+$/u)?.[0] || "";
+      if (!trailing) continue;
+      spans[index] = spans[index].slice(0, -trailing.length);
+      if (!isCodeOnlyText(spans[index - 1])) spans[index - 1] += "　";
+    }
+    return spans.reduce((output, span, index) => output + span + (bars[index] || ""), "");
   }
   function normalizeSingleLyricRhythmSpacing(tokens) {
     const { spans, bars } = splitMeasureSpans(tokens);
@@ -606,13 +641,13 @@
       const trailingSymbols = leadingTrailingSymbols(token.value);
       if (!trailingSymbols) continue;
       let cursor = index - 1;
-      let crossedRhythm = false;
-      while (cursor >= 0 && output[cursor].kind === "hyphen") {
-        crossedRhythm = true;
+      let crossedMusic = false;
+      while (cursor >= 0 && ["hyphen", "chord", "bar"].includes(output[cursor].kind)) {
+        crossedMusic = true;
         cursor -= 1;
       }
-      if (!crossedRhythm || output[cursor]?.kind !== "bar") continue;
-      const previousLyric = output[cursor - 1];
+      if (!crossedMusic) continue;
+      const previousLyric = output[cursor];
       if (previousLyric?.kind !== "text" || !previousLyric.value) continue;
       previousLyric.value += trailingSymbols;
       token.value = token.value.slice(trailingSymbols.length);
@@ -922,6 +957,66 @@
     const forcedBarBeforeSlot = anchor?.forcedBarBeforeSlot ?? -1;
     const effectiveCode = anchor?.fullCode || code;
     const parsedSourceTokens = parseTokens(body);
+    const authoredTokens = parseTokens(authoredBody);
+    const authoredBarSource = authoredTokens.some((token) => token.kind === "bar");
+    const authoredSegments = [];
+    if (authoredBarSource && !authoredTokens.some((token) => token.kind === "hyphen")) {
+      let segment = [];
+      authoredTokens.forEach((token) => {
+        if (token.kind === "bar") {
+          authoredSegments.push(segment);
+          segment = [];
+        } else segment.push(token);
+      });
+      authoredSegments.push(segment);
+    }
+    const authoredChord = authoredSegments[0]?.find((token) => token.kind === "chord")?.value || "";
+    const authoredContinuationWidth = String(code || "").trim().toLowerCase() === "c"
+      || String(code || "").trim() === "12" ? 12 : 0;
+    const correctionUnits = beatCodeUnits(String(code || ""));
+    const boundarySegments = authoredSegments.length >= 2
+      && !authoredSegments[0].some((token) => token.kind === "chord" || token.kind === "text")
+      && !authoredSegments[authoredSegments.length - 1].some((token) => token.kind === "chord" || token.kind === "text")
+      ? authoredSegments.slice(1, -1)
+      : authoredSegments;
+    const boundaryChordIndexes = boundarySegments.map((parts) => parts.findIndex((token) => token.kind === "chord"));
+    const authoredSplitContinuation = boundarySegments.length > 0
+      && correctionUnits?.length === boundaryChordIndexes.filter((index) => index >= 0).length
+      && correctionUnits.length * 2 === boundarySegments.length
+      && correctionUnits.every((unit) => unit.width === Number(settings.measureCapacity))
+      && boundaryChordIndexes.every((index, segmentIndex) => index >= 0 ? segmentIndex % 2 === 0 : true)
+      && boundaryChordIndexes.filter((index) => index >= 0).every((_index, chordIndex) => chordIndex * 2 < boundarySegments.length);
+    if (authoredSplitContinuation && settings.showContinuationChord) {
+      const marker = visibleBeatMarker({ width: settings.measureCapacity, halfNote: false, accents: 0, suffixStar: false }, settings, false);
+      const carried = ["[|]"];
+      let currentChord = "";
+      boundarySegments.forEach((parts, segmentIndex) => {
+        const authoredIndex = parts.findIndex((token) => token.kind === "chord");
+        if (authoredIndex >= 0) currentChord = parts[authoredIndex].value;
+        const text = parts.filter((token) => token.kind === "text").map((token) => token.value).join("");
+        if (segmentIndex > 0) carried.push("[|]");
+        if (currentChord) carried.push(`[${currentChord}]`);
+        carried.push(marker, text);
+      });
+      carried.push("[|]");
+      return { ok: true, body: carried.join("") };
+    }
+    const authoredContinuationSegments = authoredSegments.length > 1
+      && authoredChord
+      && authoredContinuationWidth >= (Number(settings.measureCapacity) || 1) * authoredSegments.length
+      && authoredSegments.every((parts, index) => index === 0
+        ? parts.some((token) => token.kind === "chord")
+        : !parts.some((token) => token.kind === "chord"));
+    if (authoredContinuationSegments && settings.showContinuationChord) {
+      const marker = visibleBeatMarker({ width: settings.measureCapacity, halfNote: false, accents: 0, suffixStar: false }, settings, false);
+      const carried = ["[|]"];
+      authoredSegments.forEach((parts, index) => {
+        if (index > 0) carried.push("[|]");
+        carried.push(`[${authoredChord}]`, marker, parts.filter((token) => token.kind === "text").map((token) => token.value).join(""));
+      });
+      carried.push("[|]");
+      return { ok: true, body: carried.join("") };
+    }
     const protectedRhythms = [];
     parsedSourceTokens.forEach((token, index) => {
       if (token.kind !== "chord") return;
@@ -929,7 +1024,6 @@
       const end = nextChord < 0 ? parsedSourceTokens.length : nextChord;
       protectedRhythms.push(parsedSourceTokens.slice(index + 1, end).filter((following) => following.kind === "hyphen").map((following) => following.value));
     });
-    const authoredTokens = parseTokens(authoredBody);
     const authoredFollowingLyrics = [];
     authoredTokens.forEach((token, index) => {
       if (token.kind !== "chord") return;
@@ -962,7 +1056,6 @@
     });
 
     const syncopated = units.some((unit) => unit.syncBefore || unit.syncAfter);
-    const authoredBarSource = parseTokens(authoredBody).some((token) => token.kind === "bar");
     const useLocalSyncopation = syncopated && (authoredBarSource || units.some((unit) => unit.halfNote));
     const capacity = settings.measureCapacity * (syncopated ? 2 : 1);
     const parts = [];
@@ -1277,10 +1370,23 @@
     let open = false;
     const counts = [];
     let currentChords = 0;
-    for (const token of tokens) {
+    for (let tokenIndex = 0; tokenIndex < tokens.length; tokenIndex += 1) {
+      const token = tokens[tokenIndex];
       if (token.kind === "bar") {
+        const previousChord = [...measure].reverse().find((part) => part.kind === "chord")?.value || "";
         if (open) { output.push(...closeLyricMeasure(measure, used, settings, false)); counts.push(currentChords); measure = []; used = 0; currentChords = 0; open = false; }
         else output.push({ kind: "bar", value: "|" });
+        let hasNextMeasureText = false;
+        for (let nextIndex = tokenIndex + 1; nextIndex < tokens.length && tokens[nextIndex].kind !== "bar"; nextIndex += 1) {
+          if (tokens[nextIndex].kind === "chord") break;
+          if (tokens[nextIndex].kind === "text") hasNextMeasureText = true;
+        }
+        if (settings.showContinuationChord && previousChord && hasNextMeasureText) {
+          measure = [{ kind: "chord", value: previousChord }];
+          used = unit;
+          currentChords = 1;
+          open = true;
+        }
         continue;
       }
       if (token.kind !== "chord") { (open ? measure : output).push(token); continue; }
@@ -1299,7 +1405,7 @@
       counts.push(currentChords);
     }
     let body = serializeTokens(output, settings);
-    if (!body.includes("[----]")) body = body.replace(/([^\]\s　])(\[\|\])$/, "$1　$2");
+    if (!body.includes("[----]") && measure.some((token) => token.kind === "text" && token.value.trim())) body = body.replace(/([^\]\s　])(\[\|\])$/, "$1　$2");
     return { body, beatCode: compactBeatCode(counts, unit, settings.measureCapacity), target: true };
   }
 
@@ -1488,26 +1594,49 @@
     const output = [];
     let measure = [];
     let continuationChord = "";
-    function flushMeasure(bar = null) {
+    let previousMeasureWidth = 0;
+    function flushMeasure(bar = null, hasFollowingMeasure = false) {
       const authoredChords = measure.filter((token) => token.kind === "chord");
       const hasRhythm = measure.some((token) => token.kind === "hyphen" && rhythmWidth(token) > 0);
       const hasSyncopation = measure.some((token) => token.kind === "hyphen" && /[=≧]/u.test(token.value));
+      const measureWidth = measure.reduce((sum, token) => sum + (token.kind === "hyphen" ? rhythmWidth(token) : 0), 0);
+      const hasAuthoredText = measure.some((token) => token.kind === "text" && token.value.length > 0);
+      const isPickupMeasure = hasFollowingMeasure
+        && previousMeasureWidth >= settings.measureCapacity
+        && measureWidth > 0
+        && measureWidth < settings.measureCapacity;
       if (!authoredChords.length && hasRhythm && !hasSyncopation && continuationChord) {
         const rhythmIndex = measure.findIndex((token) => token.kind === "hyphen");
         measure.splice(rhythmIndex < 0 ? 0 : rhythmIndex, 0, { kind: "chord", value: continuationChord });
+      } else if (!authoredChords.length && !hasRhythm && !hasSyncopation && hasAuthoredText
+        && settings.showContinuationChord && continuationChord && !isPickupMeasure) {
+        const markerTokens = parseTokens(visibleBeatMarker({
+          width: settings.measureCapacity,
+          halfNote: false,
+          accents: 0,
+          suffixStar: false
+        }, settings, false));
+        measure.unshift(...markerTokens);
+        measure.unshift({ kind: "chord", value: continuationChord });
       }
       output.push(...measure);
       if (hasSyncopation) {
         continuationChord = "";
-      } else if (authoredChords.length) {
+      } else if (authoredChords.length && !isPickupMeasure) {
         const lastChord = authoredChords[authoredChords.length - 1].value;
         continuationChord = isNoChordSymbol(lastChord) ? "" : lastChord;
       }
+      previousMeasureWidth = measureWidth;
       if (bar) output.push(bar);
       measure = [];
     }
-    tokens.forEach((token) => {
-      if (token.kind === "bar") flushMeasure(token);
+    tokens.forEach((token, tokenIndex) => {
+      if (token.kind === "bar") {
+        const hasFollowingMeasure = tokens.slice(tokenIndex + 1).some((following) =>
+          following.kind === "chord" || following.kind === "hyphen" || (following.kind === "text" && following.value === "[○]")
+        );
+        flushMeasure(token, hasFollowingMeasure);
+      }
       else measure.push(token);
     });
     flushMeasure();
@@ -1521,14 +1650,15 @@
     const musicTokens = annotation?.musicTokens || tokens;
     const manualRhythm = hasHyphens(musicTokens);
     const inlineArrangementNotation = hasInlineArrangementNotation(musicTokens);
-    const normalizedMusicTokens = normalizeStandaloneWaveMarkers(normalizeArrangementAnnotationTokens(musicTokens));
+    const normalizedMusicTokens = attachLeadingTrailingSymbolsAcrossBar(
+      normalizeStandaloneWaveMarkers(normalizeArrangementAnnotationTokens(musicTokens))
+    );
     const authoredParenthesizedNote = musicTokens.some((token) => token.kind === "text" && /[（(](?!\s*\d+\s*[\/／])[^（）()\r\n]*[）)]/u.test(token.value));
     const authoredRhythmicAnnotation = musicTokens.some((token) => token.kind === "text" && /[（(]\s*rit\b[^（）()\r\n]*[）)]/iu.test(token.value));
     const compactRhythmicAnnotationSource = authoredRhythmicAnnotation && manualRhythm && musicTokens.some((token) => token.kind === "bar");
-    // Only retain raw mixed spans when the author explicitly starts the line
-    // with a bar.  Ordinary lyric lines that merely continue into code-only
-    // measures still use the established mixed-measure conversion.
-    const mixedAuthoredSource = manualRhythm && musicTokens[0]?.kind === "bar" && hasMixedLyricAndCodeOnlyMeasures(musicTokens);
+    const mixedAuthoredSource = manualRhythm
+      && hasMixedLyricAndCodeOnlyMeasures(musicTokens)
+      && (musicTokens[0]?.kind === "bar" || Number(settings.measureCapacity) === 6);
     const authoredParenthesizedSource = authoredParenthesizedNote && musicTokens.some((token) => token.kind === "bar");
     const otherCompactSource = manualRhythm && (
       annotation?.preserveCompact
@@ -1542,16 +1672,20 @@
     const result = manualRhythm
       ? formatManualRhythm(moveDelayedRhythmAfterChord(normalizedMusicTokens, settings.measureCapacity), settings)
       : isCodeOnly(normalizedMusicTokens) ? formatChordOnly(normalizedMusicTokens, settings) : formatLyric(normalizedMusicTokens, settings);
-    const rawBody = preserveCompactSource
+    const rawBody = mixedAuthoredSource
+      ? serializeMixedAuthoredSource(musicTokens, settings)
+      : preserveCompactSource
       ? compactRhythmicAnnotationSource || escapedArrangementAnnotation
         ? serializeCodeOnlyTokens(normalizedMusicTokens, settings.hyphenSpacing)
         : line
-      : mixedAuthoredSource
-        ? serializeMixedAuthoredSource(musicTokens, settings)
       : suppressTrailingBarAfterParenthesizedFinalChord(result.body) + (annotation?.suffix || "");
     const leadingWhitespace = line.match(/^[ \t　]*/u)?.[0] || "";
     const trailingWhitespace = line.match(/[ \t　]*$/u)?.[0] || "";
-    const body = `${rawBody.startsWith(leadingWhitespace) ? "" : leadingWhitespace}${rawBody}${rawBody.endsWith(trailingWhitespace) ? "" : trailingWhitespace}`;
+    const simpleManualRhythm = manualRhythm
+      && !/[=>≧^*]/u.test(rawBody)
+      && !musicTokens.some((token) => token.kind === "hyphen" && /[^-]/u.test(token.value));
+    const normalizedBody = simpleManualRhythm ? moveCodeOnlyTrailingWhitespace(rawBody, settings) : rawBody;
+    const body = `${normalizedBody.startsWith(leadingWhitespace) ? "" : leadingWhitespace}${normalizedBody}${normalizedBody.endsWith(trailingWhitespace) ? "" : trailingWhitespace}`;
     return { ...result, body, preserveCompactSource, mixedMeasures: mixedAuthoredSource ? false : result.mixedMeasures };
   }
   function suppressTrailingBarAfterParenthesizedFinalChord(line) {
@@ -2017,6 +2151,14 @@
         });
       const removableSplitSingleLyricMeasure = hasSingleLyricCharacter && chordCount === 1
         && measureRhythmWidth === 8 && allHyphensAreSelectedPureRhythm;
+      // An odd row correction can split a duration at the bar boundary.  The
+      // next measure then starts with a pickup hyphen before its first chord
+      // or lyric (for example 97 / 4534).  Removing the selected 4-beat
+      // chunks from the preceding measure would erase the visible evidence
+      // that the correction crossed that boundary and make it look like 88.
+      const nextMeasure = measures[measureIndex + 1] || [];
+      const nextMeasureContent = nextMeasure[0]?.kind === "bar" ? nextMeasure.slice(1) : nextMeasure;
+      const protectedByFollowingPickup = nextMeasureContent[0]?.kind === "hyphen";
       // With three or more chord changes in one measure, the rhythm markers are
       // needed to show where each change occurs, even when their widths match a
       // selected removal target.
@@ -2024,9 +2166,10 @@
         && (removableSingleLyricMeasure || removableSplitSingleLyricMeasure)
         && !hasWhiteNote && !hasExpressiveRhythm;
       const shouldRemove = shouldRemoveSingleLyricHyphens || (chordCount < 3 && (!hasSingleLyricCharacter || (removableSingleLyricMeasure && !keepSingleCharacterHyphens)) && !hasWhiteNote && !hasExpressiveRhythm && !mixedCompleteEightBeat && chordCount >= 1 && validGroups === chordCount && removable.size > 0 && allHyphensSelected && new Set(signatures).size === 1 && lyricsFollowEveryGroup);
-      if (shouldRemove) changedMeasures += 1;
+      const shouldRemoveCrossMeasureRhythm = shouldRemove && !protectedByFollowingPickup;
+      if (shouldRemoveCrossMeasureRhythm) changedMeasures += 1;
       measure.forEach((token, tokenIndex) => {
-        if (shouldRemove && !protectedPickupHyphenIndices.has(tokenIndex) && (removable.has(tokenIndex) || (shouldRemoveSingleLyricHyphens && hyphenIndices.has(tokenIndex)))) removedHyphens += token.value.replace(/ /g, "").length;
+        if (shouldRemoveCrossMeasureRhythm && !protectedPickupHyphenIndices.has(tokenIndex) && (removable.has(tokenIndex) || (shouldRemoveSingleLyricHyphens && hyphenIndices.has(tokenIndex)))) removedHyphens += token.value.replace(/ /g, "").length;
         else output.push(token);
       });
     });
@@ -2097,13 +2240,15 @@
     return output;
   }
 
-  function serializeCodeOnlyTokens(tokens, hyphenSpacing) {
+  function serializeCodeOnlyTokens(tokens, hyphenSpacing, absoluteSpacing = false) {
     const spacing = Number(hyphenSpacing) || 0;
     const output = [];
+    const measureWidth = spacing > 0 ? spacing * 2 : 0;
+    let measurePosition = 0;
     for (let index = 0; index < tokens.length; index += 1) {
       const token = tokens[index];
       if (token.kind === "chord") { output.push(`[${token.value}]`); continue; }
-      if (token.kind === "bar") { output.push("|"); continue; }
+      if (token.kind === "bar") { output.push("|"); measurePosition = 0; continue; }
       if (token.kind !== "hyphen") { output.push(token.value); continue; }
       const rhythmParts = [];
       while (index < tokens.length && tokens[index].kind === "hyphen") {
@@ -2114,10 +2259,33 @@
       const rhythm = rhythmParts.join("");
       const mixedSyncopation = rhythm.includes("-") && rhythm.includes("=");
       const authoredEqualGroups = rhythm.includes("=") && rhythmParts.length > 1;
-      if (mixedSyncopation || authoredEqualGroups) { output.push(rhythmParts.join(" ")); continue; }
-      if (spacing <= 0 || rhythm.length <= spacing) { output.push(rhythm); continue; }
+    // Consecutive hyphen tokens are an authored rhythm grouping (for example
+    // the trailing syncopation extension in `----` + `-`). Keep that local
+    // grouping intact; correction-generated odd runs are separated by chord
+    // tokens and are handled by the absolute measure-position logic below.
+    const authoredHyphenGroups = rhythmParts.length > 1;
+    if (mixedSyncopation || authoredEqualGroups || (!absoluteSpacing && authoredHyphenGroups) || spacing <= 0) {
+      const renderedParts = !absoluteSpacing && authoredHyphenGroups
+        && rhythmParts[0] === "-" && rhythmParts[rhythmParts.length - 1].length > 1
+        ? [...rhythmParts].reverse()
+        : rhythmParts;
+      output.push(renderedParts.join(mixedSyncopation || authoredEqualGroups || (!absoluteSpacing && authoredHyphenGroups) ? " " : ""));
+        measurePosition = measureWidth ? (measurePosition + rhythm.length) % measureWidth : measurePosition + rhythm.length;
+        continue;
+      }
+      const startPosition = measurePosition;
       const chunks = [];
-      for (let offset = 0; offset < rhythm.length; offset += spacing) chunks.push(rhythm.slice(offset, offset + spacing));
+      let offset = 0;
+      while (offset < rhythm.length) {
+        const toBoundary = spacing - (measurePosition % spacing || 0);
+        const width = Math.min(toBoundary, rhythm.length - offset);
+        chunks.push(rhythm.slice(offset, offset + width));
+        offset += width;
+        measurePosition = (measurePosition + width) % measureWidth;
+      }
+      const previous = output[output.length - 1] || "";
+      const beginsAtBoundary = startPosition > 0 && startPosition % spacing === 0;
+      if (beginsAtBoundary && /[-=>≧]$/u.test(previous)) output.push(" ");
       output.push(chunks.join(" "));
     }
     // Spacing is only a separator inside one continuous rhythm run. Never leave
@@ -2165,7 +2333,7 @@
       hiddenLyricHyphens += visibility.hiddenHyphens;
       if (mixedMeasures) return padLyricAfterBracketedBars(serializeMixedMeasureTokens(padShortTrailingLyric(visibility.tokens), { hyphenSpacing }));
       if (!codeOnly) return padLyricAfterBracketedBars(serializeTokens(padShortTrailingLyric(visibility.tokens), { hyphenSpacing: 0 }));
-      return padLyricAfterBracketedBars(serializeCodeOnlyTokens(result.tokens, hyphenSpacing));
+      return padLyricAfterBracketedBars(serializeCodeOnlyTokens(result.tokens, hyphenSpacing, selectedCounts.length > 0));
     }).join("\n");
     return { output, removedHyphens, changedMeasures, hiddenLyricHyphens };
   }

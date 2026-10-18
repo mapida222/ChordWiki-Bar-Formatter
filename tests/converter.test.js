@@ -113,6 +113,22 @@ if (manualEightBeatSpacing !== manualEightBeatSpacingExpected) {
   failures += 1;
   console.error(`FAIL eight-beat spacing must not precede a bar\nexpected: ${manualEightBeatSpacingExpected}\nactual: ${manualEightBeatSpacing}`);
 }
+const oddCorrectionSpacingCases = [
+  ["|[C]---[D]----[Em]-|[---][Bm]-[----]|", "|[C]---[D]- ---[Em]-|---[Bm]- ----|"]
+];
+oddCorrectionSpacingCases.forEach(([source, expected]) => {
+  const actual = CBFConverter.renderCompletedOutput(source, [4], 4).output;
+  if (actual !== expected) {
+    failures += 1;
+    console.error(`FAIL odd correction spacing must follow the absolute 8/16 boundary\nexpected: ${expected}\nactual: ${actual}`);
+  }
+});
+const oddCorrectionConverted = CBFConverter.convertChordText("[C][D][Em][Bm]", { ...settings, hyphenSpacing: 4 }, ["3445"]);
+const oddCorrectionConvertedOutput = CBFConverter.renderCompletedOutput(oddCorrectionConverted.output, [4], 4).output;
+if (oddCorrectionConvertedOutput !== "|[C]---[D]- ---[Em]-|---[Bm]- ----|") {
+  failures += 1;
+  console.error(`FAIL 3445 must place spaces at absolute 8/16 boundaries\nactual: ${oddCorrectionConvertedOutput}`);
+}
 const rhythmOnlyWithMeter = CBFConverter.convertChordText(
   "(3/4)|[D]-- -- --|[E]-- -- --|[Fdim]-- -- --|[F#m]-- -- --|[D]-- -- --|[E]-- -- --|[A][○]　　　　　|",
   settings,

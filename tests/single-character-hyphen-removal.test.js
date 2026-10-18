@@ -32,4 +32,19 @@ const twoCharacters = CBFConverter.renderCompletedOutput("[|][C][----][----]AB[|
 assert.strictEqual(twoCharacters.removedHyphens, 8);
 assert.ok(!twoCharacters.output.includes("[----]"));
 
+const correctionSettings = {
+  measureCapacity: 8,
+  hyphenUnit: 4,
+  hyphenSpacing: 4,
+  shortFractionPrepose: 1,
+  longBeatLyricPlacement: 2,
+  showContinuationChord: 0
+};
+for (const correction of ["97", "4534"]) {
+  const converted = CBFConverter.convertChordText("[C]あ[G]い[Am]う[F]え", correctionSettings, [correction]);
+  const rendered = CBFConverter.renderCompletedOutput(converted.output, [4, 8], 4);
+  assert.ok(rendered.output.includes("[C][----]"), `${correction} must keep the rhythm before a cross-measure pickup`);
+  assert.ok(rendered.output.includes("[-]"), `${correction} must keep the pickup marker after the protected measure`);
+}
+
 console.log("PASS: complete single-character measures remove hyphens while incomplete measures stay protected");
