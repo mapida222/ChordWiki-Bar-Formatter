@@ -798,7 +798,8 @@
       const distributedCharacters = lyricGraphemes(distributedPhrase);
       insertions = [preposed, ...splitPhrase(distributedPhrase, distributedCharacters, markerCount - 1, effectivePlacementMode, forcedSpacingSplit)];
     } else {
-      insertions = splitPhrase(phrase, characters, markerCount, effectivePlacementMode, forcedSpacingSplit);
+      const distributedCharacters = shortGridSplit ? lyricGraphemes(phrase) : characters;
+      insertions = splitPhrase(phrase, distributedCharacters, markerCount, effectivePlacementMode, forcedSpacingSplit);
     }
     return { insertions, markerIndex: 0, consumedLength: authoredText.length, forcedSpacingSplit, startPosition: position };
   }

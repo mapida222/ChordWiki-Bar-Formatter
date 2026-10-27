@@ -20,6 +20,14 @@ const fractionalBoundaryCases = [
     "[|][F#m][----]おのお[D][---]の　のス[E][-]タ[|][---]イル[A][-]で[--][E/G#][--][|]"]
 ];
 const fractionalBoundarySettings = { ...settings, measureCapacity: 8, hyphenSpacing: 4, longBeatLyricPlacement: 2 };
+for (const [lyric, splitLyric] of [["　abc", "　ab[--]c"], ["か　きく", "か　き[--]く"]]) {
+  const input = `[C]甲[Dm]乙[E7]${lyric}[F]丙[G/B]丁`;
+  const actual = CBFConverter.convertChordText(input, fractionalBoundarySettings, ["12345"]).output;
+  assert.strictEqual(actual, `[|][C][-]甲[Dm][--]乙[E7][-]${splitLyric}[F][--]丙[|][--][G/B][----]丁[-][|]`,
+    "a short grid split must preserve leading and internal authored full-width spaces");
+  assert.strictEqual(actual.replace(/\[[^\]]*\]/g, ""), input.replace(/\[[^\]]*\]/g, ""));
+  assert.strictEqual((actual.match(/-/g) || []).length, 15, "12345 keeps its fifteen hyphens");
+}
 const leadingSpaceInput = "[C]x[D]y[E]　abc[A]z[G]q";
 assert.strictEqual(
   CBFConverter.convertChordText(leadingSpaceInput, fractionalBoundarySettings, ["43432"]).output.replace(/\[[^\]]*\]/g, ""),
