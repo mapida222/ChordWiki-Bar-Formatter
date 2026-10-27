@@ -703,11 +703,10 @@
 
     const spacing = Math.max(0, Number(settings.hyphenSpacing) || 0);
     const leadingSingleBeat = spacing > 0
-      && unit.width > spacing
-      && unit.width % spacing === 1
       && position > 0
       && capacity - position === 1
-      && unit.width >= (spacing * 2) + 1;
+      && ((unit.width % spacing === 1 && unit.width >= (spacing * 2) + 1)
+        || (settings.shortFractionPrepose && unit.width === spacing && unit.width > 1));
     // A one-beat remainder must stay available to the fractional-prepose
     // logic below.  Otherwise the long-beat placement mode consumes the
     // whole lyric before the 5-beat unit can place its short marker and lyric
@@ -723,17 +722,21 @@
       plannedPosition = (plannedPosition + segmentWidth) % capacity;
       remaining -= segmentWidth;
     }
+    // Keep the beat-grid boundary visible after a one-hyphen anticipation,
+    // including a short 3-hyphen duration and a single lyric grapheme.
+    const shortGridSplit = placementMode === 2 && Boolean(settings.shortFractionPrepose)
+      && unit.width > 1 && unit.width < spacing
+      && position % spacing === spacing - 1;
     const forcedSpacingSplit = markerCount < 2
       && [0, 1, 2].includes(placementMode)
-      && unit.width === Number(settings.hyphenUnit)
-      && unit.width === spacing
+      && ((unit.width === Number(settings.hyphenUnit) && unit.width === spacing) || shortGridSplit)
       && unit.width >= 2
       && position > 0
       && position + unit.width < capacity
-      && characters.length >= 2;
+      && (characters.length >= 2 || shortGridSplit);
     if (forcedSpacingSplit) markerCount = 2;
-    if (markerCount < 2) return null;
     if (leadingSingleBeat) markerCount += 1;
+    if (markerCount < 2) return null;
 
     // Automatic mode only splits an ordinary one-unit beat when it has at
     // least two lyric graphemes.  Longer ballad-like durations keep the
@@ -743,6 +746,7 @@
       ? (forcedSpacingSplit ? 1 : 3)
       : placementMode;
     const splitPhrase = (text, splitCharacters, count, mode, forceFirstSplit = false) => {
+      if (count === 1) return [text];
       if (mode === 3 || mode === 4) {
         const grouped = Array.from({ length: count }, () => "");
         grouped[mode === 3 ? 0 : count - 1] = text;
@@ -788,7 +792,8 @@
     };
     let insertions;
     if (leadingSingleBeat) {
-      const preposed = settings.shortFractionPrepose ? characters.slice(0, 1).join("") : "";
+      const leadingSpaces = phrase.match(/^　*/u)[0];
+      const preposed = settings.shortFractionPrepose ? leadingSpaces + characters[0] : "";
       const distributedPhrase = settings.shortFractionPrepose ? phrase.slice(preposed.length) : phrase;
       const distributedCharacters = lyricGraphemes(distributedPhrase);
       insertions = [preposed, ...splitPhrase(distributedPhrase, distributedCharacters, markerCount - 1, effectivePlacementMode, forcedSpacingSplit)];

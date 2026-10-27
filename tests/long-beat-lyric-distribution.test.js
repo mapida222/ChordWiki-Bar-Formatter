@@ -13,6 +13,50 @@ const settings = {
   showContinuationChord: 0
 };
 
+const fractionalBoundaryCases = [
+  ["[F#m]ようこ[D]そ　[E]ここは[A]Yes！東[E/G#]京",
+    "[|][F#m][----]ようこ[D][---]そ　[E][-]こ[|][---]こは[A][-]Yes！[--]東[E/G#][--]京[|]"],
+  ["[F#m]おのお[D]の　のス[E]タイル[A]で[E/G#]",
+    "[|][F#m][----]おのお[D][---]の　のス[E][-]タ[|][---]イル[A][-]で[--][E/G#][--][|]"]
+];
+const fractionalBoundarySettings = { ...settings, measureCapacity: 8, hyphenSpacing: 4, longBeatLyricPlacement: 2 };
+const leadingSpaceInput = "[C]x[D]y[E]　abc[A]z[G]q";
+assert.strictEqual(
+  CBFConverter.convertChordText(leadingSpaceInput, fractionalBoundarySettings, ["43432"]).output.replace(/\[[^\]]*\]/g, ""),
+  "xy　abczq",
+  "pickup distribution must preserve leading authored full-width spaces without duplicating a grapheme"
+);
+for (const [input, expected] of fractionalBoundaryCases) {
+  const actual = CBFConverter.convertChordText(input, fractionalBoundarySettings, ["43432"]).output;
+  assert.strictEqual(actual, expected, "43432 must keep the pickup lyric and the following 1+2 grid split");
+  assert.strictEqual(actual.replace(/\[[^\]]*\]/g, ""), input.replace(/\[[^\]]*\]/g, ""), "authored lyrics must stay intact");
+  assert.strictEqual((actual.match(/-/g) || []).length, 16, "43432 must preserve all sixteen hyphens");
+}
+for (let repeat = 0; repeat < 3; repeat += 1) {
+  const input = fractionalBoundaryCases.map(([line]) => line).join("\n");
+  CBFConverter.convertChordText(input, { ...fractionalBoundarySettings, hyphenSpacing: 3 }, ["43432", "43432"]);
+  const actual = CBFConverter.convertChordText(input, fractionalBoundarySettings, ["43432", "43432"]).output;
+  const expected = fractionalBoundaryCases.map(([, line]) => line).join("\n");
+  assert.strictEqual(actual, expected, "repeated conversion after switching back to four-hyphen spacing must be stable");
+  assert.strictEqual(CBFConverter.renderCompletedOutput(actual, [4], 4).output, expected, "mixed rhythm must retain its four-hyphen markers");
+}
+
+// A normal four-hyphen duration starts one hyphen before the bar line.
+// Fractional prepose must reserve one grapheme before distributing the rest.
+for (const [lyric, first, rest] of [["ここは", "こ", "こは"], ["タイル", "タ", "イル"]]) {
+  for (const placement of [0, 1, 2, 3, 4]) {
+    const actual = CBFConverter.convertChordText(
+      `[F#m]あいう[D]え　[E]${lyric}[A]お[E/G#]か`,
+      { ...settings, measureCapacity: 8, hyphenSpacing: 4, longBeatLyricPlacement: placement },
+      ["43452"]
+    ).output;
+    assert.ok(actual.includes(`[E][-]${first}[|][---]${rest}[A]`),
+      `fractional prepose must reserve one grapheme across the bar (mode ${placement}): ${actual}`);
+    assert.strictEqual((actual.match(/-/g) || []).length, 18, "row correction durations must remain 4+3+4+5+2");
+    assert.strictEqual(actual.replace(/\[[^\]]*\]/g, ""), `あいうえ　${lyric}おか`, "lyric text must stay intact");
+  }
+}
+
 const source = "長（な[Fm]が）い旅（た[Bb]び）の途中　君[DbM7]に出逢い　うつ[Eb]ろう景色";
 
 const frontBack = CBFConverter.convertChordText(source, settings, ["cccc"]);
