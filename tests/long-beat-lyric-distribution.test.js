@@ -13,6 +13,22 @@ const settings = {
   showContinuationChord: 0
 };
 
+// A normal four-hyphen duration starts one hyphen before the bar line.
+// Fractional prepose must reserve one grapheme before distributing the rest.
+for (const [lyric, first, rest] of [["ここは", "こ", "こは"], ["タイル", "タ", "イル"]]) {
+  for (const placement of [0, 1, 2, 3, 4]) {
+    const actual = CBFConverter.convertChordText(
+      `[F#m]あいう[D]え　[E]${lyric}[A]お[E/G#]か`,
+      { ...settings, measureCapacity: 8, hyphenSpacing: 4, longBeatLyricPlacement: placement },
+      ["43452"]
+    ).output;
+    assert.ok(actual.includes(`[E][-]${first}[|][---]${rest}[A]`),
+      `fractional prepose must reserve one grapheme across the bar (mode ${placement}): ${actual}`);
+    assert.strictEqual((actual.match(/-/g) || []).length, 18, "row correction durations must remain 4+3+4+5+2");
+    assert.strictEqual(actual.replace(/\[[^\]]*\]/g, ""), `あいうえ　${lyric}おか`, "lyric text must stay intact");
+  }
+}
+
 const source = "長（な[Fm]が）い旅（た[Bb]び）の途中　君[DbM7]に出逢い　うつ[Eb]ろう景色";
 
 const frontBack = CBFConverter.convertChordText(source, settings, ["cccc"]);
