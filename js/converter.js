@@ -722,14 +722,18 @@
       plannedPosition = (plannedPosition + segmentWidth) % capacity;
       remaining -= segmentWidth;
     }
+    // Keep the beat-grid boundary visible after a one-hyphen anticipation,
+    // including a short 3-hyphen duration and a single lyric grapheme.
+    const shortGridSplit = placementMode === 2 && Boolean(settings.shortFractionPrepose)
+      && unit.width > 1 && unit.width < spacing
+      && position % spacing === spacing - 1;
     const forcedSpacingSplit = markerCount < 2
       && [0, 1, 2].includes(placementMode)
-      && unit.width === Number(settings.hyphenUnit)
-      && unit.width === spacing
+      && ((unit.width === Number(settings.hyphenUnit) && unit.width === spacing) || shortGridSplit)
       && unit.width >= 2
       && position > 0
       && position + unit.width < capacity
-      && characters.length >= 2;
+      && (characters.length >= 2 || shortGridSplit);
     if (forcedSpacingSplit) markerCount = 2;
     if (leadingSingleBeat) markerCount += 1;
     if (markerCount < 2) return null;
