@@ -792,7 +792,8 @@
     };
     let insertions;
     if (leadingSingleBeat) {
-      const preposed = settings.shortFractionPrepose ? characters.slice(0, 1).join("") : "";
+      const leadingSpaces = phrase.match(/^　*/u)[0];
+      const preposed = settings.shortFractionPrepose ? leadingSpaces + characters[0] : "";
       const distributedPhrase = settings.shortFractionPrepose ? phrase.slice(preposed.length) : phrase;
       const distributedCharacters = lyricGraphemes(distributedPhrase);
       insertions = [preposed, ...splitPhrase(distributedPhrase, distributedCharacters, markerCount - 1, effectivePlacementMode, forcedSpacingSplit)];

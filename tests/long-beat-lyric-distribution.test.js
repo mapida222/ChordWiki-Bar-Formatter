@@ -20,6 +20,12 @@ const fractionalBoundaryCases = [
     "[|][F#m][----]おのお[D][---]の　のス[E][-]タ[|][---]イル[A][-]で[--][E/G#][--][|]"]
 ];
 const fractionalBoundarySettings = { ...settings, measureCapacity: 8, hyphenSpacing: 4, longBeatLyricPlacement: 2 };
+const leadingSpaceInput = "[C]x[D]y[E]　abc[A]z[G]q";
+assert.strictEqual(
+  CBFConverter.convertChordText(leadingSpaceInput, fractionalBoundarySettings, ["43432"]).output.replace(/\[[^\]]*\]/g, ""),
+  "xy　abczq",
+  "pickup distribution must preserve leading authored full-width spaces without duplicating a grapheme"
+);
 for (const [input, expected] of fractionalBoundaryCases) {
   const actual = CBFConverter.convertChordText(input, fractionalBoundarySettings, ["43432"]).output;
   assert.strictEqual(actual, expected, "43432 must keep the pickup lyric and the following 1+2 grid split");
