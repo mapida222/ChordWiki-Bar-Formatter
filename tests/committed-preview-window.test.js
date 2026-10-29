@@ -32,7 +32,7 @@ assert(html.includes('id="committed-position-toggle"') && html.includes(">コー
 assert(!html.includes('id="committed-copy"'), "realtime editor must not add a separate copy button");
 assert(html.includes('id="committed-position-help"') && html.includes('id="committed-position-help" class="position-adjust-help" hidden') && html.includes("<kbd>F2</kbd> 開閉") && html.includes("<kbd>Shift+F2</kbd> 対象切替") && html.includes("<kbd>Shift+Space</kbd> 前"), "position adjustment guide must be hidden until the mode starts");
 assert(html.includes('id="committed-preview-mode-status"') && html.includes('class="preview-position-status" hidden'), "preview header must expose a mode status hidden outside position adjustment");
-assert(html.includes('id="committed-position-symbols"') && html.includes("小節線・ハイフンも移動対象にする (Shift+F2)"), "position adjustment must offer an optional structural-token target mode");
+assert(html.includes('id="committed-position-symbols"') && html.includes("小節線・ハイフンも個別に移動する (Shift+F2)"), "position adjustment must offer an optional individual structural-token target mode");
 assert(html.indexOf('id="committed-position-toggle"') > html.indexOf('class="committed-window-editor-pane"'), "position adjustment toggle belongs to the editor pane header");
 assert(windowScript.includes('const chordTokenPattern = /\\[\\[([^\\[\\]\\r\\n]*)\\]\\]|\\[([^\\[\\]\\r\\n]*)\\]/g;'), "position adjustment must identify chord tokens");
 assert(windowScript.includes('const atStart = ranges.find((range) => position === range.start);') && windowScript.includes('position >= range.start && position < range.end'), "position adjustment clicks at adjacent token boundaries must select the following token");
@@ -40,8 +40,8 @@ assert(windowScript.includes('const handlePositionSpace = (event)') && windowScr
 assert(windowScript.includes('text.addEventListener("beforeinput"') && windowScript.includes('["historyUndo", "historyRedo"].includes(event.inputType)') && windowScript.includes('event.preventDefault();'), "position adjustment mode must block direct text input while allowing history changes");
 assert(windowScript.includes('text.readOnly = true') && windowScript.includes('text.readOnly = false') && windowScript.includes('beforeinput'), "position adjustment mode must block IME and direct text input while restoring editing on exit");
 assert(windowScript.includes('text.addEventListener("focus", () => {') && windowScript.includes('if (positionAdjustMode) text.blur();'), "position adjustment mode must immediately remove text focus so the IME cannot handle Space");
-assert(windowScript.includes('if ((event.ctrlKey || event.metaKey) && ["a", "c", "z"].includes(event.key.toLowerCase())) return;'), "position adjustment mode must allow select-all, copy and undo shortcuts");
-assert(windowScript.includes('const positionUndoStack = []') && windowScript.includes('const undoPositionEdit = ()') && windowScript.includes('document.addEventListener("keydown", handlePositionUndo, true)'), "position adjustment mode must undo scripted movements with Ctrl+Z");
+assert(windowScript.includes('if ((event.ctrlKey || event.metaKey) && ["a", "c", "z", "y"].includes(event.key.toLowerCase())) return;'), "position adjustment mode must allow select-all, copy, undo and redo shortcuts");
+assert(windowScript.includes('const positionUndoStack = []') && windowScript.includes('const undoPositionEdit = (redo = false)') && windowScript.includes('document.addEventListener("keydown", handlePositionUndo, true)'), "position adjustment mode must undo and redo scripted movements");
 assert(windowScript.includes('const directiveTokenPattern = /\\{[^{}\\r\\n]*\\}/g') && windowScript.includes('const movementRanges = (source)'), "position adjustment must treat brace directives as indivisible movement units");
 assert(windowScript.includes('const handlePositionNavigation = (event)') && windowScript.includes('if (["Tab", "Shift", "Control", "Alt", "Meta"].includes(event.key)) return;') && windowScript.includes('event.stopImmediatePropagation();'), "position adjustment mode must block non-navigation keyboard edits");
 assert(windowScript.includes('const handlePositionShortcut = (event)') && windowScript.includes('event.key !== "F2"') && windowScript.includes('event.shiftKey && !positionAdjustMode'), "F2 shortcuts must stay separate from ordinary text input and require position mode for Shift+F2");
@@ -145,3 +145,72 @@ assert(rendered.includes("テスト"));
 assert(preview.render("[[C]]上付き").includes("cw-upper-token-level-2"), "realtime preview must share old ChordWiki double-upper rendering");
 
 console.log("PASS: saved realtime drafts always render line numbers, color text, and score preview");
+
+// Exercise the real range/movement functions without booting the DOM page.
+const vm = require("vm");
+const positionContext = {
+  window: { ChordWikiPreview: { isRhythmToken: (token) => /^[\s\-=>≧○]+$/.test(token) } },
+  text: {
+    value: "", selectionStart: 0, selectionEnd: 0,
+    setSelectionRange(start, end) { this.selectionStart = start; this.selectionEnd = end; },
+    setRangeText(value, start, end) { this.value = this.value.slice(0, start) + value + this.value.slice(end); },
+    blur() {}, focus() {}
+  },
+  render() {}, setActiveLine() {}, publishText() {}, positionStatus() {}, status: {}
+};
+vm.createContext(positionContext);
+const rangeSource = windowScript.slice(windowScript.indexOf("  const chordTokenPattern"), windowScript.indexOf("  const scrollProgress"));
+const moveSource = windowScript.slice(windowScript.indexOf("  const lineRanges"), windowScript.indexOf("  const isPositionSpace"));
+vm.runInContext(`let activeChordStart = -1, includePositionSymbols = false;
+  const positionUndoStack = [], positionRedoStack = [];
+  ${rangeSource}\n${moveSource}
+  globalThis.positionTest = {
+    ranges: (value, symbols = false) => chordRanges(value, symbols),
+    reset(value, at, symbols = false) { text.value = value; includePositionSymbols = symbols;
+      activeChordStart = -1; text.setSelectionRange(at, at); positionUndoStack.length = 0; positionRedoStack.length = 0; },
+    move: moveActiveChord, undo: undoPositionEdit
+  };`, positionContext);
+const positionTest = positionContext.positionTest;
+positionTest.reset("あ[|][F]い", 4);
+assert(positionTest.move("right"));
+assert.strictEqual(positionContext.text.value, "あい[|][F]", "a directly attached bar must move with its chord by default");
+assert(positionTest.undo());
+assert.strictEqual(positionContext.text.value, "あ[|][F]い");
+assert(positionTest.undo(true));
+assert.strictEqual(positionContext.text.value, "あい[|][F]");
+const movementCases = [
+  ["あ[|][F]い", 4, "left", "[|][F]あい"],
+  ["[|][F]あ", 3, "left", "[|][F]あ"],
+  ["あ[|][F]", 4, "right", "あ[|][F]"],
+  ["あ[F]い", 1, "right", "あい[F]"],
+  ["[|] [F]あ", 4, "right", "[|] あ[F]"],
+  ["[|]か[F]あ", 4, "right", "[|]かあ[F]"],
+  ["[|][F][|][G]", 3, "right", "[|][G][|][F]"],
+  ["[|][F][G]", 3, "right", "[G][|][F]"],
+  ["[G][|][F]", 6, "left", "[|][F][G]"],
+  ["[|][|][F]", 6, "left", "[|][F][|]"],
+  ["[|][F][----]あ", 3, "right", "[----][|][F]あ"],
+  ["[|][F]\nあ", 3, "right", "[|][F]\nあ"],
+  ["[|][F]\nあ", 3, "down", "\n[|][F]あ"],
+  ["あ\n[|][F]", 5, "up", "[|][F]あ\n"],
+  ["あ[|][F]\n[G]い", 4, "down", "あ\n[|][F][G]い"],
+  ["{c:間奏}[|][F]あ", 9, "left", "[|][F]{c:間奏}あ"],
+  ["歌(うた)[|][F]続き", 8, "right", "歌(うた)続[|][F]き"]
+];
+for (const [input, at, direction, expected] of movementCases) {
+  positionTest.reset(input, at);
+  positionTest.move(direction);
+  assert.strictEqual(positionContext.text.value, expected, `${direction}: ${input}`);
+}
+for (const chord of ["F/A", "Fmaj7(#11)", "G7(b9)/B", "[F]"]) {
+  const input = `あ[|][${chord}]い`;
+  positionTest.reset(input, 5);
+  positionTest.move("right");
+  assert.strictEqual(positionContext.text.value, `あい[|][${chord}]`);
+  positionTest.undo(); positionTest.move("left");
+  assert.strictEqual(positionTest.undo(true), false, "a new edit must discard redo history");
+}
+positionTest.reset("[|][F]あ", 3, true);
+positionTest.move("right");
+assert.strictEqual(positionContext.text.value, "[|]あ[F]", "the existing structural-token mode keeps individual movement");
+console.log("PASS: PREVIEW-009 grouped bar/chord ranges, adjacent tokens, line moves and undo/redo");
