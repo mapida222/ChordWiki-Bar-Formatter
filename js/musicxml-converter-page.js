@@ -2,6 +2,7 @@ import './transposer.js';
 import {
   applyChordWikiAbbreviations,
   convertMusicXmlText,
+  formatMusicXmlOutput,
   DEFAULT_CHORD_WIKI_ABBREVIATIONS,
 } from './musicxml-converter.js';
 import { normalizeStoredMusicXmlResult } from './musicxml-converter-storage.js';
@@ -10,6 +11,7 @@ const $ = (id) => document.getElementById(id);
 const BROWSER_RESULT_STORAGE_KEY = 'musicxmlConverter.lastResult.v1';
 const ABBREVIATION_STORAGE_KEY = 'musicxmlConverter.abbreviations.v2';
 const MUSICXML_TRANSPOSE_STORAGE_KEY = 'musicxmlConverter.transpose.v1';
+const TEMPO_MODE_STORAGE_KEY = 'musicxmlConverter.tempoMode.v1';
 const MUSICXML_HANDOFF_STORAGE_KEY = 'chordWikiBarFormatter.musicxmlHandoff.v1';
 const ABBREVIATION_CYCLES = Object.freeze({
   major: ['maj', 'M'],
@@ -41,6 +43,9 @@ const transposeDown = $('musicxml-transpose-down');
 const transposeUp = $('musicxml-transpose-up');
 const formatterLink = $('musicxml-open-formatter');
 const realtimeEditorLink = $('musicxml-open-realtime');
+const tempoDoubleButton = $('tempo-double');
+const tempoNormalButton = $('tempo-normal');
+const tempoHalfButton = $('tempo-half');
 
 function escapeHtml(value) {
   return value.replace(/[&<>"']/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[character]));
@@ -100,6 +105,28 @@ function renderOutput() {
 }
 let latest = null;
 let transposeAmount = 0;
+let tempoMode = 'normal';
+
+function loadTempoMode() {
+  try {
+    const saved = localStorage.getItem(TEMPO_MODE_STORAGE_KEY);
+    if (saved === 'double' || saved === 'half') return saved;
+    return localStorage.getItem('musicxmlConverter.doubleTempo.v1') === 'true' ? 'double' : 'normal';
+  } catch (_error) { return 'normal'; }
+}
+
+function saveTempoMode() {
+  try { localStorage.setItem(TEMPO_MODE_STORAGE_KEY, tempoMode); } catch (_error) {}
+}
+
+function refreshDoubleTempoControl() {
+  [tempoDoubleButton, tempoNormalButton, tempoHalfButton].forEach((button) => {
+    if (!button) return;
+    button.disabled = !latest;
+    const mode = button === tempoDoubleButton ? 'double' : button === tempoHalfButton ? 'half' : 'normal';
+    button.setAttribute('aria-pressed', String(tempoMode === mode));
+  });
+}
 function loadAbbreviations() {
   try {
     const saved = JSON.parse(localStorage.getItem(ABBREVIATION_STORAGE_KEY) || 'null');
@@ -157,6 +184,7 @@ function refreshTransposeControls() {
 
 let abbreviations = loadAbbreviations();
 transposeAmount = loadTransposeAmount();
+tempoMode = loadTempoMode();
 let loadRequestId = 0;
 let copyFeedbackTimer = null;
 
@@ -185,7 +213,8 @@ refreshAbbreviationControls();
 
 function renderLatestOutput() {
   if (!latest) return;
-  let text = applyChordWikiAbbreviations(latest.chordWiki, abbreviations);
+  let text = latest.metadata ? formatMusicXmlOutput(latest, tempoMode) : latest.chordWiki;
+  text = applyChordWikiAbbreviations(text, abbreviations);
   if (transposeAmount && window.ChordWikiTranspose?.transposeText) {
     text = window.ChordWikiTranspose.transposeText(text, transposeAmount, 'preserve');
   }
@@ -261,6 +290,7 @@ function setResult(result, { fileName = '', fileSize = 0, persist = true, preser
   $('copy-button').disabled = false;
   refreshAbbreviationControls();
   refreshTransposeControls();
+  refreshDoubleTempoControl();
   if (persist) saveBrowserResult(result, fileName, fileSize);
 }
 
@@ -287,8 +317,10 @@ function reset() {
   outputCard?.classList.add('is-placeholder');
   latest = null;
   transposeAmount = 0;
+  tempoMode = loadTempoMode();
   saveTransposeAmount();
   refreshTransposeControls();
+  refreshDoubleTempoControl();
   refreshAbbreviationControls();
   $('output-source-name').textContent = 'ファイル未選択';
   clearBrowserResult();
@@ -313,8 +345,10 @@ async function loadFile(file) {
   clearBrowserResult();
   latest = null;
   transposeAmount = 0;
+  tempoMode = loadTempoMode();
   saveTransposeAmount();
   refreshTransposeControls();
+  refreshDoubleTempoControl();
   refreshAbbreviationControls();
   outputCard?.classList.add('is-placeholder');
   resetCopyButton();
@@ -341,8 +375,10 @@ async function loadFile(file) {
     if (requestId !== loadRequestId) return;
     latest = null;
     transposeAmount = 0;
+    tempoMode = loadTempoMode();
     saveTransposeAmount();
     refreshTransposeControls();
+    refreshDoubleTempoControl();
     refreshAbbreviationControls();
     outputCard?.classList.add('is-placeholder');
     $('result-status').textContent = '読み取り失敗';
@@ -388,6 +424,7 @@ bindCardDisclosure('source-toggle', '.converter-input-card');
 bindCardDisclosure('report-toggle', '.report-card');
 window.ChordWikiTranspose?.fillTransposeSelect(transposeSelect);
 refreshTransposeControls();
+refreshDoubleTempoControl();
 transposeSelect?.addEventListener('change', () => {
   transposeAmount = Number.parseInt(transposeSelect.value, 10) || 0;
   saveTransposeAmount();
@@ -406,6 +443,16 @@ function stepTranspose(direction) {
 }
 transposeDown?.addEventListener('click', () => stepTranspose(-1));
 transposeUp?.addEventListener('click', () => stepTranspose(1));
+function selectTempoMode(nextMode) {
+  tempoMode = tempoMode === nextMode ? 'normal' : nextMode;
+  saveTempoMode();
+  refreshDoubleTempoControl();
+  renderLatestOutput();
+}
+
+tempoDoubleButton?.addEventListener('click', () => selectTempoMode('double'));
+tempoNormalButton?.addEventListener('click', () => selectTempoMode('normal'));
+tempoHalfButton?.addEventListener('click', () => selectTempoMode('half'));
 abbreviationControls?.addEventListener('click', (event) => {
   const button = event.target.closest('button[data-abbreviation]');
   const key = button?.dataset.abbreviation;
