@@ -20,7 +20,7 @@
 | `ROW-004` | 変換前編集時の行修正保持 | 有効 | `js/app.js`、`js/converter.js`、`tests/source-edit-correction-preservation.test.js` |
 | `ROW-005` | 行修正の上書き入力と更新キャッシュ対策 | 有効 | `index.html`、`js/app.js`、`tests/correction-key-routing.test.js` |
 | `ROW-006` | 歌詞末尾の1文字と絵文字の間へ補完拍を配置 | 廃止 | 文節を自動判定できないため撤回。長さ記号は小節先頭へまとめる |
-| `ROW-007` | 行修正の長い拍へ歌詞を選択方式で配置 | 有効 | `js/settings.js`、`js/converter.js`、`tests/long-beat-lyric-distribution.test.js` |
+| `ROW-007` | 行修正の長い拍へ歌詞を選択方式で配置。再配置時も歌詞の全角・半角・連続空白を保持 | 有効 | `js/settings.js`、`js/converter.js`、`tests/long-beat-lyric-distribution.test.js` |
 | `ROW-008` | 「原文」採用行を最終表示でも未加工のまま保持 | 有効 | `js/app.js`、`js/converter.js`、`tests/conversion-bug-regressions.test.js` |
 | `ROW-009` | 行修正を文字カーソルではなく拍スロット単位で直接上書き | 有効 | `js/app.js`、`js/correction-input.js`、`style.css`、`tests/correction-slot-mode.test.js` |
 | `ROW-010` | IME・ソフトウェアキーボード経由でも拍スロットを追加せず上書き | 有効 | `js/app.js`、`js/correction-input.js`、`tests/correction-input.test.js`、`tests/correction-key-routing.test.js` |

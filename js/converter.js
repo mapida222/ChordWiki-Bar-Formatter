@@ -698,8 +698,9 @@
     // Full-width spaces are authored lyric spacing, not padding. Keep them in
     // the rendered phrase while excluding them from the beat-count calculation.
     const phrase = authoredText;
-    const characters = lyricGraphemes(phrase.replace(/　/gu, ""));
-    if (!characters.length) return null;
+    const characters = lyricGraphemes(phrase);
+    const lyricCharacterCount = characters.filter((character) => !/^\s$/u.test(character)).length;
+    if (!lyricCharacterCount) return null;
 
     const spacing = Math.max(0, Number(settings.hyphenSpacing) || 0);
     const leadingSingleBeat = spacing > 0
@@ -733,7 +734,7 @@
       && unit.width >= 2
       && position > 0
       && position + unit.width < capacity
-      && (characters.length >= 2 || shortGridSplit);
+      && (lyricCharacterCount >= 2 || shortGridSplit);
     if (forcedSpacingSplit) markerCount = 2;
     if (leadingSingleBeat) markerCount += 1;
     if (markerCount < 2) return null;
@@ -758,7 +759,7 @@
         let back;
         if (boundaryIndex > 0 && text.slice(boundaryIndex + 1).replace(/　/gu, "")) {
           front = text.slice(0, boundaryIndex + 1);
-          back = text.slice(boundaryIndex + 1).replace(/^　+/u, "");
+          back = text.slice(boundaryIndex + 1);
         } else if (forceFirstSplit) {
           front = splitCharacters[0] || "";
           back = splitCharacters.slice(1).join("");
@@ -781,7 +782,8 @@
       let characterIndex = 0;
       for (const character of splitCharacters) {
         if (/^\s$/u.test(character)) {
-          split[Math.max(0, markerIndex - (markerIndex > 0 ? 1 : 0))] += character;
+          const whitespaceIndex = split[markerIndex] ? markerIndex : Math.max(0, markerIndex - 1);
+          split[whitespaceIndex] += character;
           continue;
         }
         split[markerIndex] += character;
@@ -792,8 +794,8 @@
     };
     let insertions;
     if (leadingSingleBeat) {
-      const leadingSpaces = phrase.match(/^　*/u)[0];
-      const preposed = settings.shortFractionPrepose ? leadingSpaces + characters[0] : "";
+      const leadingSpaces = phrase.match(/^\s*/u)[0];
+      const preposed = settings.shortFractionPrepose ? leadingSpaces + characters.find((character) => !/^\s$/u.test(character)) : "";
       const distributedPhrase = settings.shortFractionPrepose ? phrase.slice(preposed.length) : phrase;
       const distributedCharacters = lyricGraphemes(distributedPhrase);
       insertions = [preposed, ...splitPhrase(distributedPhrase, distributedCharacters, markerCount - 1, effectivePlacementMode, forcedSpacingSplit)];
