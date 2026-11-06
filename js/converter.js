@@ -698,8 +698,9 @@
     // Full-width spaces are authored lyric spacing, not padding. Keep them in
     // the rendered phrase while excluding them from the beat-count calculation.
     const phrase = authoredText;
-    const characters = lyricGraphemes(phrase.replace(/　/gu, ""));
-    if (!characters.length) return null;
+    const characters = lyricGraphemes(phrase);
+    const lyricCharacterCount = characters.filter((character) => !/^\s$/u.test(character)).length;
+    if (!lyricCharacterCount) return null;
 
     const spacing = Math.max(0, Number(settings.hyphenSpacing) || 0);
     const leadingSingleBeat = spacing > 0
@@ -730,7 +731,7 @@
       && unit.width >= 2
       && position > 0
       && position + unit.width < capacity
-      && characters.length >= 2;
+      && lyricCharacterCount >= 2;
     if (forcedSpacingSplit) markerCount = 2;
     if (markerCount < 2) return null;
     if (leadingSingleBeat) markerCount += 1;
@@ -754,7 +755,7 @@
         let back;
         if (boundaryIndex > 0 && text.slice(boundaryIndex + 1).replace(/　/gu, "")) {
           front = text.slice(0, boundaryIndex + 1);
-          back = text.slice(boundaryIndex + 1).replace(/^　+/u, "");
+          back = text.slice(boundaryIndex + 1);
         } else if (forceFirstSplit) {
           front = splitCharacters[0] || "";
           back = splitCharacters.slice(1).join("");
@@ -777,7 +778,8 @@
       let characterIndex = 0;
       for (const character of splitCharacters) {
         if (/^\s$/u.test(character)) {
-          split[Math.max(0, markerIndex - (markerIndex > 0 ? 1 : 0))] += character;
+          const whitespaceIndex = split[markerIndex] ? markerIndex : Math.max(0, markerIndex - 1);
+          split[whitespaceIndex] += character;
           continue;
         }
         split[markerIndex] += character;

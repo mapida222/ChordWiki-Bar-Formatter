@@ -40,7 +40,7 @@ const uniform = CBFConverter.convertChordText(
 );
 assert.strictEqual(
   uniform.output,
-  "長（な[|][Fm][---]が）[---]い[|][---]旅[---]（た[|][Bb][---]び）[---]の[|][---]途[---]中君[|][DbM7][---]に出[---]逢[|][---]い[---]うつ[|][Eb][---]ろ[---]う[|][---]景[---]色[|]",
+  "長（な[|][Fm][---]が）[---]い[|][---]旅[---]（た[|][Bb][---]び）[---]の[|][---]途[---]中　君[|][DbM7][---]に出[---]逢[|][---]い　[---]うつ[|][Eb][---]ろ[---]う[|][---]景[---]色[|]",
   "uniform mode should distribute grapheme clusters across every visible marker"
 );
 
@@ -51,7 +51,7 @@ const fullWidthBoundary = CBFConverter.convertChordText(
 );
 assert.strictEqual(
   fullWidthBoundary.output,
-  "[|][Bbm7][---]今日[---]も[|][Cm7][---]笑い[---]合え[|][DbM7][---]る　[---][|][---][---]居場所　紡ぐ[|]",
+  "[|][Bbm7][---]今日[---]も　[|][Cm7][---]笑い[---]合え[|][DbM7][---]る　[---][|][---][---]居場所　紡ぐ[|]",
   "the first authored full-width space should split front/back placement without removing later spaces"
 );
 
@@ -69,7 +69,7 @@ assert.strictEqual(
 const completed = CBFConverter.renderCompletedOutput(fullWidthBoundary.output, [6], 3);
 assert.strictEqual(
   completed.output,
-  "[|][Bbm7]今日も[|][Cm7]笑い合え[|][DbM7][---]る　[---][|][---][---]居場所　紡ぐ[|]",
+  "[|][Bbm7]今日も　[|][Cm7]笑い合え[|][DbM7][---]る　[---][|][---][---]居場所　紡ぐ[|]",
   "selected six-beat markers should still be removable after lyric placement"
 );
 
@@ -315,5 +315,37 @@ assert(
   symbolBoundaryOutput.includes("この海([|][-]うみ)"),
   "a rhythm marker after an opening parenthesis remains allowed"
 );
+
+const spacedRowSource = "嫌[|][A7]いじゃないかな　[|][A7]好きになっ[|][D]てくれる[|][Cadd9][----]かな[D][----][|]";
+const spacedRowSettings = { ...settings, measureCapacity: 8, hyphenSpacing: 4, longBeatLyricPlacement: 2 };
+const spacedRow = CBFConverter.convertChordText(spacedRowSource, spacedRowSettings, ["84444"], [], ["44444"], ["edit"]);
+assert.strictEqual(
+  CBFConverter.renderCompletedOutput(spacedRow.output, [4, 8], 4).output,
+  "嫌[|][A7]いじゃないかな　[|][A7]好きになっ[D]てくれる[|][Cadd9][----]かな[D][----][|]",
+  "changing 44444 to 84444 must preserve the authored lyric space"
+);
+const lyricText = (line) => CBFConverter.parseTokens(line).filter((token) => token.kind === "text").map((token) => token.value).join("");
+const repeatedSpacedRowSource = "口[|][Em7]べたなとこ　[|][Em7][D]背が[|][Cadd9]高いとこ　[|][Cadd9][G/B]";
+const repeatedSpacedRowExpected = "口[|][Em7]べたなとこ　[|][Em7][----][D][----]背が[|][Cadd9]高いとこ　[|][Cadd9][----][G/B][----][|]";
+for (const mode of [2, 3]) {
+  const rowSettings = { ...spacedRowSettings, longBeatLyricPlacement: mode };
+  const previous = CBFConverter.convertChordText(repeatedSpacedRowSource, rowSettings, ["444444"]);
+  const displayedPrevious = CBFConverter.renderCompletedOutput(previous.output, [4, 8], 4).output;
+  for (const manualSource of [[], [displayedPrevious]]) {
+    const corrected = CBFConverter.convertChordText(repeatedSpacedRowSource, rowSettings, ["844844"], manualSource, ["444444"], ["edit"]);
+    assert.strictEqual(
+      CBFConverter.renderCompletedOutput(corrected.output, [4, 8], 4).output,
+      repeatedSpacedRowExpected,
+      `444444 to 844844 must preserve both lyric spaces in placement mode ${mode}, including a previously displayed result`
+    );
+    assert.strictEqual(lyricText(corrected.output), lyricText(repeatedSpacedRowSource), "row correction must preserve the complete authored lyric text");
+  }
+}
+for (const mode of [0, 1, 2, 3, 4]) {
+  for (const phrase of ["あいうえ　", "あ　いうえ", "あいう　　えお", "あい  うえ", "あい　 うえ", "あいうえ"]) {
+    const result = CBFConverter.convertChordText(`[C]${phrase}[D]次`, { ...spacedRowSettings, longBeatLyricPlacement: mode }, ["84"]);
+    assert.strictEqual(lyricText(result.output), `${phrase}次`, `mode ${mode} must preserve lyric whitespace in ${JSON.stringify(phrase)}`);
+  }
+}
 
 console.log("PASS: ROW-007 selectable long-beat lyric placement");
