@@ -66,6 +66,7 @@
   let activeChordStart = -1;
   let positionSpaceKeyDown = false;
   const positionUndoStack = [];
+  const positionRedoStack = [];
   let stackedLineHeight = 1.65;
   let sideLineHeight = 2.75;
   let stackedPaneSize = 48;
@@ -74,15 +75,20 @@
   const suppressedScrollPositions = new WeakMap();
   const chordTokenPattern = /\[\[([^\[\]\r\n]*)\]\]|\[([^\[\]\r\n]*)\]/g;
   const directiveTokenPattern = /\{[^{}\r\n]*\}/g;
-  const chordRanges = (source, includeSymbols = false) => {
+  const chordRanges = (source, includeSymbols = false, groupBars = !includeSymbols) => {
     const value = String(source || "");
     const ranges = [];
     let match;
     while ((match = chordTokenPattern.exec(value))) {
       const token = match[1] !== undefined ? match[1] : match[2];
-      if (!includeSymbols && (token === "|" || window.ChordWikiPreview?.isRhythmToken?.(token))) continue;
-      const lineStart = Math.max(value.lastIndexOf("\n", match.index - 1), value.lastIndexOf("\r", match.index - 1)) + 1;
-      ranges.push({ start: match.index, end: match.index + match[0].length, lineIndex: value.slice(0, match.index).split(/\r\n|\r|\n/).length - 1, column: match.index - lineStart, token: match[0] });
+      const isSymbol = token === "|" || window.ChordWikiPreview?.isRhythmToken?.(token);
+      if (!includeSymbols && isSymbol) continue;
+      const start = groupBars && !isSymbol && value.slice(Math.max(0, match.index - 3), match.index) === "[|]"
+        ? match.index - 3 : match.index;
+      if (ranges.at(-1)?.start === start) ranges.pop();
+      const end = match.index + match[0].length;
+      const lineStart = Math.max(value.lastIndexOf("\n", start - 1), value.lastIndexOf("\r", start - 1)) + 1;
+      ranges.push({ start, end, lineIndex: value.slice(0, start).split(/\r\n|\r|\n/).length - 1, column: start - lineStart, token: value.slice(start, end) });
     }
     chordTokenPattern.lastIndex = 0;
     return ranges;
@@ -90,7 +96,7 @@
   const activeChordRange = () => chordRanges(text.value, includePositionSymbols).find((range) => range.start === activeChordStart) || null;
   const movementRanges = (source) => {
     const value = String(source || "");
-    const ranges = chordRanges(value, true);
+    const ranges = chordRanges(value, true, !includePositionSymbols);
     let match;
     while ((match = directiveTokenPattern.exec(value))) {
       const lineStart = Math.max(value.lastIndexOf("\n", match.index - 1), value.lastIndexOf("\r", match.index - 1)) + 1;
@@ -172,7 +178,7 @@
     let lastIndex = 0;
     highlight.innerHTML = [...text.value.matchAll(tokenPattern)].map((match) => {
       const token = match[0]; const inner = token.slice(1, -1);
-      const isSelectedChord = selectedChord && match.index === selectedChord.start;
+      const isSelectedChord = selectedChord && match.index >= selectedChord.start && match.index + token.length <= selectedChord.end;
       const syntaxClass = token === "|" || (token.startsWith("[") && (inner === "|" || /^[\s\-=>≧○]+$/.test(inner))) ? "syntax-bracket" : /^\{\s*key\s*:/i.test(token) ? "syntax-key" : token.startsWith("{") ? "syntax-directive" : "syntax-chord";
       const className = `${syntaxClass}${isSelectedChord ? " position-adjust-active" : ""}`;
       const before = escape(text.value.slice(lastIndex, match.index)); lastIndex = match.index + token.length;
@@ -272,12 +278,16 @@
     return true;
   };
   const rememberPositionEdit = () => {
+    positionRedoStack.length = 0;
     positionUndoStack.push({ value: text.value, selectionStart: text.selectionStart, selectionEnd: text.selectionEnd, activeChordStart });
     if (positionUndoStack.length > 100) positionUndoStack.shift();
   };
-  const undoPositionEdit = () => {
-    const previous = positionUndoStack.pop();
+  const undoPositionEdit = (redo = false) => {
+    const from = redo ? positionRedoStack : positionUndoStack;
+    const to = redo ? positionUndoStack : positionRedoStack;
+    const previous = from.pop();
     if (!previous) return false;
+    to.push({ value: text.value, selectionStart: text.selectionStart, selectionEnd: text.selectionEnd, activeChordStart });
     text.value = previous.value;
     activeChordStart = previous.activeChordStart;
     text.setSelectionRange(previous.selectionStart, previous.selectionEnd);
@@ -330,10 +340,12 @@
     text.setRangeText("", range.start, range.end, "preserve");
     const targetStart = targetLine.start - (targetLineIndex > range.lineIndex ? token.length : 0);
     const targetLength = targetLine.end - targetLine.start;
-    const insertAt = targetStart + Math.min(range.column, targetLength);
+    let insertAt = targetStart + Math.min(range.column, targetLength);
+    const targetToken = movementRanges(text.value).find((item) => item.start < insertAt && insertAt < item.end);
+    if (targetToken) insertAt = targetToken.start;
     text.setRangeText(token, insertAt, insertAt, "preserve");
     const nextLine = targetLineIndex;
-    return finishPositionEdit({ start: insertAt, end: insertAt + token.length, lineIndex: nextLine, column: Math.min(range.column, targetLength), token });
+    return finishPositionEdit({ start: insertAt, end: insertAt + token.length, lineIndex: nextLine, column: insertAt - targetStart, token });
   };
   const isPositionSpace = (event) => event.code === "Space" || event.key === " " || event.key === "　" || event.key === "Spacebar";
   const handlePositionSpace = (event) => {
@@ -362,10 +374,10 @@
     event.stopImmediatePropagation();
   };
   const handlePositionUndo = (event) => {
-    if (!positionAdjustMode || !(event.ctrlKey || event.metaKey) || event.altKey || event.key.toLowerCase() !== "z") return;
+    if (!positionAdjustMode || !(event.ctrlKey || event.metaKey) || event.altKey || !["z", "y"].includes(event.key.toLowerCase())) return;
     event.preventDefault();
     event.stopPropagation();
-    undoPositionEdit();
+    undoPositionEdit(event.shiftKey || event.key.toLowerCase() === "y");
   };
   const handlePositionClipboard = (event) => {
     if (!positionAdjustMode || !(event.ctrlKey || event.metaKey) || event.altKey) return;
@@ -399,7 +411,7 @@
       setPositionMode(false);
       return;
     }
-    if ((event.ctrlKey || event.metaKey) && ["a", "c", "z"].includes(event.key.toLowerCase())) return;
+    if ((event.ctrlKey || event.metaKey) && ["a", "c", "z", "y"].includes(event.key.toLowerCase())) return;
     if (["Tab", "Shift", "Control", "Alt", "Meta"].includes(event.key)) return;
     if (isPositionSpace(event)) return;
     event.preventDefault();
@@ -442,6 +454,7 @@
       positionAdjustMode = true;
       positionSpaceKeyDown = false;
       positionUndoStack.length = 0;
+      positionRedoStack.length = 0;
       text.readOnly = true;
       positionToggle.textContent = "● コード位置調整モード中";
       positionToggle.setAttribute("aria-pressed", "true");
@@ -459,6 +472,7 @@
     positionAdjustMode = false;
     positionSpaceKeyDown = false;
     positionUndoStack.length = 0;
+    positionRedoStack.length = 0;
     activeChordStart = -1;
     text.readOnly = false;
     positionToggle.textContent = "コード位置調整モード(F2)";
@@ -500,7 +514,11 @@
   positionToggle.addEventListener("click", () => setPositionMode(!positionAdjustMode));
   positionSymbols.addEventListener("change", () => {
     includePositionSymbols = positionSymbols.checked;
-    if (positionAdjustMode && !activeChordRange()) selectRelativeChord(1);
+    if (positionAdjustMode) {
+      const range = chordAtPosition(text.selectionStart, false);
+      if (range) setActiveChord(range, { focus: false });
+      else if (!activeChordRange()) selectRelativeChord(1);
+    }
     render();
     if (positionAdjustMode) positionStatus();
   });

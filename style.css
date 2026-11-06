@@ -694,7 +694,7 @@ textarea::placeholder { color: var(--muted); opacity: .7; }
 .committed-window-preview.is-panning { cursor: grabbing; user-select: none; }
 .committed-window-preview > * { cursor: text; }
 .committed-window-preview > [data-source-line] { min-width: 100%; cursor: pointer; }
-.committed-window-preview > [data-source-line].compare-active { border-radius: 3px; background: color-mix(in srgb, var(--focus) 16%, transparent); }
+.committed-window-preview > [data-source-line].compare-active { border-radius: 3px; background: color-mix(in srgb, var(--text) 5%, transparent); }
 .committed-window-preview.position-adjust-active .cw-code-token { cursor: pointer; }
 .committed-window-preview.position-adjust-active .cw-code-token:hover { border-radius: 3px; background: color-mix(in srgb, var(--accent) 28%, transparent); }
 @media (min-width: 1040px) {
