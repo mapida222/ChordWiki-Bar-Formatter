@@ -1,5 +1,7 @@
 # 保存データschema契約
 
+リアルタイム編集の履歴は `chordWikiBarFormatter.editorHistory.v1.<id>` に1版ずつ保存する。曲ごとの最新100件を超えた版は退避欄から復元できる。下書きは既存の committedWindowDraft.v1 を使い、任意の unnamedSong（無題曲の識別子）と historyDueAt（履歴記録予定時刻）を保持する。
+
 この文書は、ChordWiki Bar Formatterの保存形式ごとの所有範囲と互換性を固定する。保存形式は用途別に分かれており、ひとつのschemaへ統合しない。
 
 ## 共通原則

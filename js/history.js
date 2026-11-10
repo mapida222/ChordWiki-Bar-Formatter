@@ -6,6 +6,7 @@
   "use strict";
 
   const HISTORY_KEY = "chordWikiBarFormatter.history.v1";
+  const EDITOR_PREFIX = "chordWikiBarFormatter.editorHistory.v1.";
   const CRASH_KEY = "chordWikiBarFormatter.crashRecovery.v1";
   const RETENTION_MS = 7 * 24 * 60 * 60 * 1000;
 
@@ -43,9 +44,14 @@
     return workStateSignature(snapshot);
   }
 
-  function titleFromText(text, savedAt) {
+  function titleValueFromText(text) {
     const match = String(text || "").match(/^\s*\{title\s*:\s*(.*?)\s*\}\s*$/im);
-    if (match?.[1]) return match[1].trim();
+    return match?.[1]?.trim() || "";
+  }
+
+  function titleFromText(text, savedAt) {
+    const title = titleValueFromText(text);
+    if (title) return title;
     return new Intl.DateTimeFormat("ja-JP", {
       year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit"
     }).format(new Date(savedAt));
@@ -88,8 +94,35 @@
       return kept;
     }
 
+    function editorKeys() {
+      const keys = [];
+      for (let i = 0; i < storage.length; i++) {
+        const key = storage.key(i);
+        if (key?.startsWith(EDITOR_PREFIX)) keys.push(key);
+      }
+      return keys;
+    }
+
     function list() {
-      return prune();
+      const entries = prune();
+      for (const key of editorKeys()) {
+        const entry = JSON.parse(storage.getItem(key));
+        if (entry) entries.push(entry);
+      }
+      return entries.sort((a, b) => b.savedAt - a.savedAt);
+    }
+
+    function saveEditorHistory(value, song) {
+      if (!value.trim()) return;
+      const savedAt = now();
+      const entries = list();
+      const latest = entries.find(entry => entry.editorSong === song);
+      if (latest?.historyText === value) return;
+      const id = crypto.randomUUID();
+      const entry = { id, savedAt, editorOnly: true, editorSong: song,
+        title: titleFromText(value, savedAt), historyText: value };
+      // Independent keys prevent simultaneous tabs from replacing each other's versions.
+      storage.setItem(EDITOR_PREFIX + id, JSON.stringify(entry));
     }
 
     function saveHistory(snapshot) {
@@ -183,12 +216,13 @@
     }
 
     function clearHistory() {
+      for (const key of editorKeys()) storage.removeItem(key);
       storage.removeItem(HISTORY_KEY);
       return [];
     }
 
-    return { list, prune, saveHistory, saveCrash, getCrash, clearCrash, clearHistory, signature };
+    return { list, prune, saveHistory, saveEditorHistory, saveCrash, getCrash, clearCrash, clearHistory, signature };
   }
 
-  return { createStore, outputSignature, workStateSignature, signature, titleFromText, shouldRestoreCrash, HISTORY_KEY, CRASH_KEY, RETENTION_MS };
+  return { createStore, outputSignature, workStateSignature, signature, titleValueFromText, titleFromText, shouldRestoreCrash, HISTORY_KEY, CRASH_KEY, RETENTION_MS };
 }));

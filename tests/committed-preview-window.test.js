@@ -11,7 +11,7 @@ const css = fs.readFileSync(path.join(root, "style.css"), "utf8");
 const preview = require(path.join(root, "js", "chordwiki-preview.js"));
 const entry = fs.readFileSync(path.join(root, "js", "entries", "committed-preview.js"), "utf8");
 
-assert(windowScript.includes('if (!text.value) { try { text.value = localStorage.getItem(TEXT_KEY) || ""; } catch (_error) {} }\n  // A saved draft'));
+assert(windowScript.includes('if (!savedDraft && !text.value) { try { text.value = localStorage.getItem(TEXT_KEY) || ""; } catch (_error) {} }'));
 assert(windowScript.includes('const keepExistingDraft = new URLSearchParams(window.location.search).get("draft") === "keep";'));
 assert(windowScript.includes('if (!keepExistingDraft && !pendingReplace) { try { applyState(JSON.parse(localStorage.getItem(STATE_KEY) || "null")); } catch (_error) {} }'));
 const app = fs.readFileSync(path.join(root, "js", "app.js"), "utf8");
@@ -69,7 +69,7 @@ assert(windowScript.includes('if (settingsPanel?.open && !settingsPanel.contains
 assert(html.includes('<details class="score-window-help">'));
 assert(html.includes('<strong>リアルタイムエディターの使い方</strong>'));
 assert(html.includes('右の譜面をクリックすると、対応する左の行を確認できます。'));
-assert(html.includes('編集内容はこのブラウザの下書きとして保存されます。元の画面の変換前・変換後は自動更新されません。'));
+assert(html.includes('元の画面の変換前・変換後は自動更新されません。'));
 assert(css.includes('.score-window-help-panel { position: absolute;'));
 assert(css.includes(".score-window-settings-panel { position: absolute;"));
 assert(html.includes('id="committed-line-height"'));
@@ -105,8 +105,8 @@ assert(html.indexOf('id="committed-transpose-up"') < html.indexOf('id="committed
 assert(html.includes('<span>移調</span><span class="committed-transpose-stepper">') && html.includes('aria-label="プレビューを半音下げる">▼') && html.includes('aria-label="プレビューを半音上げる">▲'), "realtime transpose and note-name controls must stay inline without opening a side settings panel");
 assert(css.includes('.committed-transpose-control, .committed-spelling-control { display: flex;') && css.includes('.committed-transpose-stepper { display: grid;'), "realtime transpose and spelling controls must use the compact inline toolbar layout");
 assert(html.includes('id="committed-bold-code" type="checkbox" checked'));
-assert(windowScript.includes("const contentLineTop = paddingTop + activeLine * lineHeight;"));
-assert(windowScript.includes('text.style.setProperty("--active-line-top", `${contentLineTop - text.scrollTop}px`);'));
+assert(windowScript.includes("function alignCurrentLineRule() {"));
+assert(windowScript.includes('layer.style.setProperty("--current-line-rule", `${y}px`);'));
 assert(windowScript.includes("if (previewRow) previewRow.dataset.sourceLine = String(sourceLineIndex);"));
 assert(windowScript.includes('event.target.closest("[data-source-line]")'));
 assert(windowScript.includes("const LINE_NUMBER_TRAILING_ROWS = 2"), "realtime editor line numbers must reserve two visual trailing rows");
@@ -135,7 +135,7 @@ assert(windowScript.includes("checkboxDefaultsVersion: 1"));
 assert(windowScript.includes("stackedPaneSize, sidePaneSize"));
 assert(windowScript.includes("Math.max(6, Math.min(94"));
 assert(windowScript.includes("requestAnimationFrame(() => {"));
-assert(css.includes(".committed-window-editor.active-line-visible"));
+assert(css.includes(".committed-window-editor-wrap .editor-text-layer::after"));
 assert(css.includes('.committed-window-preview > [data-source-line].compare-active'));
 
 const rendered = preview.render("[|][C][----]テスト[|]");
