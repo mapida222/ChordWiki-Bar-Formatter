@@ -1374,3 +1374,9 @@ textarea::placeholder { color: var(--muted); opacity: .7; }
   .help-detail-card > summary::after { transition: none; }
 }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+
+#editor-history { width: min(38rem, calc(100% - 24px)); max-height: 90vh; overflow: auto; padding: 16px; border: 1px solid var(--line); border-radius: 8px; color: var(--text); background: var(--panel); }
+#editor-history::backdrop { background: rgb(0 0 0 / .48); }
+#editor-history h2 { margin: 0 0 12px; }
+#editor-history select { display: block; width: 100%; margin: 4px 0 10px; }
+#editor-history-preview { max-height: 38vh; min-height: 5em; padding: 10px; overflow: auto; border: 1px solid var(--line); white-space: pre-wrap; overflow-wrap: anywhere; }
