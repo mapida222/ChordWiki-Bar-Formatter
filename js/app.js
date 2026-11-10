@@ -617,7 +617,15 @@
     }
     return html + colorizeChunk(text.slice(lastIndex), lastIndex, "", activeOffset, addedOffsets);
   }
+  function alignEditorRule(textarea, gutter) {
+    const layer = textarea.parentElement;
+    if (!layer.classList.contains("current-line-visible")) return;
+    const row = gutter.children[linkedLineIndex];
+    const y = row ? row.getBoundingClientRect().bottom - layer.getBoundingClientRect().top - 1 : -1;
+    layer.style.setProperty("--current-line-rule", `${y}px`);
+  }
   function syncHighlightScroll(textarea) {
+    alignEditorRule(textarea, gutterByEditor.get(textarea));
     const highlight = highlightByEditor.get(textarea);
     if (highlight) highlight.style.transform = `translate(${-textarea.scrollLeft}px, ${-textarea.scrollTop}px)`;
   }
@@ -905,15 +913,10 @@
       row.classList.toggle("active-row", index === linkedLineIndex);
       row.classList.toggle("before-active-row", index + 1 === linkedLineIndex);
     });
-    highlightByEditor.forEach((highlight, textarea) => {
+    gutterByEditor.forEach((gutter, textarea) => {
       const visible = linkedLineIndex >= 0 && linkedLineIndex < Math.max(1, lineCount(textarea.value));
-      highlight.classList.toggle("active-line-visible", visible);
-      if (!visible) return;
-      const computed = getComputedStyle(textarea);
-      const lineHeight = Number.parseFloat(computed.lineHeight) || (Number.parseFloat(computed.fontSize) || 16) * 1.65;
-      const paddingTop = Number.parseFloat(computed.paddingTop) || 0;
-      highlight.style.setProperty("--active-line-top", `${paddingTop + linkedLineIndex * lineHeight}px`);
-      highlight.style.setProperty("--active-line-height", `${lineHeight}px`);
+      textarea.parentElement.classList.toggle("current-line-visible", visible);
+      alignEditorRule(textarea, gutter);
     });
     updateEditorHighlight(elements.correction, correctionOffsetAt(linkedLineIndex, linkedSlotIndex));
     updateEditorHighlight(elements.output, -1, outputCodeOffsetAt(linkedLineIndex, linkedSlotIndex));
