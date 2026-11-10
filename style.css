@@ -681,12 +681,21 @@ textarea::placeholder { color: var(--muted); opacity: .7; }
 .position-adjust-help kbd { padding: 1px 4px; border: 1px solid color-mix(in srgb, var(--accent) 54%, var(--line)); border-radius: 3px; color: var(--text); background: color-mix(in srgb, var(--accent) 13%, var(--panel)); font-family: var(--mono); font-size: .66rem; }
 .committed-window-editor-pane, .committed-window-preview-pane { display: grid; grid-template-rows: 34px minmax(0, 1fr); }
 .committed-window-editor-wrap { display: grid; grid-template-columns: max-content minmax(0, 1fr); min-height: 0; }
+.committed-window-editor-wrap .editor-text-layer::after {
+  content: "";
+  position: absolute;
+  z-index: 2;
+  pointer-events: none;
+  inset-inline: 0;
+  top: var(--current-line-rule, -1px);
+  height: 1px;
+  background: color-mix(in srgb, var(--focus) 65%, transparent);
+}
 .committed-window-editor-wrap .editor-highlight { font-kerning: none; line-height: var(--committed-line-height); }
 .committed-window-editor-wrap .line-numbers { line-height: calc(var(--editor-font-size) * var(--committed-line-height)); }
 .committed-window-editor-wrap .line-numbers span { height: calc(var(--editor-font-size) * var(--committed-line-height)); }
 .committed-window-editor { width: 100%; height: 100%; box-sizing: border-box; resize: none; padding: 14px; border: 0; outline: 0; color: var(--text); background: var(--panel); font: var(--editor-font-size)/var(--committed-line-height) var(--editor-font); font-kerning: none; font-variant-ligatures: none; white-space: pre; }
 .bold-chords .committed-window-editor-wrap .editor-highlight .syntax-chord { font-weight: 400; text-shadow: 0 0 .35px currentColor; }
-.committed-window-editor.active-line-visible { background-color: var(--panel); background-image: linear-gradient(color-mix(in srgb, var(--focus) 14%, transparent), color-mix(in srgb, var(--focus) 14%, transparent)); background-repeat: no-repeat; background-position: 0 var(--active-line-top, 0); background-size: 100% var(--active-line-height, 1.65em); }
 .committed-window-divider { cursor: col-resize; background: var(--line); touch-action: none; }
 .committed-window-stacked .committed-window-divider { cursor: row-resize; }
 .committed-window-preview { height: 100%; margin: 0; border: 0; border-radius: 0; font-size: var(--editor-font-size) !important; }

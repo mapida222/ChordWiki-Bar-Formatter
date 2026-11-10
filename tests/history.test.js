@@ -3,6 +3,8 @@ const historyApi = require("../js/history.js");
 
 class MemoryStorage {
   constructor() { this.values = new Map(); }
+  get length() { return this.values.size; }
+  key(i) { return Array.from(this.values.keys())[i]; }
   getItem(key) { return this.values.has(key) ? this.values.get(key) : null; }
   setItem(key, value) { this.values.set(key, String(value)); }
   removeItem(key) { this.values.delete(key); }
@@ -19,6 +21,27 @@ const snapshot = {
   outputOverrides: { "source-music": { text: "[C]手動", baseText: "[C]歌詞", suppressed: false } },
   settings: { converter: { hyphenUnit: "4" } }
 };
+
+{
+  const assert = require("node:assert/strict");
+  const memory = new MemoryStorage();
+  const history = historyApi.createStore(memory, () => currentTime);
+  for (let version = 0; version < 101; version++) {
+    currentTime++;
+    history.saveEditorHistory("score-" + version, "song");
+  }
+  history.saveEditorHistory("score-100", "song");
+  assert.equal(history.list().length, 101);
+  history.saveEditorHistory("second song", "other");
+  currentTime += historyApi.RETENTION_MS + 1;
+  assert.equal(history.list().length, 102);
+  const before = history.list();
+  memory.setItem = () => { throw new Error("quota"); };
+  assert.throws(() => history.saveEditorHistory("score-new", "song"), /quota/);
+  assert.deepEqual(history.list(), before);
+  history.clearHistory();
+  assert.equal(history.list().length, 0);
+}
 
 const first = store.saveHistory(snapshot);
 if (!first.saved || first.entry.title !== "履歴テスト" || store.list().length !== 1) throw new Error("history save/title failed");

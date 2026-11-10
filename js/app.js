@@ -1882,6 +1882,7 @@
     return CBFOutputOverrides.apply(adopted, entry.sourceLineIds || [], entry.outputOverrides || {});
   }
   function restoreHistoryWorkState(entry) {
+    if (entry.editorOnly) entry = { ...entry, inputText: entry.historyText, committedOutputText: entry.historyText };
     restoreSnapshot(entry);
     const savedText = savedHistoryText(entry);
     if (savedText !== null) {
@@ -1973,7 +1974,16 @@
       elements.historyList.append(empty);
       return;
     }
+    const counts = new Map();
+    const archive = document.createElement("details");
+    const summary = document.createElement("summary");
+    archive.append(summary);
+    let archived = 0;
     entries.forEach((entry) => {
+      const song = entry.editorSong || (entry.editorOnly
+        ? "title:" + (CBFHistoryStore.titleValueFromText(entry.historyText) || "無題") : null);
+      const count = song ? (counts.get(song) || 0) + 1 : 0;
+      if (song) counts.set(song, count);
       const button = document.createElement("button");
       button.type = "button";
       button.className = "history-item";
@@ -1989,8 +1999,15 @@
       button.setAttribute("aria-pressed", "false");
       button.append(date, title, excerpt);
       button.addEventListener("click", () => showHistoryPreview(entry, button));
-      elements.historyList.append(button);
+      if (count > 100) {
+        archived++;
+        archive.append(button);
+      } else elements.historyList.append(button);
     });
+    if (archived) {
+      summary.textContent = `退避した履歴（${archived}件）`;
+      elements.historyList.append(archive);
+    }
   }
   async function writeClipboard(text) {
     if (navigator.clipboard && window.isSecureContext) return navigator.clipboard.writeText(text);

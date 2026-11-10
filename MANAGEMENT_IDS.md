@@ -122,6 +122,7 @@
 | `LAYOUT-034` | 横スクロールはカーソルを幅40〜60%に保ち、画面幅の1/6ずつ140msのイーズアウトで移動 | 有効 | `js/app.js`、`tests/scroll-sync-progress.test.js` |
 | `LAYOUT-035` | 更新履歴を5件ずつ段階表示し、ボタン操作で最古の履歴まで表示 | 有効 | `index.html`、`style.css`、`js/entries/main.js`、`js/update-history.js`、`tests/header-controls.test.js` |
 | `LAYOUT-036` | 390px以下でもヘッダー・編集見出し・テキスト枠の文字を読みやすく保ち、操作群を潰さず折り返す | 有効 | `index.html`、`style.css`、`tests/header-controls.test.js` |
+| `LAYOUT-037` | リアルタイムエディターの現在行の行番号欄を強調し、本文の下端に細い横線を表示する | 有効 | `js/committed-preview-window.js`、`style.css`、`tests/committed-preview-window.test.js` |
 | `PREVIEW-001` | 譜面プレビューのベスト条件 | 基準 | `LAYOUT_REFERENCE.md`、`layout-snapshots/2026-07-22-good/`、Gitタグ `preview-layout-best-2026-07-22` |
 | `PREVIEW-002` | 拍記号に挟まれた縦小節線が直後の拍記号と重ならないよう補正 | 有効 | `js/chordwiki-preview.js`、`style.css`、`tests/preview-layout.test.js` |
 | `PREVIEW-003` | 譜面プレビューの移調では`{key:...}`だけを移調し、`{ci:...}`・`{title:...}`・`{subtitle:...}`などコメント系ディレクティブ内部のコード風文字列は保持 | 有効 | `js/transposer.js`、`tests/transposer.test.js` |
