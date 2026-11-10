@@ -19,6 +19,7 @@
       <label class="committed-transpose-control"><span>移調</span><span class="committed-transpose-stepper"><select id="committed-transpose" aria-label="リアルタイムプレビューの移調"></select><button id="committed-transpose-down" type="button" aria-label="プレビューを半音下げる">▼</button><button id="committed-transpose-up" type="button" aria-label="プレビューを半音上げる">▲</button></span></label>
       <label class="preview-control committed-spelling-control"><span>音名</span><select id="committed-spelling" aria-label="シャープ・フラット表記"><option value="sharp">#表記</option><option value="preserve">元表記</option><option value="flat">♭表記</option></select></label>
       <button id="committed-layout-toggle" class="layout-toggle-button" type="button">↕表示入替↔</button>
+      <button id="editor-history-open" type="button" class="layout-toggle-button" aria-haspopup="dialog" aria-controls="editor-history">使用履歴</button>
       <details class="score-window-help">
         <summary>使い方</summary>
         <div class="score-window-help-panel">
@@ -29,17 +30,17 @@
             <li>右の譜面をクリックすると、対応する左の行を確認できます。</li>
             <li>移調、文字サイズ、テーマ、上下／左右の比較順は表示だけを調整します。</li>
             <li>「コード位置調整モード」はF2で切り替えます。コードをクリックまたは選択して矢印キーで移動できます。Shift+F2で小節線・ハイフンも移動対象に切り替え、Spaceで次、Shift+Spaceで前のコードを選びます。</li>
-            <li>下書きは入力停止から0.18秒後、連続入力中も最長5秒で保存します。変更のある譜面は3分ごとにメイン画面の「使用履歴」に記録します。曲ごとに最新100件を表示し、以前の版は「退避した履歴」から開けます。元の画面の変換前・変換後は自動更新されません。</li>
+            <li>下書きは入力停止から0.18秒後、連続入力中も最長5秒で保存します。変更のある譜面は3分ごとに「使用履歴」に記録します。選んだ版の本文を確認し、この画面で復元できます。曲ごとに最新100件を表示し、以前の版は「退避した履歴」から開けます。元の画面の変換前・変換後は自動更新されません。</li>
           </ol>
         </div>
       </details>
       <details class="score-window-settings">
         <summary>表示設定</summary>
         <div class="score-window-settings-panel">
+          <label class="preview-control"><span>画面テーマ</span><select id="committed-theme"><option value="light">ライト</option><option value="dark">ダーク</option></select></label>
           <label class="preview-control font-size-control"><span>文字サイズ <output id="committed-font-size-value">14px</output></span><input id="committed-font-size" type="range" min="11" max="24" value="14"></label>
           <label class="preview-control line-height-control"><span>テキスト行間 <output id="committed-line-height-value">1.65倍</output></span><input id="committed-line-height" type="range" min="1.4" max="3.2" step="0.05" value="1.65"></label>
           <label class="preview-control"><span>フォント</span><select id="committed-font"><option value="Meiryo, sans-serif">メイリオ</option><option value="system-ui, sans-serif">system-ui</option><option value="'Yu Gothic UI', sans-serif">游ゴシック</option><option value="'BIZ UDPGothic', sans-serif">BIZ UDゴシック</option></select></label>
-          <label class="preview-control"><span>テーマ</span><select id="committed-theme"><option value="light">ライト</option><option value="dark">ダーク</option></select></label>
           <label class="final-bar-setting"><input id="committed-text-coloring" type="checkbox" checked> <span>文字色</span></label>
           <label class="final-bar-setting"><input id="committed-bold-code" type="checkbox" checked> <span>太字コード</span></label>
           <label class="final-bar-setting"><input id="committed-scroll-sync" type="checkbox" checked> <span>スクロール連動</span></label>
@@ -47,6 +48,17 @@
       </details>
     </div>
   </header>
+  <dialog id="editor-history" aria-labelledby="editor-history-title">
+    <h2 id="editor-history-title">使用履歴</h2>
+    <label>保存した譜面<select id="editor-history-list"></select></label>
+    <details id="editor-history-archive"><summary>退避した履歴</summary><select id="editor-history-older" aria-label="退避した履歴から選択"></select></details>
+    <pre id="editor-history-preview" tabindex="0" aria-label="保存した本文"></pre>
+    <p id="editor-history-error" role="alert" hidden></p>
+    <div class="committed-replace-actions">
+      <button id="editor-history-close" type="button">閉じる</button>
+      <button id="editor-history-restore" type="button" disabled>この版を復元</button>
+    </div>
+  </dialog>
   <dialog id="committed-replace-dialog" class="committed-replace-dialog musicxml-handoff-dialog" aria-labelledby="committed-replace-title">
     <form method="dialog" class="committed-replace-dialog-content">
       <h2 id="committed-replace-title">変換結果を上書きしますか？</h2>

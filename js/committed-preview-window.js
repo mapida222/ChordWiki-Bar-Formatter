@@ -630,6 +630,86 @@
     if (!line) return;
     setActiveLine(Number(line.dataset.sourceLine));
   });
+  const historyDialog = document.querySelector("#editor-history");
+  const recentList = document.querySelector("#editor-history-list");
+  const olderList = document.querySelector("#editor-history-older");
+  const archive = document.querySelector("#editor-history-archive");
+  const historyPreview = document.querySelector("#editor-history-preview");
+  const restoreButton = document.querySelector("#editor-history-restore");
+  const historyError = document.querySelector("#editor-history-error");
+  let historyEntries = new Map();
+  let selectedEntry;
+  const entryText = entry => entry.historyText ?? entry.committedOutputText ?? entry.inputText ?? "";
+
+  function selectHistory(entry) {
+    selectedEntry = entry;
+    historyPreview.textContent = entry ? entryText(entry) : "保存された使用履歴はありません。";
+    restoreButton.disabled = !entry;
+    historyError.hidden = true;
+  }
+
+  document.querySelector("#editor-history-open").addEventListener("click", () => {
+    if (positionAdjustMode) setPositionMode(false);
+    recentList.replaceChildren();
+    olderList.replaceChildren(new Option("退避した版を選択", ""));
+    archive.open = false;
+    const counts = new Map();
+    historyEntries.clear();
+    selectHistory(null);
+    try {
+      for (const entry of window.CBFHistoryStore.createStore(localStorage).list()) {
+        const song = entry.editorSong || (entry.editorOnly ? "title:" + (window.CBFHistoryStore.titleValueFromText(entryText(entry)) || "無題") : null);
+        const count = (counts.get(song) || 0) + 1;
+        if (song) counts.set(song, count);
+        const target = song && count > 100 ? olderList : recentList;
+        const date = new Date(entry.savedAt).toLocaleString("ja-JP");
+        target.add(new Option(`${entry.title}　${date}`, entry.id));
+        historyEntries.set(entry.id, entry);
+      }
+      selectHistory(historyEntries.get(recentList.value));
+    } catch (_error) {
+      historyError.textContent = "使用履歴を読み込めませんでした。";
+      historyError.hidden = false;
+    }
+    archive.hidden = olderList.options.length < 2;
+    recentList.disabled = !recentList.options.length;
+    historyDialog.showModal();
+  });
+  for (const list of [recentList, olderList]) {
+    list.addEventListener("change", () => {
+      (list === recentList ? olderList : recentList).selectedIndex = -1;
+      selectHistory(historyEntries.get(list.value));
+    });
+  }
+  document.querySelector("#editor-history-close").addEventListener("click", () => historyDialog.close());
+  restoreButton.addEventListener("click", () => {
+    if (!selectedEntry) return;
+    const value = entryText(selectedEntry);
+    if (value !== text.value && text.value.trim()) {
+      try {
+        const title = window.CBFHistoryStore.titleValueFromText(text.value);
+        window.CBFHistoryStore.createStore(localStorage).saveEditorHistory(text.value, title ? `title:${title}` : `draft:${unnamedSong}`);
+      } catch (_error) {
+        historyError.textContent = "編集中の本文を履歴に保存できませんでした。復元する前に本文をコピーしてください。";
+        historyError.hidden = false;
+        return;
+      }
+    }
+    if (selectedEntry.editorSong?.startsWith("draft:")) unnamedSong = selectedEntry.editorSong.slice(6);
+    text.value = value;
+    transpose.value = "0";
+    appliedTranspose = 0;
+    transposeCommitted = false;
+    activeChordStart = -1;
+    activeLine = 0;
+    text.setSelectionRange(0, 0);
+    text.scrollTop = text.scrollLeft = 0;
+    applyDisplaySettings();
+    text.dispatchEvent(new Event("input", { bubbles: true }));
+    flushDraft();
+    historyDialog.close();
+    text.focus();
+  });
   const displayKey = "chordWikiBarFormatter.committedWindowDisplay.v1";
   window.ChordWikiTranspose?.fillTransposeSelect(transpose);
   function updateTransposeButtons() {
