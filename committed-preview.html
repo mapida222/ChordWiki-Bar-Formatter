@@ -49,15 +49,18 @@
     </div>
   </header>
   <dialog id="editor-history" aria-labelledby="editor-history-title">
-    <h2 id="editor-history-title">使用履歴</h2>
-    <label>保存した譜面<select id="editor-history-list"></select></label>
-    <details id="editor-history-archive"><summary>退避した履歴</summary><select id="editor-history-older" aria-label="退避した履歴から選択"></select></details>
-    <pre id="editor-history-preview" tabindex="0" aria-label="保存した本文"></pre>
-    <p id="editor-history-error" role="alert" hidden></p>
-    <div class="committed-replace-actions">
-      <button id="editor-history-close" type="button">閉じる</button>
-      <button id="editor-history-restore" type="button" disabled>この版を復元</button>
+    <header class="history-heading"><h2 id="editor-history-title">使用履歴</h2><button id="editor-history-close" type="button" aria-label="閉じる">×</button></header>
+    <div class="editor-history-columns">
+      <section class="history-library" aria-label="保存した譜面">
+        <h3>保存した譜面</h3><div id="editor-history-list"></div>
+        <details id="editor-history-archive"><summary>退避した履歴</summary><div id="editor-history-older"></div></details>
+      </section>
+      <section class="history-sheet" aria-label="選んだ版">
+        <div class="history-views" aria-label="プレビュー表示"><button type="button" aria-pressed="true" id="history-view-score">譜面</button><button type="button" aria-pressed="false" id="history-view-source">本文</button></div>
+        <div id="editor-history-preview" tabindex="0" aria-label="保存した譜面のプレビュー"></div>
+      </section>
     </div>
+    <footer class="history-actions"><p id="editor-history-error" role="alert" hidden></p><button id="editor-history-restore" type="button" disabled>この版を復元</button></footer>
   </dialog>
   <dialog id="committed-replace-dialog" class="committed-replace-dialog musicxml-handoff-dialog" aria-labelledby="committed-replace-title">
     <form method="dialog" class="committed-replace-dialog-content">

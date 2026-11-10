@@ -637,13 +637,34 @@
   const historyPreview = document.querySelector("#editor-history-preview");
   const restoreButton = document.querySelector("#editor-history-restore");
   const historyError = document.querySelector("#editor-history-error");
-  let historyEntries = new Map();
+  const scoreView = document.querySelector("#history-view-score");
+  const sourceView = document.querySelector("#history-view-source");
   let selectedEntry;
+  let selectedButton;
+  let showSource = false;
   const entryText = entry => entry.historyText ?? entry.committedOutputText ?? entry.inputText ?? "";
 
-  function selectHistory(entry) {
+  function drawHistoryPreview() {
+    scoreView.setAttribute("aria-pressed", String(!showSource));
+    sourceView.setAttribute("aria-pressed", String(showSource));
+    historyPreview.classList.toggle("chordwiki-preview", !showSource && Boolean(selectedEntry));
+    historyPreview.classList.toggle("history-source", showSource);
+    const value = selectedEntry ? entryText(selectedEntry) : "";
+    if (selectedEntry && !showSource) {
+      try { window.ChordWikiPreview.renderInto(historyPreview, value); }
+      catch { historyPreview.textContent = value; }
+    } else historyPreview.textContent = selectedEntry ? value : "保存された使用履歴はありません。";
+    historyPreview.scrollTop = historyPreview.scrollLeft = 0;
+  }
+  scoreView.addEventListener("click", () => { showSource = false; drawHistoryPreview(); });
+  sourceView.addEventListener("click", () => { showSource = true; drawHistoryPreview(); });
+
+  function selectHistory(entry, button) {
+    selectedButton?.setAttribute("aria-pressed", "false");
+    selectedButton = button;
+    selectedButton?.setAttribute("aria-pressed", "true");
     selectedEntry = entry;
-    historyPreview.textContent = entry ? entryText(entry) : "保存された使用履歴はありません。";
+    drawHistoryPreview();
     restoreButton.disabled = !entry;
     historyError.hidden = true;
   }
@@ -651,10 +672,10 @@
   document.querySelector("#editor-history-open").addEventListener("click", () => {
     if (positionAdjustMode) setPositionMode(false);
     recentList.replaceChildren();
-    olderList.replaceChildren(new Option("退避した版を選択", ""));
+    olderList.replaceChildren();
     archive.open = false;
     const counts = new Map();
-    historyEntries.clear();
+    showSource = false;
     selectHistory(null);
     try {
       for (const entry of window.CBFHistoryStore.createStore(localStorage).list()) {
@@ -662,25 +683,27 @@
         const count = (counts.get(song) || 0) + 1;
         if (song) counts.set(song, count);
         const target = song && count > 100 ? olderList : recentList;
-        const date = new Date(entry.savedAt).toLocaleString("ja-JP");
-        target.add(new Option(`${entry.title}　${date}`, entry.id));
-        historyEntries.set(entry.id, entry);
+        const row = document.createElement("button");
+        row.type = "button";
+        row.className = "history-version";
+        row.setAttribute("aria-pressed", "false");
+        const title = document.createElement("strong");
+        title.textContent = window.CBFHistoryStore.titleValueFromText(entryText(entry)) || entry.title;
+        const date = document.createElement("time");
+        date.textContent = new Date(entry.savedAt).toLocaleString("ja-JP");
+        row.append(title, date);
+        row.addEventListener("click", () => selectHistory(entry, row));
+        target.append(row);
+        if (!selectedEntry) selectHistory(entry, row);
       }
-      selectHistory(historyEntries.get(recentList.value));
     } catch (_error) {
       historyError.textContent = "使用履歴を読み込めませんでした。";
       historyError.hidden = false;
     }
-    archive.hidden = olderList.options.length < 2;
-    recentList.disabled = !recentList.options.length;
+    archive.hidden = !olderList.childElementCount;
     historyDialog.showModal();
+    recentList.parentElement.scrollTop = 0;
   });
-  for (const list of [recentList, olderList]) {
-    list.addEventListener("change", () => {
-      (list === recentList ? olderList : recentList).selectedIndex = -1;
-      selectHistory(historyEntries.get(list.value));
-    });
-  }
   document.querySelector("#editor-history-close").addEventListener("click", () => historyDialog.close());
   restoreButton.addEventListener("click", () => {
     if (!selectedEntry) return;
