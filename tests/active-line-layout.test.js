@@ -8,9 +8,9 @@ const root = path.join(__dirname, "..");
 const app = fs.readFileSync(path.join(root, "js", "app.js"), "utf8");
 const style = fs.readFileSync(path.join(root, "style.css"), "utf8");
 
-assert(app.includes('highlight.classList.toggle("active-line-visible", visible)'));
-assert(app.includes('highlight.style.setProperty("--active-line-top"'));
-assert(style.includes(".editor-highlight.active-line-visible"));
-assert(style.includes("background-size: 100% var(--active-line-height"));
+assert(app.includes('classList.toggle("current-line-visible", visible)'));
+assert(app.includes('alignEditorRule(textarea, gutterByEditor.get(textarea))'));
+assert(style.includes(".editor-shell .editor-text-layer.current-line-visible::after"));
+assert(!style.includes(".editor-highlight.active-line-visible"));
 
-console.log("PASS: linked current-line background spans the editor width");
+console.log("PASS: converter active line uses the shared underline and gutter highlight");
