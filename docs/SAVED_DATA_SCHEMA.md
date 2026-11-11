@@ -26,6 +26,12 @@
 
 ## 重要状態の所有関係
 
+`settingsExamplesOpen.v1` は未保存の場合に説明・使用例を閉じて開始する。保存済みの `true` / `false` はそのまま復元し、レイアウト初期化時は `false` に戻す。キーと保存形式は変更しない。
+
+リアルタイムエディターは `sessionStorage` の `committedWindowDraft.v1` にタブ個別の下書き（`text`、`updatedAt`、`transpose`、`transposeApplied`、`appliedTranspose`、`unnamedSong`、`historyDueAt`、任意の `view: {selectionStart, selectionEnd, scrollTop, scrollLeft}`）を保存し、再読み込み・休止からの復元では共有状態より優先する。空文字の下書きも有効。非表示・ページ離脱時はタブ個別の本文と表示位置を保存するとともに未保存の共有下書きを確定し、新しい共有下書きは古い予約保存で上書きせず、復帰時は行番号・色付けを再描画してから選択・表示位置を戻す。`view` のない旧タブ下書きは先頭位置を既定値にし、本文の末尾へカーソルを置いたままにしない。タブ個別の保存がない新規タブは、従来の `localStorage` 下書きと明示的な取り込みを使う。共有下書きは既存の `text`・`updatedAt`・`unnamedSong`・`historyDueAt` を保持し、曲別履歴の予約をタブ個別の下書きにも引き継ぐ。キーのversionは変更しない。保存・読み込みの失敗時も編集中の本文は保持する。
+
+開いているリアルタイムエディターは `storage` / BroadcastChannel の本文変更で置き換えない。本文の親画面への反映は opener へのメッセージで行い、`baseText` と親画面の現在の確定本文が一致する場合だけ採用する。古いタブや旧形式メッセージは親画面へ適用しない。タブを閉じた後の新規起動は共有の最終下書きを使い、曲別の永続アーカイブにはしない。
+
 | 状態 | 現在状態 | 履歴／クラッシュ | JSON | 確定プレビュー | 復元時の扱い |
 |---|---|---|---|---|---|
 | `sourceLineIds` | 保存 | 保存 | 保存 | 保存しない | 入力行数に合わせてnormalizeし、行対応の基準にする |

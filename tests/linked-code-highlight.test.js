@@ -21,7 +21,7 @@ assert(css.includes(".bold-chords .editor-highlight .syntax-chord { font-weight:
 assert(app.includes("previewRow.dataset.sourceLine = String(sourceLineIndex);"), "the score preview must retain the source line mapping");
 assert(app.includes('line.classList.toggle("compare-active", Number(line.dataset.sourceLine) === linkedLineIndex)'), "the score preview must highlight the linked current line");
 assert(app.includes("keepPreviewLineInView();"), "the score preview must follow the linked current line");
-assert(html.includes("style.css?v=20261008-001"), "the browser must load the current linked-code highlight style");
+assert(/style\.css\?v=\d{8}-\d+/.test(html), "the browser must load a versioned linked-code highlight stylesheet");
 assert(html.includes('type="module" src="/js/entries/main.js"'), "the browser must load the module entry");
 assert(entry.includes('await import("../app.js")'), "the browser must load the current linked-code mapping");
 

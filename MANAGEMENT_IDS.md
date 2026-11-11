@@ -92,7 +92,7 @@
 | `LAYOUT-004` | 変換前・変換後の下枠ドラッグによる高さ調整 | 有効 | `index.html`、`style.css`、`js/app.js`、`tests/frame-edge-resize.test.js` |
 | `LAYOUT-005` | 初期設定を開いた際に内部へ重なる幅調整線を非表示 | 有効 | `style.css`、`tests/default-layout.test.js` |
 | `LAYOUT-006` | 全テキスト枠で貼り付け前の縦横スクロール位置を維持 | 有効 | `js/app.js`、`tests/source-paste-scroll.test.js` |
-| `LAYOUT-007` | 初期設定は行修正と重なっても配置を維持し、変換前・変換後枠は左端からも横幅を調整できる。使用例は初期表示で折り畳み可能 | 有効 | `style.css`、`js/app.js`、`index.html`、`tests/default-layout.test.js`、`tests/frame-edge-resize.test.js` |
+| `LAYOUT-007` | 初期設定は03行修正の上端までに収め、長い設定・説明を枠内スクロール。説明・使用例は初回とレイアウト初期化時に閉じ、保存済みの開閉設定を維持。03・04の入力欄位置と左右リサイズを保持 | 有効 | `style.css`、`js/app.js`、`index.html`、`tests/default-layout.test.js`、`tests/settings-layout.test.js`、`tests/frame-edge-resize.test.js` |
 | `LAYOUT-008` | 初期設定・行修正・変換前・変換後・譜面プレビューを上下左右の端からサイズ変更し、初期設定の高さを保存・復元 | 有効 | `index.html`、`style.css`、`js/app.js`、`tests/frame-edge-resize.test.js` |
 | `LAYOUT-009` | スマホでは行修正と変換後を縦2段にし、編集行が見えなくなった時だけ連動追従。各セクションの補助・表示設定は見出し右の開閉操作へ集約し、本文枠の標準横スクロールバーは常時表示する。タブレットはPCレイアウトを維持 | 有効 | `index.html`、`style.css`、`js/app.js` |
 | `LAYOUT-010` | 変換後・譜面プレビューの表示設定を全画面幅で見出し右から開閉し、初期状態は開く | 有効 | `index.html`、`style.css`、`js/app.js`、`tests/header-controls.test.js`、`tests/mobile-linked-editors.test.js` |
@@ -111,7 +111,7 @@
 | `LAYOUT-023` | 通常画面から重複する確定譜面テキスト枠と別画面比較編集リンクを外し、リアルタイム編集ページへ集約 | 有効 | `index.html`、`js/app.js`、`tests/local-editor-layout.test.js` |
 | `LAYOUT-024` | スクロール同期ON/OFFを切り替えても、変換後と行修正の横並びを維持し、OFF時だけ変換前を独立スクロールさせる | 有効 | `js/app.js`、`tests/scroll-sync-progress.test.js` |
 | `LAYOUT-025` | 行番号欄の末尾に表示用の空2行を確保し、変換後テキストへ改行を追加せず下端の行番号ずれを抑える | 有効 | `js/app.js`、`tests/local-editor-layout.test.js` |
-| `LAYOUT-026` | リアルタイムエディターの名称を統一し、起動時・設定変更時・上下左右比較時のスクロールを進捗率で相互同期する | 有効 | `committed-preview.html`、`js/committed-preview-window.js`、`README.md`、`tests/committed-preview-window.test.js` |
+| `LAYOUT-026` | リアルタイムエディターの名称を統一し、起動時・設定変更時・上下左右比較時のスクロールを進捗率で相互同期する。ブラウザーが丸めた実際のスクロール位置で自動同期を識別し、編集欄への逆同期を防ぐ | 有効 | `committed-preview.html`、`js/committed-preview-window.js`、`README.md`、`tests/committed-preview-window.test.js` |
 | `LAYOUT-027` | リアルタイムエディターの表示設定を外側クリックまたは表示設定ボタンの再クリックで閉じる | 有効 | `js/committed-preview-window.js`、`tests/committed-preview-window.test.js` |
 | `LAYOUT-028` | 青いコード文字の太字ストロークを無効化し、二重表示に見える描画を防止 | 有効 | `style.css`、`tests/setting-processing.test.js` |
 | `LAYOUT-029` | 色付け用レイヤーとtextareaの同時描画を防ぎ、青いコードの二重表示を防止 | 有効 | `style.css`、`tests/setting-processing.test.js` |
@@ -144,12 +144,12 @@
 | `PROJECT-011` | 変更対象から関連テストを先に選ぶ開発ルーティングを定型化 | 完了 | `C:\Users\mapida\.codex\skills\chordwiki-development-orchestrator\SKILL.md` |
 | `PROJECT-012` | フォーマッターのChordWiki表示を別UIへ埋め込むためのPayload・DOM・postMessage API | 有効 | `js/chordwiki-embed.js`、`docs/EMBED_API.md`、`tests/embed-api.test.js` |
 | `PREVIEW-004` | 公式Parser Adapterと旧ChordWiki表示Rendererの再構築 | 有効 | `js/parser/`、`js/renderer/`、`js/chordwiki-preview.js`、`tests/official-parser-integration.test.mjs` |
-| `PREVIEW-005` | リアルタイム編集の保存済み下書きが異なる場合に、上書き・前回内容を保持・キャンセルを選択 | 有効 | `js/app.js`、`js/committed-preview-window.js`、`tests/committed-preview-window.test.js` |
+| `PREVIEW-005` | リアルタイム編集の保存済み下書きが異なる場合に、上書き・前回内容を保持・キャンセルを選択。各タブの本文・移調状態・選択位置・縦横スクロール位置はsessionStorageで個別復元し、復帰時に行番号・色付けを再描画して、別タブからの本文一斉同期と古い本文による親画面の上書きを防ぐ | 有効 | `js/app.js`、`js/committed-preview-window.js`、`tests/committed-preview-window.test.js` |
 | `PREVIEW-006` | リアルタイム編集のプレビュー背景ドラッグで縦横スクロール | 有効 | `js/committed-preview-window.js`、`style.css`、`tests/committed-preview-window.test.js` |
 | `PREVIEW-007` | リアルタイム編集へ既存Transposerを使った表示専用±12移調を追加 | 有効 | `committed-preview.html`、`js/entries/committed-preview.js`、`js/committed-preview-window.js`、`tests/committed-preview-window.test.js` |
 | `PREVIEW-008` | 旧ChordWikiの二重角括弧を通常・別画面・リアルタイムプレビューで二段上付き表示し、リアルタイム移調を「移調なし／−／＋」順へ統一 | 有効 | `js/chordwiki-preview.js`、`js/renderer/old-chordwiki-renderer.js`、`committed-preview.html`、`style.css`、`tests/preview.test.js`、`tests/official-parser-integration.test.mjs`、`tests/committed-preview-window.test.js` |
 | `PREVIEW-009` | リアルタイム編集のコード位置調整。直結した[|]とコードは既定で一緒に移動し、構造記号対象ONでは個別に操作。矢印で上下左右へ移動し、Undo/Redoで復元 | 有効 | `committed-preview.html`、`js/committed-preview-window.js`、`style.css`、`tests/committed-preview-window.test.js` |
-| `PREVIEW-010` | committed-preview.htmlの編集テキストで小節チェック。小節内の構文エラー、拍数の不一致、拍子注記前の小節線と角括弧付き拍子注記を確認し、各エラーの原因・対策と該当行への移動／安全な適用を表示する。拍数付き三連符注記をコード間でも尊重し、長いハイフン区切り線を拍数から除外する。明示された3/4などの拍子を不足・超過小節にも継承し、元の拍子への復帰または新しい拍子注記で切り替える。歌詞あり・なしの68拍子を検証し、不足修正案と解析表示にも記号定義を引き継ぐ | 有効 | `committed-preview.html`、`js/measure-check.js`、`js/committed-measure-check-panel.js`、`style.css`、`tests/measure-check.test.js` |
+| `PREVIEW-010` | committed-preview.htmlの編集テキストで小節チェック。小節内の構文エラー、拍数の不一致、拍子注記前の小節線と角括弧付き拍子注記を確認し、各エラーの原因・対策と該当行への移動／安全な適用を表示する。拍数付き三連符注記をコード間でも尊重し、長いハイフン区切り線を拍数から除外する。半角・全角括弧の拍子（2/4・3/4等、全角スラッシュや角括弧付きも含む）を認識し、不足・超過小節にも継承し、元の拍子への復帰または新しい拍子注記で切り替える。歌詞あり・なしの68拍子を検証し、不足修正案と解析表示にも記号定義を引き継ぐ | 有効 | `committed-preview.html`、`js/measure-check.js`、`js/committed-measure-check-panel.js`、`style.css`、`tests/measure-check.test.js` |
 | `PREVIEW-011` | committed-preview.htmlの小節チェック結果にChordWiki to Clover準拠の16分音符アクセント推奨編集を表示し、OK／NGおよび「すべて適用」で選択的に反映する | 廃止 | `committed-preview.html`、`js/measure-check.js`、`js/committed-measure-check-panel.js`、`style.css`、`tests/measure-check.test.js` |
 | `PREVIEW-012` | リアルタイムエディターの移調操作を左の編集テキストへ反映し、右プレビューへの二重適用を防止 | 有効 | `js/committed-preview-window.js`、`tests/committed-preview-window.test.js` |
 | `PREVIEW-013` | リアルタイムエディターの表示設定で音名を元表記・#表示・♭表記から選択し、譜面プレビューへ反映 | 有効 | `committed-preview.html`、`js/committed-preview-window.js`、`tests/committed-preview-window.test.js` |
