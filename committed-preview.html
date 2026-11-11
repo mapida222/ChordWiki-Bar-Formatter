@@ -30,7 +30,7 @@
             <li>右の譜面をクリックすると、対応する左の行を確認できます。</li>
             <li>移調、文字サイズ、テーマ、上下／左右の比較順は表示だけを調整します。</li>
             <li>「コード位置調整モード」はF2で切り替えます。コードをクリックまたは選択して矢印キーで移動できます。Shift+F2で小節線・ハイフンも移動対象に切り替え、Spaceで次、Shift+Spaceで前のコードを選びます。</li>
-            <li>下書きは入力停止から0.18秒後、連続入力中も最長5秒で保存します。変更のある譜面は3分ごとに「使用履歴」に記録します。選んだ版の本文を確認し、この画面で復元できます。曲ごとに最新100件を表示し、以前の版は「退避した履歴」から開けます。元の画面の変換前・変換後は自動更新されません。</li>
+            <li>下書きは入力停止から0.18秒後、連続入力中も最長5秒で保存します。変更のある譜面は3分ごとに「使用履歴」に記録します。選んだ版の編集テキストを確認し、この画面で復元できます。曲ごとに最新100件を表示し、以前の版は「退避した履歴」から開けます。元の画面の変換前・変換後は自動更新されません。</li>
           </ol>
         </div>
       </details>
@@ -56,7 +56,7 @@
         <details id="editor-history-archive"><summary>退避した履歴</summary><div id="editor-history-older"></div></details>
       </section>
       <section class="history-sheet" aria-label="選んだ版">
-        <div class="history-views" aria-label="プレビュー表示"><button type="button" aria-pressed="true" id="history-view-score">譜面</button><button type="button" aria-pressed="false" id="history-view-source">本文</button></div>
+        <div class="history-views" aria-label="履歴の表示切り替え"><button type="button" aria-pressed="true" id="history-view-score">譜面プレビュー</button><button type="button" aria-pressed="false" id="history-view-source">編集テキスト</button></div>
         <div id="editor-history-preview" tabindex="0" aria-label="保存した譜面のプレビュー"></div>
       </section>
     </div>
