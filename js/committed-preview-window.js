@@ -681,6 +681,8 @@
   const entryText = entry => entry.historyText ?? entry.committedOutputText ?? entry.inputText ?? "";
 
   function drawHistoryPreview() {
+    const scrollTop = selectedEntry ? historyPreview.scrollTop : 0;
+    const scrollLeft = selectedEntry ? historyPreview.scrollLeft : 0;
     scoreView.setAttribute("aria-pressed", String(!showSource));
     sourceView.setAttribute("aria-pressed", String(showSource));
     historyPreview.classList.toggle("chordwiki-preview", !showSource && Boolean(selectedEntry));
@@ -690,7 +692,8 @@
       try { window.ChordWikiPreview.renderInto(historyPreview, value); }
       catch { historyPreview.textContent = value; }
     } else historyPreview.textContent = selectedEntry ? value : "保存された使用履歴はありません。";
-    historyPreview.scrollTop = historyPreview.scrollLeft = 0;
+    historyPreview.scrollTop = scrollTop;
+    historyPreview.scrollLeft = scrollLeft;
   }
   scoreView.addEventListener("click", () => { showSource = false; drawHistoryPreview(); });
   sourceView.addEventListener("click", () => { showSource = true; drawHistoryPreview(); });
