@@ -1,5 +1,7 @@
 # 保存データschema契約
 
+リアルタイム編集の履歴は `chordWikiBarFormatter.editorHistory.v1.<id>` に1版ずつ保存する。曲ごとの最新100件を超えた版は退避欄から復元できる。下書きは既存の committedWindowDraft.v1 を使い、任意の unnamedSong（無題曲の識別子）と historyDueAt（履歴記録予定時刻）を保持する。
+
 この文書は、ChordWiki Bar Formatterの保存形式ごとの所有範囲と互換性を固定する。保存形式は用途別に分かれており、ひとつのschemaへ統合しない。
 
 ## 共通原則
@@ -26,7 +28,7 @@
 
 `settingsExamplesOpen.v1` は未保存の場合に説明・使用例を閉じて開始する。保存済みの `true` / `false` はそのまま復元し、レイアウト初期化時は `false` に戻す。キーと保存形式は変更しない。
 
-リアルタイムエディターは `sessionStorage` の `committedWindowDraft.v1` にタブ個別の下書き（`text`、`updatedAt`、`transpose`、`transposeApplied`、`appliedTranspose`、任意の `view: {selectionStart, selectionEnd, scrollTop, scrollLeft}`）を保存し、再読み込み・休止からの復元では共有状態より優先する。空文字の下書きも有効。非表示・ページ離脱時はタブ内だけに本文と表示位置を保存し、復帰時は行番号・色付けを再描画してから選択・表示位置を戻す。`view` のない旧タブ下書きは先頭位置を既定値にし、本文の末尾へカーソルを置いたままにしない。タブ個別の保存がない新規タブは、従来の `localStorage` 下書きと明示的な取り込みを使う。共有下書きの既存形式 `{text, updatedAt}` は変更しない。保存・読み込みの失敗時も編集中の本文は保持する。
+リアルタイムエディターは `sessionStorage` の `committedWindowDraft.v1` にタブ個別の下書き（`text`、`updatedAt`、`transpose`、`transposeApplied`、`appliedTranspose`、`unnamedSong`、`historyDueAt`、任意の `view: {selectionStart, selectionEnd, scrollTop, scrollLeft}`）を保存し、再読み込み・休止からの復元では共有状態より優先する。空文字の下書きも有効。非表示・ページ離脱時はタブ個別の本文と表示位置を保存するとともに未保存の共有下書きを確定し、新しい共有下書きは古い予約保存で上書きせず、復帰時は行番号・色付けを再描画してから選択・表示位置を戻す。`view` のない旧タブ下書きは先頭位置を既定値にし、本文の末尾へカーソルを置いたままにしない。タブ個別の保存がない新規タブは、従来の `localStorage` 下書きと明示的な取り込みを使う。共有下書きは既存の `text`・`updatedAt`・`unnamedSong`・`historyDueAt` を保持し、曲別履歴の予約をタブ個別の下書きにも引き継ぐ。キーのversionは変更しない。保存・読み込みの失敗時も編集中の本文は保持する。
 
 開いているリアルタイムエディターは `storage` / BroadcastChannel の本文変更で置き換えない。本文の親画面への反映は opener へのメッセージで行い、`baseText` と親画面の現在の確定本文が一致する場合だけ採用する。古いタブや旧形式メッセージは親画面へ適用しない。タブを閉じた後の新規起動は共有の最終下書きを使い、曲別の永続アーカイブにはしない。
 

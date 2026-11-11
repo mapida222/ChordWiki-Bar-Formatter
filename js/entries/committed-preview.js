@@ -1,5 +1,6 @@
 import * as chordWikiParser from "@chordwiki/chordpro-parser";
 import "../settings.js";
+import "../history.js";
 import "../parser/formatter-notation.js";
 import "../parser/chordwiki-adapter.js";
 import "../renderer/old-chordwiki-renderer.js";

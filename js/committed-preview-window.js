@@ -211,19 +211,17 @@
     setScrollProgress(preview, scrollSync.checked ? textTopProgress : previewTopProgress, scrollSync.checked ? textLeftProgress : previewLeftProgress);
     setActiveLine(activeLine);
   }
+  function alignCurrentLineRule() {
+    const row = lines.querySelector(".active-line");
+    const layer = text.parentElement;
+    const y = row ? row.getBoundingClientRect().bottom - layer.getBoundingClientRect().top - 1 : -1;
+    layer.style.setProperty("--current-line-rule", `${y}px`);
+  }
+  new ResizeObserver(alignCurrentLineRule).observe(text);
   function setActiveLine(index) {
     activeLine = Math.max(0, Math.min(Math.max(0, text.value.split(/\r\n|\r|\n/).length - 1), index));
-    const textStyle = getComputedStyle(text);
-    const lineHeight = Number.parseFloat(textStyle.lineHeight) || 23;
-    const paddingTop = Number.parseFloat(textStyle.paddingTop) || 0;
-    const contentLineTop = paddingTop + activeLine * lineHeight;
-    highlight.classList.add("active-line-visible");
-    highlight.style.setProperty("--active-line-top", `${contentLineTop}px`);
-    highlight.style.setProperty("--active-line-height", `${lineHeight}px`);
-    text.classList.add("active-line-visible");
-    text.style.setProperty("--active-line-top", `${contentLineTop - text.scrollTop}px`);
-    text.style.setProperty("--active-line-height", `${lineHeight}px`);
     [...lines.querySelectorAll("span:not(.line-number-spacer)")].forEach((line, lineIndex) => line.classList.toggle("active-line", lineIndex === activeLine));
+    alignCurrentLineRule();
     [...preview.querySelectorAll("[data-source-line]")].forEach((line) => line.classList.toggle("compare-active", Number(line.dataset.sourceLine) === activeLine));
   }
   function applyState(payload) {
@@ -236,11 +234,12 @@
     }
     render();
   }
+
   function captureEditorView() {
     return { selectionStart: text.selectionStart, selectionEnd: text.selectionEnd, scrollTop: text.scrollTop, scrollLeft: text.scrollLeft };
   }
   function saveTabDraft() {
-    try { sessionStorage.setItem(DRAFT_KEY, JSON.stringify({ text: text.value, updatedAt: draftUpdatedAt, transpose: transpose.value, transposeApplied: transposeCommitted, appliedTranspose, view: captureEditorView() })); } catch (_error) { /* keep editing when tab storage is unavailable */ }
+    try { sessionStorage.setItem(DRAFT_KEY, JSON.stringify({ text: text.value, updatedAt: draftUpdatedAt, transpose: transpose.value, transposeApplied: transposeCommitted, appliedTranspose, unnamedSong, historyDueAt: pendingHistory?.dueAt, view: captureEditorView() })); } catch (_error) { /* keep editing when tab storage is unavailable */ }
   }
   function restoreEditorView(view) {
     if (!view) return;
@@ -254,11 +253,91 @@
     setActiveLine(text.value.slice(0, start).split(/\r\n|\r|\n/).length - 1);
     if (scrollSync.checked) setScrollProgress(preview, scrollProgress(text, "top"), scrollProgress(text, "left"));
   }
+
+  const saveWarning = document.querySelector("#committed-autosave-status");
+  let idleTimer, deadlineTimer, historyTimer;
+  let pendingDraft = null;
+  let pendingHistory = null;
+  let unnamedSong = crypto.randomUUID();
+  let draftFailed = false;
+  let historyFailed = false;
+
+  function showSaveWarning() {
+    saveWarning.hidden = !draftFailed && !historyFailed;
+    saveWarning.textContent = draftFailed ? "下書きを保存できません。画面を閉じる前に本文をコピーしてください。"
+      : historyFailed ? "使用履歴に保存できません。必要な譜面は別途コピーしてください。" : "";
+  }
+
+  function flushDraft() {
+    clearTimeout(idleTimer);
+    clearTimeout(deadlineTimer);
+    deadlineTimer = undefined;
+    if (!pendingDraft) return;
+    const { value, updatedAt } = pendingDraft;
+    try {
+      let latestDraft = null;
+      try { latestDraft = JSON.parse(localStorage.getItem(DRAFT_KEY) || "null"); } catch (_error) {}
+      if (Number(latestDraft?.updatedAt) > updatedAt) {
+        pendingDraft = null;
+        draftFailed = false;
+        showSaveWarning();
+        return;
+      }
+      const saved = {text: value, updatedAt, unnamedSong, historyDueAt: pendingHistory?.dueAt};
+      localStorage.setItem(DRAFT_KEY, JSON.stringify(saved));
+      pendingDraft = null;
+      draftFailed = false;
+      // These keys also support the handoff from the main page.
+      try {
+        localStorage.setItem(TEXT_KEY, value);
+      } catch (_error) { /* The canonical draft is already saved. */ }
+    } catch (_error) { draftFailed = true; }
+    showSaveWarning();
+  }
+
+  function checkpoint() {
+    historyTimer = undefined;
+    if (!pendingHistory) return;
+    try {
+      window.CBFHistoryStore.createStore(localStorage).saveEditorHistory(pendingHistory.value, pendingHistory.song);
+      // Clear the reminder only on the draft this checkpoint belongs to.
+      const saved = JSON.parse(localStorage.getItem(DRAFT_KEY) || "null");
+      if (saved?.historyDueAt === pendingHistory.dueAt && saved.text === pendingHistory.value) {
+        delete saved.historyDueAt;
+        localStorage.setItem(DRAFT_KEY, JSON.stringify(saved));
+      }
+      pendingHistory = null;
+      saveTabDraft();
+      historyFailed = false;
+    } catch (_error) {
+      historyFailed = true;
+      historyTimer = setTimeout(checkpoint, 180_000);
+    }
+    showSaveWarning();
+  }
+
+  function queueHistory(value, dueAt) {
+    const title = window.CBFHistoryStore.titleValueFromText(value);
+    pendingHistory = { value, dueAt, song: title ? `title:${title}` : `draft:${unnamedSong}` };
+    historyTimer ??= setTimeout(checkpoint, Math.max(0, dueAt - Date.now()));
+  }
+
+  window.addEventListener("pagehide", flushDraft);
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) flushDraft();
+  });
+
   function publishText() {
-    const payload = { type: "committed-text", text: text.value, baseText: lastPublishedText };
+    const value = text.value;
+    const payload = { type: "committed-text", text: value, baseText: lastPublishedText };
     draftUpdatedAt = Date.now();
+    pendingDraft = { value, updatedAt: draftUpdatedAt };
+    clearTimeout(idleTimer);
+    idleTimer = setTimeout(flushDraft, 180);
+    deadlineTimer ??= setTimeout(flushDraft, 5_000);
+    queueHistory(value, pendingHistory?.dueAt ?? Date.now() + 180_000);
     saveTabDraft();
-    try { localStorage.setItem(TEXT_KEY, text.value); localStorage.setItem(DRAFT_KEY, JSON.stringify({ text: text.value, updatedAt: draftUpdatedAt })); } catch (_error) { /* opener can still sync */ }
+
     try { if (window.opener && !window.opener.closed) window.opener.postMessage(payload, window.location.origin === "null" ? "*" : window.location.origin); } catch (_error) { /* ignore */ }
     lastPublishedText = text.value;
     render(); status.textContent = "譜面プレビューへリアルタイムで反映しました。";
@@ -587,6 +666,109 @@
     if (!line) return;
     setActiveLine(Number(line.dataset.sourceLine));
   });
+  const historyDialog = document.querySelector("#editor-history");
+  const recentList = document.querySelector("#editor-history-list");
+  const olderList = document.querySelector("#editor-history-older");
+  const archive = document.querySelector("#editor-history-archive");
+  const historyPreview = document.querySelector("#editor-history-preview");
+  const restoreButton = document.querySelector("#editor-history-restore");
+  const historyError = document.querySelector("#editor-history-error");
+  const scoreView = document.querySelector("#history-view-score");
+  const sourceView = document.querySelector("#history-view-source");
+  let selectedEntry;
+  let selectedButton;
+  let showSource = false;
+  const entryText = entry => entry.historyText ?? entry.committedOutputText ?? entry.inputText ?? "";
+
+  function drawHistoryPreview() {
+    scoreView.setAttribute("aria-pressed", String(!showSource));
+    sourceView.setAttribute("aria-pressed", String(showSource));
+    historyPreview.classList.toggle("chordwiki-preview", !showSource && Boolean(selectedEntry));
+    historyPreview.classList.toggle("history-source", showSource);
+    const value = selectedEntry ? entryText(selectedEntry) : "";
+    if (selectedEntry && !showSource) {
+      try { window.ChordWikiPreview.renderInto(historyPreview, value); }
+      catch { historyPreview.textContent = value; }
+    } else historyPreview.textContent = selectedEntry ? value : "保存された使用履歴はありません。";
+    historyPreview.scrollTop = historyPreview.scrollLeft = 0;
+  }
+  scoreView.addEventListener("click", () => { showSource = false; drawHistoryPreview(); });
+  sourceView.addEventListener("click", () => { showSource = true; drawHistoryPreview(); });
+
+  function selectHistory(entry, button) {
+    selectedButton?.setAttribute("aria-pressed", "false");
+    selectedButton = button;
+    selectedButton?.setAttribute("aria-pressed", "true");
+    selectedEntry = entry;
+    drawHistoryPreview();
+    restoreButton.disabled = !entry;
+    historyError.hidden = true;
+  }
+
+  document.querySelector("#editor-history-open").addEventListener("click", () => {
+    if (positionAdjustMode) setPositionMode(false);
+    recentList.replaceChildren();
+    olderList.replaceChildren();
+    archive.open = false;
+    const counts = new Map();
+    showSource = false;
+    selectHistory(null);
+    try {
+      for (const entry of window.CBFHistoryStore.createStore(localStorage).list()) {
+        const song = entry.editorSong || (entry.editorOnly ? "title:" + (window.CBFHistoryStore.titleValueFromText(entryText(entry)) || "無題") : null);
+        const count = (counts.get(song) || 0) + 1;
+        if (song) counts.set(song, count);
+        const target = song && count > 100 ? olderList : recentList;
+        const row = document.createElement("button");
+        row.type = "button";
+        row.className = "history-version";
+        row.setAttribute("aria-pressed", "false");
+        const title = document.createElement("strong");
+        title.textContent = window.CBFHistoryStore.titleValueFromText(entryText(entry)) || entry.title;
+        const date = document.createElement("time");
+        date.textContent = new Date(entry.savedAt).toLocaleString("ja-JP");
+        row.append(title, date);
+        row.addEventListener("click", () => selectHistory(entry, row));
+        target.append(row);
+        if (!selectedEntry) selectHistory(entry, row);
+      }
+    } catch (_error) {
+      historyError.textContent = "使用履歴を読み込めませんでした。";
+      historyError.hidden = false;
+    }
+    archive.hidden = !olderList.childElementCount;
+    historyDialog.showModal();
+    recentList.parentElement.scrollTop = 0;
+  });
+  document.querySelector("#editor-history-close").addEventListener("click", () => historyDialog.close());
+  restoreButton.addEventListener("click", () => {
+    if (!selectedEntry) return;
+    const value = entryText(selectedEntry);
+    if (value !== text.value && text.value.trim()) {
+      try {
+        const title = window.CBFHistoryStore.titleValueFromText(text.value);
+        window.CBFHistoryStore.createStore(localStorage).saveEditorHistory(text.value, title ? `title:${title}` : `draft:${unnamedSong}`);
+      } catch (_error) {
+        historyError.textContent = "編集中の本文を履歴に保存できませんでした。復元する前に本文をコピーしてください。";
+        historyError.hidden = false;
+        return;
+      }
+    }
+    if (selectedEntry.editorSong?.startsWith("draft:")) unnamedSong = selectedEntry.editorSong.slice(6);
+    text.value = value;
+    transpose.value = "0";
+    appliedTranspose = 0;
+    transposeCommitted = false;
+    activeChordStart = -1;
+    activeLine = 0;
+    text.setSelectionRange(0, 0);
+    text.scrollTop = text.scrollLeft = 0;
+    applyDisplaySettings();
+    text.dispatchEvent(new Event("input", { bubbles: true }));
+    flushDraft();
+    historyDialog.close();
+    text.focus();
+  });
   const displayKey = "chordWikiBarFormatter.committedWindowDisplay.v1";
   window.ChordWikiTranspose?.fillTransposeSelect(transpose);
   function updateTransposeButtons() {
@@ -740,11 +922,18 @@
   // tab; storage/BroadcastChannel events must never replace an open draft.
   try { const saved = JSON.parse(localStorage.getItem(displayKey) || "null"); if (saved) { fontSize.value = saved.fontSize || fontSize.value; font.value = saved.font || font.value; theme.value = saved.theme === "dark-gray" ? "dark" : saved.theme || theme.value; spelling.value = ["preserve", "sharp", "flat"].includes(saved.spelling) ? saved.spelling : spelling.value; transpose.value = String(Math.max(window.ChordWikiTranspose.transposeMin, Math.min(window.ChordWikiTranspose.transposeMax, Number(saved.transpose) || 0))); transposeCommitted = saved.transposeApplied === true; appliedTranspose = transposeCommitted ? Number(saved.appliedTranspose ?? saved.transpose) || 0 : 0; const savedCheckboxDefaults = saved.checkboxDefaultsVersion === 1; textColoring.checked = savedCheckboxDefaults ? saved.textColoring !== false : true; boldCode.checked = savedCheckboxDefaults ? saved.boldCode !== false : true; scrollSync.checked = savedCheckboxDefaults ? saved.scrollSync !== false : true; layoutMode = saved.layoutPreferenceVersion === 1 && layoutModes.includes(saved.layoutMode) ? saved.layoutMode : "stacked"; stackedLineHeight = Math.max(1.4, Math.min(3.2, Number.parseFloat(saved.stackedLineHeight) || 1.65)); sideLineHeight = Math.max(1.4, Math.min(3.2, Number.parseFloat(saved.sideLineHeight) || 2.75)); stackedPaneSize = Math.max(6, Math.min(94, Number.parseFloat(saved.stackedPaneSize) || 48)); sidePaneSize = Math.max(6, Math.min(94, Number.parseFloat(saved.sidePaneSize) || 48)); } } catch (_error) {}
   applyDisplaySettings();
+
   let tabDraft = null;
   try { const saved = JSON.parse(sessionStorage.getItem(DRAFT_KEY) || "null"); if (typeof saved?.text === "string") tabDraft = saved; } catch (_error) {}
-  try { const draft = tabDraft || JSON.parse(localStorage.getItem(DRAFT_KEY) || "null"); if (typeof draft?.text === "string") { loadedDraftText = draft.text; text.value = draft.text; draftUpdatedAt = Number(draft.updatedAt) || 0; } } catch (_error) {}
+  let savedDraft;
+  try { savedDraft = tabDraft || JSON.parse(localStorage.getItem(DRAFT_KEY) || "null"); } catch (_error) {}
+  if (typeof savedDraft?.text === "string") {
+    loadedDraftText = text.value = savedDraft.text;
+    draftUpdatedAt = Number(savedDraft.updatedAt) || 0;
+    if (savedDraft.unnamedSong) unnamedSong = savedDraft.unnamedSong;
+  }
   if (!tabDraft && !keepExistingDraft && !pendingReplace) { try { applyState(JSON.parse(localStorage.getItem(STATE_KEY) || "null")); } catch (_error) {} }
-  if (!tabDraft && !text.value) { try { text.value = localStorage.getItem(TEXT_KEY) || ""; } catch (_error) {} }
+  if (!savedDraft && !text.value) { try { text.value = localStorage.getItem(TEXT_KEY) || ""; } catch (_error) {} }
   if (tabDraft && typeof tabDraft.transpose === "string") {
     transpose.value = tabDraft.transpose;
     transposeCommitted = tabDraft.transposeApplied === true;
@@ -752,6 +941,8 @@
   }
   lastPublishedText = text.value;
   resumeEditorView = tabDraft?.view || { selectionStart: 0, selectionEnd: 0, scrollTop: 0, scrollLeft: 0 };
+  if (Number.isFinite(savedDraft?.historyDueAt) && text.value === savedDraft.text) queueHistory(text.value, savedDraft.historyDueAt);
+
   // A saved draft can already fill the textarea without producing the line
   // numbers, syntax layer, or score preview. Always perform an initial render.
   render();
@@ -761,7 +952,7 @@
       text.value = musicXmlHandoffText;
       appliedTranspose = 0;
       transposeCommitted = false;
-      render();
+      publishText();
     } else pendingMusicXmlText = musicXmlHandoffText;
   }
   if (pendingMusicXmlText) {

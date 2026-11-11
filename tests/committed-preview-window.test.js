@@ -11,7 +11,9 @@ const css = fs.readFileSync(path.join(root, "style.css"), "utf8");
 const preview = require(path.join(root, "js", "chordwiki-preview.js"));
 const entry = fs.readFileSync(path.join(root, "js", "entries", "committed-preview.js"), "utf8");
 
-assert(windowScript.includes('if (!tabDraft && !text.value) { try { text.value = localStorage.getItem(TEXT_KEY) || ""; } catch (_error) {} }'), "a resumed tab must not fall back to another song even if its own draft is empty");
+
+assert(windowScript.includes('if (!savedDraft && !text.value) { try { text.value = localStorage.getItem(TEXT_KEY) || ""; } catch (_error) {} }'), "a resumed tab must not fall back to another song even if its own draft is empty");
+
 assert(windowScript.includes('const keepExistingDraft = new URLSearchParams(window.location.search).get("draft") === "keep";'));
 assert(windowScript.includes('if (!tabDraft && !keepExistingDraft && !pendingReplace) { try { applyState(JSON.parse(localStorage.getItem(STATE_KEY) || "null")); } catch (_error) {} }'), "tab drafts must win over newer shared score state");
 const app = fs.readFileSync(path.join(root, "js", "app.js"), "utf8");
@@ -69,7 +71,7 @@ assert(windowScript.includes('if (settingsPanel?.open && !settingsPanel.contains
 assert(html.includes('<details class="score-window-help">'));
 assert(html.includes('<strong>リアルタイムエディターの使い方</strong>'));
 assert(html.includes('右の譜面をクリックすると、対応する左の行を確認できます。'));
-assert(html.includes('編集内容はこのブラウザの下書きとして保存されます。元の画面の変換前・変換後は自動更新されません。'));
+assert(html.includes('元の画面の変換前・変換後は自動更新されません。'));
 assert(css.includes('.score-window-help-panel { position: absolute;'));
 assert(css.includes(".score-window-settings-panel { position: absolute;"));
 assert(html.includes('id="committed-line-height"'));
@@ -105,8 +107,8 @@ assert(html.indexOf('id="committed-transpose-up"') < html.indexOf('id="committed
 assert(html.includes('<span>移調</span><span class="committed-transpose-stepper">') && html.includes('aria-label="プレビューを半音下げる">▼') && html.includes('aria-label="プレビューを半音上げる">▲'), "realtime transpose and note-name controls must stay inline without opening a side settings panel");
 assert(css.includes('.committed-transpose-control, .committed-spelling-control { display: flex;') && css.includes('.committed-transpose-stepper { display: grid;'), "realtime transpose and spelling controls must use the compact inline toolbar layout");
 assert(html.includes('id="committed-bold-code" type="checkbox" checked'));
-assert(windowScript.includes("const contentLineTop = paddingTop + activeLine * lineHeight;"));
-assert(windowScript.includes('text.style.setProperty("--active-line-top", `${contentLineTop - text.scrollTop}px`);'));
+assert(windowScript.includes("function alignCurrentLineRule() {"));
+assert(windowScript.includes('layer.style.setProperty("--current-line-rule", `${y}px`);'));
 assert(windowScript.includes("if (previewRow) previewRow.dataset.sourceLine = String(sourceLineIndex);"));
 assert(windowScript.includes('event.target.closest("[data-source-line]")'));
 assert(windowScript.includes("const LINE_NUMBER_TRAILING_ROWS = 2"), "realtime editor line numbers must reserve two visual trailing rows");
@@ -135,7 +137,7 @@ assert(windowScript.includes("checkboxDefaultsVersion: 1"));
 assert(windowScript.includes("stackedPaneSize, sidePaneSize"));
 assert(windowScript.includes("Math.max(6, Math.min(94"));
 assert(windowScript.includes("requestAnimationFrame(() => {"));
-assert(css.includes(".committed-window-editor.active-line-visible"));
+assert(css.includes(".committed-window-editor-wrap .editor-text-layer::after"));
 assert(css.includes('.committed-window-preview > [data-source-line].compare-active'));
 
 const rendered = preview.render("[|][C][----]テスト[|]");
@@ -247,7 +249,7 @@ const viewContext = {
   lines: { scrollTop: 0 }, highlight: { style: {} }, scrollSync: { checked: false }, setActiveLine() {}, Number, Math
 };
 vm.createContext(viewContext);
-const restoreViewSource = windowScript.slice(windowScript.indexOf("  function restoreEditorView("), windowScript.indexOf("  function publishText()"));
+const restoreViewSource = windowScript.slice(windowScript.indexOf("  function restoreEditorView("), windowScript.indexOf("  const saveWarning"));
 vm.runInContext(restoreViewSource, viewContext);
 vm.runInContext("restoreEditorView({selectionStart:6,selectionEnd:8,scrollTop:120,scrollLeft:40});", viewContext);
 assert.strictEqual(viewContext.text.selectionStart, 6, "resuming a tab must not leave the caret at the end of its restored text");
@@ -284,7 +286,9 @@ const draftContext = {
   TEXT_KEY: "text", DRAFT_KEY: "draft", localStorage: sharedDraftStorage,
   sessionStorage: { setItem(key, value) { this[key] = value; } },
   channel: { postMessage: (payload) => emittedDrafts.push(payload) },
-  window: { opener: { closed: false, postMessage: (payload) => emittedDrafts.push(payload) }, location: { origin: "http://localhost" } },
+  window: { opener: { closed: false, postMessage: (payload) => emittedDrafts.push(payload) }, location: { origin: "http://localhost" }, addEventListener() {}, CBFHistoryStore: { titleValueFromText: () => "" } },
+  document: { querySelector: () => ({}), addEventListener() {} }, crypto: { randomUUID: () => "test-song" },
+  setTimeout: () => 1, clearTimeout() {},
   render() {}, status: {}, Date
 };
 vm.createContext(draftContext);
@@ -295,6 +299,11 @@ assert.strictEqual(JSON.parse(draftContext.sessionStorage.draft || "null")?.text
 assert.strictEqual(emittedDrafts.length, 1, "edited text must go only to its opener, never all song tabs");
 assert.strictEqual(emittedDrafts[0].baseText, "曲A", "the opener must be able to reject a stale edit against another song");
 assert.strictEqual(draftContext.lastPublishedText, "曲Aの編集");
+assert.strictEqual(typeof JSON.parse(draftContext.sessionStorage.draft).historyDueAt, "number", "tab drafts must keep the scheduled song-history checkpoint");
+draftWrites.set("draft", JSON.stringify({ text: "新しい曲B", updatedAt: Date.now() + 60_000 }));
+vm.runInContext("flushDraft();", draftContext);
+assert.strictEqual(JSON.parse(draftWrites.get("draft")).text, "新しい曲B", "a delayed autosave from a resumed old tab must not overwrite a newer shared draft");
+assert.strictEqual(draftWrites.has("text"), false, "a rejected stale save must not update the shared committed text either");
 assert(!windowScript.includes('event.key === TEXT_KEY'), "storage events from another song must not overwrite a realtime tab");
 
 const restoreTabSource = windowScript.slice(windowScript.indexOf("  let tabDraft = null;"), windowScript.indexOf("  // A saved draft"));
