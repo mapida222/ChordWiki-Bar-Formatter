@@ -150,6 +150,26 @@ console.log("PASS: saved realtime drafts always render line numbers, color text,
 
 // Exercise the real range/movement functions without booting the DOM page.
 const vm = require("vm");
+const historyPreviewStub = { scrollTop: 420, scrollLeft: 80, classList: { toggle() {} } };
+const historyContext = {
+  historyPreview: historyPreviewStub,
+  scoreView: { setAttribute() {} }, sourceView: { setAttribute() {} },
+  selectedEntry: { historyText: "曲B" }, showSource: false,
+  entryText: entry => entry.historyText,
+  window: { ChordWikiPreview: { renderInto(element) { element.scrollTop = element.scrollLeft = 0; } } }
+};
+vm.createContext(historyContext);
+vm.runInContext(windowScript.slice(windowScript.indexOf("  function drawHistoryPreview()"), windowScript.indexOf('  scoreView.addEventListener("click"')), historyContext);
+vm.runInContext("drawHistoryPreview();", historyContext);
+assert.strictEqual(historyPreviewStub.scrollTop, 420, "switching history songs must retain vertical preview position after rendering");
+assert.strictEqual(historyPreviewStub.scrollLeft, 80, "switching history songs must retain horizontal preview position");
+historyContext.showSource = true;
+vm.runInContext("drawHistoryPreview();", historyContext);
+assert.strictEqual(historyPreviewStub.scrollTop, 420, "switching to source must retain preview position");
+historyContext.selectedEntry = null;
+vm.runInContext("drawHistoryPreview();", historyContext);
+assert.strictEqual(historyPreviewStub.scrollTop, 0, "opening a new history browsing session starts at the top");
+assert.strictEqual(historyPreviewStub.scrollLeft, 0);
 const positionContext = {
   window: { ChordWikiPreview: { isRhythmToken: (token) => /^[\s\-=>≧○]+$/.test(token) } },
   text: {
