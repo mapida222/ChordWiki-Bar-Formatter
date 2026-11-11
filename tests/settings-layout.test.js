@@ -40,9 +40,9 @@ assert(app.includes('const standardValues = new Set([...RECOMMENDED_VALUES.fourF
 assert(app.includes('setting-option-common') && app.includes('setting-option-rare'), "numeric settings must distinguish recommended and less-used options visually");
 assert(css.includes(".settings-panel.settings-compact { height: auto; }"));
 assert(css.includes("width: max-content;") && css.includes("max-width: calc(100vw - 16px);") && css.includes(".setting-help .context-help-popover { white-space: nowrap; }") && css.includes("overflow-wrap: normal;") && css.includes("word-break: keep-all;"), "設定の？ヘルプは幅を広く使い、文中で不自然に改行しない");
-assert(css.includes(".settings-panel.settings-compact .settings-shell { overflow: visible; max-height: none; }"), "初期設定のヘルプポップオーバーは設定枠の外へ表示できる");
+assert(css.includes("overflow: visible; max-height: var(--settings-available-height, 260px)"), "設定本体は高さを制限し、fixedヘルプは枠の外へ表示できる");
 assert(css.includes(".settings-panel.settings-closed { height: auto; min-height: 0; overflow: visible; }"), "closed settings must keep its heading and open button visible");
 assert(css.includes(".settings-panel.settings-compact .settings-advanced > summary"));
-assert(css.includes("@media (min-width: 700px)") && css.includes(".settings-panel { position: absolute; top: 0; left: 0; width: var(--left-column-width); }"), "desktop settings must overlay the row-edit card when open");
+assert(css.includes("@media (min-width: 700px)") && css.includes(".settings-panel { position: absolute; top: 0; left: 0; width: var(--left-column-width); }"), "desktop settings must stay in the left column above row edit");
 
 console.log("PASS: compact settings layout keeps existing setting keys and removes profile/corner UI");

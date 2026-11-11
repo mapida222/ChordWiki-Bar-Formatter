@@ -156,7 +156,7 @@
   let mobileLastLinkedLine = -1;
   let keyPreviewTargets = [];
   let settingsMode = "compact";
-  let settingsExamplesOpen = true;
+  let settingsExamplesOpen = false;
   let convertedOutput = "";
   let outputManuallyEdited = false;
   let outputHighlightValue = "";
@@ -1393,12 +1393,15 @@
     resultAlignmentFrame = requestAnimationFrame(() => {
       elements.workspace.style.setProperty("--correction-controls-offset", "0px");
       if (window.matchMedia("(max-width: 699px)").matches) {
+        elements.settingsShell.style.removeProperty("--settings-available-height");
         positionFrameResizeEdges();
         return;
       }
       const correctionTop = elements.correctionShell.getBoundingClientRect().top;
       const outputTop = elements.outputShell.getBoundingClientRect().top;
       elements.workspace.style.setProperty("--correction-controls-offset", `${outputTop - correctionTop}px`);
+      const settingsAvailableHeight = elements.correctionCard.getBoundingClientRect().top - elements.settingsShell.getBoundingClientRect().top - 10;
+      elements.settingsShell.style.setProperty("--settings-available-height", `${Math.max(0, settingsAvailableHeight)}px`);
       positionFrameResizeEdges();
     });
   }
@@ -2303,6 +2306,7 @@
     scorePreviewChannel.addEventListener("message", (event) => {
       if (event.data?.type === "score-controls") applyScoreWindowControls(event.data.payload);
       if (event.data?.type === "committed-text") {
+        if (typeof event.data.baseText !== "string" || event.data.baseText !== elements.committedOutput.value) return;
         const text = String(event.data.text || "");
         if (text === elements.committedOutput.value) return;
         elements.committedOutput.value = text;
@@ -2326,6 +2330,7 @@
       return;
     }
     if (event.data.type === "committed-text") {
+      if (typeof event.data.baseText !== "string" || event.data.baseText !== elements.committedOutput.value) return;
       const text = String(event.data.text || "");
       if (text !== elements.committedOutput.value) {
         elements.committedOutput.value = text;
@@ -3609,6 +3614,7 @@
     let savedDraft = null;
     try { savedDraft = JSON.parse(localStorage.getItem(COMMITTED_DRAFT_STORAGE_KEY) || "null"); } catch (_error) { savedDraft = null; }
     const hasDifferentDraft = Boolean(savedDraft?.text) && savedDraft.text !== currentText;
+    elements.committedOutput.value = currentText;
     if (hasDifferentDraft) {
       event.preventDefault();
       localStorage.setItem(COMMITTED_OUTPUT_STORAGE_KEY, currentText);
@@ -3730,6 +3736,7 @@
   function positionSettingsPanel() {
     Object.assign(elements.settingsPanel.style, { left: "", top: "", width: "", height: "" });
     positionFrameResizeEdges();
+    syncResultRowAlignment();
   }
   function positionFrameResizeEdges() {
     document.querySelectorAll(".frame-resize-edge").forEach((edge) => {
@@ -3793,7 +3800,7 @@
     localStorage.setItem(ADDED_BACKGROUND_STORAGE_KEY, "true");
     setDisplaySettingsOpen(false);
     setSettingsMode("compact");
-    setSettingsExamplesOpen(true);
+    setSettingsExamplesOpen(false);
     positionSettingsPanel();
     notify("レイアウトと表示設定を初期化しました。");
   }
@@ -4117,7 +4124,7 @@
   }
   {
     const savedSettingsExamples = localStorage.getItem(SETTINGS_EXAMPLES_OPEN_STORAGE_KEY);
-    setSettingsExamplesOpen(savedSettingsExamples === null ? true : savedSettingsExamples === "true", false);
+    setSettingsExamplesOpen(savedSettingsExamples === "true", false);
   }
   restoreLayout();
   renderSettings(loadedSettings);

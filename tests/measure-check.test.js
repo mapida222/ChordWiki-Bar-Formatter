@@ -138,6 +138,21 @@ const inlineMeter = check.validate("|(9/8拍子)[C]---[G]---[Am]---|");
 assert.strictEqual(inlineMeter.rhythmMeasures[0].meter.text, "9/8");
 assert.strictEqual(inlineMeter.ok, true, "an inline arbitrary meter must determine the expected capacity");
 const inlineMeterAfterBar = check.validate("|(3/4)[C]--[G]--[Am]--|");
+for (const annotation of ["（3/4）", "（ 3 ／ 4 ）", "（3/4拍子）", "[（3/4）]"]) {
+  const fullWidthMeter = check.validate(`|${annotation}[C]------|[G]------|(4/4)[Am]--------|`);
+  assert.strictEqual(fullWidthMeter.ok, true, `${annotation} must be recognized as an explicit meter`);
+  assert.deepStrictEqual(fullWidthMeter.rhythmMeasures.map((measure) => measure.meter?.text), ["3/4", "3/4", "4/4"], "full-width meter regions must inherit and end like half-width regions");
+  assert.strictEqual(fullWidthMeter.rhythmMeasures[0].inlineMeter.rawAnnotation, annotation.replace(/^\[|\]$/g, ""), "authored full-width annotation must be retained");
+}
+const fullWidthShortMeter = check.validate("|（3/4）[C]----|[G]----|");
+for (const [meter, width] of [["2/4", 4], ["5/4", 10], ["7/8", 7]]) {
+  const result = check.validate(`|（${meter}）[C]${"-".repeat(width)}|[G]${"-".repeat(width)}|`);
+  assert.strictEqual(result.ok, true, `full-width ${meter} must use its own capacity`);
+  assert.deepStrictEqual(result.rhythmMeasures.map((measure) => measure.meter?.text), [meter, meter], `full-width ${meter} must apply to subsequent measures`);
+}
+assert.deepStrictEqual(fullWidthShortMeter.beatIssues.map((issue) => issue.expectedBeats), [6, 6], "short measures must retain the full-width meter");
+assert.strictEqual(check.validate("|（6／8）[C]---[G]---|").ok, true, "full-width parentheses and slash must work together");
+assert.strictEqual(check.validate("|（休符）[C]--------|").rhythmMeasures[0].inlineMeter, null, "ordinary parenthesized annotations must not become meters");
 assert.strictEqual(inlineMeterAfterBar.rhythmMeasures[0].meter.text, "3/4", "an inline meter may follow a bar delimiter");
 assert.strictEqual(inlineMeterAfterBar.ok, true, "the meter after a bar must determine the expected capacity");
 const shortWaltzMeasures = check.validate("|(3/4)[D]---|[Em7]---|[F#m]---|");
@@ -262,7 +277,7 @@ assert(html.includes('id="committed-measure-check-expand-all"'));
 assert(html.includes('id="committed-measure-check-apply-all"'));
 assert(html.includes("安全な対策をすべて適用"), "bulk apply must be clearly limited to safe automatic fixes");
 assert(css.includes('.committed-measure-check-button::before { content: "▼";') && css.includes('.committed-measure-check-button[aria-expanded="true"]::before { content: "▲"; }'), "the check button must show its open/closed state");
-assert(entry.includes('import "../measure-check.js?v=20260919-001"'));
+assert(/import "\.\.\/measure-check\.js\?v=\d{8}-\d+"/.test(entry), "the browser must load a versioned measure checker");
 assert(entry.includes('import "../committed-measure-check-panel.js?v=20260919-001"'));
 assert(entry.includes('import "../settings.js";'), "committed preview must load the shared initial meter settings");
 const panel = fs.readFileSync(path.join(root, "js", "committed-measure-check-panel.js"), "utf8");

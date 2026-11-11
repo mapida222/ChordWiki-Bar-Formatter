@@ -103,7 +103,8 @@ main { padding: 12px 0 28px; }
 .settings-panel.settings-compact .settings-reset-button { min-width: 0; padding: 2px 5px; font-size: .63rem; }
 .settings-panel, .settings-panel .settings-shell { filter: none; box-shadow: none; }
 .settings-panel.settings-compact { min-height: 0; background: transparent; }
-.settings-panel.settings-compact .settings-shell { overflow: visible; max-height: none; }
+.settings-panel.settings-compact .settings-shell { display: flex; flex-direction: column; overflow: visible; max-height: var(--settings-available-height, 260px); }
+.settings-shell > .settings-primary-actions, .settings-shell > .settings-footer-actions { flex-shrink: 0; }
 .settings-panel.settings-compact .settings-grid { grid-template-columns: 1fr; }
 .settings-panel.settings-compact .setting-example { display: block; width: 100%; margin-top: 5px; padding: 4px 6px; border-left-width: 3px; font-size: 11px; line-height: 1.42; }
 .settings-panel.settings-compact .setting-example span { margin-top: 0; }
@@ -111,7 +112,7 @@ main { padding: 12px 0 28px; }
 .settings-panel.settings-examples-closed .setting-example { display: none; }
 .settings-shell { position: relative; overflow: visible; width: 100%; min-width: 0; height: auto; padding: 7px 8px 8px 10px; border: 1px dashed color-mix(in srgb, var(--display-line) 70%, var(--line)); border-left: 4px solid var(--display-line); border-radius: 2px; background: linear-gradient(135deg, color-mix(in srgb, var(--panel) 94%, var(--display-line)), var(--panel) 42%); resize: none; }
 .settings-shell::before { content: "CONTROL PANEL"; position: absolute; top: -7px; right: 9px; padding: 0 5px; color: var(--muted); background: var(--bg); font: 700 .55rem/1 var(--mono); letter-spacing: .1em; }
-#settings-body:not([hidden]) { margin-top: 4px; }
+#settings-body:not([hidden]) { margin-top: 4px; min-height: 0; overflow-y: auto; overscroll-behavior-y: contain; scrollbar-gutter: stable; }
 .settings-profile-picker { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; margin: 2px 0 4px; }
 .settings-profile-picker button { min-width: 0; min-height: 31px; padding: 3px 5px; border: 1px solid var(--line); border-radius: 4px; color: var(--text); background: var(--panel); font-size: .72rem; font-weight: 800; line-height: 1.2; cursor: pointer; }
 .settings-profile-picker button:hover, .settings-profile-picker button[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); }
@@ -172,6 +173,7 @@ main { padding: 12px 0 28px; }
 .text-button { padding: 1px 0; border: 0; border-bottom: 1px solid currentColor; color: var(--muted); background: transparent; cursor: pointer; font-size: .68rem; }
 .workspace { --top-editor-height: clamp(210px, 24vh, 230px); --result-editor-height: clamp(300px, 48vh, 680px); --final-editor-height: clamp(220px, 36vh, 520px); --committed-editor-height: clamp(220px, 36vh, 520px); --left-column-width: clamp(220px, 28%, 360px); position: relative; display: grid; grid-template-columns: var(--left-column-width) minmax(0, 1fr); gap: 0 10px; align-items: start; }
 @media (min-width: 700px) {
+  .workspace { grid-template-rows: minmax(260px, auto); }
   .settings-panel { position: absolute; top: 0; left: 0; width: var(--left-column-width); }
 }
 .community-panel { width: 100%; min-width: 0; overflow: hidden; margin: 0; padding: 9px 10px 9px; border: 1px solid var(--correction-line); border-radius: 5px; background: var(--panel); }

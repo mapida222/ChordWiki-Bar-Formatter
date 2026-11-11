@@ -15,7 +15,7 @@
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4561699699325989" crossorigin="anonymous"></script>
   <title>ChordWiki Bar Formatter (コバッター) ～演奏しやすいリズム付きコード譜へ～</title>
   <link rel="icon" type="image/png" href="logo/260810_favicon_touka.png">
-  <link rel="stylesheet" href="style.css?v=20261008-001">
+  <link rel="stylesheet" href="style.css?v=20261106-002">
   <link rel="stylesheet" href="style-row-edit-test.css?v=20260801-3">
 </head>
 <body>
@@ -70,7 +70,7 @@
 
   <main>
     <section class="workspace" aria-label="コード譜変換エリア">
-      <section id="settings-panel" class="settings-panel settings-compact" aria-labelledby="settings-title">
+      <section id="settings-panel" class="settings-panel settings-compact settings-examples-closed" aria-labelledby="settings-title">
         <div class="editor-heading settings-panel-heading">
           <div class="settings-heading-copy">
             <h2 id="settings-title" class="compact-editor-title">02. 初期設定 <span>/ SETTINGS</span></h2>
@@ -144,7 +144,7 @@
           <button id="settings-toggle" class="text-button" type="button" aria-expanded="true" aria-controls="settings-body">設定を閉じる▼</button>
           <button id="settings-example-toggle" class="text-button settings-example-toggle" type="button" aria-expanded="false">説明・使用例▼</button>
         </div>
-        <div id="settings-body">
+        <div id="settings-body" tabindex="0" role="region" aria-label="初期設定の項目">
           <div id="settings-grid" class="settings-grid"></div>
           <details id="settings-advanced" class="settings-advanced">
             <summary>詳細設定▼</summary>

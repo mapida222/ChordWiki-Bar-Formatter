@@ -253,7 +253,7 @@
   function parseInlineMeter(source) {
     const text = String(source || "");
     const withoutLeadingBar = text.trimStart().replace(/^(?:\|\s*|\[\s*\|\s*\]\s*)/u, "");
-    const annotationPattern = "(?:\\(\\s*\\d+\\s*[\\/／]\\s*\\d+[^)]*\\)|\\{\\s*ci?\\s*:\\s*[^}]+\\})";
+    const annotationPattern = "(?:[（(]\\s*\\d+\\s*[\\/／]\\s*\\d+[^)）]*[)）]|\\{\\s*ci?\\s*:\\s*[^}]+\\})";
     const bracketedMatch = withoutLeadingBar.match(new RegExp(`^\\[\\s*(${annotationPattern})\\s*\\]`, "iu"));
     const plainMatch = withoutLeadingBar.match(new RegExp(`^(${annotationPattern})`, "iu"));
     const rawAnnotation = bracketedMatch?.[1] || plainMatch?.[1];

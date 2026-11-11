@@ -11,9 +11,9 @@ const css = fs.readFileSync(path.join(root, "style.css"), "utf8");
 const preview = require(path.join(root, "js", "chordwiki-preview.js"));
 const entry = fs.readFileSync(path.join(root, "js", "entries", "committed-preview.js"), "utf8");
 
-assert(windowScript.includes('if (!text.value) { try { text.value = localStorage.getItem(TEXT_KEY) || ""; } catch (_error) {} }\n  // A saved draft'));
+assert(windowScript.includes('if (!tabDraft && !text.value) { try { text.value = localStorage.getItem(TEXT_KEY) || ""; } catch (_error) {} }'), "a resumed tab must not fall back to another song even if its own draft is empty");
 assert(windowScript.includes('const keepExistingDraft = new URLSearchParams(window.location.search).get("draft") === "keep";'));
-assert(windowScript.includes('if (!keepExistingDraft && !pendingReplace) { try { applyState(JSON.parse(localStorage.getItem(STATE_KEY) || "null")); } catch (_error) {} }'));
+assert(windowScript.includes('if (!tabDraft && !keepExistingDraft && !pendingReplace) { try { applyState(JSON.parse(localStorage.getItem(STATE_KEY) || "null")); } catch (_error) {} }'), "tab drafts must win over newer shared score state");
 const app = fs.readFileSync(path.join(root, "js", "app.js"), "utf8");
 assert(app.includes('elements.openRealtimeEditor.href = "committed-preview.html?pending=replace";'));
 assert(app.includes("event.preventDefault();"), "cancel must prevent opening the realtime editor");
@@ -93,7 +93,7 @@ assert(windowScript.includes("const previewTranspose = transposeCommitted ? 0 : 
 assert(windowScript.includes("const commitTransposeSelection = () => {") && windowScript.includes("const delta = transposeCommitted ? target - appliedTranspose : target;"), "realtime transpose changes must apply the selected delta to the editor text");
 assert(windowScript.includes("text.value = transposed;") && windowScript.includes("publishText();"), "realtime transpose must publish the transposed editor text");
 assert(windowScript.includes("transposeApplied: transposeCommitted") && windowScript.includes("appliedTranspose"), "realtime transpose state must persist without changing the existing draft schema");
-assert(windowScript.includes('text.value = event.newValue; appliedTranspose = 0; transposeCommitted = false;'), "external realtime text updates must reset the baked transpose tracking");
+assert(windowScript.includes('text.value = next;\n      appliedTranspose = 0;\n      transposeCommitted = false;'), "initial imported text must reset baked transpose tracking");
 assert(windowScript.includes('const startedOnBackground = event.target === preview || Boolean(sourceLine);'), "dragging any rendered score line must pan the preview");
 assert(windowScript.includes('if (!startedOnBackground || (event.pointerType === "mouse" && event.button !== 0)) return;'));
 assert(windowScript.includes('preview.setPointerCapture(event.pointerId);'));
@@ -214,3 +214,116 @@ positionTest.reset("[|][F]あ", 3, true);
 positionTest.move("right");
 assert.strictEqual(positionContext.text.value, "[|]あ[F]", "the existing structural-token mode keeps individual movement");
 console.log("PASS: PREVIEW-009 grouped bar/chord ranges, adjacent tokens, line moves and undo/redo");
+
+const scrollContext = { WeakMap };
+vm.createContext(scrollContext);
+const scrollHelpers = windowScript.slice(windowScript.indexOf("  const scrollProgress ="), windowScript.indexOf("  function render()"));
+vm.runInContext(`const suppressedScrollPositions = new WeakMap(); ${scrollHelpers}
+  globalThis.scrollTest = { setScrollProgress, scrollPositionWasSuppressed };`, scrollContext);
+let roundedTop = 0;
+let roundedLeft = 0;
+const roundedPane = {
+  scrollHeight: 2000, clientHeight: 300, scrollWidth: 1000, clientWidth: 400,
+  get scrollTop() { return roundedTop; },
+  set scrollTop(value) { roundedTop = Math.round(value * 64) / 64; },
+  get scrollLeft() { return roundedLeft; },
+  set scrollLeft(value) { roundedLeft = Math.round(value * 64) / 64; }
+};
+scrollContext.scrollTest.setScrollProgress(roundedPane, 1 / 3, 1 / 7);
+assert.strictEqual(scrollContext.scrollTest.scrollPositionWasSuppressed(roundedPane), true,
+  "browser-rounded programmatic preview scrolling must not feed back into the editor");
+assert.strictEqual(Boolean(scrollContext.scrollTest.scrollPositionWasSuppressed(roundedPane)), false,
+  "only the matching programmatic scroll event is suppressed");
+scrollContext.scrollTest.setScrollProgress(roundedPane, 0.5, 0.5);
+roundedPane.scrollTop += 10;
+assert.strictEqual(Boolean(scrollContext.scrollTest.scrollPositionWasSuppressed(roundedPane)), false,
+  "a real user scroll after synchronization must still propagate");
+
+const draftWrites = new Map();
+assert(windowScript.includes("function restoreEditorView("), "restored text must restore its selection and viewport before the next input");
+const viewContext = {
+  text: { value: "line1\nline2\nline3", selectionStart: 17, selectionEnd: 17, scrollTop: 0, scrollLeft: 0,
+    setSelectionRange(start, end) { this.selectionStart = start; this.selectionEnd = end; this.scrollTop = 999; } },
+  lines: { scrollTop: 0 }, highlight: { style: {} }, scrollSync: { checked: false }, setActiveLine() {}, Number, Math
+};
+vm.createContext(viewContext);
+const restoreViewSource = windowScript.slice(windowScript.indexOf("  function restoreEditorView("), windowScript.indexOf("  function publishText()"));
+vm.runInContext(restoreViewSource, viewContext);
+vm.runInContext("restoreEditorView({selectionStart:6,selectionEnd:8,scrollTop:120,scrollLeft:40});", viewContext);
+assert.strictEqual(viewContext.text.selectionStart, 6, "resuming a tab must not leave the caret at the end of its restored text");
+assert.strictEqual(viewContext.text.selectionEnd, 8);
+assert.strictEqual(viewContext.text.scrollTop, 120, "restore viewport after setSelectionRange may scroll the native textarea");
+assert.strictEqual(viewContext.lines.scrollTop, 120, "line numbers must follow the restored text viewport");
+assert.strictEqual(viewContext.highlight.style.transform, "translate(-40px, -120px)", "syntax layer must follow the restored viewport");
+const lifecycleHandlers = {};
+const lifecycleCalls = [];
+const lifecycleContext = {
+  resumeEditorView: null, editorViewInteracted: true,
+  captureEditorView: () => ({ selectionStart: 453, selectionEnd: 453, scrollTop: 269.6, scrollLeft: 0 }),
+  render: () => lifecycleCalls.push("render"),
+  restoreEditorView: (view) => lifecycleCalls.push(view),
+  saveTabDraft: () => lifecycleCalls.push("save-tab"),
+  window: { addEventListener: (name, handler) => { lifecycleHandlers[name] = handler; } },
+  document: { hidden: false, addEventListener: (name, handler) => { lifecycleHandlers[name] = handler; } },
+  requestAnimationFrame() {}
+};
+vm.createContext(lifecycleContext);
+vm.runInContext(windowScript.slice(windowScript.indexOf("  const refreshEditorView ="), windowScript.lastIndexOf("}());")), lifecycleContext);
+lifecycleHandlers.pagehide();
+assert.strictEqual(lifecycleCalls[0], "save-tab", "leaving a tab must save its current cursor and viewport locally");
+lifecycleHandlers.pageshow();
+assert.strictEqual(lifecycleCalls[1], "render", "restore must rebuild missing line numbers and syntax layers before positioning them");
+assert.strictEqual(lifecycleCalls[2].selectionStart, 453);
+assert.strictEqual(lifecycleCalls[2].scrollTop, 269.6);
+assert.strictEqual(lifecycleCalls.filter((call) => call === "save-tab").length, 1, "showing a restored tab must not publish or resave an old song");
+const sharedDraftStorage = { getItem: (key) => draftWrites.get(key) ?? null, setItem: (key, value) => draftWrites.set(key, value) };
+const emittedDrafts = [];
+const draftContext = {
+  text: { value: "曲Aの編集" }, draftUpdatedAt: 0, lastPublishedText: "曲A",
+  transpose: { value: "0" }, transposeCommitted: false, appliedTranspose: 0,
+  TEXT_KEY: "text", DRAFT_KEY: "draft", localStorage: sharedDraftStorage,
+  sessionStorage: { setItem(key, value) { this[key] = value; } },
+  channel: { postMessage: (payload) => emittedDrafts.push(payload) },
+  window: { opener: { closed: false, postMessage: (payload) => emittedDrafts.push(payload) }, location: { origin: "http://localhost" } },
+  render() {}, status: {}, Date
+};
+vm.createContext(draftContext);
+const publishSource = windowScript.slice(windowScript.indexOf("  function captureEditorView()"), windowScript.indexOf("  const positionStatus"));
+vm.runInContext(publishSource, draftContext);
+vm.runInContext("publishText();", draftContext);
+assert.strictEqual(JSON.parse(draftContext.sessionStorage.draft || "null")?.text, "曲Aの編集", "each tab must save its own draft before publishing");
+assert.strictEqual(emittedDrafts.length, 1, "edited text must go only to its opener, never all song tabs");
+assert.strictEqual(emittedDrafts[0].baseText, "曲A", "the opener must be able to reject a stale edit against another song");
+assert.strictEqual(draftContext.lastPublishedText, "曲Aの編集");
+assert(!windowScript.includes('event.key === TEXT_KEY'), "storage events from another song must not overwrite a realtime tab");
+
+const restoreTabSource = windowScript.slice(windowScript.indexOf("  let tabDraft = null;"), windowScript.indexOf("  // A saved draft"));
+for (const savedText of ["曲A", ""]) {
+  const restoreTabContext = {
+    sessionStorage: { getItem: () => JSON.stringify({ text: savedText, updatedAt: 10, transpose: "2", transposeApplied: true, appliedTranspose: 2 }) },
+    localStorage: { getItem: () => JSON.stringify({ text: "曲B", committedText: "曲B", updatedAt: 20 }) },
+    DRAFT_KEY: "draft", TEXT_KEY: "text", STATE_KEY: "state", keepExistingDraft: false, pendingReplace: false,
+    loadedDraftText: "", draftUpdatedAt: 0, lastPublishedText: "", text: { value: "" },
+    transpose: { value: "-5" }, transposeCommitted: false, appliedTranspose: 0,
+    applyState() { throw new Error("shared state must never replace a resumed tab"); }
+  };
+  vm.createContext(restoreTabContext);
+  vm.runInContext(restoreTabSource, restoreTabContext);
+  assert.strictEqual(restoreTabContext.text.value, savedText, "a resumed tab must keep its own song, including an intentionally empty draft");
+  assert.strictEqual(restoreTabContext.transpose.value, "2", "another song's transpose must not replace the resumed tab's setting");
+  assert.strictEqual(restoreTabContext.appliedTranspose, 2);
+}
+const committedMessageSource = app.slice(app.indexOf('    if (event.data.type === "committed-text")'), app.indexOf('    if (event.data.type !== "score-request"'));
+const parentContext = {
+  elements: { committedOutput: { value: "曲B" } },
+  localStorage: { setItem() { throw new Error("a stale editor must not overwrite the parent song"); } }
+};
+vm.createContext(parentContext);
+vm.runInContext(`function receive(event) { ${committedMessageSource} } receive({data:{type:"committed-text",text:"古い曲A",baseText:"曲A"}});`, parentContext);
+assert.strictEqual(parentContext.elements.committedOutput.value, "曲B");
+vm.runInContext('receive({data:{type:"committed-text",text:"旧形式の曲A"}});', parentContext);
+assert.strictEqual(parentContext.elements.committedOutput.value, "曲B", "legacy messages without a baseline must be rejected");
+parentContext.localStorage.setItem = () => {};
+Object.assign(parentContext, { COMMITTED_OUTPUT_STORAGE_KEY: "committed", updateCount() {}, updateLineNumbers() {}, publishScoreWindow() {} });
+vm.runInContext('receive({data:{type:"committed-text",text:"曲Bの編集",baseText:"曲B"}});', parentContext);
+assert.strictEqual(parentContext.elements.committedOutput.value, "曲Bの編集", "edits based on the current parent song must still be accepted");

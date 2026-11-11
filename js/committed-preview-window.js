@@ -1,7 +1,6 @@
 (function () {
   "use strict";
   const STATE_KEY = "chordWikiBarFormatter.scoreWindow.v1";
-  const CHANNEL_NAME = "chordWikiBarFormatter.scoreWindow.channel.v1";
   const TEXT_KEY = "chordWikiBarFormatter.committedOutput.v1";
   const DRAFT_KEY = "chordWikiBarFormatter.committedWindowDraft.v1";
   const MUSICXML_HANDOFF_STORAGE_KEY = "chordWikiBarFormatter.musicxmlHandoff.v1";
@@ -52,10 +51,12 @@
   const transposeDown = document.querySelector("#committed-transpose-down");
   const transposeUp = document.querySelector("#committed-transpose-up");
   const replaceDialog = document.querySelector("#committed-replace-dialog");
-  let channel = null;
   let activeLine = 0;
   let draftUpdatedAt = 0;
   let loadedDraftText = "";
+  let lastPublishedText = "";
+  let resumeEditorView = null;
+  let editorViewInteracted = false;
   const layoutModes = ["stacked", "side", "side-reverse", "stacked-reverse"];
   const layoutLabels = { stacked: "上下（編集→プレビュー）", side: "左右（編集→プレビュー）", "side-reverse": "左右反転（プレビュー→編集）", "stacked-reverse": "上下反転（プレビュー→編集）" };
   let layoutMode = "stacked";
@@ -152,9 +153,11 @@
     const top = scrollPositionForProgress(element, "top", topProgress);
     const left = scrollPositionForProgress(element, "left", leftProgress);
     if (element.scrollTop === top && element.scrollLeft === left) return;
-    suppressedScrollPositions.set(element, { top, left });
     element.scrollTop = top;
     element.scrollLeft = left;
+    // Browsers quantize scroll offsets. Track the applied coordinates so a
+    // programmatic preview scroll cannot be mistaken for a user scroll.
+    suppressedScrollPositions.set(element, { top: element.scrollTop, left: element.scrollLeft });
   };
   const scrollPositionWasSuppressed = (element) => {
     const position = suppressedScrollPositions.get(element);
@@ -164,7 +167,6 @@
     if (suppressed) suppressedScrollPositions.delete(element);
     return suppressed;
   };
-  try { if ("BroadcastChannel" in window) channel = new BroadcastChannel(CHANNEL_NAME); } catch (_error) { channel = null; }
   function render() {
     const textTopProgress = scrollProgress(text, "top");
     const textLeftProgress = scrollProgress(text, "left");
@@ -234,12 +236,31 @@
     }
     render();
   }
+  function captureEditorView() {
+    return { selectionStart: text.selectionStart, selectionEnd: text.selectionEnd, scrollTop: text.scrollTop, scrollLeft: text.scrollLeft };
+  }
+  function saveTabDraft() {
+    try { sessionStorage.setItem(DRAFT_KEY, JSON.stringify({ text: text.value, updatedAt: draftUpdatedAt, transpose: transpose.value, transposeApplied: transposeCommitted, appliedTranspose, view: captureEditorView() })); } catch (_error) { /* keep editing when tab storage is unavailable */ }
+  }
+  function restoreEditorView(view) {
+    if (!view) return;
+    const start = Math.min(text.value.length, Math.max(0, Number(view.selectionStart) || 0));
+    const end = Math.min(text.value.length, Math.max(start, Number(view.selectionEnd) || 0));
+    text.setSelectionRange(start, end);
+    text.scrollTop = Math.max(0, Number(view.scrollTop) || 0);
+    text.scrollLeft = Math.max(0, Number(view.scrollLeft) || 0);
+    lines.scrollTop = text.scrollTop;
+    highlight.style.transform = `translate(${-text.scrollLeft}px, ${-text.scrollTop}px)`;
+    setActiveLine(text.value.slice(0, start).split(/\r\n|\r|\n/).length - 1);
+    if (scrollSync.checked) setScrollProgress(preview, scrollProgress(text, "top"), scrollProgress(text, "left"));
+  }
   function publishText() {
-    const payload = { type: "committed-text", text: text.value };
+    const payload = { type: "committed-text", text: text.value, baseText: lastPublishedText };
     draftUpdatedAt = Date.now();
-    try { localStorage.setItem(TEXT_KEY, text.value); localStorage.setItem(DRAFT_KEY, JSON.stringify({ text: text.value, updatedAt: draftUpdatedAt })); } catch (_error) { /* opener/channel can still sync */ }
-    if (channel) channel.postMessage(payload);
+    saveTabDraft();
+    try { localStorage.setItem(TEXT_KEY, text.value); localStorage.setItem(DRAFT_KEY, JSON.stringify({ text: text.value, updatedAt: draftUpdatedAt })); } catch (_error) { /* opener can still sync */ }
     try { if (window.opener && !window.opener.closed) window.opener.postMessage(payload, window.location.origin === "null" ? "*" : window.location.origin); } catch (_error) { /* ignore */ }
+    lastPublishedText = text.value;
     render(); status.textContent = "譜面プレビューへリアルタイムで反映しました。";
   }
   const positionStatus = () => {
@@ -490,8 +511,11 @@
   document.addEventListener("keydown", handlePositionShortcut, true);
   document.addEventListener("keydown", handlePositionNavigation, true);
   text.addEventListener("beforeinput", (event) => {
+    editorViewInteracted = true;
     if (positionAdjustMode && !["historyUndo", "historyRedo"].includes(event.inputType)) event.preventDefault();
   });
+  text.addEventListener("pointerdown", () => { editorViewInteracted = true; });
+  text.addEventListener("keydown", () => { editorViewInteracted = true; });
   text.addEventListener("input", () => {
     if (positionAdjustMode) activeChordStart = chordAtPosition(text.selectionStart)?.start ?? -1;
     publishText();
@@ -712,13 +736,22 @@
     };
     divider.addEventListener("pointermove", move); divider.addEventListener("pointerup", () => { divider.removeEventListener("pointermove", move); applyDisplaySettings(); }, { once: true });
   });
-  if (channel) channel.addEventListener("message", (event) => { if (event.data?.type === "score-state") applyState(event.data.payload); });
-  window.addEventListener("storage", (event) => { if (event.key === STATE_KEY && event.newValue) { try { applyState(JSON.parse(event.newValue)); } catch (_error) {} } if (event.key === TEXT_KEY && event.newValue !== text.value) { text.value = event.newValue; appliedTranspose = 0; transposeCommitted = false; render(); } });
+  // Each editor owns its song. Shared storage is only a fallback for a new
+  // tab; storage/BroadcastChannel events must never replace an open draft.
   try { const saved = JSON.parse(localStorage.getItem(displayKey) || "null"); if (saved) { fontSize.value = saved.fontSize || fontSize.value; font.value = saved.font || font.value; theme.value = saved.theme === "dark-gray" ? "dark" : saved.theme || theme.value; spelling.value = ["preserve", "sharp", "flat"].includes(saved.spelling) ? saved.spelling : spelling.value; transpose.value = String(Math.max(window.ChordWikiTranspose.transposeMin, Math.min(window.ChordWikiTranspose.transposeMax, Number(saved.transpose) || 0))); transposeCommitted = saved.transposeApplied === true; appliedTranspose = transposeCommitted ? Number(saved.appliedTranspose ?? saved.transpose) || 0 : 0; const savedCheckboxDefaults = saved.checkboxDefaultsVersion === 1; textColoring.checked = savedCheckboxDefaults ? saved.textColoring !== false : true; boldCode.checked = savedCheckboxDefaults ? saved.boldCode !== false : true; scrollSync.checked = savedCheckboxDefaults ? saved.scrollSync !== false : true; layoutMode = saved.layoutPreferenceVersion === 1 && layoutModes.includes(saved.layoutMode) ? saved.layoutMode : "stacked"; stackedLineHeight = Math.max(1.4, Math.min(3.2, Number.parseFloat(saved.stackedLineHeight) || 1.65)); sideLineHeight = Math.max(1.4, Math.min(3.2, Number.parseFloat(saved.sideLineHeight) || 2.75)); stackedPaneSize = Math.max(6, Math.min(94, Number.parseFloat(saved.stackedPaneSize) || 48)); sidePaneSize = Math.max(6, Math.min(94, Number.parseFloat(saved.sidePaneSize) || 48)); } } catch (_error) {}
   applyDisplaySettings();
-  try { const draft = JSON.parse(localStorage.getItem(DRAFT_KEY) || "null"); if (draft?.text) { loadedDraftText = draft.text; text.value = draft.text; draftUpdatedAt = Number(draft.updatedAt) || 0; } } catch (_error) {}
-  if (!keepExistingDraft && !pendingReplace) { try { applyState(JSON.parse(localStorage.getItem(STATE_KEY) || "null")); } catch (_error) {} }
-  if (!text.value) { try { text.value = localStorage.getItem(TEXT_KEY) || ""; } catch (_error) {} }
+  let tabDraft = null;
+  try { const saved = JSON.parse(sessionStorage.getItem(DRAFT_KEY) || "null"); if (typeof saved?.text === "string") tabDraft = saved; } catch (_error) {}
+  try { const draft = tabDraft || JSON.parse(localStorage.getItem(DRAFT_KEY) || "null"); if (typeof draft?.text === "string") { loadedDraftText = draft.text; text.value = draft.text; draftUpdatedAt = Number(draft.updatedAt) || 0; } } catch (_error) {}
+  if (!tabDraft && !keepExistingDraft && !pendingReplace) { try { applyState(JSON.parse(localStorage.getItem(STATE_KEY) || "null")); } catch (_error) {} }
+  if (!tabDraft && !text.value) { try { text.value = localStorage.getItem(TEXT_KEY) || ""; } catch (_error) {} }
+  if (tabDraft && typeof tabDraft.transpose === "string") {
+    transpose.value = tabDraft.transpose;
+    transposeCommitted = tabDraft.transposeApplied === true;
+    appliedTranspose = transposeCommitted ? Number(tabDraft.appliedTranspose) || 0 : 0;
+  }
+  lastPublishedText = text.value;
+  resumeEditorView = tabDraft?.view || { selectionStart: 0, selectionEnd: 0, scrollTop: 0, scrollLeft: 0 };
   // A saved draft can already fill the textarea without producing the line
   // numbers, syntax layer, or score preview. Always perform an initial render.
   render();
@@ -751,5 +784,27 @@
       }
       history.replaceState(null, "", window.location.pathname);
     }, { once: true });
-  }
+  } else if (pendingReplace) history.replaceState(null, "", window.location.pathname);
+  restoreEditorView(resumeEditorView);
+  saveTabDraft();
+  const refreshEditorView = () => {
+    const view = resumeEditorView || captureEditorView();
+    render();
+    restoreEditorView(view);
+  };
+  window.addEventListener("pagehide", () => {
+    resumeEditorView = captureEditorView();
+    editorViewInteracted = false;
+    saveTabDraft();
+  });
+  window.addEventListener("pageshow", () => {
+    if (!editorViewInteracted) refreshEditorView();
+  });
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) {
+      resumeEditorView = captureEditorView();
+      saveTabDraft();
+    } else refreshEditorView();
+  });
+  requestAnimationFrame(() => { if (!editorViewInteracted) refreshEditorView(); });
 }());
