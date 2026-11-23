@@ -17,7 +17,7 @@ matrix.forEach(([label, source, correction, whiteNoteCount]) => {
   assert.strictEqual((result.output.match(/\[○\]/g) || []).length, whiteNoteCount, `${label}: white-note count`);
 });
 const replacementWhiteNote = CBFConverter.convertChordText("[C][D][E][F]", settings, ["3@21"]);
-assert.strictEqual(replacementWhiteNote.output, "[|][C][---][D][○][----][E][-][|][-][F][-][|]", "replacing 4 with @ keeps a default white-note hyphen without adding a visible duration value");
+assert.strictEqual(replacementWhiteNote.output, "[|][C][---][D][○][-][---][E][-][|][-][F][-][|]", "replacing 4 with @ keeps a default white-note hyphen without adding a visible duration value");
 
 function replaceWithWhiteNote(line, start, end, duration) {
   const edit = CBFCorrectionInput.whiteNoteEdit(line, start, end);

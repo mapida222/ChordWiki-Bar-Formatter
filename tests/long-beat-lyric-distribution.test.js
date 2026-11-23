@@ -20,10 +20,10 @@ const fractionalBoundaryCases = [
     "[|][F#m][----]おのお[D][---]の　のス[E][-]タ[|][---]イル[A][-]で[--][E/G#][--][|]"]
 ];
 const fractionalBoundarySettings = { ...settings, measureCapacity: 8, hyphenSpacing: 4, longBeatLyricPlacement: 2 };
-for (const [lyric, splitLyric] of [["　abc", "　ab[--]c"], ["か　きく", "か　き[--]く"]]) {
+for (const [lyric, splitLyric] of [["　abc", "　abc[--]"], ["か　きく", "か　き[--]く"]]) {
   const input = `[C]甲[Dm]乙[E7]${lyric}[F]丙[G/B]丁`;
   const actual = CBFConverter.convertChordText(input, fractionalBoundarySettings, ["12345"]).output;
-  assert.strictEqual(actual, `[|][C][-]甲[Dm][--]乙[E7][-]${splitLyric}[F][--]丙[|][--][G/B][----]丁[-][|]`,
+  assert.strictEqual(actual, `[|][C][-]甲[Dm][--]乙[E7][-]${splitLyric}[F][--]丙[|][--][G/B][--]丁[---][|]`,
     "a short grid split must preserve leading and internal authored full-width spaces");
   assert.strictEqual(actual.replace(/\[[^\]]*\]/g, ""), input.replace(/\[[^\]]*\]/g, ""));
   assert.strictEqual((actual.match(/-/g) || []).length, 15, "12345 keeps its fifteen hyphens");
@@ -400,4 +400,79 @@ for (const mode of [0, 1, 2, 3, 4]) {
   }
 }
 
-console.log("PASS: ROW-007 selectable long-beat lyric placement");
+// ROW-007: automatic placement must keep Latin words and authored spacing intact.
+const englishSettings = { ...settings, measureCapacity: 8, hyphenSpacing: 4 };
+const englishPhrases = [
+  "Dancing", "I'm", "rock'n'roll", "I’m", "Hello世界", "君とDancing",
+  "Yeah！Dancing Dancing GO！",
+  "Hello,  world! I'm dancing; rock'n'roll forever.",
+  "Dancing through the night we keep singing together until the morning light",
+  "Cafe\u0301世界", "sing-along tonight", "Hello\tworld　君と  Dancing！"
+];
+const englishLyricText = (output) => CBFConverter.parseTokens(output)
+  .filter((token) => token.kind === "text").map((token) => token.value).join("");
+for (const mode of [-1, 0, 1, 2, 3, 4]) {
+  for (const phrase of englishPhrases) {
+    for (const code of ["5", "8", "c", "g", "s8"]) {
+      const result = CBFConverter.convertChordText(`[G]${phrase}`, { ...englishSettings, longBeatLyricPlacement: mode }, [code]);
+      assert.strictEqual(englishLyricText(result.output), phrase, `${mode}/${code}: preserve lyric text and whitespace`);
+      for (const word of phrase.match(/(?:\p{Script=Latin}\p{Mark}*)+(?:['’ʼ-](?:\p{Script=Latin}\p{Mark}*)+)*/gu) || []) {
+        assert.ok(result.output.includes(word), `${mode}/${code}: never split ${word}: ${result.output}`);
+      }
+    }
+  }
+}
+assert.strictEqual(
+  CBFConverter.convertChordText("[G]Yeah！Dancing Dancing GO！", { ...englishSettings, longBeatLyricPlacement: 2 }, ["c"]).output,
+  "[|][G][----]Yeah！Dancing [----]Dancing [|][----]GO！[|]",
+  "keep the twelve duration hyphens and measure boundaries while distributing whole words"
+);
+assert.strictEqual(
+  CBFConverter.convertChordText("[G]Dancing through the night we keep singing together until the morning light", { ...englishSettings, longBeatLyricPlacement: 2 }, ["c"]).output,
+  "[|][G][----]Dancing through the night [----]we keep singing together [|][----]until the morning light[|]",
+  "balance a long English sentence across the existing rhythm positions"
+);
+for (const input of ["[G]Dan[C]cing", "[G]Dan[|]cing", "[G][----]Dan[|][----]cing[|]"]) {
+  const output = CBFConverter.convertChordText(input, englishSettings).output;
+  assert.ok(output.includes("Dan"), "keep the authored first word fragment");
+  assert.ok(output.includes("cing"), "keep the authored second word fragment");
+  if (input.includes("[C]")) assert.ok(output.indexOf("[C]") > output.indexOf("Dan"));
+  else assert.ok(output.indexOf("[|]", output.indexOf("Dan")) < output.indexOf("cing"));
+}
+const englishWarning = CBFConverter.convertChordText("[G]Dancing", { ...englishSettings, longBeatLyricPlacement: 2 }, ["c"]);
+assert.ok(englishWarning.warnings.some((warning) => /単語/.test(warning) && /調整/.test(warning)), "flag that whole-word placement may need beat alignment adjustment");
+assert.ok(!CBFConverter.convertChordText("[G]君と歌う", englishSettings, ["c"]).warnings.some((warning) => /単語/.test(warning)), "Japanese-only input needs no English alignment warning");
+const manualEnglish = "[|][G][----]Dan[C][----]cing[|]";
+assert.strictEqual(CBFConverter.convertChordText("[G]Dancing", englishSettings, [], [manualEnglish]).output, manualEnglish, "preserve a directly edited mid-word chord exactly");
+const mixedChordOutput = CBFConverter.convertChordText("[G]Dancing[C]Hello世界", { ...englishSettings, longBeatLyricPlacement: 2 }, ["79"]).output;
+const mixedChordTokens = CBFConverter.parseTokens(mixedChordOutput);
+assert.deepStrictEqual(mixedChordTokens.filter((token) => token.kind === "chord").map((token) => token.value), ["G", "C"], "preserve authored chord order");
+assert.strictEqual(mixedChordTokens.filter((token) => token.kind === "hyphen").reduce((sum, token) => sum + token.value.length, 0), 16, "preserve the 7+9 duration");
+assert.strictEqual(mixedChordTokens.filter((token) => token.kind === "bar").length, 3, "preserve two measures and their outer boundaries");
+assert.ok(mixedChordOutput.indexOf("Dancing") < mixedChordOutput.indexOf("[C]") && mixedChordOutput.indexOf("[C]") < mixedChordOutput.indexOf("Hello"), "keep each word with its authored chord");
+assert.strictEqual(englishLyricText(mixedChordOutput), "DancingHello世界");
+
+// The split belongs to the measure grid, including a chord shorter than one grid unit.
+const measureGridCases = [
+  [8, "3454", "[Am]Yeah！[D]　[Bm]Dancing Dancing [Em]GO！", "[|][Am][---]Yeah！[D][-][---]　[Bm][-]Dancing [|][----]Dancing [Em][----]GO！[|]"],
+  [8, "35", "[C]君と[G]Dancing", "[|][C][---]君と[G][-]Dancing[----][|]"],
+  [8, "26", "[Am]今[F]I'm ready！", "[|][Am][--]今[F][--]I'm [----]ready！[|]"],
+  [8, "53", "[C]Hello世界[G]歌おう", "[|][C][----]Hello世[-]界[G][---]歌おう[|]"],
+  [6, "24", "[Dm]君と[G]rock'n'roll", "[|][Dm][--]君と[G][-]rock'n'roll[---][|]"],
+  [8, "17", "[C]いま[G]Hello world！", "[|][C][-]いま[G][---]Hello [----]world！[|]"],
+  [8, "62", "[C]君と歌う[G]明日へ", "[|][C][----]君と[--]歌う[G][--]明日へ[|]"],
+  [8, "233", "[C]君と[G]Hello世界[Am]歌おう", "[|][C][--]君と[G][--]Hello世[-]界[Am][---]歌おう[|]"],
+  [8, "323", "[C]あ[G]い[Am]う", "[|][C][---]あ[G][-]い[-][Am][---]う[|]"],
+  [8, "79", "[C]君と歩こう[G]Dancing through night", "[|][C][----]君と歩[---]こう[G][-]Dancing [|][----]through [----]night[|]"],
+  [6, "57", "[Dm]君と踊ろう[G]rock'n'roll all night", "[|][Dm][---]君と踊[--]ろう[G][-]rock'n'roll [|][---]all [---]night[|]"],
+  [8, "62", "[C]extraordinary[G]tonight", "[|][C][----]extraordinary[--][G][--]tonight[|]"],
+  [8, "44", "[C]あ[G]い", "[|][C][----]あ[G][----]い[|]"],
+  [8, "44", "[C]あいうえ[G]かきくけ", "[|][C][----]あいうえ[G][----]かきくけ[|]"],
+  [4, "13", "[C]さあ[G]Dancing！", "[|][C][-]さあ[G][---]Dancing！[|]"]
+];
+for (const [capacity, code, input, expected] of measureGridCases) {
+  const gridSettings = { ...englishSettings, measureCapacity: capacity, hyphenUnit: capacity === 6 ? 3 : 4, hyphenSpacing: capacity === 6 ? 3 : 4, longBeatLyricPlacement: 2 };
+  assert.strictEqual(CBFConverter.convertChordText(input, gridSettings, [code]).output, expected, `${capacity}/${code}: align markers and lyrics to the measure grid`);
+}
+
+console.log("PASS: ROW-007 selectable long-beat lyric placement, English words, and measure grid");
