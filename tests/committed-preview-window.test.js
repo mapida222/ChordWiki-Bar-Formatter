@@ -356,3 +356,61 @@ parentContext.localStorage.setItem = () => {};
 Object.assign(parentContext, { COMMITTED_OUTPUT_STORAGE_KEY: "committed", updateCount() {}, updateLineNumbers() {}, publishScoreWindow() {} });
 vm.runInContext('receive({data:{type:"committed-text",text:"曲Bの編集",baseText:"曲B"}});', parentContext);
 assert.strictEqual(parentContext.elements.committedOutput.value, "曲Bの編集", "edits based on the current parent song must still be accepted");
+
+// PREVIEW-012: replacement paste starts a new transpose baseline.
+{
+  const vm = require("node:vm");
+  const transposer = require(path.join(root, "js", "transposer.js"));
+  const start = windowScript.includes("  let pendingPasteResetTranspose")
+    ? windowScript.indexOf("  let pendingPasteResetTranspose")
+    : windowScript.indexOf('  text.addEventListener("beforeinput",');
+  const handlersSource = windowScript.slice(start, windowScript.indexOf('  ["click", "keyup", "select", "focus"]', start));
+  const commitSource = windowScript.slice(windowScript.indexOf("  const commitTransposeSelection ="), windowScript.indexOf('  transpose.addEventListener("change", commitTransposeSelection)'));
+  function scenario(initial, start, end, replacement, inputType = "insertFromPaste", paste = true, committed = true) {
+    const handlers = {};
+    const context = {
+      positionAdjustMode: false, activeChordStart: -1,
+      transposeCommitted: committed, appliedTranspose: committed ? 2 : 0,
+      transpose: { value: "2" }, spelling: { value: "preserve" }, status: {},
+      text: { value: initial, selectionStart: start, selectionEnd: end, addEventListener(type, fn) { handlers[type] = fn; } },
+      window: { ChordWikiTranspose: transposer }, document: { activeElement: null },
+      render() {}, publishText() { context.published = context.text.value; },
+      applyDisplaySettings() { context.saved = { transpose: context.transpose.value, applied: context.appliedTranspose, committed: context.transposeCommitted }; }
+    };
+    vm.createContext(context);
+    vm.runInContext(handlersSource + commitSource + "\n globalThis.commitSelection = commitTransposeSelection;", context);
+    if (paste) handlers.paste?.({});
+    if (replacement !== null) {
+      context.text.value = replacement;
+      handlers.input({ inputType });
+    }
+    return context;
+  }
+  for (const [initial, start, end] of [["", 0, 0], ["  \n", 1, 1], ["[D] old", 0, 7]]) {
+    for (const committed of [true, false]) for (const inputType of ["insertFromPaste", ""]) {
+      const c = scenario(initial, start, end, "[C] new", inputType, true, committed);
+      assert.equal(c.transpose.value, "0", "fresh/replacement paste must reset the selector");
+      assert.equal(c.appliedTranspose, 0);
+      assert.equal(c.transposeCommitted, false);
+      assert.equal(c.text.value, "[C] new", "reset must preserve pasted text");
+      assert.equal(c.published, "[C] new");
+      assert.deepEqual(c.saved, { transpose: "0", applied: 0, committed: false }, "reset must persist for reload");
+      c.transpose.value = "3";
+      c.commitSelection();
+      assert.equal(c.text.value, "[D#] new", "next transpose must use the new text as its baseline");
+    }
+  }
+  for (const c of [
+    scenario("[D] old", 4, 7, "[D] new"),
+    scenario("[D] old", 7, 7, "[D] old more"),
+    scenario("[D] old", 0, 7, "[D] typed", "insertText", false),
+    scenario("[D] old", 0, 7, "[C] undo", "historyUndo", false),
+    scenario("[D] old", 0, 7, null),
+    scenario("[D] old", 0, 7, "[D] typed", "insertText")
+  ]) {
+    assert.equal(c.transpose.value, "2", "partial paste, editing, undo and cancelled paste must retain transpose");
+    assert.equal(c.appliedTranspose, 2);
+    assert.equal(c.transposeCommitted, true);
+  }
+  console.log("PASS: replacement paste resets transpose, partial paste and ordinary editing retain it");
+}
