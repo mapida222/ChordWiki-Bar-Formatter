@@ -69,4 +69,30 @@ assert(app.includes("elements.outputHeading, elements.measureCapacityWarning, el
 const warningUpdater = app.match(/function updateMeasureCapacityWarning[\s\S]*?\n  function lineCount/);
 assert(warningUpdater && (warningUpdater[0].match(/syncResultRowAlignment\(\)/g) || []).length >= 3);
 
+// Execute the warning updater: text-only checks miss undefined variables on
+// the path where the measure matches but the chord duration or 6/8 profile does not.
+const warningFunction = app.match(/  function updateMeasureCapacityWarning\([^\n]*\) \{[\s\S]*?\n  \}/)[0];
+const meterFunction = app.match(/  function hasExplicitSixEightMeter\([^\n]*\) \{[\s\S]*?\n  \}/)[0];
+for (const [input, detected, profile] of [
+  ["{c:6/8拍子}\n[C]歌[G]う", "6", "sixEight"],
+  ["[C]--[G]--[Am]--[F]--|", "", ""]
+]) {
+  const elements = {
+    input: { value: input },
+    measureCapacityWarning: { hidden: true },
+    measureCapacityWarningText: { textContent: "" },
+    measureCapacityWarningOpen: { dataset: {}, textContent: "" }
+  };
+  const update = require("vm").runInNewContext(`${meterFunction}\n${warningFunction}\nupdateMeasureCapacityWarning`, {
+    elements, CBFConverter,
+    updateSongChangeWarningEligibility: () => true,
+    syncResultRowAlignment: () => {}
+  });
+  update({ measureCapacity: 8, hyphenUnit: 4, hyphenSpacing: 4 });
+  assert.strictEqual(elements.measureCapacityWarning.hidden, false, "a format mismatch must finish rendering its warning");
+  assert.strictEqual(elements.measureCapacityWarningOpen.dataset.detected, detected, "only a capacity/profile mismatch should change the measure capacity");
+  assert.strictEqual(elements.measureCapacityWarningOpen.dataset.profile, profile);
+  assert.strictEqual(JSON.parse(elements.measureCapacityWarningOpen.dataset.formatting).hyphenSpacing, profile ? 3 : 4);
+}
+
 console.log("PASS: clear authored-measure mismatches produce a settings warning");
