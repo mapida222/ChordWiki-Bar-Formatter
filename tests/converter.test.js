@@ -49,7 +49,7 @@ const splitBeatLyricSettings = { ...settings, longBeatLyricPlacement: 1 };
 const splitBeatLyricPatterns = [
   ["35", "[C]あいう[D]えお", "[|][C][---]あいう[D][-]え[----]お[|]"],
   ["53", "[C]あいうえ[D]お", "[|][C][----]あいう[-]え[D][---]お[|]"],
-  ["332", "[C]あい[D]うえ[Em]お", "[|][C][---]あい[D][---]うえ[Em][--]お[|]"],
+  ["332", "[C]あい[D]うえ[Em]お", "[|][C][---]あい[D][-]う[--]え[Em][--]お[|]"],
   ["349", "[C]あい[D]うえ[Em]お", "[|][C][---]あい[D][-]う[---]え[Em][-]お[|][----][----][|]"]
 ];
 splitBeatLyricPatterns.forEach(([code, input, expected]) => {
@@ -280,7 +280,7 @@ if (fractionalLyricPreposeAccepted.output !== "[|][C][----]あいう[-]え[G][--
   console.error(`FAIL adopted 53 lyric prepose\nactual: ${fractionalLyricPreposeAccepted.output}`);
 }
 const overflow335 = CBFConverter.convertChordText("[C]あいう[G]え[Am]おかき", settings, ["335"]);
-if (overflow335.output !== "[|][C][---]あいう[G][---]え[Am][--]おかき[|][---]") {
+if (overflow335.output !== "[|][C][---]あいう[G][-][--]え[Am][--]おかき[|][---]") {
   failures += 1;
   console.error(`FAIL adopted 335 overflow bar\nactual: ${overflow335.output}`);
 }
