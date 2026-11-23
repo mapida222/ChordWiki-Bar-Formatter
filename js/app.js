@@ -544,7 +544,7 @@
         : "検出した書式を初期設定へ反映しますか？";
       elements.measureCapacityWarningText.textContent = `※変換前の譜面を解析した結果、現在の初期設定と異なる書式が検出されました。\n\n${formattingDetails.map((detail, index) => `${index + 1}: ${detail}`).join("\n")}\n\n${actionText}`;
     }
-    elements.measureCapacityWarningOpen.dataset.detected = measureMismatch || explicitSixEightSettingsMismatch ? String(suggestedCapacity) : "";
+    elements.measureCapacityWarningOpen.dataset.detected = measureMismatch || sixEightSettingsMismatch ? String(suggestedCapacity) : "";
     elements.measureCapacityWarningOpen.dataset.formatting = JSON.stringify({
       hyphenUnit: formatting.hyphenUnit?.detected || null,
       hyphenSpacing: standardHyphenSpacing
