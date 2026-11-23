@@ -151,7 +151,7 @@
 | `PREVIEW-009` | リアルタイム編集のコード位置調整。直結した[|]とコードは既定で一緒に移動し、構造記号対象ONでは個別に操作。矢印で上下左右へ移動し、Undo/Redoで復元 | 有効 | `committed-preview.html`、`js/committed-preview-window.js`、`style.css`、`tests/committed-preview-window.test.js` |
 | `PREVIEW-010` | committed-preview.htmlの編集テキストで小節チェック。小節内の構文エラー、拍数の不一致、拍子注記前の小節線と角括弧付き拍子注記を確認し、各エラーの原因・対策と該当行への移動／安全な適用を表示する。拍数付き三連符注記をコード間でも尊重し、長いハイフン区切り線を拍数から除外する。半角・全角括弧の拍子（2/4・3/4等、全角スラッシュや角括弧付きも含む）を認識し、不足・超過小節にも継承し、元の拍子への復帰または新しい拍子注記で切り替える。歌詞あり・なしの68拍子を検証し、不足修正案と解析表示にも記号定義を引き継ぐ | 有効 | `committed-preview.html`、`js/measure-check.js`、`js/committed-measure-check-panel.js`、`style.css`、`tests/measure-check.test.js` |
 | `PREVIEW-011` | committed-preview.htmlの小節チェック結果にChordWiki to Clover準拠の16分音符アクセント推奨編集を表示し、OK／NGおよび「すべて適用」で選択的に反映する | 廃止 | `committed-preview.html`、`js/measure-check.js`、`js/committed-measure-check-panel.js`、`style.css`、`tests/measure-check.test.js` |
-| `PREVIEW-012` | リアルタイムエディターの移調操作を左の編集テキストへ反映し、右プレビューへの二重適用を防止 | 有効 | `js/committed-preview-window.js`、`tests/committed-preview-window.test.js` |
+| `PREVIEW-012` | リアルタイムエディターの移調操作を左の編集テキストへ反映し、右プレビューへの二重適用を防止。空欄・全文選択への貼り付けは移調状態をリセットし、部分貼り付け・通常編集では維持 | 有効 | `js/committed-preview-window.js`、`tests/committed-preview-window.test.js` |
 | `PREVIEW-013` | リアルタイムエディターの表示設定で音名を元表記・#表示・♭表記から選択し、譜面プレビューへ反映 | 有効 | `committed-preview.html`、`js/committed-preview-window.js`、`tests/committed-preview-window.test.js` |
 | `PREVIEW-014` | リアルタイムエディターのコード位置調整モードをF2で切り替え、Shift+F2で小節線・ハイフンの移動対象を切り替える。モード切替・コード選択時は各欄の表示位置を保持する | 有効 | `committed-preview.html`、`js/committed-preview-window.js`、`tests/committed-preview-window.test.js`、`tests/position-viewport.test.js` |
 | `PREVIEW-015` | コード・キー区間のない変換後テキストでも移調プレビューを停止させず、そのまま表示 | 有効 | `js/transposer.js`、`tests/transposer.test.js` |

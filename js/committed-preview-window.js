@@ -604,15 +604,29 @@
   });
   document.addEventListener("keydown", handlePositionShortcut, true);
   document.addEventListener("keydown", handlePositionNavigation, true);
+  let pendingPasteResetTranspose = false;
+  text.addEventListener("paste", () => {
+    pendingPasteResetTranspose = !positionAdjustMode && (!text.value.trim()
+      || (text.selectionStart === 0 && text.selectionEnd === text.value.length));
+  });
   text.addEventListener("beforeinput", (event) => {
     editorViewInteracted = true;
     if (positionAdjustMode && !["historyUndo", "historyRedo"].includes(event.inputType)) event.preventDefault();
   });
   text.addEventListener("pointerdown", () => { editorViewInteracted = true; });
   text.addEventListener("keydown", () => { editorViewInteracted = true; });
-  text.addEventListener("input", () => {
+  text.addEventListener("input", (event) => {
+    const resetTranspose = pendingPasteResetTranspose && (!event.inputType || event.inputType === "insertFromPaste");
+    pendingPasteResetTranspose = false;
+    if (resetTranspose) {
+      transpose.value = "0";
+      appliedTranspose = 0;
+      transposeCommitted = false;
+      applyDisplaySettings();
+    }
     if (positionAdjustMode) activeChordStart = chordAtPosition(text.selectionStart)?.start ?? -1;
     publishText();
+    if (resetTranspose) status.textContent = "新しい本文を貼り付けたため、移調をリセットしました。";
     if (positionAdjustMode) positionStatus();
   });
   ["click", "keyup", "select", "focus"].forEach((eventName) => text.addEventListener(eventName, () => setActiveLine(text.value.slice(0, text.selectionStart).split(/\r\n|\r|\n/).length - 1)));
