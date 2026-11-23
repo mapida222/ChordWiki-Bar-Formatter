@@ -114,7 +114,22 @@
     if (inside || !allowNearby) return inside || null;
     return ranges.find((range) => Math.min(Math.abs(position - range.start), Math.abs(position - range.end)) <= 1) || null;
   };
-  const setActiveChord = (range, { focus = true } = {}) => {
+  const preservePositionViewport = (action) => {
+    const positions = [text, preview, document.scrollingElement].filter(Boolean)
+      .map((element) => ({ element, top: element.scrollTop, left: element.scrollLeft }));
+    try {
+      return action();
+    } finally {
+      positions.forEach(({ element, top, left }) => {
+        element.scrollTop = top;
+        element.scrollLeft = left;
+        suppressedScrollPositions.set(element, { top: element.scrollTop, left: element.scrollLeft });
+      });
+      lines.scrollTop = text.scrollTop;
+      highlight.style.transform = `translate(${-text.scrollLeft}px, ${-text.scrollTop}px)`;
+    }
+  };
+  const setActiveChord = (range, { focus = true } = {}) => preservePositionViewport(() => {
     if (!range) return false;
     activeChordStart = range.start;
     text.setSelectionRange(range.start, range.end);
@@ -123,7 +138,7 @@
     else text.blur();
     render();
     return true;
-  };
+  });
   const selectRelativeChord = (direction) => {
     const ranges = chordRanges(text.value, includePositionSymbols);
     if (!ranges.length) return false;
@@ -544,7 +559,7 @@
   document.addEventListener("keydown", handlePositionClipboard, true);
   document.addEventListener("keydown", handlePositionUndo, true);
   window.addEventListener("resize", syncPreviewHeaderHeight);
-  const setPositionMode = (enabled) => {
+  const setPositionMode = (enabled) => preservePositionViewport(() => {
     if (enabled) {
       const range = chordAtPosition(text.selectionStart) || chordRanges(text.value, includePositionSymbols)[0];
       if (!range) {
@@ -586,7 +601,7 @@
     preview.classList.remove("position-adjust-active");
     render();
     positionStatus();
-  };
+  });
   document.addEventListener("keydown", handlePositionShortcut, true);
   document.addEventListener("keydown", handlePositionNavigation, true);
   text.addEventListener("beforeinput", (event) => {
