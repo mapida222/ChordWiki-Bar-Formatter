@@ -120,7 +120,7 @@
 | `LAYOUT-032` | 編集枠の端2行をクリックしても位置を保ち、矢印キー操作時は上下左右へ滑らかに追従（縦方向は最大2行ずつ） | 有効 | `js/app.js`、`tests/scroll-sync-progress.test.js` |
 | `LAYOUT-033` | 更新履歴を開いた後、履歴の外側をクリックすると閉じる | 有効 | `js/app.js`、`tests/header-controls.test.js` |
 | `LAYOUT-034` | 横スクロールはカーソルを幅40〜60%に保ち、画面幅の1/6ずつ140msのイーズアウトで移動 | 有効 | `js/app.js`、`tests/scroll-sync-progress.test.js` |
-| `LAYOUT-035` | 更新履歴を5件ずつ段階表示し、ボタン操作で最古の履歴まで表示。スマホではヘッダー幅へ広げ、本文を日付・カテゴリの下へ折り返す。hiddenの表示抑止を保証 | 有効 | `index.html`、`style.css`、`js/entries/main.js`、`js/update-history.js`、`tests/header-controls.test.js` |
+| `LAYOUT-035` | 更新履歴を5件ずつ段階表示し、ボタン操作で最古の履歴まで表示。スマホではヘッダー幅、PCではヘッダー幅内の最大640pxへ広げ、本文を日付・カテゴリの下へ折り返す。hiddenの表示抑止を保証 | 有効 | `index.html`、`style.css`、`js/entries/main.js`、`js/update-history.js`、`tests/header-controls.test.js` |
 | `LAYOUT-036` | 390px以下でもヘッダー・編集見出し・テキスト枠の文字を読みやすく保ち、操作群を潰さず折り返す | 有効 | `index.html`、`style.css`、`tests/header-controls.test.js` |
 | `LAYOUT-037` | リアルタイムエディターの現在行の行番号欄を強調し、本文の下端に細い横線を表示する | 有効 | `js/committed-preview-window.js`、`style.css`、`tests/committed-preview-window.test.js` |
 | `PREVIEW-001` | 譜面プレビューのベスト条件 | 基準 | `LAYOUT_REFERENCE.md`、`layout-snapshots/2026-07-22-good/`、Gitタグ `preview-layout-best-2026-07-22` |
