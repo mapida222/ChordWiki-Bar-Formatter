@@ -88,7 +88,7 @@
 | `WARNING-001` | 歌詞が90%以上変わった時に限り、部分入力も含む変換前譜面の拍子・小節ハイフン数を初期設定と比較し、標準空白を案内 | 有効 | `js/app.js`、`js/converter.js`、`tests/measure-capacity-warning.test.js` |
 | `LAYOUT-001` | 行修正枠と変換後枠の入力欄上端を揃える | 有効 | `style.css`、`js/app.js` |
 | `LAYOUT-002` | 確定譜面テキスト枠の右下リサイズとサイズ保存 | 有効 | `index.html`、`style.css`、`js/app.js`、`tests/committed-resize.test.js` |
-| `LAYOUT-003` | 01・03を畳んだ初期配置、変換前の省スペース化、行修正上部枠の強調 | 有効 | `index.html`、`style.css`、`js/app.js`、`tests/default-layout.test.js` |
+| `LAYOUT-003` | 01・03を畳んだ初期配置、変換前の省スペース化、行修正上部枠の強調。スマホでは02初期設定を閉じて開始し、現在値を要約表示 | 有効 | `index.html`、`style.css`、`js/app.js`、`tests/default-layout.test.js` |
 | `LAYOUT-004` | 変換前・変換後の下枠ドラッグによる高さ調整 | 有効 | `index.html`、`style.css`、`js/app.js`、`tests/frame-edge-resize.test.js` |
 | `LAYOUT-005` | 初期設定を開いた際に内部へ重なる幅調整線を非表示 | 有効 | `style.css`、`tests/default-layout.test.js` |
 | `LAYOUT-006` | 全テキスト枠で貼り付け前の縦横スクロール位置を維持 | 有効 | `js/app.js`、`tests/source-paste-scroll.test.js` |
@@ -120,7 +120,7 @@
 | `LAYOUT-032` | 編集枠の端2行をクリックしても位置を保ち、矢印キー操作時は上下左右へ滑らかに追従（縦方向は最大2行ずつ） | 有効 | `js/app.js`、`tests/scroll-sync-progress.test.js` |
 | `LAYOUT-033` | 更新履歴を開いた後、履歴の外側をクリックすると閉じる | 有効 | `js/app.js`、`tests/header-controls.test.js` |
 | `LAYOUT-034` | 横スクロールはカーソルを幅40〜60%に保ち、画面幅の1/6ずつ140msのイーズアウトで移動 | 有効 | `js/app.js`、`tests/scroll-sync-progress.test.js` |
-| `LAYOUT-035` | 更新履歴を5件ずつ段階表示し、ボタン操作で最古の履歴まで表示 | 有効 | `index.html`、`style.css`、`js/entries/main.js`、`js/update-history.js`、`tests/header-controls.test.js` |
+| `LAYOUT-035` | 更新履歴を5件ずつ段階表示し、ボタン操作で最古の履歴まで表示。スマホではヘッダー幅へ広げ、本文を日付・カテゴリの下へ折り返す。hiddenの表示抑止を保証 | 有効 | `index.html`、`style.css`、`js/entries/main.js`、`js/update-history.js`、`tests/header-controls.test.js` |
 | `LAYOUT-036` | 390px以下でもヘッダー・編集見出し・テキスト枠の文字を読みやすく保ち、操作群を潰さず折り返す | 有効 | `index.html`、`style.css`、`tests/header-controls.test.js` |
 | `LAYOUT-037` | リアルタイムエディターの現在行の行番号欄を強調し、本文の下端に細い横線を表示する | 有効 | `js/committed-preview-window.js`、`style.css`、`tests/committed-preview-window.test.js` |
 | `PREVIEW-001` | 譜面プレビューのベスト条件 | 基準 | `LAYOUT_REFERENCE.md`、`layout-snapshots/2026-07-22-good/`、Gitタグ `preview-layout-best-2026-07-22` |

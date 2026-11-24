@@ -377,7 +377,11 @@
     focusButton.focus();
   }
 
+  function updateSettingsSummary(values) {
+    $("#settings-current-summary").textContent = `1小節：${values.measureCapacity} ／ コード直後：${values.hyphenUnit} ／ 区切り：${values.hyphenSpacing}`;
+  }
   function renderSettings(values) {
+    updateSettingsSummary(values);
     elements.settingsGrid.textContent = "";
     elements.settingsAdvancedGrid.textContent = "";
     const basicKeys = new Set(["measureCapacity", "hyphenUnit", "hyphenSpacing"]);
@@ -457,6 +461,7 @@
       input.setAttribute("aria-invalid", String(Boolean(result.errors[item.key])));
       $(`#error-${item.key}`).textContent = result.errors[item.key] || "";
     });
+    if (result.valid) updateSettingsSummary(result.values);
     if (result.valid && persist) CBFSettings.save(result.values);
     return result;
   }
@@ -4148,6 +4153,7 @@
   }
   restoreLayout();
   renderSettings(loadedSettings);
+  setSettingsMode(window.matchMedia("(max-width: 699px)").matches ? "closed" : "compact");
   updateSettingsProfileUI();
   showScorePreview();
   updateCount(elements.input, elements.inputCount);

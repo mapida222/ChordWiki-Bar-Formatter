@@ -216,3 +216,25 @@ assert(!css.includes(".committed-card { grid-column: 2; grid-row: 4;"));
 assert(!app.includes("--settings-clearance"));
 
 console.log("PASS: header wording and bracket-button text layout");
+
+assert(css.includes('.header-notice-history [hidden] { display: none !important; }'), "pagination must stay hidden even when history rows use display:grid");
+const mobileNoticeCss = css.slice(css.indexOf('@media (max-width: 699px)'));
+assert(mobileNoticeCss.includes('.header-notice { position: static;'), "mobile history must anchor to the full-width header, not the small trigger");
+assert(mobileNoticeCss.includes('.header-notice-history .header-notice-content { grid-column: 1 / -1; white-space: normal;'), "mobile history text must wrap below the date and category");
+
+{
+  const vm = require('node:vm');
+  const source = fs.readFileSync(path.join(root, 'js', 'update-history.js'), 'utf8');
+  const entries = Array.from({ length: 12 }, () => ({ hidden: false }));
+  let showMore;
+  const more = { addEventListener(type, handler) { showMore = handler; } };
+  vm.runInNewContext(source, { document: { querySelector(selector) {
+    return selector === '.header-notice-history' ? { querySelectorAll: () => entries } : more;
+  } } });
+  assert.equal(entries.filter(entry => !entry.hidden).length, 5);
+  showMore();
+  assert.equal(entries.filter(entry => !entry.hidden).length, 10);
+  showMore();
+  assert.equal(entries.filter(entry => !entry.hidden).length, 12);
+  assert.equal(more.hidden, true);
+}
