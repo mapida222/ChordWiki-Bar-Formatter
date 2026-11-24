@@ -35,7 +35,7 @@ assert(html.includes('id="correction-position" class="correction-position" aria-
 assert.strictEqual((html.match(/class="correction-action-divider"/g) || []).length, 0, "the restored support frame must use button spacing instead of pipe separators");
 assert(!html.includes('id="correction-support-toggle"'), "row-edit support must stay visible without a redundant collapse button");
 assert(css.includes(".correction-position[hidden] { display: none !important; }"));
-assert.strictEqual((html.match(/data-correction-symbol=/g) || []).length, 6);
+assert.deepStrictEqual([...html.matchAll(/data-correction-symbol="([^"]+)"/g)].map(match => match[1]), ["*", "^", "@", "s", "|", "x", "/", ..."abcdefghi"], "native numeric entry must retain access to every supplementary symbol and long duration");
 assert(css.includes(".correction-rebuild-button {"));
 assert(!css.includes(".correction-refresh-help { position: absolute;"));
 assert(app.includes('correctionRefreshLine: $("#correction-refresh-line")'));

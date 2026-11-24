@@ -927,6 +927,7 @@
     updateEditorHighlight(elements.output, -1, outputCodeOffsetAt(linkedLineIndex, linkedSlotIndex));
     applyPreviewActiveLine();
     updateCorrectionPosition();
+    document.dispatchEvent(new CustomEvent("cbf:linked-position", { detail: { lineIndex: linkedLineIndex, slotIndex: linkedSlotIndex } }));
   }
   function updateActivePosition(textarea, _gutter, activate = false, eventType = "") {
     const shouldAutoFollowActiveLine = eventType === "keyup" || eventType === "input";
@@ -2760,7 +2761,7 @@
         notify("先に行修正の数字または数字の間を選んでください。", true);
         return;
       }
-      if (symbol === "@") {
+      if (symbol === "@" || /^[a-i]$/.test(symbol)) {
         replaceActiveCorrectionBeat(symbol);
         elements.correction.focus({ preventScroll: true });
         return;
