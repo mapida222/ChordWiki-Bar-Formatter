@@ -218,6 +218,9 @@ assert(!app.includes("--settings-clearance"));
 console.log("PASS: header wording and bracket-button text layout");
 
 assert(css.includes('.header-notice-history [hidden] { display: none !important; }'), "pagination must stay hidden even when history rows use display:grid");
+const noticeSummaryRule = css.match(/\.header-notice-summary \{([^}]+)\}/)[1];
+assert(noticeSummaryRule.includes('border-radius: 999px;'), 'hover and pressed backgrounds must follow the rounded update-history trigger');
+assert(css.includes('.header-notice-summary:focus-visible { outline: 2px solid var(--focus);'), 'keyboard focus must remain visible around the rounded trigger');
 const mobileNoticeCss = css.slice(css.indexOf('@media (max-width: 699px)'));
 assert(mobileNoticeCss.includes('.header-notice { position: static;'), "mobile history must anchor to the full-width header, not the small trigger");
 assert(mobileNoticeCss.includes('.header-notice-history .header-notice-content { grid-column: 1 / -1; white-space: normal;'), "mobile history text must wrap below the date and category");
