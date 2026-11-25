@@ -377,7 +377,11 @@
     focusButton.focus();
   }
 
+  function updateSettingsSummary(values) {
+    $("#settings-current-summary").textContent = `1小節：${values.measureCapacity} ／ コード直後：${values.hyphenUnit} ／ 区切り：${values.hyphenSpacing}`;
+  }
   function renderSettings(values) {
+    updateSettingsSummary(values);
     elements.settingsGrid.textContent = "";
     elements.settingsAdvancedGrid.textContent = "";
     const basicKeys = new Set(["measureCapacity", "hyphenUnit", "hyphenSpacing"]);
@@ -457,6 +461,7 @@
       input.setAttribute("aria-invalid", String(Boolean(result.errors[item.key])));
       $(`#error-${item.key}`).textContent = result.errors[item.key] || "";
     });
+    if (result.valid) updateSettingsSummary(result.values);
     if (result.valid && persist) CBFSettings.save(result.values);
     return result;
   }
@@ -922,6 +927,7 @@
     updateEditorHighlight(elements.output, -1, outputCodeOffsetAt(linkedLineIndex, linkedSlotIndex));
     applyPreviewActiveLine();
     updateCorrectionPosition();
+    document.dispatchEvent(new CustomEvent("cbf:linked-position", { detail: { lineIndex: linkedLineIndex, slotIndex: linkedSlotIndex } }));
   }
   function updateActivePosition(textarea, _gutter, activate = false, eventType = "") {
     const shouldAutoFollowActiveLine = eventType === "keyup" || eventType === "input";
@@ -2755,7 +2761,7 @@
         notify("先に行修正の数字または数字の間を選んでください。", true);
         return;
       }
-      if (symbol === "@") {
+      if (symbol === "@" || /^[a-i]$/.test(symbol)) {
         replaceActiveCorrectionBeat(symbol);
         elements.correction.focus({ preventScroll: true });
         return;
@@ -4148,6 +4154,7 @@
   }
   restoreLayout();
   renderSettings(loadedSettings);
+  setSettingsMode(window.matchMedia("(max-width: 699px)").matches ? "closed" : "compact");
   updateSettingsProfileUI();
   showScorePreview();
   updateCount(elements.input, elements.inputCount);

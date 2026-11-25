@@ -35,7 +35,7 @@ assert(html.includes('id="correction-position" class="correction-position" aria-
 assert.strictEqual((html.match(/class="correction-action-divider"/g) || []).length, 0, "the restored support frame must use button spacing instead of pipe separators");
 assert(!html.includes('id="correction-support-toggle"'), "row-edit support must stay visible without a redundant collapse button");
 assert(css.includes(".correction-position[hidden] { display: none !important; }"));
-assert.strictEqual((html.match(/data-correction-symbol=/g) || []).length, 6);
+assert.deepStrictEqual([...html.matchAll(/data-correction-symbol="([^"]+)"/g)].map(match => match[1]), ["*", "^", "@", "s", "|", "x", "/", ..."abcdefghi"], "native numeric entry must retain access to every supplementary symbol and long duration");
 assert(css.includes(".correction-rebuild-button {"));
 assert(!css.includes(".correction-refresh-help { position: absolute;"));
 assert(app.includes('correctionRefreshLine: $("#correction-refresh-line")'));
@@ -216,3 +216,31 @@ assert(!css.includes(".committed-card { grid-column: 2; grid-row: 4;"));
 assert(!app.includes("--settings-clearance"));
 
 console.log("PASS: header wording and bracket-button text layout");
+
+assert(css.includes('.header-notice-history [hidden] { display: none !important; }'), "pagination must stay hidden even when history rows use display:grid");
+const noticeSummaryRule = css.match(/\.header-notice-summary \{([^}]+)\}/)[1];
+assert(noticeSummaryRule.includes('border-radius: 999px;'), 'hover and pressed backgrounds must follow the rounded update-history trigger');
+assert(css.includes('.header-notice-summary:focus-visible { outline: 2px solid var(--focus);'), 'keyboard focus must remain visible around the rounded trigger');
+const desktopNoticeCss = css.slice(css.indexOf('@media (min-width: 700px)'));
+assert(desktopNoticeCss.includes('width: min(640px, 100%);'), 'desktop history must use a readable panel width bounded by the header');
+assert(desktopNoticeCss.includes('.header-notice-history .header-notice-content { grid-column: 1 / -1; white-space: normal;'), 'desktop history must show complete text below the metadata');
+const mobileNoticeCss = css.slice(css.indexOf('@media (max-width: 699px)'));
+assert(mobileNoticeCss.includes('.header-notice { position: static;'), "mobile history must anchor to the full-width header, not the small trigger");
+assert(mobileNoticeCss.includes('.header-notice-history .header-notice-content { grid-column: 1 / -1; white-space: normal;'), "mobile history text must wrap below the date and category");
+
+{
+  const vm = require('node:vm');
+  const source = fs.readFileSync(path.join(root, 'js', 'update-history.js'), 'utf8');
+  const entries = Array.from({ length: 12 }, () => ({ hidden: false }));
+  let showMore;
+  const more = { addEventListener(type, handler) { showMore = handler; } };
+  vm.runInNewContext(source, { document: { querySelector(selector) {
+    return selector === '.header-notice-history' ? { querySelectorAll: () => entries } : more;
+  } } });
+  assert.equal(entries.filter(entry => !entry.hidden).length, 5);
+  showMore();
+  assert.equal(entries.filter(entry => !entry.hidden).length, 10);
+  showMore();
+  assert.equal(entries.filter(entry => !entry.hidden).length, 12);
+  assert.equal(more.hidden, true);
+}

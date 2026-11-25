@@ -39,7 +39,7 @@ assert(css.includes(".settings-panel.settings-closed .settings-reset-button, .se
 assert(css.includes(".settings-panel.settings-closed { height: auto; min-height: 0; overflow: visible; }"), "a closed settings panel must keep its heading and open button visible");
 assert(css.includes(".settings-panel.settings-closed .settings-shell { height: auto !important; overflow: hidden; }"), "a closed settings shell must not leak a saved height");
 assert(app.includes("elements.settingsShell.style.removeProperty(\"height\");"), "settings open/close must clear saved manual height");
-assert(html.includes("style.css?v=20261106-002"));
+assert(html.includes("style.css?v=20261124-005"));
 assert(css.includes(".app-logo { width: min(420px, 48vw);"), "the logo must stay left-aligned while leaving room for header actions");
 assert(css.includes(".app-header .eyebrow") && css.includes("white-space: nowrap"), "the app subtitle must stay on one line");
 assert(css.includes(".header-secondary-actions .help-open-button") && css.includes("min-height: 29px") && css.includes("line-height: 28px"), "wrapped header buttons must grow to about 58px across two lines");
@@ -48,3 +48,23 @@ assert(html.includes('type="module" src="/js/entries/main.js"'));
 assert(entry.includes('await import("../app.js")'));
 
 console.log("PASS: LAYOUT-003 compact default layout and clear row-edit context frame");
+
+{
+  const vm = require('node:vm');
+  const initialMode = app.match(/setSettingsMode\(window\.matchMedia\("\(max-width: 699px\)"\)\.matches \? "closed" : "compact"\);/);
+  assert(initialMode, 'initial settings must be closed on phones and open on desktop');
+  for (const [matches, expected] of [[true, 'closed'], [false, 'compact']]) {
+    let actual;
+    vm.runInNewContext(initialMode[0], { window: { matchMedia: () => ({ matches }) }, setSettingsMode: mode => { actual = mode; } });
+    assert.equal(actual, expected);
+  }
+  const summaryFunction = app.match(/  function updateSettingsSummary\(values\) \{[\s\S]*?\n  \}/);
+  assert(summaryFunction, 'collapsed settings must show current values');
+  const summary = {};
+  vm.runInNewContext(summaryFunction[0] + '\nupdateSettingsSummary(values);', {
+    $: () => summary, values: { measureCapacity: 6, hyphenUnit: 3, hyphenSpacing: 0 }
+  });
+  assert.equal(summary.textContent, '1小節：6 ／ コード直後：3 ／ 区切り：0');
+  assert(app.includes('updateSettingsSummary(values);'), 'restored settings must update the summary');
+  assert(app.includes('if (result.valid) updateSettingsSummary(result.values);'), 'edited settings must update the summary');
+}

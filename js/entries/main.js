@@ -19,4 +19,5 @@ import "../update-history.js";
 
 globalThis.ChordWikiPreview.configureParser(chordWikiParser);
 await import("../app.js");
+await import("../mobile-correction-focus.js");
 await import("../row-edit-test.js");

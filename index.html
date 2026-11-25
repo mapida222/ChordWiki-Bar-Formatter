@@ -15,7 +15,7 @@
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4561699699325989" crossorigin="anonymous"></script>
   <title>ChordWiki Bar Formatter (コバッター) ～演奏しやすいリズム付きコード譜へ～</title>
   <link rel="icon" type="image/png" href="logo/260810_favicon_touka.png">
-  <link rel="stylesheet" href="style.css?v=20261106-002">
+  <link rel="stylesheet" href="style.css?v=20261124-005">
   <link rel="stylesheet" href="style-row-edit-test.css?v=20260801-3">
 </head>
 <body>
@@ -143,6 +143,7 @@
         </div>
         </aside>
         <div id="settings-shell" class="settings-shell">
+        <p id="settings-current-summary" class="settings-current-summary" aria-live="polite"></p>
         <div class="settings-primary-actions">
           <button id="settings-toggle" class="text-button" type="button" aria-expanded="true" aria-controls="settings-body">設定を閉じる▼</button>
           <button id="settings-example-toggle" class="text-button settings-example-toggle" type="button" aria-expanded="false">説明・使用例▼</button>
@@ -169,7 +170,13 @@
         <div class="frame-resize-edge" data-panel="settings" data-edge="bottom" role="separator" aria-label="初期設定枠の下端を上下に調整" aria-orientation="horizontal" tabindex="0"></div>
       </section>
 
+      <div id="mobile-correction-placeholder" hidden></div>
       <article class="editor-card correction-card">
+        <div id="mobile-correction-focus" hidden>
+          <div class="mobile-correction-heading"><strong id="mobile-correction-row" role="status"></strong><button id="mobile-correction-done" type="button">完了</button></div>
+          <section class="mobile-correction-result-wrap" aria-label="編集中の行の変換結果"><span class="mobile-correction-label">変換後</span><div id="mobile-correction-preview" class="score-preview"></div><pre id="mobile-correction-result"></pre></section>
+          <label class="mobile-correction-label" for="correction-text">修正値</label>
+        </div>
         <div class="editor-heading">
           <div class="heading-with-help"><h2 class="compact-editor-title"><label for="correction-text">03. 行修正 <span>/ ROW EDIT</span></label></h2><span class="context-help"><button class="context-help-button" type="button" aria-label="行修正の説明" aria-expanded="false" aria-controls="help-tip-correction">?</button><span id="help-tip-correction" class="context-help-popover" role="tooltip" hidden><strong class="context-help-title">03. 行修正</strong>1行のコード順に対応する数字や記号を上書きして、音の長さや小節位置を調整します。<br>入力例と記号の意味は、下の「行修正で使える記号」で確認できます。<br>「?」は自動変換できなかった位置です。手動で変換・調整をしてください。</span></span></div>
           <div class="editor-tools">
@@ -302,6 +309,8 @@
         <button type="button" data-correction-symbol="^" title="アクセント">^</button>
         <button type="button" data-correction-symbol="@" title="白玉">@</button>
         <button type="button" data-correction-symbol="s" title="シンコペーション">s</button>
+        <button id="mobile-correction-more" type="button" aria-expanded="false" aria-controls="mobile-correction-symbols">その他</button>
+        <div id="mobile-correction-symbols">
         <button type="button" data-correction-symbol="|" title="小節頭">|</button>
         <button type="button" data-correction-symbol="x" title="小節線を消去">x</button>
         <button type="button" data-correction-backspace title="1文字削除">BS</button>
@@ -309,6 +318,17 @@
         <button type="button" data-correction-move="ArrowRight" title="カーソルを右へ">→</button>
         <button type="button" data-correction-move="ArrowDown" title="カーソルを下へ">↓</button>
         <button type="button" data-correction-move="ArrowUp" title="カーソルを上へ">↑</button>
+        <button class="mobile-only-symbol" type="button" data-correction-symbol="/" title="小節またぎ">/</button>
+        <button class="mobile-only-symbol" type="button" data-correction-symbol="a" title="ハイフン10個">a</button>
+        <button class="mobile-only-symbol" type="button" data-correction-symbol="b" title="ハイフン11個">b</button>
+        <button class="mobile-only-symbol" type="button" data-correction-symbol="c" title="ハイフン12個">c</button>
+        <button class="mobile-only-symbol" type="button" data-correction-symbol="d" title="ハイフン13個">d</button>
+        <button class="mobile-only-symbol" type="button" data-correction-symbol="e" title="ハイフン14個">e</button>
+        <button class="mobile-only-symbol" type="button" data-correction-symbol="f" title="ハイフン15個">f</button>
+        <button class="mobile-only-symbol" type="button" data-correction-symbol="g" title="ハイフン16個">g</button>
+        <button class="mobile-only-symbol" type="button" data-correction-symbol="h" title="ハイフン24個">h</button>
+        <button class="mobile-only-symbol" type="button" data-correction-symbol="i" title="ハイフン32個">i</button>
+        </div>
       </div>
 
       <article class="editor-card output-card">

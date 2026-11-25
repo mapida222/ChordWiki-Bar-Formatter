@@ -22,7 +22,7 @@ for (const test of tests) {
 }
 
 for (const file of [
-  "js/analytics.js", "js/app.js", "js/converter.js", "js/numeric-entry.js", "js/row-edit-test.js",
+  "js/analytics.js", "js/app.js", "js/converter.js", "js/numeric-entry.js", "js/row-edit-test.js", "js/mobile-correction-focus.js",
   "js/parser/formatter-notation.js", "js/parser/chordwiki-adapter.js",
   "js/renderer/old-chordwiki-renderer.js", "js/chordwiki-preview.js",
   "js/entries/main.js", "js/entries/preview-window.js", "js/entries/committed-preview.js"
