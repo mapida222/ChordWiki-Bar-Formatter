@@ -3,22 +3,16 @@
   const status = document.querySelector('#header-notice-status');
   if (!history || !status) return;
 
-  const entries = [...history.querySelectorAll(':scope > p')];
+  const entries = [...history.querySelectorAll('.header-notice-entry')];
+  const groups = [...history.querySelectorAll('.header-notice-group')];
   const pageSize = 5;
   let visibleCount = pageSize;
 
-  let previousDate;
-  entries.forEach(entry => {
-    const time = entry.querySelector('time');
-    const date = time.dateTime;
-    const startsDate = date !== previousDate;
-    time.hidden = !startsDate;
-    entry.classList.toggle('header-notice-date-start', startsDate);
-    previousDate = date;
-  });
-
   const render = () => {
     entries.forEach((entry, index) => { entry.hidden = index >= visibleCount; });
+    groups.forEach(group => {
+      group.hidden = ![...group.querySelectorAll('.header-notice-entry')].some(entry => !entry.hidden);
+    });
     status.textContent = visibleCount >= entries.length ? 'すべての更新履歴を表示しました' : '';
   };
 

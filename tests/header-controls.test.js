@@ -139,18 +139,22 @@ assert(html.includes('<summary class="header-notice-summary">'));
 assert(html.includes('<span class="header-notice-label">更新履歴</span>'));
 assert(html.includes('class="header-notice-latest"'));
 assert(html.includes('class="header-notice-history" aria-label="更新履歴"'));
+const historyMarkup = html.slice(html.indexOf('class="header-notice-history"'), html.indexOf('id="header-notice-status"'));
+assert.equal((historyMarkup.match(/datetime="2026-11-24"/g) || []).length, 1, 'a date must appear once in the history HTML even when scripts do not run');
+assert.equal((historyMarkup.match(/class="header-notice-group"/g) || []).length, 11, 'each date must have its own structural group');
+assert.equal((historyMarkup.match(/class="header-notice-entry"/g) || []).length, 22, 'grouping must retain every entry');
 assert(html.includes('aria-label="更新履歴" role="region" tabindex="0"'), 'scroll-only history must remain reachable by keyboard');
 assert(html.includes('id="header-notice-status" class="header-notice-status" role="status"'));
 assert(!html.includes('id="header-notice-more"'), 'history must load on scroll instead of requiring a more button');
 assert(html.includes('datetime="2026-08-02"') && html.includes('v1.0.0を公開'), "update history must reach the first public release");
 assert(entry.includes('import "../update-history.js";'), "update history must progressively reveal older entries");
 assert(html.includes('datetime="2026-09-30">2026/09/30</time>'));
-assert(html.includes('class="header-notice-category">[MusicXML]</span>'));
+assert(html.includes('class="header-notice-category">MusicXML</span>'));
 assert(html.includes('MusicXML変換ページを新設'));
 assert(app.includes('if (headerNotice?.open && !headerNotice.contains(event.target)) headerNotice.open = false;'), "update history must close when the user clicks outside it");
 assert(html.includes('class="header-notice-category">[Editor]</span>'));
-assert(html.includes('class="header-notice-category">[Formatter・Editor]</span>'));
-assert(html.includes('class="header-notice-category">[Formatter]</span>'));
+assert(html.includes('class="header-notice-category">Formatter・Editor</span>'));
+assert(html.includes('class="header-notice-category">Formatter</span>'));
 assert(html.includes('更新履歴を設置'));
 assert(html.includes('太字表示の不具合・カーソル位置ずれを修正'));
 assert(html.includes('小節チェック機能を追加'));
@@ -230,17 +234,21 @@ assert(css.includes('max-height: min(60dvh, 360px);'), 'history must stay bounde
 assert(css.includes('overflow-anchor: none;') && css.includes('overscroll-behavior: contain;'), 'appending history must not move the viewport or chain scrolling to the score');
 const mobileNoticeCss = css.slice(css.indexOf('@media (max-width: 699px)'));
 assert(mobileNoticeCss.includes('.header-notice { position: static;'), "mobile history must anchor to the full-width header, not the small trigger");
-assert(mobileNoticeCss.includes('--history-category-width:'), 'mobile history must retain a bounded category column');
+assert(css.includes('--history-category-width: 104px;'), 'category columns must remain compact across screen widths');
 
 {
   const vm = require('node:vm');
   const source = fs.readFileSync(path.join(root, 'js', 'update-history.js'), 'utf8');
   const dates = ['2026-11-24', '2026-11-24', '2026-11-24', '2026-09-30', '2026-09-22', '2026-09-20', '2026-09-20', '2026-09-19', '2026-09-19', '2026-09-19', '2026-09-19', '2026-09-07'];
-  const entries = dates.map(date => {
-    const time = { dateTime: date, hidden: false };
-    const classes = new Set();
-    return { hidden: false, time, classes, querySelector: () => time, classList: { toggle(name, enabled) { enabled ? classes.add(name) : classes.delete(name); } } };
-  });
+  const entries = dates.map(() => ({ hidden: false }));
+  const groups = [
+    { date: '2026-11-24', entries: entries.slice(0, 3) },
+    { date: '2026-09-30', entries: entries.slice(3, 4) },
+    { date: '2026-09-22', entries: entries.slice(4, 5) },
+    { date: '2026-09-20', entries: entries.slice(5, 7) },
+    { date: '2026-09-19', entries: entries.slice(7, 11) },
+    { date: '2026-09-07', entries: entries.slice(11) },
+  ].map(group => ({ ...group, hidden: false, querySelectorAll: () => group.entries }));
   const handlers = {};
   const frames = [];
   let height = 0;
@@ -248,7 +256,7 @@ assert(mobileNoticeCss.includes('--history-category-width:'), 'mobile history mu
   const history = {
     scrollTop: 0, get clientHeight() { return height; },
     get scrollHeight() { return entries.filter(entry => !entry.hidden).length * 50; },
-    querySelectorAll: () => entries, closest: () => details,
+    querySelectorAll: selector => selector === '.header-notice-entry' ? entries : groups, closest: () => details,
     addEventListener(type, callback) { handlers[type] = callback; },
   };
   const status = { textContent: '' };
@@ -266,7 +274,7 @@ assert(mobileNoticeCss.includes('--history-category-width:'), 'mobile history mu
   };
   flush();
   assert.equal(entries.filter(entry => !entry.hidden).length, 5);
-  assert.deepStrictEqual(entries.filter(entry => !entry.hidden && !entry.time.hidden).map(entry => entry.time.dateTime), ['2026-11-24', '2026-09-30', '2026-09-22']);
+  assert.deepStrictEqual(groups.filter(group => !group.hidden).map(group => group.date), ['2026-11-24', '2026-09-30', '2026-09-22']);
   assert.equal(status.textContent, '');
   height = 200;
   details.open = true;
@@ -282,8 +290,8 @@ assert(mobileNoticeCss.includes('--history-category-width:'), 'mobile history mu
   flush();
   assert.equal(entries.filter(entry => !entry.hidden).length, 12);
   assert.equal(history.scrollTop, 250, 'appending the last batch must preserve the scroll position');
-  assert.deepStrictEqual(entries.filter(entry => !entry.time.hidden).map(entry => entry.time.dateTime), ['2026-11-24', '2026-09-30', '2026-09-22', '2026-09-20', '2026-09-19', '2026-09-07']);
-  assert.equal(entries[10].time.hidden, true, 'a batch boundary in the middle of a date must not repeat that date');
+  assert.deepStrictEqual(groups.filter(group => !group.hidden).map(group => group.date), ['2026-11-24', '2026-09-30', '2026-09-22', '2026-09-20', '2026-09-19', '2026-09-07']);
+  assert.equal(groups.filter(group => group.date === '2026-09-19' && !group.hidden).length, 1, 'a batch boundary in the middle of a date must not duplicate that group');
   assert.equal(status.textContent, 'すべての更新履歴を表示しました');
   handlers.scroll();
   flush();
