@@ -229,6 +229,10 @@ assert(noticeSummaryRule.includes('border-radius: 999px;'), 'hover and pressed b
 assert(css.includes('.header-notice-summary:focus-visible { outline: 2px solid var(--focus);'), 'keyboard focus must remain visible around the rounded trigger');
 const desktopNoticeCss = css.slice(css.indexOf('@media (min-width: 700px)'));
 assert(desktopNoticeCss.includes('width: min(640px, 100%);'), 'desktop history must use a readable panel width bounded by the header');
+assert(desktopNoticeCss.includes('.header-notice-history { left: 0; right: auto;'), 'desktop history must start below the bar instead of the right-hand controls');
+const historyPanelRule = css.match(/\.header-notice-history \{([^}]+)\}/)[1];
+assert(historyPanelRule.includes('top: calc(var(--header-notice-bar-height) + 6px);'), 'CSS must anchor below the bar even before the module executes');
+assert(!historyPanelRule.includes('top: calc(100%'), 'the fallback must not include the secondary button row height');
 assert(css.includes('.header-notice-history .header-notice-content { grid-column: 2;'), 'history text must stay beside the fixed category column');
 assert(css.includes('max-height: min(60dvh, 360px);'), 'history must stay bounded by the screen and a compact maximum height');
 assert(css.includes('overflow-anchor: none;') && css.includes('overscroll-behavior: contain;'), 'appending history must not move the viewport or chain scrolling to the score');
@@ -252,9 +256,12 @@ assert(css.includes('--history-category-width: 104px;'), 'category columns must 
   const handlers = {};
   const frames = [];
   let height = 0;
-  const details = { open: false, addEventListener(type, callback) { handlers[type] = callback; } };
+  let barBottom = 200;
+  let parentTop = 100;
+  const details = { open: false, querySelector: () => ({ getBoundingClientRect: () => ({ bottom: barBottom }) }), addEventListener(type, callback) { handlers[type] = callback; } };
   const history = {
     scrollTop: 0, get clientHeight() { return height; },
+    style: {}, get offsetParent() { return height ? { getBoundingClientRect: () => ({ top: parentTop }) } : null; },
     get scrollHeight() { return entries.filter(entry => !entry.hidden).length * 50; },
     querySelectorAll: selector => selector === '.header-notice-entry' ? entries : groups, closest: () => details,
     addEventListener(type, callback) { handlers[type] = callback; },
@@ -281,6 +288,7 @@ assert(css.includes('--history-category-width: 104px;'), 'category columns must 
   handlers.toggle();
   flush();
   assert.equal(entries.filter(entry => !entry.hidden).length, 10);
+  assert.equal(history.style.top, '106px', 'the panel must sit six pixels below the update bar, ignoring the lower action row');
   history.scrollTop = 80;
   handlers.scroll();
   flush();
@@ -296,6 +304,12 @@ assert(css.includes('--history-category-width: 104px;'), 'category columns must 
   handlers.scroll();
   flush();
   assert.equal(entries.filter(entry => !entry.hidden).length, 12, 'end-of-list scrolls must not duplicate entries');
+  barBottom = 244;
+  parentTop = 120;
+  handlers.resize();
+  flush();
+  assert.equal(history.style.top, '130px', 'resizing must update the anchor even when all entries are already loaded');
+  assert.equal(history.scrollTop, 250, 'repositioning the panel must preserve its scroll position');
 
   entries.forEach((entry, index) => { entry.hidden = index >= 5; });
   // A fresh instance must also fill a tall panel without requiring a scroll event.

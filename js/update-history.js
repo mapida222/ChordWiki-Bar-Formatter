@@ -8,6 +8,13 @@
   const pageSize = 5;
   let visibleCount = pageSize;
 
+  const positionPanel = () => {
+    const bar = history.closest('details')?.querySelector('summary');
+    const parent = history.offsetParent;
+    if (!bar || !parent) return;
+    history.style.top = `${bar.getBoundingClientRect().bottom - parent.getBoundingClientRect().top + 6}px`;
+  };
+
   const render = () => {
     entries.forEach((entry, index) => { entry.hidden = index >= visibleCount; });
     groups.forEach(group => {
@@ -17,6 +24,7 @@
   };
 
   const loadNearBottom = () => {
+    positionPanel();
     if (!history.clientHeight || visibleCount >= entries.length) return;
     if (history.scrollHeight - history.scrollTop - history.clientHeight > 64) return;
     const top = history.scrollTop;
