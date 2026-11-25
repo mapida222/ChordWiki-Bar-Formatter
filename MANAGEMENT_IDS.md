@@ -120,7 +120,7 @@
 | `LAYOUT-032` | 編集枠の端2行をクリックしても位置を保ち、矢印キー操作時は上下左右へ滑らかに追従（縦方向は最大2行ずつ） | 有効 | `js/app.js`、`tests/scroll-sync-progress.test.js` |
 | `LAYOUT-033` | 更新履歴を開いた後、履歴の外側をクリックすると閉じる | 有効 | `js/app.js`、`tests/header-controls.test.js` |
 | `LAYOUT-034` | 横スクロールはカーソルを幅40〜60%に保ち、画面幅の1/6ずつ140msのイーズアウトで移動 | 有効 | `js/app.js`、`tests/scroll-sync-progress.test.js` |
-| `LAYOUT-035` | 更新履歴を5件ずつ段階表示し、ボタン操作で最古の履歴まで表示。スマホではヘッダー幅、PCではヘッダー幅内の最大640pxへ広げ、本文を日付・カテゴリの下へ折り返す。hiddenの表示抑止を保証 | 有効 | `index.html`、`style.css`、`js/entries/main.js`、`js/update-history.js`、`tests/header-controls.test.js` |
+| `LAYOUT-035` | 更新履歴をHTML構造で日付別の見出しとリストにまとめ、幅104pxの縁付きカテゴリと12pxの間隔で本文を表示。パネルはバー直下に重ねて表示し、最大360px内で下端付近へスクロールすると5件ずつ自動追加して位置を保持。全件表示後は完了状態を表示。スマホはヘッダー幅、PCは最大640px、両テーマ・リサイズ追従・hiddenの表示抑止に対応 | 有効 | `index.html`、`style.css`、`js/entries/main.js`、`js/update-history.js`、`tests/header-controls.test.js` |
 | `LAYOUT-036` | 390px以下でもヘッダー・編集見出し・テキスト枠の文字を読みやすく保ち、操作群を潰さず折り返す | 有効 | `index.html`、`style.css`、`tests/header-controls.test.js` |
 | `LAYOUT-037` | リアルタイムエディターの現在行の行番号欄を強調し、本文の下端に細い横線を表示する | 有効 | `js/committed-preview-window.js`、`style.css`、`tests/committed-preview-window.test.js` |
 | `LAYOUT-038` | スマホの行修正入力中は選択行の変換結果・既存入力欄・記号バーを表示領域内に固定し、完了で通常表示へ戻す | 有効 | `js/mobile-correction-focus.js`、`js/app.js`、`js/entries/main.js`、`index.html`、`style.css`、`tests/mobile-correction-focus.test.js` |

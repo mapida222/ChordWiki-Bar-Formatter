@@ -15,7 +15,7 @@
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4561699699325989" crossorigin="anonymous"></script>
   <title>ChordWiki Bar Formatter (コバッター) ～演奏しやすいリズム付きコード譜へ～</title>
   <link rel="icon" type="image/png" href="logo/260810_favicon_touka.png">
-  <link rel="stylesheet" href="style.css?v=20261124-005">
+  <link rel="stylesheet" href="style.css?v=20261126-001">
   <link rel="stylesheet" href="style-row-edit-test.css?v=20260801-3">
 </head>
 <body>
@@ -32,31 +32,85 @@
             <span class="header-notice-latest"><time datetime="2026-11-24">2026/11/24</time> <span class="header-notice-category">[Editor]</span> <span class="header-notice-content">新規譜面の貼り付け時に移調設定をリセットするように変更</span></span>
             <span class="header-notice-caret" aria-hidden="true">▼</span>
           </summary>
-          <div class="header-notice-history" aria-label="更新履歴">
-            <p><time datetime="2026-11-24">2026/11/24</time><span class="header-notice-category">[Editor]</span><span class="header-notice-content">新規譜面の貼り付け時に移調設定をリセットするように変更</span></p>
-            <p><time datetime="2026-11-24">2026/11/24</time><span class="header-notice-category">[Editor]</span><span class="header-notice-content">コード位置の調整時に意図せずスクロールする問題を修正</span></p>
-            <p><time datetime="2026-11-24">2026/11/24</time><span class="header-notice-category">[Formatter]</span><span class="header-notice-content">英単語の途中にハイフンや小節線が挿入される問題を修正</span></p>
-            <p><time datetime="2026-09-30">2026/09/30</time><span class="header-notice-category">[MusicXML]</span><span class="header-notice-content">MusicXML変換ページを新設</span></p>
-
-            <p><time datetime="2026-09-22">2026/09/22</time><span class="header-notice-category">[Formatter]</span><span class="header-notice-content">行修正時に歌詞の空白と位置が崩れる問題を修正</span></p>
-            <p><time datetime="2026-09-20">2026/09/20</time><span class="header-notice-category">[Editor]</span><span class="header-notice-content">左右の矢印キー移動時に横スクロールを滑らかに追従</span></p>
-            <p><time datetime="2026-09-20">2026/09/20</time><span class="header-notice-category">[Formatter]</span><span class="header-notice-content">譜面貼り替え後に前譜面の手修正が残る問題と空白行を修正</span></p>
-            <p><time datetime="2026-09-19">2026/09/19</time><span class="header-notice-category">[Editor]</span><span class="header-notice-content">枠の下端クリックで選択行が中央へ戻る動きを修正</span></p>
-            <p><time datetime="2026-09-19">2026/09/19</time><span class="header-notice-category">[Formatter]</span><span class="header-notice-content">歌詞の認識文字列が90%以上変わったときだけ、設定変更を案内</span></p>
-            <p><time datetime="2026-09-19">2026/09/19</time><span class="header-notice-category">[Formatter]</span><span class="header-notice-content">6/8拍子の省略数を3・6、空白区切りを拍子標準に</span></p>
-            <p><time datetime="2026-09-19">2026/09/19</time><span class="header-notice-category">[Editor]</span><span class="header-notice-content">拍子注記が小節線の前や角括弧内にある譜面もチェック</span></p>
-            <p><time datetime="2026-09-07">2026/09/07</time><span class="header-notice-category">[Editor]</span><span class="header-notice-content">コード位置調整モードにショートカットを追加</span></p>
-            <p><time datetime="2026-09-07">2026/09/07</time><span class="header-notice-category">[Editor]</span><span class="header-notice-content">編集・プレビューの表示入替に対応</span></p>
-            <p><time datetime="2026-09-05">2026/09/05</time><span class="header-notice-category">[Formatter]</span><span class="header-notice-content">更新履歴を設置</span></p>
-            <p><time datetime="2026-09-05">2026/09/05</time><span class="header-notice-category">[Formatter・Editor]</span><span class="header-notice-content">太字表示の不具合・カーソル位置ずれを修正</span></p>
-            <p><time datetime="2026-09-05">2026/09/05</time><span class="header-notice-category">[Editor]</span><span class="header-notice-content">小節チェック機能を追加</span></p>
-            <p><time datetime="2026-09-05">2026/09/05</time><span class="header-notice-category">[Editor]</span><span class="header-notice-content">コード位置調整モードを追加</span></p>
-            <p><time datetime="2026-09-02">2026/09/02</time><span class="header-notice-category">[公開]</span><span class="header-notice-content">v1.4.0を公開</span></p>
-            <p><time datetime="2026-08-17">2026/08/17</time><span class="header-notice-category">[公開]</span><span class="header-notice-content">v1.3.0を公開</span></p>
-            <p><time datetime="2026-08-03">2026/08/03</time><span class="header-notice-category">[公開]</span><span class="header-notice-content">v1.2.0を公開</span></p>
-            <p><time datetime="2026-08-02">2026/08/02</time><span class="header-notice-category">[公開]</span><span class="header-notice-content">v1.1.0を公開</span></p>
-            <p><time datetime="2026-08-02">2026/08/02</time><span class="header-notice-category">[初回公開]</span><span class="header-notice-content">v1.0.0を公開</span></p>
-            <button id="header-notice-more" class="header-notice-more" type="button" hidden>過去の更新履歴をさらに表示</button>
+          <div class="header-notice-history" aria-label="更新履歴" role="region" tabindex="0">
+            <section class="header-notice-group" aria-labelledby="notice-date-2026-11-24">
+              <h3 class="header-notice-date" id="notice-date-2026-11-24"><time datetime="2026-11-24">2026/11/24</time></h3>
+              <ul class="header-notice-items">
+                <li class="header-notice-entry"><span class="header-notice-category">Editor</span><span class="header-notice-content">新規譜面の貼り付け時に移調設定をリセットするように変更</span></li>
+                <li class="header-notice-entry"><span class="header-notice-category">Editor</span><span class="header-notice-content">コード位置の調整時に意図せずスクロールする問題を修正</span></li>
+                <li class="header-notice-entry"><span class="header-notice-category">Formatter</span><span class="header-notice-content">英単語の途中にハイフンや小節線が挿入される問題を修正</span></li>
+              </ul>
+            </section>
+            <section class="header-notice-group" aria-labelledby="notice-date-2026-09-30">
+              <h3 class="header-notice-date" id="notice-date-2026-09-30"><time datetime="2026-09-30">2026/09/30</time></h3>
+              <ul class="header-notice-items">
+                <li class="header-notice-entry"><span class="header-notice-category">MusicXML</span><span class="header-notice-content">MusicXML変換ページを新設</span></li>
+              </ul>
+            </section>
+            <section class="header-notice-group" aria-labelledby="notice-date-2026-09-22">
+              <h3 class="header-notice-date" id="notice-date-2026-09-22"><time datetime="2026-09-22">2026/09/22</time></h3>
+              <ul class="header-notice-items">
+                <li class="header-notice-entry"><span class="header-notice-category">Formatter</span><span class="header-notice-content">行修正時に歌詞の空白と位置が崩れる問題を修正</span></li>
+              </ul>
+            </section>
+            <section class="header-notice-group" aria-labelledby="notice-date-2026-09-20">
+              <h3 class="header-notice-date" id="notice-date-2026-09-20"><time datetime="2026-09-20">2026/09/20</time></h3>
+              <ul class="header-notice-items">
+                <li class="header-notice-entry"><span class="header-notice-category">Editor</span><span class="header-notice-content">左右の矢印キー移動時に横スクロールを滑らかに追従</span></li>
+                <li class="header-notice-entry"><span class="header-notice-category">Formatter</span><span class="header-notice-content">譜面貼り替え後に前譜面の手修正が残る問題と空白行を修正</span></li>
+              </ul>
+            </section>
+            <section class="header-notice-group" aria-labelledby="notice-date-2026-09-19">
+              <h3 class="header-notice-date" id="notice-date-2026-09-19"><time datetime="2026-09-19">2026/09/19</time></h3>
+              <ul class="header-notice-items">
+                <li class="header-notice-entry"><span class="header-notice-category">Editor</span><span class="header-notice-content">枠の下端クリックで選択行が中央へ戻る動きを修正</span></li>
+                <li class="header-notice-entry"><span class="header-notice-category">Formatter</span><span class="header-notice-content">歌詞の認識文字列が90%以上変わったときだけ、設定変更を案内</span></li>
+                <li class="header-notice-entry"><span class="header-notice-category">Formatter</span><span class="header-notice-content">6/8拍子の省略数を3・6、空白区切りを拍子標準に</span></li>
+                <li class="header-notice-entry"><span class="header-notice-category">Editor</span><span class="header-notice-content">拍子注記が小節線の前や角括弧内にある譜面もチェック</span></li>
+              </ul>
+            </section>
+            <section class="header-notice-group" aria-labelledby="notice-date-2026-09-07">
+              <h3 class="header-notice-date" id="notice-date-2026-09-07"><time datetime="2026-09-07">2026/09/07</time></h3>
+              <ul class="header-notice-items">
+                <li class="header-notice-entry"><span class="header-notice-category">Editor</span><span class="header-notice-content">コード位置調整モードにショートカットを追加</span></li>
+                <li class="header-notice-entry"><span class="header-notice-category">Editor</span><span class="header-notice-content">編集・プレビューの表示入替に対応</span></li>
+              </ul>
+            </section>
+            <section class="header-notice-group" aria-labelledby="notice-date-2026-09-05">
+              <h3 class="header-notice-date" id="notice-date-2026-09-05"><time datetime="2026-09-05">2026/09/05</time></h3>
+              <ul class="header-notice-items">
+                <li class="header-notice-entry"><span class="header-notice-category">Formatter</span><span class="header-notice-content">更新履歴を設置</span></li>
+                <li class="header-notice-entry"><span class="header-notice-category">Formatter・Editor</span><span class="header-notice-content">太字表示の不具合・カーソル位置ずれを修正</span></li>
+                <li class="header-notice-entry"><span class="header-notice-category">Editor</span><span class="header-notice-content">小節チェック機能を追加</span></li>
+                <li class="header-notice-entry"><span class="header-notice-category">Editor</span><span class="header-notice-content">コード位置調整モードを追加</span></li>
+              </ul>
+            </section>
+            <section class="header-notice-group" aria-labelledby="notice-date-2026-09-02">
+              <h3 class="header-notice-date" id="notice-date-2026-09-02"><time datetime="2026-09-02">2026/09/02</time></h3>
+              <ul class="header-notice-items">
+                <li class="header-notice-entry"><span class="header-notice-category">公開</span><span class="header-notice-content">v1.4.0を公開</span></li>
+              </ul>
+            </section>
+            <section class="header-notice-group" aria-labelledby="notice-date-2026-08-17">
+              <h3 class="header-notice-date" id="notice-date-2026-08-17"><time datetime="2026-08-17">2026/08/17</time></h3>
+              <ul class="header-notice-items">
+                <li class="header-notice-entry"><span class="header-notice-category">公開</span><span class="header-notice-content">v1.3.0を公開</span></li>
+              </ul>
+            </section>
+            <section class="header-notice-group" aria-labelledby="notice-date-2026-08-03">
+              <h3 class="header-notice-date" id="notice-date-2026-08-03"><time datetime="2026-08-03">2026/08/03</time></h3>
+              <ul class="header-notice-items">
+                <li class="header-notice-entry"><span class="header-notice-category">公開</span><span class="header-notice-content">v1.2.0を公開</span></li>
+              </ul>
+            </section>
+            <section class="header-notice-group" aria-labelledby="notice-date-2026-08-02">
+              <h3 class="header-notice-date" id="notice-date-2026-08-02"><time datetime="2026-08-02">2026/08/02</time></h3>
+              <ul class="header-notice-items">
+                <li class="header-notice-entry"><span class="header-notice-category">公開</span><span class="header-notice-content">v1.1.0を公開</span></li>
+                <li class="header-notice-entry"><span class="header-notice-category">初回公開</span><span class="header-notice-content">v1.0.0を公開</span></li>
+              </ul>
+            </section>
+            <div id="header-notice-status" class="header-notice-status" role="status"></div>
           </div>
         </details>
         <a id="header-musicxml-converter" class="help-open-button" href="musicxml-converter.html">MusicXML変換</a>
