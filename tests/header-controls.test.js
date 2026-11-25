@@ -139,7 +139,9 @@ assert(html.includes('<summary class="header-notice-summary">'));
 assert(html.includes('<span class="header-notice-label">更新履歴</span>'));
 assert(html.includes('class="header-notice-latest"'));
 assert(html.includes('class="header-notice-history" aria-label="更新履歴"'));
-assert(html.includes('id="header-notice-more" class="header-notice-more" type="button" hidden>過去の更新履歴をさらに表示</button>'));
+assert(html.includes('aria-label="更新履歴" role="region" tabindex="0"'), 'scroll-only history must remain reachable by keyboard');
+assert(html.includes('id="header-notice-status" class="header-notice-status" role="status"'));
+assert(!html.includes('id="header-notice-more"'), 'history must load on scroll instead of requiring a more button');
 assert(html.includes('datetime="2026-08-02"') && html.includes('v1.0.0を公開'), "update history must reach the first public release");
 assert(entry.includes('import "../update-history.js";'), "update history must progressively reveal older entries");
 assert(html.includes('datetime="2026-09-30">2026/09/30</time>'));
@@ -166,11 +168,11 @@ assert(css.includes(".header-notice-summary { display: grid;"));
 assert(css.includes(".header-notice-label { display: inline-flex; align-items: center;") && css.includes(".header-notice-label::before { content: \"\";"), "update history must use a compact status pill");
 assert(css.includes(".header-notice-latest { display: flex; align-items: baseline;") && css.includes(".header-notice-latest time { flex: 0 0 auto;"), "update history must keep date and message in a readable hierarchy");
 assert(css.includes(".header-notice-category { display: inline-block; flex: 0 0 auto; padding: 2px 5px;") && css.includes("border-radius: 999px;"), "update history categories must read as subtle metadata");
-assert(css.includes(".header-notice-history p { display: grid; grid-template-columns: max-content max-content minmax(0, 1fr);"));
+assert(css.includes('grid-template-columns: var(--history-category-width) minmax(0, 1fr);'), 'history must align all category and content columns');
 assert(css.includes(".header-notice[open] .header-notice-caret"));
 assert(css.includes(".header-notice-history { position: absolute; z-index: 80;"), "the open history should overlay the lower header actions");
-assert(css.includes(".header-notice-more"), "older update history must have a compact load-more control");
-assert(css.includes("max-height: 168px;") && css.includes("overflow-y: auto;"), "long update histories should scroll within the open panel");
+assert(css.includes('.header-notice-status'), 'history must show a quiet completion status');
+assert(css.includes('max-height: min(60dvh, 360px);') && css.includes('overflow-y: auto;'), 'long update histories should scroll within the bounded panel');
 assert(css.includes("@media (max-width: 699px)") && css.includes(".header-notice { width: max-content; max-width: 100%; }") && css.includes(".header-notice-summary { grid-template-columns: max-content max-content; }") && css.includes(".header-notice-latest { display: none; }"), "the settings mobile breakpoint should show only the compact two-column update-history trigger");
 assert(!css.includes("  .header-realtime-row { grid-template-columns: 1fr; }"), "the compact trigger should keep the realtime editor beside it instead of creating a third header row");
 assert(css.includes(".header-realtime-row #header-realtime-editor { display: inline-flex;"), "the realtime editor link should have a distinct primary-link treatment");
@@ -223,24 +225,80 @@ assert(noticeSummaryRule.includes('border-radius: 999px;'), 'hover and pressed b
 assert(css.includes('.header-notice-summary:focus-visible { outline: 2px solid var(--focus);'), 'keyboard focus must remain visible around the rounded trigger');
 const desktopNoticeCss = css.slice(css.indexOf('@media (min-width: 700px)'));
 assert(desktopNoticeCss.includes('width: min(640px, 100%);'), 'desktop history must use a readable panel width bounded by the header');
-assert(desktopNoticeCss.includes('.header-notice-history .header-notice-content { grid-column: 1 / -1; white-space: normal;'), 'desktop history must show complete text below the metadata');
+assert(css.includes('.header-notice-history .header-notice-content { grid-column: 2;'), 'history text must stay beside the fixed category column');
+assert(css.includes('max-height: min(60dvh, 360px);'), 'history must stay bounded by the screen and a compact maximum height');
+assert(css.includes('overflow-anchor: none;') && css.includes('overscroll-behavior: contain;'), 'appending history must not move the viewport or chain scrolling to the score');
 const mobileNoticeCss = css.slice(css.indexOf('@media (max-width: 699px)'));
 assert(mobileNoticeCss.includes('.header-notice { position: static;'), "mobile history must anchor to the full-width header, not the small trigger");
-assert(mobileNoticeCss.includes('.header-notice-history .header-notice-content { grid-column: 1 / -1; white-space: normal;'), "mobile history text must wrap below the date and category");
+assert(mobileNoticeCss.includes('--history-category-width:'), 'mobile history must retain a bounded category column');
 
 {
   const vm = require('node:vm');
   const source = fs.readFileSync(path.join(root, 'js', 'update-history.js'), 'utf8');
-  const entries = Array.from({ length: 12 }, () => ({ hidden: false }));
-  let showMore;
-  const more = { addEventListener(type, handler) { showMore = handler; } };
-  vm.runInNewContext(source, { document: { querySelector(selector) {
-    return selector === '.header-notice-history' ? { querySelectorAll: () => entries } : more;
-  } } });
+  const dates = ['2026-11-24', '2026-11-24', '2026-11-24', '2026-09-30', '2026-09-22', '2026-09-20', '2026-09-20', '2026-09-19', '2026-09-19', '2026-09-19', '2026-09-19', '2026-09-07'];
+  const entries = dates.map(date => {
+    const time = { dateTime: date, hidden: false };
+    const classes = new Set();
+    return { hidden: false, time, classes, querySelector: () => time, classList: { toggle(name, enabled) { enabled ? classes.add(name) : classes.delete(name); } } };
+  });
+  const handlers = {};
+  const frames = [];
+  let height = 0;
+  const details = { open: false, addEventListener(type, callback) { handlers[type] = callback; } };
+  const history = {
+    scrollTop: 0, get clientHeight() { return height; },
+    get scrollHeight() { return entries.filter(entry => !entry.hidden).length * 50; },
+    querySelectorAll: () => entries, closest: () => details,
+    addEventListener(type, callback) { handlers[type] = callback; },
+  };
+  const status = { textContent: '' };
+  vm.runInNewContext(source, {
+    document: { querySelector: selector => selector === '.header-notice-history' ? history : status },
+    window: { addEventListener(type, callback) { handlers[type] = callback; } },
+    requestAnimationFrame: callback => frames.push(callback),
+  });
+  const flush = () => {
+    let attempts = 0;
+    while (frames.length) {
+      assert(++attempts < 20, 'auto-loading must stop when the panel is filled or all entries are shown');
+      frames.shift()();
+    }
+  };
+  flush();
   assert.equal(entries.filter(entry => !entry.hidden).length, 5);
-  showMore();
+  assert.deepStrictEqual(entries.filter(entry => !entry.hidden && !entry.time.hidden).map(entry => entry.time.dateTime), ['2026-11-24', '2026-09-30', '2026-09-22']);
+  assert.equal(status.textContent, '');
+  height = 200;
+  details.open = true;
+  handlers.toggle();
+  flush();
   assert.equal(entries.filter(entry => !entry.hidden).length, 10);
-  showMore();
+  history.scrollTop = 80;
+  handlers.scroll();
+  flush();
+  assert.equal(entries.filter(entry => !entry.hidden).length, 10, 'scrolling away from the bottom must not load everything');
+  history.scrollTop = 250;
+  handlers.scroll();
+  flush();
   assert.equal(entries.filter(entry => !entry.hidden).length, 12);
-  assert.equal(more.hidden, true);
+  assert.equal(history.scrollTop, 250, 'appending the last batch must preserve the scroll position');
+  assert.deepStrictEqual(entries.filter(entry => !entry.time.hidden).map(entry => entry.time.dateTime), ['2026-11-24', '2026-09-30', '2026-09-22', '2026-09-20', '2026-09-19', '2026-09-07']);
+  assert.equal(entries[10].time.hidden, true, 'a batch boundary in the middle of a date must not repeat that date');
+  assert.equal(status.textContent, 'すべての更新履歴を表示しました');
+  handlers.scroll();
+  flush();
+  assert.equal(entries.filter(entry => !entry.hidden).length, 12, 'end-of-list scrolls must not duplicate entries');
+
+  entries.forEach((entry, index) => { entry.hidden = index >= 5; });
+  // A fresh instance must also fill a tall panel without requiring a scroll event.
+  height = 900;
+  status.textContent = '';
+  frames.length = 0;
+  vm.runInNewContext(source, {
+    document: { querySelector: selector => selector === '.header-notice-history' ? history : status },
+    window: { addEventListener(type, callback) { handlers[type] = callback; } },
+    requestAnimationFrame: callback => frames.push(callback),
+  });
+  flush();
+  assert.equal(entries.filter(entry => !entry.hidden).length, 12, 'a tall visible panel must fill itself until the final entry');
 }
